@@ -1,0 +1,59 @@
+[package]
+name = "deck-ds"
+version = "0.1.0"
+edition = "2021"
+authors = ["SteelSavant <steelsavant@gmail.com>"]
+description = "Backend functionality for DeckDS plugin"
+license = "GPL-3.0-only"
+repository = "https://github.com/NGnius/PowerTools"
+keywords = ["utility", "emulation", "dual-screen", "decky"]
+readme = "../README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+usdpl-back = { version = "0.10.1", features = ["blocking"] }
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0"
+# async
+tokio = { version = "*", features = ["time"] }
+async-trait = { version = "0.1" }
+
+# logging
+log = "0.4"
+simplelog = "0.12"
+
+# ureq's tls feature does not like musl targets
+ureq = { version = "2", features = [
+    "json",
+    "gzip",
+    "brotli",
+    "charset",
+], default-features = false, optional = true }
+clap = { version = "4.4.6", features = ["derive"] }
+derive_more = "0.99.17"
+
+[features]
+default = ["online", "decky"]
+decky = ["usdpl-back/decky"]
+crankshaft = ["usdpl-back/crankshaft"]
+encrypt = ["usdpl-back/encrypt"]
+online = ["ureq"]
+dev_stuff = []
+
+[profile.release]
+debug = false
+strip = true
+lto = true
+codegen-units = 1
+
+[profile.docker]
+inherits = "release"
+debug = false
+strip = true
+lto = "thin"
+codegen-units = 16
+opt-level = 2
+debug-assertions = false
+overflow-checks = false

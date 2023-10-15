@@ -1,0 +1,7 @@
+[Desktop Entry]
+Comment=Runs DeckDS plugin autostart script for dual screen applications
+Exec=/home/deck/.config/deck-ds/autostart/autostart.sh
+Path=/home/deck/.config/deck-ds/autostart/
+Name=DeckDS
+Type=Application
+
