@@ -73,9 +73,12 @@ pub enum TimingFallbackMethod {
 
 impl PipelineActionExecutor for DisplayTeardown {
     fn setup(&self, ctx: &mut Context) -> Result<(), String> {
-        todo!("get previous display configurations")
+        Ok(())
+        // todo!("get previous display configurations")
     }
-    fn teardown(&self, ctx: &mut Context) -> Result<(), String> {
-        todo!("teardown")
+    fn tear_down(&self, ctx: &mut Context) -> Result<(), String> {
+        // todo!("Teardown")
+
+        Ok(())
     }
 }

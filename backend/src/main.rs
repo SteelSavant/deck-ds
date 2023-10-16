@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use deck_ds::pipeline::executor::PipelineExecutor;
+use deck_ds::pipeline::{executor::PipelineExecutor, self, config::{PipelineDefinition, Selection}, action::{PipelineAction, display_teardown::DisplayTeardown}};
 use derive_more::Display;
 
 #[derive(Clone, Debug, Parser)]
@@ -29,10 +29,18 @@ fn main() {
 
     match mode {
         Modes::Autostart => {
-            let executor =
+            let mut executor =
                 PipelineExecutor::new(PathBuf::from("./defaults"), PathBuf::from("todo"));
+            let pipeline = PipelineDefinition {
+                name: "Test".to_string(),
+                description: "Test Pipeline".to_string(),
+                actions: vec![
+                    Selection { value: pipeline::config::SelectionType::Single(PipelineAction::DisplayTeardown(DisplayTeardown::default())), optional: None, hidden_in_ui: false }
+                ],
+            };
+            let res = executor.exec(&pipeline);
 
-            todo!();
+            println!("Pipeline result: {res:?}");
         }
         Modes::DisplayTest => todo!(),
         Modes::Serve => todo!(),

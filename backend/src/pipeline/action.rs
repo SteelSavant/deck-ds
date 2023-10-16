@@ -1,8 +1,9 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use self::display_teardown::DisplayTeardown;
 
-use super::{common::Context, dependency::Dependency};
+use super::{common::Context, dependency::DependencyId};
 
 pub mod display_teardown;
 pub mod virtual_screen;
@@ -14,18 +15,18 @@ pub trait PipelineActionExecutor {
         Ok(())
     }
 
-    fn teardown(&self, ctx: &mut Context) -> Result<(), String> {
-        // default to no teardown
+    fn tear_down(&self, ctx: &mut Context) -> Result<(), String> {
+        // default to no Teardown
         Ok(())
     }
 
-    fn get_dependencies(&self) -> Vec<Dependency> {
+    fn get_dependencies(&self) -> Vec<DependencyId> {
         // default to no dependencies
         vec![]
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[enum_delegate::implement(PipelineActionExecutor)]
 pub enum PipelineAction {
     DisplayTeardown(DisplayTeardown),

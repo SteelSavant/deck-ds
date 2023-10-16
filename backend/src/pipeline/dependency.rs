@@ -7,12 +7,13 @@ use self::true_video_wall::TrueVideoWall;
 #[enum_delegate::register]
 pub trait DependencyExecutor {
     fn install(&self, ctx: &mut Context) -> Result<(), String>;
-    // fn configure(&self, ctx: &mut Context) -> Result<(), String> {
-    //     Ok()
-    // }
 }
 
+#[derive(Debug, Clone)]
 #[enum_delegate::implement(DependencyExecutor)]
 pub enum Dependency {
     TrueVideoWall(TrueVideoWall),
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DependencyId(pub String);

@@ -1,10 +1,10 @@
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 use super::{
     action::{PipelineAction, PipelineActionExecutor},
     common::Context,
     config::{PipelineDefinition, SelectionType},
-    dependency::DependencyExecutor,
+    dependency::{true_video_wall::TrueVideoWall, Dependency, DependencyExecutor},
 };
 
 pub struct PipelineExecutor {
@@ -17,6 +17,10 @@ impl PipelineExecutor {
             ctx: Context {
                 defaults_dir,
                 config_dir,
+                dependencies: HashMap::from([(
+                    TrueVideoWall::id(),
+                    Dependency::TrueVideoWall(TrueVideoWall),
+                )]),
             },
         }
     }
@@ -68,7 +72,7 @@ impl PipelineExecutor {
         }
     }
 
-    fn build<'a>(&self, pipeline: &PipelineDefinition) -> Result<Vec<PipelineAction>, String> {
+    fn build(&self, pipeline: &PipelineDefinition) -> Result<Vec<PipelineAction>, String> {
         pipeline
             .actions
             .iter()
@@ -80,7 +84,23 @@ impl PipelineExecutor {
                             .get(key)
                             .ok_or(format!("missing action {key}"))
                             .map(|a| vec![a.clone()]),
-                        SelectionType::AnyOf(values, keys) => todo!(),
+                        SelectionType::AnyOf(values, keys) => {
+                            let mut ordered = keys
+                                .iter()
+                                .map(|k| {
+                                    values
+                                        .get_index_of(k)
+                                        .map(|i| (i, k))
+                                        .ok_or_else(|| format!("missing action {k}"))
+                                })
+                                .collect::<Result<Vec<_>, _>>()?;
+                            ordered.sort_by_key(|v| v.0);
+
+                            Ok(ordered
+                                .into_iter()
+                                .map(|(_, k)| values[k].clone())
+                                .collect())
+                        }
                     }
                 } else {
                     Ok(vec![])
@@ -101,15 +121,27 @@ impl PipelineAction {
     fn exec(&self, ctx: &mut Context, action: ActionType) -> Result<(), String> {
         match action {
             ActionType::Dependencies => {
-                let deps = self.get_dependencies();
+                let ids = self.get_dependencies();
+
+                let deps = ids
+                    .iter()
+                    .map(|id: &super::dependency::DependencyId| {
+                        ctx.dependencies
+                            .get(id)
+                            .map(|d| (*d).clone())
+                            .ok_or_else(|| format!("missing dependency {id:?}"))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+
                 for d in deps {
+                    // TODO::consider tracking installs to avoid reinstalling dependencies
                     d.install(ctx)?;
                 }
 
                 Ok(())
             }
             ActionType::Setup => self.setup(ctx),
-            ActionType::Teardown => self.teardown(ctx),
+            ActionType::Teardown => self.tear_down(ctx),
         }
     }
 }
