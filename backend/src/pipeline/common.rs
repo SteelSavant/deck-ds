@@ -1,11 +1,18 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Command;
 
-pub struct Context {
+use super::config::{PipelineArgs, PipelineAction};
+
+
+pub(super) struct Context {
     /// path to directory containing contents of decky "defaults" folder
-    defaults_dir: PathBuf,
+    pub defaults_dir: PathBuf,
     /// path to directory containing user configuration files
-    config_dir: PathBuf,
+    pub config_dir: PathBuf,
+    /// configured executors
+    pub executors: HashMap<String, Box<dyn PipelineActionExecutor>>
+
 }
 
 pub enum Dependency {
@@ -13,33 +20,51 @@ pub enum Dependency {
 }
 
 impl Dependency {
-    fn install(&self, ctx: &Context) -> bool {
+    pub fn install(&self, ctx: &Context) -> Result<(), String> {
         match self {
             Dependency::TrueVideoWall => {
-                Command::new("kpackagetool5")
-                    .args(["-i", "170914-truevideowall-1.0.kwinscript"])
-                    .current_dir(ctx.defaults_dir)
+                let res = Command::new("kpackagetool5")
+                    .args([
+                        "-i",
+                        "./true_video_wall/170914-truevideowall-1.0.kwinscript",
+                    ])
+                    .current_dir(&ctx.defaults_dir)
                     .output()
-                    .map_err(|err| {
-                        println!("{}, {}", err.kind(), err.to_string());
-                        err.kind()
-                    }) // TODO::remap "already installed" to Ok
-                    .is_ok()
+                    .map(|v| {
+                        let err = String::from_utf8_lossy(&v.stderr);
+                        if err.is_empty() | err.contains("already exists") {
+                            Ok(())
+                        } else {
+                            Err(err.to_string())
+                        }
+                    })
+                    .map_err(|err| err.to_string());
+                match res {
+                    Ok(Ok(_)) => Ok(()),
+                    Ok(Err(err)) | Err(err) => Err(err),
+                }
             }
         }
     }
 }
 
+pub struct PipelineActionExecutorId(pub String);
+
 pub trait PipelineActionExecutor {
-    fn setup(args: PipelineArgs) -> bool {
+    fn id() -> PipelineActionExecutorId;
+
+    fn definition(&self) -> PipelineAction;
+
+    fn setup(&mut self, ctx: &Context, args: PipelineArgs) -> Result<(), String>{
         // default to no setup
-        true
+        Ok(())
     }
-    fn teardown(args: PipelineArgs) -> bool {
+    fn teardown(&mut self, ctx: &Context, args: PipelineArgs) -> Result<(), String> {
         // default to no teardown
-        true
+        Ok(())
     }
-    fn get_dependencies(args: PipelineArgs) -> Vec<Dependency> {
+
+    fn get_dependencies(&self) -> Vec<Dependency> {
         // default to no dependencies
         vec![]
     }

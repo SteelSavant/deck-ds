@@ -33,6 +33,7 @@ ureq = { version = "2", features = [
 ], default-features = false, optional = true }
 clap = { version = "4.4.6", features = ["derive"] }
 derive_more = "0.99.17"
+indexmap = { version = "2.0.2", features = ["serde"] }
 
 [features]
 default = ["online", "decky"]

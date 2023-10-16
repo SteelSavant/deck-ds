@@ -1,4 +1,7 @@
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
+use deck_ds::pipeline::executor::PipelineExecutor;
 use derive_more::Display;
 
 #[derive(Clone, Debug, Parser)]
@@ -21,11 +24,14 @@ enum Modes {
 
 fn main() {
     let args = Cli::parse();
+    println!("got arg {:?}", args.mode);
     let mode = args.mode.unwrap_or_default();
 
     match mode {
         Modes::Autostart => {
-            let executor = PipelineExecutor::new();
+            let executor =
+                PipelineExecutor::new(PathBuf::from("./defaults"), PathBuf::from("todo"));
+            executor.exec();
 
             todo!();
         }
