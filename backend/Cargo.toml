@@ -34,6 +34,9 @@ ureq = { version = "2", features = [
 clap = { version = "4.4.6", features = ["derive"] }
 derive_more = "0.99.17"
 indexmap = { version = "2.0.2", features = ["serde"] }
+schemars = "0.8.15"
+valico = "4.0.0"
+enum_delegate = "0.2.0"
 
 [features]
 default = ["online", "decky"]

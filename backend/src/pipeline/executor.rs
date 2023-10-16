@@ -1,7 +1,11 @@
-use std::{path::PathBuf, collections::HashMap};
+use std::path::PathBuf;
 
-
-use super::{common::{Context, Dependency}, config::{PipelineDefinition, SelectionType, PipelineAction}, action::virtual_screen::VirtualScreen};
+use super::{
+    action::{PipelineAction, PipelineActionExecutor},
+    common::Context,
+    config::{PipelineDefinition, SelectionType},
+    dependency::DependencyExecutor,
+};
 
 pub struct PipelineExecutor {
     ctx: Context,
@@ -13,31 +17,77 @@ impl PipelineExecutor {
             ctx: Context {
                 defaults_dir,
                 config_dir,
-                executors: HashMap::from([("VirtualScreen".to_string(), Box::new( VirtualScreen))])
             },
         }
     }
 
-    pub fn exec(&self, pipeline: &PipelineDefinition) {
-        let actions = pipeline.actions.iter().filter(|a| matches!(a.optional, Some(true) | None)).collect::<Vec<_>>();
-        
+    pub fn exec(&mut self, pipeline: &PipelineDefinition) -> Result<(), Vec<String>> {
+        let res = self.build(pipeline);
 
-        
-        for action in actions {
-            action.value.deps(&self.ctx)?;
-            action.value.startup()?;
+        match res {
+            Err(err) => Err(vec![err]),
+            Ok(pipeline) => {
+                let mut run = vec![];
+                let mut errors = vec![];
+
+                for action in pipeline {
+                    let res = action
+                        .exec(&mut self.ctx, ActionType::Dependencies)
+                        .and_then(|_| {
+                            run.push(action);
+                            run.last()
+                                .expect("action should exist")
+                                .exec(&mut self.ctx, ActionType::Setup)
+                        });
+
+                    if let Err(err) = res {
+                        errors.push(err);
+                        break;
+                    }
+                }
+
+                if errors.is_empty() {
+                    println!("app exec!");
+                }
+
+                for action in run.into_iter().rev() {
+                    let ctx = &mut self.ctx;
+
+                    let res = action.exec(ctx, ActionType::Teardown);
+                    if let Err(err) = res {
+                        errors.push(err);
+                    }
+                }
+
+                if errors.is_empty() {
+                    Ok(())
+                } else {
+                    Err(errors)
+                }
+            }
         }
+    }
 
-        println!("app exec!");
-
-
-
-        for action in pipeline.actions.iter() {
-            action.value.teardown()?;
-        }
-
-        let res = Dependency::TrueVideoWall.install(&self.ctx);
-        println!("{:?}", res)
+    fn build<'a>(&self, pipeline: &PipelineDefinition) -> Result<Vec<PipelineAction>, String> {
+        pipeline
+            .actions
+            .iter()
+            .map(|s| {
+                if matches!(s.optional, Some(true) | None) {
+                    match &s.value {
+                        SelectionType::Single(a) => Ok(vec![a.clone()]),
+                        SelectionType::OneOf(values, key) => values
+                            .get(key)
+                            .ok_or(format!("missing action {key}"))
+                            .map(|a| vec![a.clone()]),
+                        SelectionType::AnyOf(values, keys) => todo!(),
+                    }
+                } else {
+                    Ok(vec![])
+                }
+            })
+            .collect::<Result<Vec<_>, _>>()
+            .map(|v| v.into_iter().flatten().collect())
     }
 }
 
@@ -47,27 +97,19 @@ enum ActionType {
     Teardown,
 }
 
-impl SelectionType<PipelineAction> {
-    fn exec(&self, action: ActionType) {
-        match self {
-            SelectionType::Single(value) => value.exec(action),
-            SelectionType::OneOf(values, key) =>  match values.get(key) {
-                Some(v) => v.exec(action),
-                None => todo!(),
-            },
-            SelectionType::AnyOf(values, keys) => {
-                values.g
-            },
-        }
-    }
-}
-
 impl PipelineAction {
-    fn exec(&self, action: ActionType) {
+    fn exec(&self, ctx: &mut Context, action: ActionType) -> Result<(), String> {
         match action {
-            ActionType::Dependencies => self.,
-            ActionType::Setup => todo!(),
-            ActionType::Teardown => todo!(),
+            ActionType::Dependencies => {
+                let deps = self.get_dependencies();
+                for d in deps {
+                    d.install(ctx)?;
+                }
+
+                Ok(())
+            }
+            ActionType::Setup => self.setup(ctx),
+            ActionType::Teardown => self.teardown(ctx),
         }
     }
 }

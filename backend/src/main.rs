@@ -31,7 +31,6 @@ fn main() {
         Modes::Autostart => {
             let executor =
                 PipelineExecutor::new(PathBuf::from("./defaults"), PathBuf::from("todo"));
-            executor.exec();
 
             todo!();
         }
