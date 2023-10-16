@@ -1,9 +1,10 @@
+use anyhow::Result;
 use std::process::Command;
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::pipeline::common::Context;
+use crate::pipeline::executor::PipelineContext;
 
 use super::DependencyExecutor;
 
@@ -16,7 +17,7 @@ impl TrueVideoWall {
 }
 
 impl DependencyExecutor for TrueVideoWall {
-    fn install(&self, ctx: &mut Context) -> Result<(), String> {
+    fn install(&self, ctx: &mut PipelineContext) -> Result<()> {
         let res = Command::new("kpackagetool5")
             .args([
                 "-i",
@@ -35,7 +36,7 @@ impl DependencyExecutor for TrueVideoWall {
             .map_err(|err| err.to_string());
         match res {
             Ok(Ok(_)) => Ok(()),
-            Ok(Err(err)) | Err(err) => Err(err),
+            Ok(Err(err)) | Err(err) => Err(anyhow::anyhow!(err)),
         }
     }
 }

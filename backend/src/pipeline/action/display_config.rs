@@ -1,19 +1,22 @@
+use anyhow::Result;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use xrandr::Monitor;
 
-use crate::pipeline::common::Context;
+use crate::pipeline::executor::PipelineContext;
 
 use super::PipelineActionExecutor;
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct DisplayTeardown {
-    teardown_deck_location: TeardownLocation,
+pub struct DisplayConfig {
     teardown_external_settings: TeardownExternalSettings,
+    teardown_deck_location: TeardownLocation,
     timing_fallback_method: TimingFallbackMethod,
 }
 
+#[derive(Debug)]
 pub struct DisplayState {
-    // TODO::store state (previous display configuration, etc)
+    previous_configuration: Vec<Monitor>,
 }
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
@@ -29,7 +32,7 @@ pub enum TeardownLocation {
 
 #[derive(Serialize, Deserialize)]
 pub struct VirtualScreenState {
-    // TODO::previous location state
+    previous_state: Option<Vec<xrandr::Monitor>>,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, JsonSchema)]
@@ -71,14 +74,40 @@ pub enum TimingFallbackMethod {
     // Manual
 }
 
-impl PipelineActionExecutor for DisplayTeardown {
-    fn setup(&self, ctx: &mut Context) -> Result<(), String> {
-        Ok(())
-        // todo!("get previous display configurations")
+impl PipelineActionExecutor for DisplayConfig {
+    type S = Self;
+    type State = DisplayState;
+
+    fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
+        // let mut handle = xrandr::XHandle::open()?;
+
+
+
+        // let monitors = handle.monitors()?;
+        // let m = monitors[0];
+        // let o = m.outputs[0];
+
+        // let crtc = 
+
+        // handle.set_position(output, relation, relative_output)
+        // self.set_state(ctx, DisplayState {
+        //     previous_configuration:  monitors
+        // });
+        // Ok(())
+
+        todo!();
     }
-    fn tear_down(&self, ctx: &mut Context) -> Result<(), String> {
-        // todo!("Teardown")
+
+    fn tear_down(&self, ctx: &mut PipelineContext) -> Result<()> {
+        match self.teardown_external_settings {
+            TeardownExternalSettings::Previous => todo!(),
+            TeardownExternalSettings::Native => todo!(),
+            TeardownExternalSettings::Limited { h, v, r, use_native_aspect_ratio } => todo!(),
+        }
 
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {}

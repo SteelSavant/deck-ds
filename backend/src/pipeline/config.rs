@@ -23,7 +23,10 @@ pub struct Selection<T> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub enum SelectionType<T> where T: JsonSchema + Clone + Debug   {
+pub enum SelectionType<T>
+where
+    T: JsonSchema + Clone + Debug,
+{
     Single(T),
     OneOf(IndexMap<String, T>, String),
     AnyOf(IndexMap<String, T>, HashSet<String>),

@@ -1,12 +1,12 @@
-use super::common::Context;
-
 pub mod true_video_wall;
-
 use self::true_video_wall::TrueVideoWall;
+use anyhow::Result;
+
+use super::executor::PipelineContext;
 
 #[enum_delegate::register]
 pub trait DependencyExecutor {
-    fn install(&self, ctx: &mut Context) -> Result<(), String>;
+    fn install(&self, ctx: &mut PipelineContext) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]

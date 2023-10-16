@@ -1,7 +1,12 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use deck_ds::pipeline::{executor::PipelineExecutor, self, config::{PipelineDefinition, Selection}, action::{PipelineAction, display_teardown::DisplayTeardown}};
+use deck_ds::pipeline::{
+    self,
+    action::{display_config::DisplayConfig, PipelineAction},
+    config::{PipelineDefinition, Selection},
+    executor::PipelineExecutor,
+};
 use derive_more::Display;
 
 #[derive(Clone, Debug, Parser)]
@@ -34,9 +39,13 @@ fn main() {
             let pipeline = PipelineDefinition {
                 name: "Test".to_string(),
                 description: "Test Pipeline".to_string(),
-                actions: vec![
-                    Selection { value: pipeline::config::SelectionType::Single(PipelineAction::DisplayTeardown(DisplayTeardown::default())), optional: None, hidden_in_ui: false }
-                ],
+                actions: vec![Selection {
+                    value: pipeline::config::SelectionType::Single(
+                        PipelineAction::DisplayTeardown(DisplayConfig::default()),
+                    ),
+                    optional: None,
+                    hidden_in_ui: false,
+                }],
             };
             let res = executor.exec(&pipeline);
 
