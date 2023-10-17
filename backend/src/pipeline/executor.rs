@@ -4,7 +4,7 @@ use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Command;
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime};
 use typemap::TypeMap;
 
 use crate::process::AppProcess;
@@ -52,14 +52,16 @@ impl PipelineExecutor {
 
         match res {
             Ok(pipeline) => {
-                let mut run: Vec<PipelineAction> = vec![];
-                let mut errors = vec![];
-
+                // Install dependencies
                 for action in pipeline.iter() {
                     if let Err(err) = action.exec(&mut self.ctx, ActionType::Dependencies) {
                         return Err(err).with_context(|| "Error installing dependencies");
                     }
                 }
+
+                // Set up pipeline
+                let mut run = vec![];
+                let mut errors = vec![];
 
                 for action in pipeline {
                     run.push(action);
@@ -75,11 +77,13 @@ impl PipelineExecutor {
                 }
 
                 if errors.is_empty() {
+                    // Run app
                     if let Err(err) = self.run_app(game_id) {
                         errors.push(err);
                     }
                 }
 
+                // Teardown pipeline
                 for action in run.into_iter().rev() {
                     let ctx = &mut self.ctx;
 
@@ -105,7 +109,6 @@ impl PipelineExecutor {
         }
     }
 
-    #[allow(unused_variables)]
     fn run_app(&self, app_id: String) -> Result<()> {
         let status = Command::new("steam")
             .arg(format!("steam://rungameid/{app_id}"))
@@ -126,6 +129,10 @@ impl PipelineExecutor {
         while app_process.is_alive() {
             std::thread::sleep(std::time::Duration::from_millis(100));
             while let Some(Event { id, event, time }) = gilrs.next_event() {
+                fn create_instant(time: SystemTime) -> Instant {
+                    let elapsed = time.elapsed().unwrap_or_default();
+                    Instant::now() - elapsed
+                }
                 match event {
                     EventType::ButtonPressed(
                         btn @ (gilrs::Button::Start | gilrs::Button::Select),
@@ -139,7 +146,7 @@ impl PipelineExecutor {
                         }
 
                         if let &mut (true, true, None) = entry {
-                            entry.2 = Some(Instant::now())
+                            entry.2 = Some(create_instant(time))
                         }
                     }
                     EventType::ButtonReleased(
@@ -167,7 +174,7 @@ impl PipelineExecutor {
                         let start_pressed = check_pressed(gamepad, Button::Start);
                         let select_pressed = check_pressed(gamepad, Button::Select);
                         let instant = if start_pressed && select_pressed {
-                            Some(Instant::now())
+                            Some(create_instant(time))
                         } else {
                             None
                         };
@@ -183,7 +190,6 @@ impl PipelineExecutor {
 
             println!("Gamepad State: {state:?}");
 
-            let id = std::process::id();
             for (_, _, instant) in state.values() {
                 let hold_duration = std::time::Duration::from_secs(2);
                 if matches!(instant, &Some(i) if i.elapsed() > hold_duration) {
