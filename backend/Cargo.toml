@@ -16,8 +16,6 @@ usdpl-back = { version = "0.10.1", features = ["blocking"] }
 regex = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
-# async
-tokio = { version = "*", features = ["time"] }
 async-trait = { version = "0.1" }
 
 # logging
@@ -43,6 +41,8 @@ xrandr = { git = "https://github.com/dzfranklin/xrandr-rs", features = [
 typemap = "0.3.3"
 anyhow = "1.0.75"
 gilrs = "0.10.2"
+rand = "0.8.5"
+nix = { version = "0.27.1", features = ["process", "zerocopy", "signal"] }
 
 [features]
 default = ["online", "decky"]
