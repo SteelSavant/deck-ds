@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use deck_ds::pipeline::{
     self,
-    action::{display_config::DisplayConfig, PipelineAction},
+    action::{display_teardown::DisplayTeardown, PipelineAction},
     config::{PipelineDefinition, Selection},
     executor::PipelineExecutor,
 };
@@ -41,13 +41,13 @@ fn main() {
                 description: "Test Pipeline".to_string(),
                 actions: vec![Selection {
                     value: pipeline::config::SelectionType::Single(
-                        PipelineAction::DisplayTeardown(DisplayConfig::default()),
+                        PipelineAction::DisplayTeardown(DisplayTeardown::default()),
                     ),
                     optional: None,
                     hidden_in_ui: false,
                 }],
             };
-            let res = executor.exec(&pipeline);
+            let res = executor.exec("12146987087370911744".to_string(), &pipeline);
 
             println!("Pipeline result: {res:?}");
         }

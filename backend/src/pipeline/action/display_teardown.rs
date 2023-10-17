@@ -1,5 +1,3 @@
-use std::default;
-
 use anyhow::Result;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -11,7 +9,7 @@ use crate::pipeline::executor::PipelineContext;
 use super::PipelineActionExecutor;
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct DisplayConfig {
+pub struct DisplayTeardown {
     teardown_external_settings: TeardownExternalSettings,
     teardown_deck_location: RelativeLocation,
     timing_fallback_method: TimingFallbackMethod,
@@ -69,7 +67,7 @@ pub enum TimingFallbackMethod {
     // Manual
 }
 
-impl PipelineActionExecutor for DisplayConfig {
+impl PipelineActionExecutor for DisplayTeardown {
     type S = Self;
     type State = DisplayState;
 

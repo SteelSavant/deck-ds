@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
 use std::collections::HashMap;
@@ -46,24 +46,30 @@ impl PipelineExecutor {
         }
     }
 
-    pub fn exec(&mut self, pipeline: &PipelineDefinition) -> Result<()> {
+    pub fn exec(&mut self, game_id: String, pipeline: &PipelineDefinition) -> Result<()> {
         let res = self.build(pipeline);
 
         match res {
-            Err(err) => Err(anyhow::anyhow!("Encountered errors: {:?}", vec![err])),
+            Err(err) => Err(anyhow::anyhow!(
+                "Encountered errors assembling pipeline: {:?}",
+                vec![err]
+            )),
             Ok(pipeline) => {
                 let mut run = vec![];
                 let mut errors = vec![];
 
+                for action in pipeline.iter() {
+                    if let Err(err) = action.exec(&mut self.ctx, ActionType::Dependencies) {
+                        return Err(err).with_context(|| format!("Error installing dependencies"));
+                    }
+                }
+
                 for action in pipeline {
-                    let res = action
-                        .exec(&mut self.ctx, ActionType::Dependencies)
-                        .and_then(|_| {
-                            run.push(action);
-                            run.last()
-                                .expect("action should exist")
-                                .exec(&mut self.ctx, ActionType::Setup)
-                        });
+                    run.push(action);
+                    let res = run
+                        .last()
+                        .expect("action should exist")
+                        .exec(&mut self.ctx, ActionType::Setup);
 
                     if let Err(err) = res {
                         errors.push(err);
@@ -72,7 +78,7 @@ impl PipelineExecutor {
                 }
 
                 if errors.is_empty() {
-                    if let Err(err) = self.run_app() {
+                    if let Err(err) = self.run_app(game_id) {
                         errors.push(err);
                     }
                 }
@@ -89,15 +95,21 @@ impl PipelineExecutor {
                 if errors.is_empty() {
                     Ok(())
                 } else {
-                    Err(anyhow::anyhow!("Encountered errors: {:?}", errors))
+                    Err(anyhow::anyhow!(
+                        "Encountered errors executing pipeline: {:?}",
+                        errors
+                    ))
                 }
             }
         }
     }
 
     #[allow(unused_variables)]
-    fn run_app(&self) -> Result<ExitStatus> {
-        let mut app_handle = Command::new("TODO::test this").spawn()?;
+    fn run_app(&self, game_id: String,) -> Result<ExitStatus> {
+        let mut app_handle = Command::new("steam")
+            .arg(format!("steam://rungameid/{game_id}"))
+            .spawn()
+            .with_context(|| format!("Error starting application {game_id}"))?;
 
         let (send, recv) = std::sync::mpsc::channel();
 
@@ -164,9 +176,12 @@ impl PipelineExecutor {
                     }
                 }
 
+                println!("Gamepad State: {state:?}");
+
                 for (_, _, instant) in state.values() {
                     let hold_duration = std::time::Duration::from_secs(3);
                     if matches!(instant, &Some(i) if i.elapsed() > hold_duration) {
+                        println!("Received exit signal. Closing application...");
                         let _ = send.send(());
                         return;
                     }
@@ -175,6 +190,7 @@ impl PipelineExecutor {
         });
 
         loop {
+            // TODO::this is not correct; it waits for steam, not the application
             if let Ok(Some(exit_status)) = app_handle.try_wait() {
                 return Ok(exit_status);
             }
@@ -183,6 +199,7 @@ impl PipelineExecutor {
                 recv.recv_timeout(timeout),
                 Ok(()) | Err(RecvTimeoutError::Disconnected)
             ) {
+                // TODO::this is not correct; it kills the bash script/steam, not the launched application.
                 let _ = app_handle.kill();
             }
         }

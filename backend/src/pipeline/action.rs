@@ -4,11 +4,11 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use typemap::Key;
 
-use self::display_config::DisplayConfig;
+use self::display_teardown::DisplayTeardown;
 use super::{dependency::DependencyId, executor::PipelineContext};
 use anyhow::Result;
 
-pub mod display_config;
+pub mod display_teardown;
 pub mod virtual_screen;
 
 #[enum_delegate::register]
@@ -60,7 +60,7 @@ pub trait PipelineActionExecutor {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[enum_delegate::implement(PipelineActionExecutor)]
 pub enum PipelineAction {
-    DisplayTeardown(DisplayConfig),
+    DisplayTeardown(DisplayTeardown),
 }
 
 // state impl
