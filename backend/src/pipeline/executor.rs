@@ -1,9 +1,12 @@
 use anyhow::{anyhow, Result};
+use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
+use indexmap::IndexMap;
 use std::collections::HashMap;
-use std::marker::PhantomData;
 use std::path::PathBuf;
-use std::process::Command;
-use typemap::{Key, TypeMap};
+use std::process::{Command, ExitStatus};
+use std::sync::mpsc::RecvTimeoutError;
+use std::time::Instant;
+use typemap::TypeMap;
 
 use super::dependency::{Dependency, DependencyId};
 
@@ -69,16 +72,9 @@ impl PipelineExecutor {
                 }
 
                 if errors.is_empty() {
-                    // let appid = 12146987087370911744u64;
-
-                    // if let Err(_) = Command::new("steam")
-                    //     .args([format!("steam://rungameid/{appid}")])
-                    //     .status()
-                    // {
-                    //     errors.push(anyhow!("failed to run game in steam"));
-                    // }
-
-                    println!("Running App!");
+                    if let Err(err) = self.run_app() {
+                        errors.push(err);
+                    }
                 }
 
                 for action in run.into_iter().rev() {
@@ -95,6 +91,99 @@ impl PipelineExecutor {
                 } else {
                     Err(anyhow::anyhow!("Encountered errors: {:?}", errors))
                 }
+            }
+        }
+    }
+
+    #[allow(unused_variables)]
+    fn run_app(&self) -> Result<ExitStatus> {
+        let mut app_handle = Command::new("TODO::test this").spawn()?;
+
+        let (send, recv) = std::sync::mpsc::channel();
+
+        std::thread::spawn(move || {
+            let mut gilrs = gilrs::Gilrs::new().unwrap();
+            let mut state = IndexMap::<GamepadId, (bool, bool, Option<Instant>)>::new();
+
+            loop {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+
+                while let Some(Event { id, event, time }) = gilrs.next_event() {
+                    match event {
+                        EventType::ButtonPressed(
+                            btn @ (gilrs::Button::Start | gilrs::Button::Select),
+                            _,
+                        ) => {
+                            let entry = state.entry(id).or_default();
+                            if btn == Button::Start {
+                                entry.0 = true;
+                            } else {
+                                entry.1 = true;
+                            }
+
+                            if let &mut (true, true, None) = entry {
+                                entry.2 = Some(Instant::now())
+                            }
+                        }
+                        EventType::ButtonReleased(
+                            btn @ (gilrs::Button::Start | gilrs::Button::Select),
+                            _,
+                        ) => {
+                            let entry = state.entry(id).or_default();
+                            if btn == Button::Start {
+                                entry.0 = false;
+                            } else {
+                                entry.1 = false;
+                            }
+                            entry.2 = None;
+                        }
+                        EventType::Connected => {
+                            let gamepad = gilrs.gamepad(id);
+
+                            fn check_pressed(gamepad: Gamepad, btn: Button) -> bool {
+                                gamepad
+                                    .button_data(btn)
+                                    .map(|data| data.is_pressed())
+                                    .unwrap_or_default()
+                            }
+
+                            let start_pressed = check_pressed(gamepad, Button::Start);
+                            let select_pressed = check_pressed(gamepad, Button::Select);
+                            let instant = if start_pressed && select_pressed {
+                                Some(Instant::now())
+                            } else {
+                                None
+                            };
+
+                            state.insert(id, (start_pressed, select_pressed, instant));
+                        }
+                        EventType::Disconnected => {
+                            state.remove(&id);
+                        }
+                        _ => (),
+                    }
+                }
+
+                for (_, _, instant) in state.values() {
+                    let hold_duration = std::time::Duration::from_secs(3);
+                    if matches!(instant, &Some(i) if i.elapsed() > hold_duration) {
+                        let _ = send.send(());
+                        return;
+                    }
+                }
+            }
+        });
+
+        loop {
+            if let Ok(Some(exit_status)) = app_handle.try_wait() {
+                return Ok(exit_status);
+            }
+            let timeout = std::time::Duration::from_secs(2);
+            if matches!(
+                recv.recv_timeout(timeout),
+                Ok(()) | Err(RecvTimeoutError::Disconnected)
+            ) {
+                let _ = app_handle.kill();
             }
         }
     }
@@ -172,6 +261,3 @@ impl PipelineAction {
         }
     }
 }
-
-
-

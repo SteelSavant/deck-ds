@@ -12,6 +12,7 @@ pub mod display_config;
 pub mod virtual_screen;
 
 #[enum_delegate::register]
+#[allow(unused_variables)]
 pub trait PipelineActionExecutor {
     /// Type of `Self`; necessary because of limitations in [enum_delegate]
     type S: Sized + 'static;
@@ -73,5 +74,3 @@ where
 {
     type Value = T;
 }
-
-

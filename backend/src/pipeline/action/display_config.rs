@@ -1,7 +1,7 @@
 use anyhow::Result;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use xrandr::Monitor;
+// use xrandr::Monitor;
 
 use crate::pipeline::executor::PipelineContext;
 
@@ -16,7 +16,7 @@ pub struct DisplayConfig {
 
 #[derive(Debug)]
 pub struct DisplayState {
-    previous_configuration: Vec<Monitor>,
+    // previous_configuration: Vec<Monitor>,
 }
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
@@ -28,11 +28,6 @@ pub enum TeardownLocation {
     Left(VerticalLocation),
     Right(VerticalLocation),
     Mirror,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct VirtualScreenState {
-    previous_state: Option<Vec<xrandr::Monitor>>,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, JsonSchema)]
@@ -81,29 +76,30 @@ impl PipelineActionExecutor for DisplayConfig {
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         // let mut handle = xrandr::XHandle::open()?;
 
-
-
         // let monitors = handle.monitors()?;
         // let m = monitors[0];
         // let o = m.outputs[0];
 
-        // let crtc = 
+        // let crtc =
 
         // handle.set_position(output, relation, relative_output)
         // self.set_state(ctx, DisplayState {
         //     previous_configuration:  monitors
         // });
-        // Ok(())
-
-        todo!();
+        Ok(())
     }
 
     fn tear_down(&self, ctx: &mut PipelineContext) -> Result<()> {
-        match self.teardown_external_settings {
-            TeardownExternalSettings::Previous => todo!(),
-            TeardownExternalSettings::Native => todo!(),
-            TeardownExternalSettings::Limited { h, v, r, use_native_aspect_ratio } => todo!(),
-        }
+        // match self.teardown_external_settings {
+        //     TeardownExternalSettings::Previous => todo!(),
+        //     TeardownExternalSettings::Native => todo!(),
+        //     TeardownExternalSettings::Limited {
+        //         h,
+        //         v,
+        //         r,
+        //         use_native_aspect_ratio,
+        //     } => todo!(),
+        // }
 
         Ok(())
     }
