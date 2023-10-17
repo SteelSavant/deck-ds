@@ -14,8 +14,6 @@ pub mod virtual_screen;
 #[enum_delegate::register]
 #[allow(unused_variables)]
 pub trait PipelineActionExecutor {
-    /// Type of `Self`; necessary because of limitations in [enum_delegate]
-    type S: Sized + 'static;
     /// Type of state for the executor
     type State: 'static;
 
@@ -33,7 +31,6 @@ pub trait PipelineActionExecutor {
         // default to no dependencies
         vec![]
     }
-
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -41,5 +38,3 @@ pub trait PipelineActionExecutor {
 pub enum PipelineAction {
     DisplayTeardown(DisplayTeardown),
 }
-
-

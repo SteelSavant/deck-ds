@@ -1,7 +1,7 @@
 use anyhow::Result;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use xrandr::{Relation, Monitor};
+use xrandr::{Monitor, Relation};
 
 use crate::pipeline::executor::PipelineContext;
 
@@ -14,7 +14,7 @@ pub struct DisplayTeardown {
     timing_fallback_method: TimingFallbackMethod,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct DisplayState {
     previous_configuration: Vec<Monitor>,
 }
@@ -67,27 +67,25 @@ pub enum TimingFallbackMethod {
 }
 
 impl PipelineActionExecutor for DisplayTeardown {
-    type S = Self;
     type State = DisplayState;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
-        // let mut handle = xrandr::XHandle::open()?;
+        let mut handle = xrandr::XHandle::open()?;
 
-        // let monitors = handle.monitors()?;
-        // let m = monitors[0];
-        // let o = m.outputs[0];
+        let monitors = handle.monitors()?;
 
-        // let crtc =
-
-        // handle.set_position(output, relation, relative_output)
-        // self.set_state(ctx, DisplayState {
-        //     previous_configuration:  monitors
-        // });
+        ctx.set_state::<Self>(DisplayState {
+            previous_configuration: monitors,
+        });
         Ok(())
     }
 
     fn tear_down(&self, ctx: &mut PipelineContext) -> Result<()> {
         let state = ctx.get_state::<Self>();
+
+        let mut handle = xrandr::XHandle::open()?;
+        let monitors = handle.monitors()?;
+        for monitor in monitors {}
 
         // match self.teardown_external_settings {
         //     TeardownExternalSettings::Previous => todo!(),

@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::process::Command;
 use std::time::{Duration, Instant, SystemTime};
-use typemap::{TypeMap, Key};
+use typemap::{Key, TypeMap};
 
 use crate::process::AppProcess;
 
@@ -46,23 +46,19 @@ where
 }
 
 impl PipelineContext {
-    pub fn get_state< P: PipelineActionExecutor>(
-        &self
-    ) -> Option<& P::State> {
-        self.state.get::<StateKey::<P::S, P::State>>()
+    pub fn get_state<P: PipelineActionExecutor + 'static>(&self) -> Option<&P::State> {
+        self.state.get::<StateKey<P, P::State>>()
     }
 
-    pub fn get_state_mut< P: PipelineActionExecutor>(
-        &mut self
-    ) -> Option<& mut P::State> {
-        self.state.get_mut::<StateKey::<P::S, P::State>>()
+    pub fn get_state_mut<P: PipelineActionExecutor + 'static>(&mut self) -> Option<&mut P::State> {
+        self.state.get_mut::<StateKey<P, P::State>>()
     }
 
-    pub fn set_state<P: PipelineActionExecutor>(
+    pub fn set_state<P: PipelineActionExecutor + 'static>(
         &mut self,
         state: P::State,
     ) -> Option<P::State> {
-        self.state.insert::<StateKey::<P::S, P::State>>(state)
+        self.state.insert::<StateKey<P, P::State>>(state)
     }
 }
 
@@ -234,7 +230,7 @@ impl PipelineExecutor {
             }
         }
 
-         Ok(())
+        Ok(())
     }
 
     fn build(&self, pipeline: &PipelineDefinition) -> Result<Vec<PipelineAction>> {

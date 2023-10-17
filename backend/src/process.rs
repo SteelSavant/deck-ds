@@ -49,7 +49,7 @@ impl AppProcess {
                 }
             });
             std::thread::sleep(timeout);
-            if join_handle.is_finished(){
+            if join_handle.is_finished() {
                 let res = join_handle.join();
                 matches!(res, Ok(Ok(()))) && !AppProcess::is_pid_alive(pid)
             } else {
