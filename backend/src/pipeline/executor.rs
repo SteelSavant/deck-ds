@@ -2,10 +2,11 @@ use anyhow::{anyhow, Context, Result};
 use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
 use std::collections::HashMap;
+use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::process::Command;
 use std::time::{Duration, Instant, SystemTime};
-use typemap::TypeMap;
+use typemap::{TypeMap, Key};
 
 use crate::process::AppProcess;
 
@@ -29,7 +30,40 @@ pub struct PipelineContext {
     /// known dependencies
     pub dependencies: HashMap<DependencyId, Dependency>,
     /// pipeline state
-    pub state: TypeMap,
+    state: TypeMap,
+}
+
+// state impl
+
+struct StateKey<S: Sized, T>(PhantomData<S>, PhantomData<T>);
+
+impl<S, T> Key for StateKey<S, T>
+where
+    S: 'static,
+    T: 'static,
+{
+    type Value = T;
+}
+
+impl PipelineContext {
+    pub fn get_state< P: PipelineActionExecutor>(
+        &self
+    ) -> Option<& P::State> {
+        self.state.get::<StateKey::<P::S, P::State>>()
+    }
+
+    pub fn get_state_mut< P: PipelineActionExecutor>(
+        &mut self
+    ) -> Option<& mut P::State> {
+        self.state.get_mut::<StateKey::<P::S, P::State>>()
+    }
+
+    pub fn set_state<P: PipelineActionExecutor>(
+        &mut self,
+        state: P::State,
+    ) -> Option<P::State> {
+        self.state.insert::<StateKey::<P::S, P::State>>(state)
+    }
 }
 
 impl PipelineExecutor {

@@ -1,8 +1,7 @@
 use anyhow::Result;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use xrandr::Relation;
-// use xrandr::Monitor;
+use xrandr::{Relation, Monitor};
 
 use crate::pipeline::executor::PipelineContext;
 
@@ -17,7 +16,7 @@ pub struct DisplayTeardown {
 
 #[derive(Debug)]
 pub struct DisplayState {
-    // previous_configuration: Vec<Monitor>,
+    previous_configuration: Vec<Monitor>,
 }
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
@@ -88,6 +87,8 @@ impl PipelineActionExecutor for DisplayTeardown {
     }
 
     fn tear_down(&self, ctx: &mut PipelineContext) -> Result<()> {
+        let state = ctx.get_state::<Self>();
+
         // match self.teardown_external_settings {
         //     TeardownExternalSettings::Previous => todo!(),
         //     TeardownExternalSettings::Native => todo!(),
