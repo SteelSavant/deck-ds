@@ -37,7 +37,9 @@ indexmap = { version = "2.0.2", features = ["serde"] }
 schemars = { version = "0.8.15", features = ["indexmap2"] }
 valico = "4.0.0"
 enum_delegate = "0.2.0"
-# xrandr = { git = "https://github.com/dzfranklin/xrandr-rs", features = ["serialize"] }
+xrandr = { git = "https://github.com/dzfranklin/xrandr-rs", features = [
+    "serialize",
+] }
 typemap = "0.3.3"
 anyhow = "1.0.75"
 gilrs = "0.10.2"

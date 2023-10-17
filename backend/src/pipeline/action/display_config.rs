@@ -1,6 +1,9 @@
+use std::default;
+
 use anyhow::Result;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use xrandr::Relation;
 // use xrandr::Monitor;
 
 use crate::pipeline::executor::PipelineContext;
@@ -10,7 +13,7 @@ use super::PipelineActionExecutor;
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct DisplayConfig {
     teardown_external_settings: TeardownExternalSettings,
-    teardown_deck_location: TeardownLocation,
+    teardown_deck_location: RelativeLocation,
     timing_fallback_method: TimingFallbackMethod,
 }
 
@@ -20,28 +23,25 @@ pub struct DisplayState {
 }
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
-pub enum TeardownLocation {
+pub enum RelativeLocation {
+    Above,
     #[default]
-    Previous,
-    Top(HorizontalLocation),
-    Bottom(HorizontalLocation),
-    Left(VerticalLocation),
-    Right(VerticalLocation),
-    Mirror,
+    Below,
+    LeftOf,
+    RightOf,
+    SameAs,
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, JsonSchema)]
-pub enum VerticalLocation {
-    Top,
-    Center,
-    Bottom,
-}
-
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, JsonSchema)]
-pub enum HorizontalLocation {
-    Left,
-    Center,
-    Right,
+impl Into<Relation> for RelativeLocation {
+    fn into(self) -> Relation {
+        match self {
+            RelativeLocation::Above => Relation::Above,
+            RelativeLocation::Below => Relation::Below,
+            RelativeLocation::LeftOf => Relation::LeftOf,
+            RelativeLocation::RightOf => Relation::RightOf,
+            RelativeLocation::SameAs => Relation::SameAs,
+        }
+    }
 }
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
