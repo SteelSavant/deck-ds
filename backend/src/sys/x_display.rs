@@ -170,8 +170,8 @@ impl XDisplay {
                         }
                     }
                     ModeOption::AtLeast(rr) => {
-                        if  e.0.rate >= rr {
-                            Some( e.0.rate - rr)
+                        if e.0.rate >= rr {
+                            Some(e.0.rate - rr)
                         } else {
                             None
                         }
@@ -208,27 +208,27 @@ impl XDisplay {
                 let scaled_h = (e.0.height as f32 * ar_scale).round() as u32; // TODO::verify scaling with other resolutions + aspect ratios than 16/9 -> 16/10;
                 let res_diff = match &pref.resolution {
                     ModeOption::Exact(res) => {
-                        if res.w == e.0.width && res.h == scaled_h {
+                        if res.w == e.0.width && scaled_h == e.0.height {
                             Some((0, 0))
                         } else {
                             None
                         }
                     }
                     ModeOption::AtLeast(res) => {
-                        if res.w >= e.0.width && res.h >= scaled_h {
+                        if e.0.width >= res.w && e.0.height >= scaled_h  {
                             Some((
-                                res.w as i64 - e.0.width as i64,
-                                res.h as i64 - scaled_h as i64,
+                                e.0.width as i64 - res.w as i64,
+                                e.0.height as i64 - scaled_h as i64,
                             ))
                         } else {
                             None
                         }
                     }
                     ModeOption::AtMost(res) => {
-                        if res.w <= e.0.width && res.h <= scaled_h {
+                        if res.w <= e.0.width && scaled_h <= e.0.height {
                             Some((
                                 res.w as i64 - e.0.width as i64,
-                                res.h as i64 - scaled_h as i64,
+                                scaled_h as i64 - e.0.height as i64,
                             ))
                         } else {
                             None
@@ -312,8 +312,8 @@ mod tests {
         )
     }
 
-    const s9: f32 = 16. / 9.;
-    const s10: f32 = 16. / 10.;
+    const S9: f32 = 16. / 9.;
+    const S10: f32 = 16. / 10.;
 
     #[test]
     fn test_get_preferred_mode_prf() -> Result<()> {
@@ -323,11 +323,11 @@ mod tests {
         ];
 
         let mode = XDisplay::get_preferred_mode(
-            s9,
+            S9,
             modes,
             &ModePreference {
                 resolution: ModeOption::Exact(Resolution { w: 1280, h: 720 }),
-                aspect_ratio: AspectRatioOption::Exact(s9),
+                aspect_ratio: AspectRatioOption::Exact(S9),
                 refresh: ModeOption::Exact(60.),
             },
         )?
@@ -346,11 +346,11 @@ mod tests {
         ];
 
         let mode = XDisplay::get_preferred_mode(
-            s9,
+            S9,
             modes,
             &ModePreference {
                 resolution: ModeOption::Exact(Resolution { w: 1280, h: 720 }),
-                aspect_ratio: AspectRatioOption::Exact(s9),
+                aspect_ratio: AspectRatioOption::Exact(S9),
                 refresh: ModeOption::Exact(60.),
             },
         )?
@@ -369,11 +369,11 @@ mod tests {
         ];
 
         let mode = XDisplay::get_preferred_mode(
-            s9,
+            S9,
             modes,
             &ModePreference {
                 resolution: ModeOption::Exact(Resolution { w: 1280, h: 720 }),
-                aspect_ratio: AspectRatioOption::Exact(s9),
+                aspect_ratio: AspectRatioOption::Exact(S9),
                 refresh: ModeOption::AtLeast(30.),
             },
         )?
@@ -392,11 +392,11 @@ mod tests {
         ];
 
         let mode = XDisplay::get_preferred_mode(
-            s9,
+            S9,
             modes,
             &ModePreference {
                 resolution: ModeOption::Exact(Resolution { w: 1280, h: 720 }),
-                aspect_ratio: AspectRatioOption::Exact(s9),
+                aspect_ratio: AspectRatioOption::Exact(S9),
                 refresh: ModeOption::AtMost(30.),
             },
         )?
@@ -406,18 +406,143 @@ mod tests {
         Ok(())
     }
 
-    // #[test]
-    // fn test_get_preferred_mode_exact_res_native() {
-    //     todo!()
-    // }
+    #[test]
+    fn test_get_preferred_mode_exact_res_exact_ar() -> Result<()> {
+        let modes = vec![
+            create_mode(1, 1920, 1080, 60., false),
+            create_mode(2, 1280, 720, 60., false),
+            create_mode(3, 2560, 1440, 60., false),
+        ];
 
-    // #[test]
-    // fn test_get_preferred_mode_min_res_native() {
-    //     todo!()
-    // }
+        let mode = XDisplay::get_preferred_mode(
+            S9,
+            modes,
+            &ModePreference {
+                resolution: ModeOption::Exact(Resolution { w: 1280, h: 720 }),
+                aspect_ratio: AspectRatioOption::Exact(S9),
+                refresh: ModeOption::Exact(60.),
+            },
+        )?
+        .map(|m| m.xid);
 
-    // #[test]
-    // fn test_get_preferred_mode_max_res_native() {
-    //     todo!()
-    // }
+        assert_eq!(Some(2), mode);
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_preferred_mode_min_res_exact_ar() -> Result<()> {
+        let modes = vec![
+            create_mode(1, 1920, 1080, 60., false),
+            create_mode(2, 1280, 720, 60., false),
+            create_mode(3, 2560, 1440, 60., false),
+        ];
+
+        let mode = XDisplay::get_preferred_mode(
+            S9,
+            modes,
+            &ModePreference {
+                resolution: ModeOption::AtLeast(Resolution { w: 1920, h: 1080 }),
+                aspect_ratio: AspectRatioOption::Exact(S9),
+                refresh: ModeOption::Exact(60.),
+            },
+        )?
+        .map(|m| m.xid);
+
+        assert_eq!(Some(3), mode);
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_preferred_mode_max_res_exact_ar() -> Result<()> {
+        let modes = vec![
+            create_mode(1, 1920, 1080, 60., false),
+            create_mode(2, 1280, 720, 60., false),
+            create_mode(3, 2560, 1440, 60., false),
+        ];
+
+        let mode = XDisplay::get_preferred_mode(
+            S9,
+            modes,
+            &ModePreference {
+                resolution: ModeOption::AtMost(Resolution { w: 1920, h: 1080 }),
+                aspect_ratio: AspectRatioOption::Exact(S9),
+                refresh: ModeOption::Exact(60.),
+            },
+        )?
+        .map(|m| m.xid);
+
+        assert_eq!(Some(1), mode);
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_preferred_mode_exact_res_native_ar() -> Result<()> {
+        let modes = vec![
+            create_mode(1, 1920, 1080, 60., false),
+            create_mode(2, 1280, 720, 60., false),
+            create_mode(3, 1280, 800, 60., false),
+            create_mode(4, 2560, 1440, 60., false),
+        ];
+
+        let mode = XDisplay::get_preferred_mode(
+            S10,
+            modes,
+            &ModePreference {
+                resolution: ModeOption::Exact(Resolution { w: 1280, h: 720 }),
+                aspect_ratio: AspectRatioOption::Native,
+                refresh: ModeOption::Exact(60.),
+            },
+        )?
+        .map(|m| m.xid);
+
+        assert_eq!(Some(3), mode);
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_preferred_mode_min_res_native_ar() -> Result<()> {
+        let modes = vec![
+            create_mode(1, 1920, 1200, 60., false),
+            create_mode(2, 1280, 720, 60., false),
+            create_mode(3, 1280, 800, 60., false),
+            create_mode(4, 2560, 1440, 60., false),
+        ];
+
+        let mode = XDisplay::get_preferred_mode(
+            S10,
+            modes,
+            &ModePreference {
+                resolution: ModeOption::AtLeast(Resolution { w: 1280, h: 720 }),
+                aspect_ratio: AspectRatioOption::Native,
+                refresh: ModeOption::Exact(60.),
+            },
+        )?
+        .map(|m| m.xid);
+
+        assert_eq!(Some(1), mode);
+        Ok(())
+    }
+    #[test]
+    fn test_get_preferred_mode_max_res_native_ar() -> Result<()> {
+        let modes = vec![
+            create_mode(1, 1920, 1200, 60., false),
+            create_mode(2, 1280, 720, 60., false),
+            create_mode(3, 1280, 800, 60., false),
+            create_mode(4, 2560, 1440, 60., false),
+        ];
+
+        let mode = XDisplay::get_preferred_mode(
+            S10,
+            modes,
+            &ModePreference {
+                resolution: ModeOption::AtMost(Resolution { w: 1280, h: 720 }),
+                aspect_ratio: AspectRatioOption::Native,
+                refresh: ModeOption::Exact(60.),
+            },
+        )?
+        .map(|m| m.xid);
+
+        assert_eq!(Some(3), mode);
+        Ok(())
+    }
 }
