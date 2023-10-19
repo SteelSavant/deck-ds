@@ -1,9 +1,10 @@
+use anyhow::Result;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 use deck_ds::pipeline::{
     self,
-    action::{display_teardown::DisplayTeardown, PipelineAction},
+    action::{display_teardown::DisplayTeardown, virtual_screen::VirtualScreen, PipelineAction},
     config::{PipelineDefinition, Selection},
     executor::PipelineExecutor,
 };
@@ -27,7 +28,7 @@ enum Modes {
     Serve,
 }
 
-fn main() {
+fn main() -> Result<()> {
     let args = Cli::parse();
     println!("got arg {:?}", args.mode);
     let mode = args.mode.unwrap_or_default();
@@ -35,25 +36,25 @@ fn main() {
     match mode {
         Modes::Autostart => {
             let mut executor =
-                PipelineExecutor::new(PathBuf::from("./defaults"), PathBuf::from("todo"));
+                PipelineExecutor::new(PathBuf::from("./defaults"), PathBuf::from("todo"))?;
             let pipeline = PipelineDefinition {
                 name: "Test".to_string(),
                 description: "Test Pipeline".to_string(),
                 actions: vec![Selection {
-                    value: pipeline::config::SelectionType::Single(
-                        PipelineAction::DisplayTeardown(DisplayTeardown::default()),
-                    ),
+                    value: pipeline::config::SelectionType::Single(PipelineAction::VirtualScreen(
+                        VirtualScreen,
+                    )),
                     optional: None,
                     hidden_in_ui: false,
                 }],
             };
             let botw = "12146987087370911744";
             // let gungeon = "311690";
-            let res = executor.exec(botw.to_string(), &pipeline);
-
-            println!("Pipeline result: {res:?}");
+            executor.exec(botw.to_string(), &pipeline)?;
         }
         Modes::DisplayTest => todo!(),
         Modes::Serve => todo!(),
     }
+
+    Ok(())
 }

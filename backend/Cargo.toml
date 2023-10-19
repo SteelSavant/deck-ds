@@ -43,6 +43,8 @@ anyhow = "1.0.75"
 gilrs = "0.10.2"
 rand = "0.8.5"
 nix = { version = "0.27.1", features = ["process", "zerocopy", "signal"] }
+edid = "0.3.0"
+float-cmp = "0.9.0"
 
 [features]
 default = ["online", "decky"]

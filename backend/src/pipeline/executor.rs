@@ -3,12 +3,14 @@ use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant, SystemTime};
 use typemap::{Key, TypeMap};
 
-use crate::process::AppProcess;
+use crate::sys::kwin::{KWin, KWinScriptConfig};
+use crate::sys::process::AppProcess;
+use crate::sys::x_display::XDisplay;
 
 use super::dependency::{Dependency, DependencyId};
 
@@ -29,6 +31,10 @@ pub struct PipelineContext {
     pub config_dir: PathBuf,
     /// known dependencies
     pub dependencies: HashMap<DependencyId, Dependency>,
+    /// KWin script handler
+    pub kwin: KWin,
+    /// Display handler,
+    pub display: XDisplay,
     /// pipeline state
     state: TypeMap,
 }
@@ -63,8 +69,18 @@ impl PipelineContext {
 }
 
 impl PipelineExecutor {
-    pub fn new(defaults_dir: PathBuf, config_dir: PathBuf) -> Self {
-        Self {
+    pub fn new(defaults_dir: PathBuf, config_dir: PathBuf) -> Result<Self> {
+        let mut kwin = KWin::new(defaults_dir.join("kwin"));
+        kwin.register(
+            "TrueVideoWall".to_string(),
+            KWinScriptConfig {
+                enabled_key: "truevideowallEnabled".to_string(),
+                bundle_name: Path::new("170914-truevideowall-1.0.kwinscript").to_path_buf(),
+            },
+        )
+        .expect("TrueVideoWall script should exist");
+
+        Ok(Self {
             ctx: PipelineContext {
                 defaults_dir,
                 config_dir,
@@ -72,9 +88,11 @@ impl PipelineExecutor {
                     TrueVideoWall::id(),
                     Dependency::TrueVideoWall(TrueVideoWall),
                 )]),
+                kwin: kwin,
+                display: XDisplay::new()?,
                 state: TypeMap::new(),
             },
-        }
+        })
     }
 
     pub fn exec(&mut self, game_id: String, pipeline: &PipelineDefinition) -> Result<()> {

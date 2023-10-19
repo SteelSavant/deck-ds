@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use self::display_teardown::DisplayTeardown;
+use self::{display_teardown::DisplayTeardown, virtual_screen::VirtualScreen};
 use super::{dependency::DependencyId, executor::PipelineContext};
 use anyhow::Result;
 
@@ -33,5 +33,5 @@ pub trait PipelineActionExecutor {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[enum_delegate::implement(PipelineActionExecutor)]
 pub enum PipelineAction {
-    DisplayTeardown(DisplayTeardown),
+    VirtualScreen(VirtualScreen),
 }

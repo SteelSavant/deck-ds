@@ -1,7 +1,9 @@
-use anyhow::Result;
+use std::cmp::Ordering;
+
+use anyhow::{Ok, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use xrandr::{Monitor, Relation};
+use xrandr::{Mode, Monitor, Output, Relation, ScreenResources, XHandle};
 
 use crate::pipeline::executor::PipelineContext;
 
@@ -16,7 +18,7 @@ pub struct DisplayTeardown {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DisplayState {
-    previous_configuration: Vec<Monitor>,
+    previous_output_configuration: Output,
 }
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
@@ -70,25 +72,34 @@ impl PipelineActionExecutor for DisplayTeardown {
     type State = DisplayState;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
-        let mut handle = xrandr::XHandle::open()?;
+        // let mut handle = xrandr::XHandle::open()?;
 
-        let monitors = handle.monitors()?;
+        // let preferred = self.get_preferred_output(&mut handle)?;
+        // match preferred {
+        //     Some(output) => {
+        //         ctx.set_state::<Self>(DisplayState {
+        //             previous_output_configuration: output,
+        //         });
+        //         Ok(())
+        //     },
+        //     None => Err(anyhow::anyhow!("Unable to find external display for dual screen")),
+        // }
 
-        ctx.set_state::<Self>(DisplayState {
-            previous_configuration: monitors,
-        });
         Ok(())
     }
 
     fn tear_down(&self, ctx: &mut PipelineContext) -> Result<()> {
-        let state = ctx.get_state::<Self>();
+        // match ctx.get_state::<Self>() {
+        //     Some(state) => {
+        //         let mut handle = xrandr::XHandle::open()?;
+        //         let resources = ScreenResources::new(&mut handle)?;
 
-        let mut handle = xrandr::XHandle::open()?;
-        let monitors = handle.monitors()?;
-        for monitor in monitors {}
+        //         let output = resources.output(&mut handle, state.previous_output_configuration.xid)?;
 
-        // match self.teardown_external_settings {
-        //     TeardownExternalSettings::Previous => todo!(),
+        //                 match self.teardown_external_settings {
+        //     TeardownExternalSettings::Previous => {
+        //         state.previous_output_configuration.current_mode
+        //     } handle.set_mode(&output, ),
         //     TeardownExternalSettings::Native => todo!(),
         //     TeardownExternalSettings::Limited {
         //         h,
@@ -96,6 +107,10 @@ impl PipelineActionExecutor for DisplayTeardown {
         //         r,
         //         use_native_aspect_ratio,
         //     } => todo!(),
+        // }
+        //     },
+        //     /// No state, nothing to tear down
+        //     None => Ok(()),
         // }
 
         Ok(())

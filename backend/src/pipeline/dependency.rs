@@ -1,4 +1,6 @@
 pub mod true_video_wall;
+use crate::sys::kwin::KWin;
+
 use self::true_video_wall::TrueVideoWall;
 use anyhow::Result;
 
