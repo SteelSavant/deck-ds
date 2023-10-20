@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use anyhow::{Ok, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use xrandr::{Mode, Monitor, Output, Relation, ScreenResources, XHandle};
+use xrandr::{Mode, Monitor, Output, Relation, ScreenResources, XHandle, XId};
 
 use crate::pipeline::executor::PipelineContext;
 
@@ -11,13 +11,14 @@ use super::PipelineActionExecutor;
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct DisplayTeardown {
-    teardown_external_settings: TeardownExternalSettings,
-    teardown_deck_location: RelativeLocation,
+    pub teardown_external_settings: TeardownExternalSettings,
+    pub teardown_deck_location: RelativeLocation,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DisplayState {
-    previous_output_configuration: Output,
+    previous_output_id: XId,
+    previous_output_mode: Option<XId>,
 }
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
@@ -49,7 +50,7 @@ pub enum TeardownExternalSettings {
     Previous,
     /// Native resolution
     Native,
-    /// Highest resolution under h by v with refresh rate r. If use_native_aspect_ratio is true, select closest with native aspect ratio.
+    /// Highest resolution <= h by v with refresh rate r. If use_native_aspect_ratio is true, select closest with native aspect ratio.
     Limited {
         h: u16,
         v: u16,
@@ -62,48 +63,60 @@ impl PipelineActionExecutor for DisplayTeardown {
     type State = DisplayState;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
-        // let mut handle = xrandr::XHandle::open()?;
-
-        // let preferred = self.get_preferred_output(&mut handle)?;
-        // match preferred {
-        //     Some(output) => {
-        //         ctx.set_state::<Self>(DisplayState {
-        //             previous_output_configuration: output,
-        //         });
-        //         Ok(())
-        //     },
-        //     None => Err(anyhow::anyhow!("Unable to find external display for dual screen")),
-        // }
-
-        Ok(())
+        let preferred = ctx.display.get_preferred_external_output()?;
+        match preferred {
+            Some(output) => {
+                ctx.set_state::<Self>(DisplayState {
+                    previous_output_id: output.xid,
+                    previous_output_mode: output.current_mode,
+                });
+                Ok(())
+            }
+            None => Err(anyhow::anyhow!(
+                "Unable to find external display for dual screen"
+            )),
+        }
     }
 
-    fn tear_down(&self, ctx: &mut PipelineContext) -> Result<()> {
-        // match ctx.get_state::<Self>() {
-        //     Some(state) => {
-        //         let mut handle = xrandr::XHandle::open()?;
-        //         let resources = ScreenResources::new(&mut handle)?;
+    fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {
+        match ctx.get_state::<Self>() {
+            Some(state) => {
+                let output = state.previous_output_id;
 
-        //         let output = resources.output(&mut handle, state.previous_output_configuration.xid)?;
-
-        //                 match self.teardown_external_settings {
-        //     TeardownExternalSettings::Previous => {
-        //         state.previous_output_configuration.current_mode
-        //     } handle.set_mode(&output, ),
-        //     TeardownExternalSettings::Native => todo!(),
-        //     TeardownExternalSettings::Limited {
-        //         h,
-        //         v,
-        //         r,
-        //         use_native_aspect_ratio,
-        //     } => todo!(),
-        // }
-        //     },
-        //     /// No state, nothing to tear down
-        //     None => Ok(()),
-        // }
-
-        Ok(())
+                match self.teardown_external_settings {
+                    TeardownExternalSettings::Previous => match state.previous_output_mode {
+                        Some(mode) => {
+                            let current_output = ctx.display.get_preferred_external_output()?;
+                            match current_output {
+                                Some(current) => {
+                                    if current.xid == output {
+                                        let mode = ctx.display.get_mode(mode)?;
+                                        ctx.display.set_output_mode(&current, &mode)
+                                    } else {
+                                        Ok(())
+                                    }
+                                }
+                                None => Ok(()),
+                            }
+                        }
+                        None => DisplayTeardown {
+                            teardown_external_settings: TeardownExternalSettings::Native,
+                            ..*self
+                        }
+                        .teardown(ctx),
+                    },
+                    TeardownExternalSettings::Native => todo!(),
+                    TeardownExternalSettings::Limited {
+                        h,
+                        v,
+                        r,
+                        use_native_aspect_ratio,
+                    } => todo!(),
+                }
+            }
+            // No state, nothing to tear down
+            None => Ok(()),
+        }
     }
 }
 

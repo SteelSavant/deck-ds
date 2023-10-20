@@ -12,12 +12,13 @@ use crate::sys::kwin::{KWin, KWinScriptConfig};
 use crate::sys::process::AppProcess;
 use crate::sys::x_display::XDisplay;
 
-use super::dependency::{Dependency, DependencyId};
+use super::action::ErasedPipelineActionExecutor;
+use super::dependency::{Dependency, DependencyId, DependencyExecutor};
 
 use super::{
     action::{PipelineAction, PipelineActionExecutor},
     config::{PipelineDefinition, SelectionType},
-    dependency::{true_video_wall::TrueVideoWall, DependencyExecutor},
+    dependency::true_video_wall::TrueVideoWall,
 };
 
 pub struct PipelineExecutor {
@@ -320,7 +321,7 @@ impl PipelineAction {
                 Ok(())
             }
             ActionType::Setup => self.setup(ctx),
-            ActionType::Teardown => self.tear_down(ctx),
+            ActionType::Teardown => self.teardown(ctx),
         }
     }
 }

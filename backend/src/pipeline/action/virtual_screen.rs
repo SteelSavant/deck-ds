@@ -1,7 +1,7 @@
 use anyhow::Result;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use xrandr::Relation;
+use xrandr::{Relation, ScreenResources};
 
 use crate::{
     pipeline::{
@@ -11,7 +11,7 @@ use crate::{
     sys::x_display::{AspectRatioOption, ModeOption, ModePreference, Resolution},
 };
 
-use super::PipelineActionExecutor;
+use super::{display_teardown::DisplayState, PipelineActionExecutor};
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct VirtualScreen;
@@ -34,15 +34,23 @@ impl PipelineActionExecutor for VirtualScreen {
             .display
             .get_current_mode(&deck)?
             .expect("Deck screen should have active mode");
+        let res = if deck_mode.width < deck_mode.height {
+            Resolution {
+                h: deck_mode.width,
+                w: deck_mode.height,
+            }
+        } else {
+            Resolution {
+                w: deck_mode.width,
+                h: deck_mode.height,
+            }
+        };
 
         ctx.display.set_or_create_preferred_mode(
             &external,
             &ModePreference {
-                resolution: ModeOption::Exact(Resolution {
-                    w: deck_mode.width,
-                    h: deck_mode.height,
-                }),
-                aspect_ratio: AspectRatioOption::Exact(deck_mode.width as f32 / deck_mode.height as f32),
+                resolution: ModeOption::Exact(res),
+                aspect_ratio: AspectRatioOption::Exact(res.w as f32 / res.h as f32),
                 refresh: ModeOption::Exact(deck_mode.rate),
             },
         )?;

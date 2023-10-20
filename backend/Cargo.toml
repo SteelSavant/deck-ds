@@ -34,7 +34,6 @@ derive_more = "0.99.17"
 indexmap = { version = "2.0.2", features = ["serde"] }
 schemars = { version = "0.8.15", features = ["indexmap2"] }
 valico = "4.0.0"
-enum_delegate = "0.2.0"
 xrandr = { git = "https://github.com/dzfranklin/xrandr-rs", features = [
     "serialize",
 ] }
@@ -46,11 +45,11 @@ nix = { version = "0.27.1", features = ["process", "zerocopy", "signal"] }
 edid = "0.3.0"
 float-cmp = "0.9.0"
 x11 = { version = "2.21.0", features = ["xrandr"] }
+enum_delegate = "0.2.0"
 
 [features]
 default = ["online", "decky"]
 decky = ["usdpl-back/decky"]
-crankshaft = ["usdpl-back/crankshaft"]
 encrypt = ["usdpl-back/encrypt"]
 online = ["ureq"]
 dev_stuff = []

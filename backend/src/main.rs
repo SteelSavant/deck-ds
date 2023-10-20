@@ -4,8 +4,12 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use deck_ds::pipeline::{
     self,
-    action::{display_teardown::DisplayTeardown, virtual_screen::VirtualScreen, PipelineAction},
-    config::{PipelineDefinition, Selection},
+    action::{
+        display_teardown::{DisplayTeardown, RelativeLocation, TeardownExternalSettings},
+        virtual_screen::VirtualScreen,
+        PipelineAction,
+    },
+    config::{PipelineDefinition, Selection, SelectionType},
     executor::PipelineExecutor,
 };
 use derive_more::Display;
@@ -29,9 +33,7 @@ enum Modes {
 }
 
 fn main() -> Result<()> {
-    if cfg!(debug) {
-        std::env::set_var("RUST_BACKTRACE", "full");
-    }
+    std::env::set_var("RUST_BACKTRACE", "1");
 
     let args = Cli::parse();
     println!("got arg {:?}", args.mode);
@@ -42,10 +44,19 @@ fn main() -> Result<()> {
             let mut executor =
                 PipelineExecutor::new(PathBuf::from("./defaults"), PathBuf::from("todo"))?;
             let pipeline = PipelineDefinition {
-                name: "Test".to_string(),
-                description: "Test Pipeline".to_string(),
-                actions: vec![Selection {
-                    value: pipeline::config::SelectionType::Single(PipelineAction::VirtualScreen(
+                name: "Single-Window Dual-Screen".to_string(),
+                description: "Maps the internal and external monitor to a single virtual screen. Useful for emulators like melonDS which do not currently support multiple windows".to_string(),
+                actions: vec![
+                    Selection {
+                        value: SelectionType::Single(PipelineAction::DisplayTeardown(DisplayTeardown {
+                             teardown_external_settings: TeardownExternalSettings::Previous,
+                             teardown_deck_location: RelativeLocation::Below
+                        })),
+                        optional: None,
+                        hidden_in_ui: false,
+                    },
+                    Selection {
+                    value: SelectionType::Single(PipelineAction::VirtualScreen(
                         VirtualScreen,
                     )),
                     optional: None,

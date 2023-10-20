@@ -61,6 +61,7 @@ pub enum TimingFallbackMethod {
     // Manual
 }
 
+// TODO::rework this - its messy and unlikely to play nicely with all configurations; its either doing too much, or too little.
 impl XDisplay {
     pub fn new() -> Result<Self> {
         Ok(Self {
@@ -152,7 +153,7 @@ impl XDisplay {
         let mode = Self::get_preferred_mode(native_ar, &modes, pref)?;
         let mode = match mode {
             Some(mode) => screen.mode(mode)?,
-            None => self.create_preferred_mode(output, native_ar, &modes, pref)?,
+            None => self.create_preferred_mode(native_ar, &modes, pref)?,
         };
 
         self.set_output_mode(output, &mode)
@@ -299,7 +300,6 @@ impl XDisplay {
     /// Creates a new xrandr output mode based on the preference specification.
     fn create_preferred_mode(
         &mut self,
-        output: &Output,
         native_ar: f32,
         modes: &[(Mode, bool)],
         pref: &ModePreference,
@@ -315,29 +315,39 @@ impl XDisplay {
                 ModeOption::AtMost(_) => ModeOption::AtLeast(0.),
             },
         };
+
+        let screen = ScreenResources::new(&mut self.xhandle)?;
         let nearest = Self::get_preferred_mode(native_ar, &modes, &nearest_pref)?.ok_or(
             anyhow::anyhow!("Unable to find acceptable mode for {nearest_pref:?} from {modes:?}"),
         )?;
-
-        let screen = ScreenResources::new(&mut self.xhandle)?;
         let nearest = screen.mode(nearest)?;
 
-        let height = {
-            let ar = nearest.width as f32 / nearest.height as f32;
+        let (width, height) = {
+            let res = match pref.resolution {
+                ModeOption::Exact(res) | ModeOption::AtMost(res) => Resolution {
+                    w: res.w.min(nearest.width),
+                    h: res.h.min(nearest.height),
+                },
+                ModeOption::AtLeast(_) => Resolution {
+                    w: nearest.width,
+                    h: nearest.height,
+                },
+            };
+            let ar = res.w as f32 / res.h as f32;
             match pref.aspect_ratio {
-                AspectRatioOption::Any => nearest.height,
+                AspectRatioOption::Any => (res.w, res.h),
                 AspectRatioOption::Native => {
                     if approx_eq!(f32, ar, native_ar, ulps = 2) {
-                        nearest.height
+                        (res.w, res.h)
                     } else {
-                        Self::scale_height(ar, native_ar, nearest.height)
+                        (res.w, Self::scale_height(ar, native_ar, res.h))
                     }
                 }
                 AspectRatioOption::Exact(ex_ar) => {
                     if approx_eq!(f32, ar, ex_ar, ulps = 2) {
-                        nearest.height
+                        (res.w, res.h)
                     } else {
-                        Self::scale_height(ar, ex_ar, nearest.height)
+                        (res.w, Self::scale_height(ar, ex_ar, res.h))
                     }
                 }
             }
@@ -348,20 +358,21 @@ impl XDisplay {
             ModeOption::AtMost(rr) => rr,
         };
 
-        let mut sys = ptr::NonNull::new(unsafe { xlib::XOpenDisplay(ptr::null()) })
-            .ok_or(XrandrError::Open)?;
-
-        let mut timings = self.get_timings(nearest.width, height, rate)?;
-
-        let mode = unsafe { x11::xrandr::XRRCreateMode(sys.as_mut(), output.xid, &mut timings) };
-
-        println!("created mode {mode}");
+        let timings = self.get_timings(width, height, rate)?;
+        Command::new("xrandr").args(&timings.1);
 
         let resources = ScreenResources::new(&mut self.xhandle)?;
-        Ok(resources.mode(mode)?)
+        let mode = resources
+            .modes
+            .iter()
+            .find(|m| timings.0.contains(&m.name))
+            .ok_or(anyhow::anyhow!("newly create mode {} not found", timings.0))?;
+        Ok(resources.mode(mode.xid)?)
     }
 
-    fn get_timings(&self, width: u32, height: u32, refresh: f64) -> Result<XRRModeInfo> {
+    // Ideally, we'd return the timing values and set them with xlib, but that isn't working,
+    // so we return the mode name + modeline args instead
+    fn get_timings(&self, width: u32, height: u32, refresh: f64) -> Result<(String, Vec<String>)> {
         let mut args = vec![width.to_string(), height.to_string(), refresh.to_string()];
         match self.timing_fallback {
             TimingFallbackMethod::CvtR => args.insert(0, "-r".to_string()),
@@ -370,7 +381,7 @@ impl XDisplay {
 
         let out = Command::new("cvt").args(args).output()?;
         if out.status.success() {
-            let regex = Regex::new(r#"(?m)Modeline "(?<name>[\w|\.]+)"\s+(?<dotclock>[\d|.]+)\s+(?<width>\d+)\s+(?<hsyncstart>\d+)\s+(?<hsyncend>\d+)\s+(?<htotal>\d+)\s+(?<height>\d+)\s+(?<vsyncstart>\d+)\s+(?<vsyncend>\d+)\s+(?<vtotal>\d+)\s+(?<flags>.*)"#).unwrap();
+            let regex = Regex::new(r#"(?m)Modeline (?<name>"[\w|\.]+")\s+(?<dotclock>[\d|.]+)\s+(?<width>\d+)\s+(?<hsyncstart>\d+)\s+(?<hsyncend>\d+)\s+(?<htotal>\d+)\s+(?<height>\d+)\s+(?<vsyncstart>\d+)\s+(?<vsyncend>\d+)\s+(?<vtotal>\d+)\s+(?<flags>.*)"#).unwrap();
             let output = String::from_utf8_lossy(&out.stdout);
 
             let captures = regex
@@ -390,51 +401,64 @@ impl XDisplay {
                     .clone())
             }
 
-            let mut name: String = get(&captures, "name")?;
-            let name_b = unsafe { name.as_bytes_mut() };
-            let name_ptr = name_b.as_mut_ptr() as *mut i8;
+            Ok((
+                get(&captures, "name")?,
+                captures
+                    .get(0)
+                    .expect("should have capture from cvt")
+                    .as_str()
+                    .strip_prefix("Modeline ")
+                    .expect("cvt out should have modeline prefix")
+                    .split_ascii_whitespace()
+                    .map(|v| v.to_string())
+                    .collect(),
+            ))
 
-            let flags = {
-                let captured_flags: String = get(&captures, "flags")?;
-                let ascii_flags = &captured_flags.to_ascii_lowercase();
-                let flags: IndexMap<&str, i32, RandomState> = IndexMap::from_iter([
-                    ("+hsync", x11::xrandr::RR_HSyncPositive),
-                    ("-hsync", x11::xrandr::RR_HSyncNegative),
-                    ("+vsync", x11::xrandr::RR_VSyncPositive),
-                    ("-vsync", x11::xrandr::RR_VSyncNegative),
-                    ("interlace", x11::xrandr::RR_Interlace),
-                    ("doublescan", x11::xrandr::RR_DoubleScan),
-                    ("csync", x11::xrandr::RR_CSync),
-                    ("+csync", x11::xrandr::RR_CSyncPositive),
-                    ("-csync", x11::xrandr::RR_CSyncNegative),
-                ]);
+        //     let mut name: String = get(&captures, "name")?;
+        //     let name_b = unsafe { name.as_bytes_mut() };
+        //     let name_ptr = name_b.as_mut_ptr() as *mut i8;
 
-                flags.into_iter().fold(0u64, |acc, (k, v)| {
-                    if ascii_flags.contains(k) {
-                        acc | v as u64
-                    } else {
-                        acc
-                    }
-                })
-            };
-            
-            let clock:f64 = get(&captures, "dotclock")?;
-            Ok(XRRModeInfo {
-                id: 0,
-                width,
-                height,
-                dotClock: (clock * 1e6 as f64).round() as u64,
-                hSyncStart: get(&captures, "hsyncstart")?,
-                hSyncEnd: get(&captures, "hsyncend")?,
-                hTotal: get(&captures, "htotal")?,
-                hSkew: 0, // xrandr doesn't seem to set this, so I'm assuming it defaults to 0
-                vSyncStart: get(&captures, "vsyncstart")?,
-                vSyncEnd: get(&captures, "vsyncend")?,
-                vTotal: get(&captures, "vtotal")?,
-                nameLength: name_b.len() as u32,
-                name: name_ptr,
-                modeFlags: flags,
-            })
+        //     let flags = {
+        //         let captured_flags: String = get(&captures, "flags")?;
+        //         let ascii_flags = &captured_flags.to_ascii_lowercase();
+        //         let flags: IndexMap<&str, i32, RandomState> = IndexMap::from_iter([
+        //             ("+hsync", x11::xrandr::RR_HSyncPositive),
+        //             ("-hsync", x11::xrandr::RR_HSyncNegative),
+        //             ("+vsync", x11::xrandr::RR_VSyncPositive),
+        //             ("-vsync", x11::xrandr::RR_VSyncNegative),
+        //             ("interlace", x11::xrandr::RR_Interlace),
+        //             ("doublescan", x11::xrandr::RR_DoubleScan),
+        //             ("csync", x11::xrandr::RR_CSync),
+        //             ("+csync", x11::xrandr::RR_CSyncPositive),
+        //             ("-csync", x11::xrandr::RR_CSyncNegative),
+        //         ]);
+
+        //         flags.into_iter().fold(0u64, |acc, (k, v)| {
+        //             if ascii_flags.contains(k) {
+        //                 acc | v as u64
+        //             } else {
+        //                 acc
+        //             }
+        //         })
+        //     };
+
+        //     let clock:f64 = get(&captures, "dotclock")?;
+        //     Ok(XRRModeInfo {
+        //         id: 0,
+        //         width,
+        //         height,
+        //         dotClock: (clock * 1e6 as f64).round() as u64,
+        //         hSyncStart: get(&captures, "hsyncstart")?,
+        //         hSyncEnd: get(&captures, "hsyncend")?,
+        //         hTotal: get(&captures, "htotal")?,
+        //         hSkew: 0, // xrandr doesn't seem to set this, so I'm assuming it defaults to 0
+        //         vSyncStart: get(&captures, "vsyncstart")?,
+        //         vSyncEnd: get(&captures, "vsyncend")?,
+        //         vTotal: get(&captures, "vtotal")?,
+        //         nameLength: name_b.len() as u32,
+        //         name: name_ptr,
+        //         modeFlags: flags,
+        //     })
         } else {
             let stderr = out.stderr;
             Err(anyhow::anyhow!("{:?}", String::from_utf8_lossy(&stderr)))
@@ -468,6 +492,10 @@ impl XDisplay {
             .map(|m| m.0.width as f32 / m.0.height as f32)
             .unwrap_or(16. / 9.)
         // )
+    }
+
+    pub(crate) fn get_mode(&mut self, mode: u64) -> Result<Mode> {
+        Ok(ScreenResources::new(&mut self.xhandle)?.mode(mode)?)
     }
 }
 
@@ -711,5 +739,30 @@ mod tests {
         )?;
         assert_eq!(Some(3), mode);
         Ok(())
+    }
+
+    #[test]
+    fn test_get_native_ar() {
+        let modes = vec![
+            create_mode(1, 1920, 1200, 60., false),
+            create_mode(2, 1280, 720, 60., false),
+            create_mode(3, 1280, 800, 60., false),
+            create_mode(4, 2560, 1440, 60., false),
+        ];
+
+        let actual = XDisplay::get_native_ar(&modes);
+        assert_eq!(S9, actual)
+    }
+
+    #[test]
+    fn test_scale_height_s9_s10() {
+        let actual = XDisplay::scale_height(S9, S10, 720);
+        assert_eq!(800, actual)
+    }
+
+    #[test]
+    fn test_scale_height_s10_s9() {
+        let actual = XDisplay::scale_height(S10, S9, 800);
+        assert_eq!(720, actual)
     }
 }
