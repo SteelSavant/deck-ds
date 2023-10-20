@@ -1,42 +1,71 @@
-use std::cmp::Ordering;
+use std::{
+    cmp::Ordering,
+    collections::{hash_map::RandomState, HashMap},
+    error::Error,
+    process::Command,
+    ptr,
+    str::FromStr,
+};
 
-use edid::EDID;
 use float_cmp::approx_eq;
-use xrandr::{Mode, Output, Relation, ScreenResources, XHandle};
+use indexmap::IndexMap;
+use regex::Regex;
+use x11::{
+    xlib,
+    xrandr::{XRRModeFlags, XRRModeInfo},
+};
+use xrandr::{Mode, Output, Relation, ScreenResources, XHandle, XId, XrandrError};
 
-use anyhow::Result;
+use anyhow::{Ok, Result};
 
 /// Thin wrapper around xrandr for common display operations.
+#[derive(Debug)]
 pub struct XDisplay {
     xhandle: XHandle,
+    timing_fallback: TimingFallbackMethod,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct ModePreference {
     pub resolution: ModeOption<Resolution>,
     pub aspect_ratio: AspectRatioOption,
     pub refresh: ModeOption<f64>,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum ModeOption<T> {
     Exact(T),
     AtLeast(T),
     AtMost(T),
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct Resolution {
-    pub w: u32,
+    pub w: u32, // TODO::enforce w is multiple of 8 for CVT
     pub h: u32,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum AspectRatioOption {
+    Any,
     Native,
     Exact(f32),
+}
+
+#[derive(Debug, Default, Copy, Clone)]
+pub enum TimingFallbackMethod {
+    #[default]
+    CvtR,
+    Cvt,
+    // Gtf,
+    // Manual
 }
 
 impl XDisplay {
     pub fn new() -> Result<Self> {
         Ok(Self {
             xhandle: xrandr::XHandle::open()?,
+            timing_fallback: TimingFallbackMethod::CvtR, // TODO::make this configurable
         })
     }
 
@@ -71,10 +100,21 @@ impl XDisplay {
             .next())
     }
 
+    /// Gets the current mode of an output
+    pub fn get_current_mode(&mut self, output: &Output) -> Result<Option<Mode>> {
+        let resources = ScreenResources::new(&mut self.xhandle)?;
+        Ok(output
+            .current_mode
+            .map(|id| resources.mode(id))
+            .transpose()?)
+    }
+
+    /// Sets the mode of an output.
     pub fn set_output_mode(&mut self, output: &Output, mode: &Mode) -> Result<()> {
         Ok(self.xhandle.set_mode(output, mode)?)
     }
 
+    /// Sets the position of one output relative to another.
     pub fn set_output_position(
         &mut self,
         output: &Output,
@@ -86,6 +126,7 @@ impl XDisplay {
             .set_position(output, relation, relative_output)?)
     }
 
+    /// Finds a mode matching the preference, or creates one if none matching are found, and sets the output to that mode.
     pub fn set_or_create_preferred_mode(
         &mut self,
         output: &Output,
@@ -106,39 +147,21 @@ impl XDisplay {
             })
             .collect::<Vec<_>>();
 
-        let native_ar = {
-            let output_edid = output.edid();
-            let output_edid: Option<_> = output_edid
-                .map(|e| {
-                    let edid_data = edid::parse(&e);
-                    let res = edid_data.to_result().ok();
-                    res.map(|r| r.display)
-                })
-                .flatten();
+        let native_ar = Self::get_native_ar(&modes);
 
-            let largest_mode = modes.iter().reduce(|a, b| {
-                if a.0.width * a.0.height > b.0.width * b.0.height {
-                    a
-                } else {
-                    b
-                }
-            });
-            output_edid
-                .map(|e| e.width as f32 / e.height as f32)
-                .unwrap_or(
-                    largest_mode
-                        .map(|m| m.0.width as f32 / m.0.height as f32)
-                        .unwrap_or(16. / 9.),
-                )
-        };
-
-        let mode = Self::get_preferred_mode(native_ar, modes, pref)?;
+        let mode = Self::get_preferred_mode(native_ar, &modes, pref)?;
         let mode = match mode {
-            Some(mode) => mode,
-            None => self.create_preferred_mode(output, pref)?,
+            Some(mode) => screen.mode(mode)?,
+            None => self.create_preferred_mode(output, native_ar, &modes, pref)?,
         };
 
         self.set_output_mode(output, &mode)
+    }
+
+    fn scale_height(mode_ar: f32, native_ar: f32, height: u32) -> u32 {
+        let ar_scale = mode_ar / native_ar;
+
+        (height as f32 * ar_scale).round() as u32 // TODO::verify scaling with other resolutions + aspect ratios than 16/9 -> 16/10;
     }
 
     /// Gets the best mode matching a preference from a list of modes.
@@ -147,11 +170,11 @@ impl XDisplay {
     /// * native_ar - native aspect ratio
     /// * modes - Modes to select from, in the format ([Mode], is_preferred_mode)
     /// * pref - the preferences for the selected mode
-    fn get_preferred_mode(
+    fn get_preferred_mode<'a>(
         native_ar: f32,
-        modes: Vec<(Mode, bool)>,
+        modes: &'a [(Mode, bool)],
         pref: &ModePreference,
-    ) -> Result<Option<Mode>> {
+    ) -> Result<Option<XId>> {
         struct ModeDiff {
             width: i64,
             rr: f64,
@@ -160,7 +183,7 @@ impl XDisplay {
 
         let best_mode = modes
             .into_iter()
-            .fold(None, |acc: Option<(Mode, ModeDiff)>, e| {
+            .fold(None, |acc: Option<(&Mode, ModeDiff)>, e| {
                 let rr_diff = match pref.refresh {
                     ModeOption::Exact(rr) => {
                         if approx_eq!(f64, rr, e.0.rate, ulps = 2) {
@@ -201,11 +224,11 @@ impl XDisplay {
                             None
                         }
                     }
+                    AspectRatioOption::Any => Some(0.),
                 };
 
-                let ar_scale = mode_ar / native_ar;
+                let scaled_h = Self::scale_height(mode_ar, native_ar, e.0.height);
 
-                let scaled_h = (e.0.height as f32 * ar_scale).round() as u32; // TODO::verify scaling with other resolutions + aspect ratios than 16/9 -> 16/10;
                 let res_diff = match &pref.resolution {
                     ModeOption::Exact(res) => {
                         if res.w == e.0.width && scaled_h == e.0.height {
@@ -215,7 +238,7 @@ impl XDisplay {
                         }
                     }
                     ModeOption::AtLeast(res) => {
-                        if e.0.width >= res.w && e.0.height >= scaled_h  {
+                        if e.0.width >= res.w && e.0.height >= scaled_h {
                             Some((
                                 e.0.width as i64 - res.w as i64,
                                 e.0.height as i64 - scaled_h as i64,
@@ -250,39 +273,201 @@ impl XDisplay {
                             .partial_cmp(&rr)
                             .expect("refresh rates should be real numbers")
                         {
-                            Ordering::Less => Some((e.0, diff)),
+                            Ordering::Less => Some((&e.0, diff)),
                             Ordering::Greater => Some(best),
                             Ordering::Equal => match best.1.width.cmp(&res.0) {
-                                Ordering::Less => Some((e.0, diff)),
+                                Ordering::Less => Some((&e.0, diff)),
                                 Ordering::Greater => Some(best),
                                 Ordering::Equal => match best.1.pref.cmp(&e.1) {
-                                    Ordering::Less => Some((e.0, diff)),
+                                    Ordering::Less => Some((&e.0, diff)),
                                     Ordering::Equal | Ordering::Greater => Some(best),
                                 },
                             },
                         }
                     } else {
-                        Some((e.0, diff))
+                        Some((&e.0, diff))
                     }
                 } else {
                     acc
                 }
             });
 
-        Ok(best_mode.map(|m| m.0))
+        Ok(best_mode.map(|m| m.0.xid))
     }
 
-    fn create_preferred_mode(&mut self, output: &Output, pref: &ModePreference) -> Result<Mode> {
-        // TODO::configurable timing methods
-        todo!("TODO::create mode from preference");
-    }
+    // TODO::configurable timing methods
+    /// Creates a new xrandr output mode based on the preference specification.
+    fn create_preferred_mode(
+        &mut self,
+        output: &Output,
+        native_ar: f32,
+        modes: &[(Mode, bool)],
+        pref: &ModePreference,
+    ) -> Result<Mode> {
+        let nearest_pref = ModePreference {
+            aspect_ratio: AspectRatioOption::Any,
+            resolution: match pref.resolution {
+                ModeOption::Exact(res) | ModeOption::AtMost(res) => ModeOption::AtMost(res),
+                ModeOption::AtLeast(_) => ModeOption::AtLeast(Resolution { w: 0, h: 0 }),
+            },
+            refresh: match pref.refresh {
+                ModeOption::Exact(rr) | ModeOption::AtLeast(rr) => ModeOption::AtLeast(rr),
+                ModeOption::AtMost(_) => ModeOption::AtLeast(0.),
+            },
+        };
+        let nearest = Self::get_preferred_mode(native_ar, &modes, &nearest_pref)?.ok_or(
+            anyhow::anyhow!("Unable to find acceptable mode for {nearest_pref:?} from {modes:?}"),
+        )?;
 
-    pub fn get_current_mode(&mut self, output: &Output) -> Result<Option<Mode>> {
+        let screen = ScreenResources::new(&mut self.xhandle)?;
+        let nearest = screen.mode(nearest)?;
+
+        let height = {
+            let ar = nearest.width as f32 / nearest.height as f32;
+            match pref.aspect_ratio {
+                AspectRatioOption::Any => nearest.height,
+                AspectRatioOption::Native => {
+                    if approx_eq!(f32, ar, native_ar, ulps = 2) {
+                        nearest.height
+                    } else {
+                        Self::scale_height(ar, native_ar, nearest.height)
+                    }
+                }
+                AspectRatioOption::Exact(ex_ar) => {
+                    if approx_eq!(f32, ar, ex_ar, ulps = 2) {
+                        nearest.height
+                    } else {
+                        Self::scale_height(ar, ex_ar, nearest.height)
+                    }
+                }
+            }
+        };
+
+        let rate = match nearest_pref.refresh {
+            ModeOption::Exact(_) | ModeOption::AtLeast(_) => nearest.rate,
+            ModeOption::AtMost(rr) => rr,
+        };
+
+        let mut sys = ptr::NonNull::new(unsafe { xlib::XOpenDisplay(ptr::null()) })
+            .ok_or(XrandrError::Open)?;
+
+        let mut timings = self.get_timings(nearest.width, height, rate)?;
+
+        let mode = unsafe { x11::xrandr::XRRCreateMode(sys.as_mut(), output.xid, &mut timings) };
+
+        println!("created mode {mode}");
+
         let resources = ScreenResources::new(&mut self.xhandle)?;
-        Ok(output
-            .current_mode
-            .map(|id| resources.mode(id))
-            .transpose()?)
+        Ok(resources.mode(mode)?)
+    }
+
+    fn get_timings(&self, width: u32, height: u32, refresh: f64) -> Result<XRRModeInfo> {
+        let mut args = vec![width.to_string(), height.to_string(), refresh.to_string()];
+        match self.timing_fallback {
+            TimingFallbackMethod::CvtR => args.insert(0, "-r".to_string()),
+            TimingFallbackMethod::Cvt => (),
+        }
+
+        let out = Command::new("cvt").args(args).output()?;
+        if out.status.success() {
+            let regex = Regex::new(r#"(?m)Modeline "(?<name>[\w|\.]+)"\s+(?<dotclock>[\d|.]+)\s+(?<width>\d+)\s+(?<hsyncstart>\d+)\s+(?<hsyncend>\d+)\s+(?<htotal>\d+)\s+(?<height>\d+)\s+(?<vsyncstart>\d+)\s+(?<vsyncend>\d+)\s+(?<vtotal>\d+)\s+(?<flags>.*)"#).unwrap();
+            let output = String::from_utf8_lossy(&out.stdout);
+
+            let captures = regex
+                .captures(&output)
+                .ok_or(anyhow::anyhow!("could not get captures from timing output"))?;
+
+            fn get<T>(captures: &regex::Captures, name: &str) -> Result<T>
+            where
+                T: FromStr + Clone,
+                <T as FromStr>::Err: std::error::Error + Send + Sync + 'static,
+            {
+                Ok(captures
+                    .name(name)
+                    .expect(&format!("expecting timing capture with name {name}"))
+                    .as_str()
+                    .parse::<T>()?
+                    .clone())
+            }
+
+            let mut name: String = get(&captures, "name")?;
+            let name_b = unsafe { name.as_bytes_mut() };
+            let name_ptr = name_b.as_mut_ptr() as *mut i8;
+
+            let flags = {
+                let captured_flags: String = get(&captures, "flags")?;
+                let ascii_flags = &captured_flags.to_ascii_lowercase();
+                let flags: IndexMap<&str, i32, RandomState> = IndexMap::from_iter([
+                    ("+hsync", x11::xrandr::RR_HSyncPositive),
+                    ("-hsync", x11::xrandr::RR_HSyncNegative),
+                    ("+vsync", x11::xrandr::RR_VSyncPositive),
+                    ("-vsync", x11::xrandr::RR_VSyncNegative),
+                    ("interlace", x11::xrandr::RR_Interlace),
+                    ("doublescan", x11::xrandr::RR_DoubleScan),
+                    ("csync", x11::xrandr::RR_CSync),
+                    ("+csync", x11::xrandr::RR_CSyncPositive),
+                    ("-csync", x11::xrandr::RR_CSyncNegative),
+                ]);
+
+                flags.into_iter().fold(0u64, |acc, (k, v)| {
+                    if ascii_flags.contains(k) {
+                        acc | v as u64
+                    } else {
+                        acc
+                    }
+                })
+            };
+            
+            let clock:f64 = get(&captures, "dotclock")?;
+            Ok(XRRModeInfo {
+                id: 0,
+                width,
+                height,
+                dotClock: (clock * 1e6 as f64).round() as u64,
+                hSyncStart: get(&captures, "hsyncstart")?,
+                hSyncEnd: get(&captures, "hsyncend")?,
+                hTotal: get(&captures, "htotal")?,
+                hSkew: 0, // xrandr doesn't seem to set this, so I'm assuming it defaults to 0
+                vSyncStart: get(&captures, "vsyncstart")?,
+                vSyncEnd: get(&captures, "vsyncend")?,
+                vTotal: get(&captures, "vtotal")?,
+                nameLength: name_b.len() as u32,
+                name: name_ptr,
+                modeFlags: flags,
+            })
+        } else {
+            let stderr = out.stderr;
+            Err(anyhow::anyhow!("{:?}", String::from_utf8_lossy(&stderr)))
+        }
+    }
+
+    fn get_native_ar(
+        // output: &Output,
+        modes: &[(Mode, bool)],
+    ) -> f32 {
+        // let output_edid = output.edid();
+        // let output_edid: Option<_> = output_edid
+        //     .map(|e| {
+        //         let edid_data = edid::parse(&e);
+        //         let res = edid_data.to_result().ok();
+        //         res.map(|r| r.display)
+        //     })
+        //     .flatten();
+
+        let largest_mode = modes.iter().reduce(|a, b| {
+            if a.0.width * a.0.height > b.0.width * b.0.height {
+                a
+            } else {
+                b
+            }
+        });
+        // output_edid
+        //     .map(|e| e.width as f32 / e.height as f32)
+        //     .unwrap_or(
+        largest_mode
+            .map(|m| m.0.width as f32 / m.0.height as f32)
+            .unwrap_or(16. / 9.)
+        // )
     }
 }
 
@@ -324,14 +509,13 @@ mod tests {
 
         let mode = XDisplay::get_preferred_mode(
             S9,
-            modes,
+            &modes,
             &ModePreference {
                 resolution: ModeOption::Exact(Resolution { w: 1280, h: 720 }),
                 aspect_ratio: AspectRatioOption::Exact(S9),
                 refresh: ModeOption::Exact(60.),
             },
-        )?
-        .map(|m| m.xid);
+        )?;
 
         assert_eq!(Some(1), mode);
         Ok(())
@@ -347,14 +531,13 @@ mod tests {
 
         let mode = XDisplay::get_preferred_mode(
             S9,
-            modes,
+            &modes,
             &ModePreference {
                 resolution: ModeOption::Exact(Resolution { w: 1280, h: 720 }),
                 aspect_ratio: AspectRatioOption::Exact(S9),
                 refresh: ModeOption::Exact(60.),
             },
-        )?
-        .map(|m| m.xid);
+        )?;
 
         assert_eq!(Some(1), mode);
         Ok(())
@@ -370,15 +553,13 @@ mod tests {
 
         let mode = XDisplay::get_preferred_mode(
             S9,
-            modes,
+            &modes,
             &ModePreference {
                 resolution: ModeOption::Exact(Resolution { w: 1280, h: 720 }),
                 aspect_ratio: AspectRatioOption::Exact(S9),
                 refresh: ModeOption::AtLeast(30.),
             },
-        )?
-        .map(|m| m.xid);
-
+        )?;
         assert_eq!(Some(2), mode);
         Ok(())
     }
@@ -393,15 +574,13 @@ mod tests {
 
         let mode = XDisplay::get_preferred_mode(
             S9,
-            modes,
+            &modes,
             &ModePreference {
                 resolution: ModeOption::Exact(Resolution { w: 1280, h: 720 }),
                 aspect_ratio: AspectRatioOption::Exact(S9),
                 refresh: ModeOption::AtMost(30.),
             },
-        )?
-        .map(|m| m.xid);
-
+        )?;
         assert_eq!(Some(3), mode);
         Ok(())
     }
@@ -416,15 +595,13 @@ mod tests {
 
         let mode = XDisplay::get_preferred_mode(
             S9,
-            modes,
+            &modes,
             &ModePreference {
                 resolution: ModeOption::Exact(Resolution { w: 1280, h: 720 }),
                 aspect_ratio: AspectRatioOption::Exact(S9),
                 refresh: ModeOption::Exact(60.),
             },
-        )?
-        .map(|m| m.xid);
-
+        )?;
         assert_eq!(Some(2), mode);
         Ok(())
     }
@@ -439,15 +616,13 @@ mod tests {
 
         let mode = XDisplay::get_preferred_mode(
             S9,
-            modes,
+            &modes,
             &ModePreference {
                 resolution: ModeOption::AtLeast(Resolution { w: 1920, h: 1080 }),
                 aspect_ratio: AspectRatioOption::Exact(S9),
                 refresh: ModeOption::Exact(60.),
             },
-        )?
-        .map(|m| m.xid);
-
+        )?;
         assert_eq!(Some(3), mode);
         Ok(())
     }
@@ -462,15 +637,13 @@ mod tests {
 
         let mode = XDisplay::get_preferred_mode(
             S9,
-            modes,
+            &modes,
             &ModePreference {
                 resolution: ModeOption::AtMost(Resolution { w: 1920, h: 1080 }),
                 aspect_ratio: AspectRatioOption::Exact(S9),
                 refresh: ModeOption::Exact(60.),
             },
-        )?
-        .map(|m| m.xid);
-
+        )?;
         assert_eq!(Some(1), mode);
         Ok(())
     }
@@ -486,15 +659,13 @@ mod tests {
 
         let mode = XDisplay::get_preferred_mode(
             S10,
-            modes,
+            &modes,
             &ModePreference {
                 resolution: ModeOption::Exact(Resolution { w: 1280, h: 720 }),
                 aspect_ratio: AspectRatioOption::Native,
                 refresh: ModeOption::Exact(60.),
             },
-        )?
-        .map(|m| m.xid);
-
+        )?;
         assert_eq!(Some(3), mode);
         Ok(())
     }
@@ -510,15 +681,13 @@ mod tests {
 
         let mode = XDisplay::get_preferred_mode(
             S10,
-            modes,
+            &modes,
             &ModePreference {
                 resolution: ModeOption::AtLeast(Resolution { w: 1280, h: 720 }),
                 aspect_ratio: AspectRatioOption::Native,
                 refresh: ModeOption::Exact(60.),
             },
-        )?
-        .map(|m| m.xid);
-
+        )?;
         assert_eq!(Some(1), mode);
         Ok(())
     }
@@ -533,15 +702,13 @@ mod tests {
 
         let mode = XDisplay::get_preferred_mode(
             S10,
-            modes,
+            &modes,
             &ModePreference {
                 resolution: ModeOption::AtMost(Resolution { w: 1280, h: 720 }),
                 aspect_ratio: AspectRatioOption::Native,
                 refresh: ModeOption::Exact(60.),
             },
-        )?
-        .map(|m| m.xid);
-
+        )?;
         assert_eq!(Some(3), mode);
         Ok(())
     }
