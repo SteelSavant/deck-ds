@@ -42,7 +42,7 @@ impl PipelineActionExecutor for VirtualScreen {
                     w: deck_mode.width,
                     h: deck_mode.height,
                 }),
-                aspect_ratio: AspectRatioOption::Native,
+                aspect_ratio: AspectRatioOption::Exact(deck_mode.width as f32 / deck_mode.height as f32),
                 refresh: ModeOption::Exact(deck_mode.rate),
             },
         )?;

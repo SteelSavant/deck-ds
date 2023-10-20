@@ -39,12 +39,13 @@ xrandr = { git = "https://github.com/dzfranklin/xrandr-rs", features = [
     "serialize",
 ] }
 typemap = "0.3.3"
-anyhow = "1.0.75"
+anyhow = { version = "1.0.75", features = ["backtrace"] }
 gilrs = "0.10.2"
 rand = "0.8.5"
 nix = { version = "0.27.1", features = ["process", "zerocopy", "signal"] }
 edid = "0.3.0"
 float-cmp = "0.9.0"
+x11 = { version = "2.21.0", features = ["xrandr"] }
 
 [features]
 default = ["online", "decky"]

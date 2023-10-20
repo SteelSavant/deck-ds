@@ -13,7 +13,6 @@ use super::PipelineActionExecutor;
 pub struct DisplayTeardown {
     teardown_external_settings: TeardownExternalSettings,
     teardown_deck_location: RelativeLocation,
-    timing_fallback_method: TimingFallbackMethod,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -57,15 +56,6 @@ pub enum TeardownExternalSettings {
         r: u16,
         use_native_aspect_ratio: bool,
     },
-}
-
-#[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
-pub enum TimingFallbackMethod {
-    #[default]
-    CvtR,
-    Cvt,
-    Gtf,
-    // Manual
 }
 
 impl PipelineActionExecutor for DisplayTeardown {

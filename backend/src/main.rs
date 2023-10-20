@@ -29,6 +29,10 @@ enum Modes {
 }
 
 fn main() -> Result<()> {
+    if cfg!(debug) {
+        std::env::set_var("RUST_BACKTRACE", "full");
+    }
+
     let args = Cli::parse();
     println!("got arg {:?}", args.mode);
     let mode = args.mode.unwrap_or_default();
