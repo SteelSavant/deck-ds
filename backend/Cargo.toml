@@ -5,8 +5,8 @@ edition = "2021"
 authors = ["SteelSavant <steelsavant@gmail.com>"]
 description = "Backend functionality for DeckDS plugin"
 license = "GPL-3.0-only"
-repository = "https://github.com/NGnius/PowerTools"
-keywords = ["utility", "emulation", "dual-screen", "decky"]
+repository = "https://github.com/SteelSavant/deckds"
+keywords = ["dual-screen", "emulation", "decky"]
 readme = "../README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

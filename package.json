@@ -1,29 +1,30 @@
 {
-  "name": "decky-plugin-template",
+  "name": "deck-ds",
   "version": "0.0.1",
-  "description": "A template to quickly create decky plugins from scratch, based on TypeScript and webpack",
+  "description": "Decky plugin for launching dual-screen games from game mode on Steam Deck",
   "scripts": {
     "build": "shx rm -rf dist && rollup -c",
+    "build_all": "shx rm -rf dist && rollup -c && cargo build && mkdir -p bin && cp ./target/debug/deck-ds ./bin/backend",
+
     "watch": "rollup -c -w",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SteamDeckHomebrew/decky-plugin-template.git"
+    "url": "git+https://github.com/SteelSavant/deck-ds.git"
   },
   "keywords": [
     "decky",
     "plugin",
-    "plugin-template",
     "steam-deck",
     "deck"
   ],
-  "author": "Jonas Dellinger <jonas@dellinger.dev>",
-  "license": "BSD-3-Clause",
+  "author": "SteelSavant",
+  "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/SteamDeckHomebrew/decky-plugin-template/issues"
+    "url": "https://github.com/SteelSavant/deck-ds/issues"
   },
-  "homepage": "https://github.com/SteamDeckHomebrew/decky-plugin-template#readme",
+  "homepage": "https://github.com/SteelSavant/deck-ds#readme",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^21.1.0",
     "@rollup/plugin-json": "^4.1.0",
@@ -40,7 +41,8 @@
   },
   "dependencies": {
     "decky-frontend-lib": "^3.21.1",
-    "react-icons": "^4.4.0"
+    "react-icons": "^4.4.0",
+    "usdpl-front": "file:src/usdpl_front"
   },
   "pnpm": {
     "peerDependencyRules": {

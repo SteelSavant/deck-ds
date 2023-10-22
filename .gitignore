@@ -58,3 +58,6 @@ cli/decky
 
 # Ignore rust build files
 **/target/
+
+# Ignore output bin
+bin/

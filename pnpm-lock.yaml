@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   decky-frontend-lib:
     specifier: ^3.21.1
@@ -7,6 +11,9 @@ dependencies:
   react-icons:
     specifier: ^4.4.0
     version: 4.9.0
+  usdpl-front:
+    specifier: file:src/usdpl_front
+    version: file:src/usdpl_front
 
 devDependencies:
   '@rollup/plugin-commonjs':
@@ -937,6 +944,7 @@ packages:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
     dev: true
 
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
+  file:src/usdpl_front:
+    resolution: {directory: src/usdpl_front, type: directory}
+    name: usdpl-front
+    dev: false

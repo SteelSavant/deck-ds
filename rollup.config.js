@@ -23,7 +23,7 @@ export default defineConfig({
       publicPath: `http://127.0.0.1:1337/plugins/${name}/`
     })
   ],
-  PipelineContext: 'window',
+  context: 'window',
   external: ["react", "react-dom", "decky-frontend-lib"],
   output: {
     file: "dist/index.js",
