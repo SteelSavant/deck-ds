@@ -99,7 +99,18 @@ const findModule = (property: string) => {
             serverAPI.toaster.toast({
               title: "DeckDS",
               body: logged ? "Log sent successfully!" : "Log failed",
-              duration: 5,
+              duration: 5000,
+              sound:  NavSoundMap?.ToastMisc,
+              playSound: true,
+              showToast: true
+            });
+
+            let path = await backend.logPath();
+
+            serverAPI.toaster.toast({
+              title: "DeckDS",
+              body: "Log set at path " + path,
+              duration: 5000,
               sound:  NavSoundMap?.ToastMisc,
               playSound: true,
               showToast: true

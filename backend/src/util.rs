@@ -30,7 +30,7 @@ pub fn unwrap_maybe_fatal<T: Sized, E: Display>(result: Result<T, E>, message: &
 pub fn settings_dir() -> std::path::PathBuf {
     usdpl_back::api::dirs::home()
         .unwrap_or_else(|| "/tmp/".into())
-        .join(".config/powertools/")
+        .join(".config/deck-ds/")
 }
 
 pub fn chown_settings_dir() -> std::io::Result<()> {
@@ -52,7 +52,7 @@ pub fn chown_settings_dir() -> std::io::Result<()> {
         .parse()
         .unwrap_or(1000);
     log::info!(
-        "chmod/chown ~/.config/powertools for user `{}` ({})",
+        "chmod/chown ~/.config/deckdsd for user `{}` ({})",
         deck_user,
         uid
     );

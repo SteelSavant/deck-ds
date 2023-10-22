@@ -4,7 +4,7 @@
   "description": "Decky plugin for launching dual-screen games from game mode on Steam Deck",
   "scripts": {
     "build": "shx rm -rf dist && rollup -c",
-    "build_all": "shx rm -rf dist && rollup -c && cargo build && mkdir -p bin && cp ./target/debug/deck-ds ./bin/backend",
+    "build_all": "shx rm -rf dist && rollup -c && cargo build && mkdir -p bin && cp ./target/debug/deck-ds ./bin/backend && echo Done",
 
     "watch": "rollup -c -w",
     "test": "echo \"Error: no test specified\" && exit 1"

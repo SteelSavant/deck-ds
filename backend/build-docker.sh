@@ -9,7 +9,7 @@ echo "--- Building plugin backend ---"
 cargo build --profile docker
 mkdir -p out
 
-mv target/docker/powertools out/backend
+mv target/docker/deck-ds out/backend
 
 echo " --- Cleaning up ---"
 # remove root-owned target folder

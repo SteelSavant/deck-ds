@@ -29,15 +29,15 @@ export async function initBackend() {
     // init usdpl
     await init_embedded();
     init_usdpl(USDPL_PORT);
-    console.log("POWERTOOLS: USDPL started for framework: " + target_usdpl());
+    console.log("DeckDS: USDPL started for framework: " + target_usdpl());
     const user_locale =
         navigator.languages && navigator.languages.length
             ? navigator.languages[0]
             : navigator.language;
-    console.log("POWERTOOLS: locale", user_locale);
-    //let mo_path = "../plugins/PowerTools/translations/" + user_locale.toString() + ".mo";
+    console.log("DeckDS: locale", user_locale);
+    //let mo_path = "../plugins/DeckDS/translations/" + user_locale.toString() + ".mo";
     await init_tr(user_locale);
-    //await init_tr("../plugins/PowerTools/translations/test.mo");
+    //await init_tr("../plugins/DeckDS/translations/test.mo");
     //setReady(true);
 }
 
@@ -52,3 +52,8 @@ export enum LogLevel {
 export async function log(level: LogLevel, msg: string): Promise<boolean> {
     return (await call_backend("LOG", [level, msg]))[0];
 }
+
+export async function logPath(): Promise<String> {
+    return (await call_backend("LOGPATH", []))[0];
+}
+

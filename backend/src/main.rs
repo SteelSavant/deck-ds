@@ -69,7 +69,6 @@ fn main() -> Result<()> {
         },
         Default::default(),
         std::fs::File::create(&log_filepath).unwrap(),
-        //std::fs::File::create("/home/deck/powertools-rs.log").unwrap(),
     )
     .unwrap();
     log::debug!("Logging to: {:?}.", log_filepath);
@@ -130,7 +129,10 @@ fn main() -> Result<()> {
         Modes::Serve => {
             let instance = Instance::new(PORT)
 
-            .register("LOG", api::general::log_it());
+            .register("LOG", api::general::log_it())
+            .register("LOGPATH", move |_| {
+               vec![log_filepath.to_string_lossy().to_string().into()]
+            });
 
             instance.run_blocking().map_err(|_| anyhow::anyhow!("server stopped unexpectedly"))
         },
