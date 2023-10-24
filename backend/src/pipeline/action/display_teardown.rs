@@ -8,7 +8,7 @@ use xrandr::{Mode, Monitor, Output, Relation, ScreenResources, XHandle, XId};
 
 use crate::pipeline::executor::PipelineContext;
 
-use super::{PipelineAction, PipelineActionId};
+use super::{PipelineActionId, PipelineActionImpl};
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct DisplayTeardown {
@@ -60,7 +60,7 @@ pub enum TeardownExternalSettings {
     },
 }
 
-impl PipelineAction for DisplayTeardown {
+impl PipelineActionImpl for DisplayTeardown {
     type State = DisplayState;
 
     fn id(&self) -> PipelineActionId {

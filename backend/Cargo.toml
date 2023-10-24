@@ -32,11 +32,13 @@ ureq = { version = "2", features = [
 clap = { version = "4.4.6", features = ["derive"] }
 derive_more = "0.99.17"
 indexmap = { version = "2.0.2", features = ["serde"] }
-schemars = { version = "0.8.15", features = ["indexmap2", "uuid1"] }
-valico = "4.0.0"
-xrandr = { git = "https://github.com/dzfranklin/xrandr-rs", features = [
-    "serialize",
+schemars = { version = "0.8.15", features = [
+    "indexmap2",
+    "uuid1",
+    "impl_json_schema",
 ] }
+valico = "4.0.0"
+
 typemap = "0.3.3"
 anyhow = { version = "1.0.75", features = ["backtrace"] }
 gilrs = "0.10.2"
@@ -44,10 +46,13 @@ rand = "0.8.5"
 nix = { version = "0.27.1", features = ["process", "zerocopy", "signal"] }
 edid = "0.3.0"
 float-cmp = "0.9.0"
-x11 = { version = "2.21.0", features = ["xrandr"] }
 enum_delegate = "0.2.0"
 uuid = { version = "1.5.0", features = ["serde", "v4"] }
 typetag = "0.2.13"
+x11 = { version = "2.21.0", features = ["xrandr"] }
+xrandr = { git = "https://github.com/dzfranklin/xrandr-rs", features = [
+    "serialize",
+] }
 
 [features]
 default = ["online", "decky"]

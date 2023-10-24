@@ -20,7 +20,7 @@ use super::action::virtual_screen::VirtualScreen;
 use super::action::{ErasedPipelineAction, PipelineActionId};
 use super::dependency::{Dependency, DependencyExecutor, DependencyId};
 
-use super::{action::PipelineAction, dependency::true_video_wall::TrueVideoWall};
+use super::{action::PipelineActionImpl, dependency::true_video_wall::TrueVideoWall};
 
 pub struct PipelineExecutor {
     ctx: PipelineContext,
@@ -55,15 +55,18 @@ where
 }
 
 impl PipelineContext {
-    pub fn get_state<P: PipelineAction + 'static>(&self) -> Option<&P::State> {
+    pub fn get_state<P: PipelineActionImpl + 'static>(&self) -> Option<&P::State> {
         self.state.get::<StateKey<P, P::State>>()
     }
 
-    pub fn get_state_mut<P: PipelineAction + 'static>(&mut self) -> Option<&mut P::State> {
+    pub fn get_state_mut<P: PipelineActionImpl + 'static>(&mut self) -> Option<&mut P::State> {
         self.state.get_mut::<StateKey<P, P::State>>()
     }
 
-    pub fn set_state<P: PipelineAction + 'static>(&mut self, state: P::State) -> Option<P::State> {
+    pub fn set_state<P: PipelineActionImpl + 'static>(
+        &mut self,
+        state: P::State,
+    ) -> Option<P::State> {
         self.state.insert::<StateKey<P, P::State>>(state)
     }
 }

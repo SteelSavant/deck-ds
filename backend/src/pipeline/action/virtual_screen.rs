@@ -15,12 +15,12 @@ use crate::{
     sys::x_display::{AspectRatioOption, ModeOption, ModePreference, Resolution},
 };
 
-use super::{PipelineAction, PipelineActionId};
+use super::{PipelineActionId, PipelineActionImpl};
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct VirtualScreen;
 
-impl PipelineAction for VirtualScreen {
+impl PipelineActionImpl for VirtualScreen {
     type State = ();
 
     fn id(&self) -> PipelineActionId {

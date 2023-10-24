@@ -7,6 +7,8 @@ use schemars::{
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use uuid::Uuid;
 
+use self::{display_teardown::DisplayTeardown, virtual_screen::VirtualScreen};
+
 use super::{dependency::DependencyId, executor::PipelineContext};
 use anyhow::Result;
 
@@ -17,7 +19,7 @@ pub mod virtual_screen;
 #[serde(transparent)]
 pub struct PipelineActionId(Uuid);
 
-pub trait PipelineAction: DeserializeOwned + Serialize {
+pub trait PipelineActionImpl: DeserializeOwned + Serialize {
     /// Type of runtime state of the action
     type State: 'static;
 
@@ -48,7 +50,7 @@ pub trait PipelineAction: DeserializeOwned + Serialize {
     fn get_schema(&self) -> Schema;
 }
 
-#[typetag::serialize(tag = "type")]
+#[enum_delegate::register]
 pub trait ErasedPipelineAction {
     fn id(&self) -> PipelineActionId;
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()>;
@@ -58,10 +60,9 @@ pub trait ErasedPipelineAction {
     fn get_schema(&self) -> Schema;
 }
 
-#[typetag::serialize]
 impl<T> ErasedPipelineAction for T
 where
-    T: PipelineAction + JsonSchema + Serialize + Debug + Clone,
+    T: PipelineActionImpl + JsonSchema + Serialize + Debug + Clone,
 {
     fn id(&self) -> PipelineActionId {
         self.id()
@@ -86,4 +87,10 @@ where
     fn get_schema(&self) -> Schema {
         self.get_schema()
     }
+}
+
+#[enum_delegate::implement(ErasedPipelineAction)]
+pub enum PipelineAction {
+    DisplayConfig(DisplayTeardown),
+    VirtualScreen(VirtualScreen),
 }
