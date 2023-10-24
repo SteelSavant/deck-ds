@@ -3,11 +3,12 @@ use std::cmp::Ordering;
 use anyhow::{Ok, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 use xrandr::{Mode, Monitor, Output, Relation, ScreenResources, XHandle, XId};
 
 use crate::pipeline::executor::PipelineContext;
 
-use super::PipelineActionExecutor;
+use super::{PipelineAction, PipelineActionId};
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct DisplayTeardown {
@@ -59,8 +60,14 @@ pub enum TeardownExternalSettings {
     },
 }
 
-impl PipelineActionExecutor for DisplayTeardown {
+impl PipelineAction for DisplayTeardown {
     type State = DisplayState;
+
+    fn id(&self) -> PipelineActionId {
+        PipelineActionId(
+            Uuid::parse_str("be4b11ef-288f-4493-a28a-3dd790d05813").expect("guid should be valid"),
+        )
+    }
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let preferred = ctx.display.get_preferred_external_output()?;
@@ -117,6 +124,10 @@ impl PipelineActionExecutor for DisplayTeardown {
             // No state, nothing to tear down
             None => Ok(()),
         }
+    }
+
+    fn get_schema(&self) -> schemars::schema::Schema {
+        todo!()
     }
 }
 

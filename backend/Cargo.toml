@@ -32,7 +32,7 @@ ureq = { version = "2", features = [
 clap = { version = "4.4.6", features = ["derive"] }
 derive_more = "0.99.17"
 indexmap = { version = "2.0.2", features = ["serde"] }
-schemars = { version = "0.8.15", features = ["indexmap2"] }
+schemars = { version = "0.8.15", features = ["indexmap2", "uuid1"] }
 valico = "4.0.0"
 xrandr = { git = "https://github.com/dzfranklin/xrandr-rs", features = [
     "serialize",
@@ -46,6 +46,8 @@ edid = "0.3.0"
 float-cmp = "0.9.0"
 x11 = { version = "2.21.0", features = ["xrandr"] }
 enum_delegate = "0.2.0"
+uuid = { version = "1.5.0", features = ["serde", "v4"] }
+typetag = "0.2.13"
 
 [features]
 default = ["online", "decky"]

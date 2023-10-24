@@ -1,6 +1,10 @@
 use anyhow::Result;
-use schemars::JsonSchema;
+use schemars::{
+    schema::{RootSchema, Schema},
+    JsonSchema,
+};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 use xrandr::{Relation, ScreenResources};
 
 use crate::{
@@ -11,13 +15,19 @@ use crate::{
     sys::x_display::{AspectRatioOption, ModeOption, ModePreference, Resolution},
 };
 
-use super::{display_teardown::DisplayState, PipelineActionExecutor};
+use super::{PipelineAction, PipelineActionId};
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct VirtualScreen;
 
-impl PipelineActionExecutor for VirtualScreen {
+impl PipelineAction for VirtualScreen {
     type State = ();
+
+    fn id(&self) -> PipelineActionId {
+        PipelineActionId(
+            Uuid::parse_str("8bc7b827-1c31-41c2-a807-dc1e99f85922").expect("guid should be valid"),
+        )
+    }
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         ctx.kwin.set_script_enabled("TrueVideoWall", true)?;
@@ -61,5 +71,9 @@ impl PipelineActionExecutor for VirtualScreen {
 
     fn get_dependencies(&self) -> Vec<DependencyId> {
         vec![TrueVideoWall::id()]
+    }
+
+    fn get_schema(&self) -> Schema {
+        todo!()
     }
 }

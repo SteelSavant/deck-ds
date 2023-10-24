@@ -1,6 +1,5 @@
 use usdpl_back::core::serdes::Primitive;
 
-
 /// API web method to send log messages to the back-end log, callable from the front-end
 pub fn log_it() -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |params| {

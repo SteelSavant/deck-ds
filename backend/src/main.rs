@@ -1,23 +1,27 @@
 use anyhow::Result;
-use std::path::PathBuf;
-
+use std::path::{Path, PathBuf};
+use uuid::Uuid;
 
 use simplelog::{LevelFilter, WriteLogger};
 
 use usdpl_back::Instance;
 
-
-
 use clap::{Parser, Subcommand};
-use deck_ds::{pipeline::{
-    action::{
-        display_teardown::{DisplayTeardown, RelativeLocation, TeardownExternalSettings},
-        virtual_screen::VirtualScreen,
-        PipelineAction,
+use deck_ds::{
+    api,
+    consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
+    pipeline::{
+        action::{
+            display_teardown::{DisplayTeardown, RelativeLocation, TeardownExternalSettings},
+            virtual_screen::VirtualScreen,
+        },
+        config::{
+            PipelineActionDefinition, PipelineDefinition, PipelineDefinitionId, SelectionType,
+        },
+        executor::PipelineExecutor,
     },
-    config::{PipelineDefinition, Selection, SelectionType},
-    executor::PipelineExecutor,
-}, consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT}, api, util};
+    util,
+};
 use derive_more::Display;
 
 #[derive(Clone, Debug, Parser)]
@@ -36,11 +40,32 @@ enum Modes {
     /// runs the plugin server backend
     #[default]
     Serve,
+    /// generates the schema definitions to ts type generation.
+    Schema {
+        /// The file in which to store the schema
+        output: String,
+    },
 }
 
-
-
 fn main() -> Result<()> {
+    let pipeline = PipelineDefinition {
+        name: "Single-Window Dual-Screen".to_string(),
+        id: PipelineDefinitionId(Uuid::new_v4()),
+        description: "Maps the internal and external monitor to a single virtual screen. Useful for emulators like melonDS which do not currently support multiple windows".to_string(),
+        actions: vec![
+            PipelineActionDefinition {
+                selection: SelectionType::single(
+                    DisplayTeardown{
+                        teardown_external_settings:TeardownExternalSettings::Previous,
+                        teardown_deck_location:RelativeLocation::Below}
+                    ),optional:None, 
+                    id: todo!(), 
+                    name: todo!(), 
+                    schema: todo!(), 
+                },
+            PipelineActionDefinition {selection: SelectionType::single(VirtualScreen),optional:None, id: todo!(), name: todo!(), schema: todo!(), }],
+    };
+
     #[cfg(debug_assertions)]
     let log_filepath = usdpl_back::api::dirs::home()
         .unwrap_or_else(|| "/tmp/".into())
@@ -101,40 +126,35 @@ fn main() -> Result<()> {
         Modes::Autostart => {
             let mut executor =
                 PipelineExecutor::new(PathBuf::from("./defaults"), PathBuf::from("todo"))?;
-            let pipeline = PipelineDefinition {
-                name: "Single-Window Dual-Screen".to_string(),
-                description: "Maps the internal and external monitor to a single virtual screen. Useful for emulators like melonDS which do not currently support multiple windows".to_string(),
-                actions: vec![
-                    Selection {
-                        value: SelectionType::Single(PipelineAction::DisplayTeardown(DisplayTeardown {
-                             teardown_external_settings: TeardownExternalSettings::Previous,
-                             teardown_deck_location: RelativeLocation::Below
-                        })),
-                        optional: None,
-                        hidden_in_ui: false,
-                    },
-                    Selection {
-                    value: SelectionType::Single(PipelineAction::VirtualScreen(
-                        VirtualScreen,
-                    )),
-                    optional: None,
-                    hidden_in_ui: false,
-                }],
-            };
+
             let botw = "12146987087370911744";
             // let gungeon = "311690";
-            executor.exec(botw.to_string(), &pipeline)
+            // executor.exec(botw.to_string(), &pipeline)
+            todo!()
         }
         Modes::DisplayTest => todo!(),
         Modes::Serve => {
             let instance = Instance::new(PORT)
+                .register("LOG", api::general::log_it())
+                .register("LOGPATH", move |_| {
+                    vec![log_filepath.to_string_lossy().to_string().into()]
+                });
 
-            .register("LOG", api::general::log_it())
-            .register("LOGPATH", move |_| {
-               vec![log_filepath.to_string_lossy().to_string().into()]
-            });
-
-            instance.run_blocking().map_err(|_| anyhow::anyhow!("server stopped unexpectedly"))
-        },
+            instance
+                .run_blocking()
+                .map_err(|_| anyhow::anyhow!("server stopped unexpectedly"))
+        }
+        Modes::Schema { output } => {
+            let path = Path::new(&output);
+            if path.is_dir() {
+                Err(anyhow::anyhow!("output must be a file"))
+            } else {
+                let schema = schemars::schema_for!(PipelineDefinition);
+                Ok(std::fs::write(
+                    path,
+                    serde_json::to_string_pretty(&schema)?,
+                )?)
+            }
+        }
     }
 }
