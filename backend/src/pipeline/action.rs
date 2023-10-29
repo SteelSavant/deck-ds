@@ -7,7 +7,7 @@ use schemars::{
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use uuid::Uuid;
 
-use self::{display_teardown::DisplayTeardown, virtual_screen::VirtualScreen};
+use self::{display_teardown::DisplayConfig, virtual_screen::VirtualScreen};
 
 use super::{dependency::DependencyId, executor::PipelineContext};
 use anyhow::Result;
@@ -62,7 +62,7 @@ pub trait ErasedPipelineAction {
 
 impl<T> ErasedPipelineAction for T
 where
-    T: PipelineActionImpl + JsonSchema + Serialize + Debug + Clone,
+    T: PipelineActionImpl + JsonSchema + Serialize + DeserializeOwned + Debug + Clone,
 {
     fn id(&self) -> PipelineActionId {
         self.id()
@@ -89,8 +89,9 @@ where
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[enum_delegate::implement(ErasedPipelineAction)]
 pub enum PipelineAction {
-    DisplayConfig(DisplayTeardown),
+    DisplayConfig(DisplayConfig),
     VirtualScreen(VirtualScreen),
 }

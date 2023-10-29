@@ -12,12 +12,11 @@ use deck_ds::{
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
     pipeline::{
         action::{
-            display_teardown::{DisplayTeardown, RelativeLocation, TeardownExternalSettings},
+            display_teardown::{DisplayConfig, RelativeLocation, TeardownExternalSettings},
             virtual_screen::VirtualScreen,
+            PipelineAction,
         },
-        config::{
-            PipelineActionDefinition, PipelineDefinition, PipelineDefinitionId, SelectionType,
-        },
+        config::{PipelineActionDefinition, PipelineDefinition, PipelineDefinitionId, Selection},
         executor::PipelineExecutor,
     },
     util,
@@ -52,18 +51,18 @@ fn main() -> Result<()> {
         name: "Single-Window Dual-Screen".to_string(),
         id: PipelineDefinitionId(Uuid::new_v4()),
         description: "Maps the internal and external monitor to a single virtual screen. Useful for emulators like melonDS which do not currently support multiple windows".to_string(),
-        actions: vec![
+        selection: Selection::AllOf(vec![
             PipelineActionDefinition {
-                selection: SelectionType::single(
-                    DisplayTeardown{
+                optional:None,
+                id: todo!(),
+                name: todo!(),
+                selection: Selection::Action( PipelineAction::DisplayConfig(
+                    DisplayConfig {
                         teardown_external_settings:TeardownExternalSettings::Previous,
-                        teardown_deck_location:RelativeLocation::Below}
-                    ),optional:None, 
-                    id: todo!(), 
-                    name: todo!(), 
-                    schema: todo!(), 
-                },
-            PipelineActionDefinition {selection: SelectionType::single(VirtualScreen),optional:None, id: todo!(), name: todo!(), schema: todo!(), }],
+                        teardown_deck_location:RelativeLocation::Below
+                    })),
+            },
+            PipelineActionDefinition {selection: Selection::Action(PipelineAction::VirtualScreen(VirtualScreen)),optional:None, id: todo!(), name: todo!(), }])
     };
 
     #[cfg(debug_assertions)]

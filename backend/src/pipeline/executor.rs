@@ -13,9 +13,7 @@ use crate::sys::kwin::{KWin, KWinScriptConfig};
 use crate::sys::process::AppProcess;
 use crate::sys::x_display::XDisplay;
 
-use super::action::display_teardown::{
-    DisplayTeardown, RelativeLocation, TeardownExternalSettings,
-};
+use super::action::display_teardown::{DisplayConfig, RelativeLocation, TeardownExternalSettings};
 use super::action::virtual_screen::VirtualScreen;
 use super::action::{ErasedPipelineAction, PipelineActionId};
 use super::dependency::{Dependency, DependencyExecutor, DependencyId};
@@ -97,7 +95,7 @@ impl PipelineExecutor {
             },
             actions: HashMap::new(),
         }
-        .with_action(DisplayTeardown {
+        .with_action(DisplayConfig {
             teardown_external_settings: TeardownExternalSettings::Previous,
             teardown_deck_location: RelativeLocation::Below,
         })

@@ -11,7 +11,7 @@ use crate::pipeline::executor::PipelineContext;
 use super::{PipelineActionId, PipelineActionImpl};
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct DisplayTeardown {
+pub struct DisplayConfig {
     pub teardown_external_settings: TeardownExternalSettings,
     pub teardown_deck_location: RelativeLocation,
 }
@@ -60,7 +60,7 @@ pub enum TeardownExternalSettings {
     },
 }
 
-impl PipelineActionImpl for DisplayTeardown {
+impl PipelineActionImpl for DisplayConfig {
     type State = DisplayState;
 
     fn id(&self) -> PipelineActionId {
@@ -106,7 +106,7 @@ impl PipelineActionImpl for DisplayTeardown {
                                 None => Ok(()),
                             }
                         }
-                        None => DisplayTeardown {
+                        None => DisplayConfig {
                             teardown_external_settings: TeardownExternalSettings::Native,
                             ..*self
                         }

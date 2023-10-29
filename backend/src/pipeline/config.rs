@@ -1,13 +1,13 @@
 use indexmap::IndexMap;
 use schemars::{
     gen::SchemaGenerator,
-    schema::{InstanceType, RootSchema, Schema, SchemaObject},
-    schema_for, JsonSchema,
+    schema::{InstanceType, Schema, SchemaObject},
+    JsonSchema,
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use super::action::{ErasedPipelineAction, PipelineAction, PipelineActionId};
+use super::action::PipelineAction;
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, Hash)]
 #[serde(transparent)]
@@ -22,7 +22,7 @@ pub struct PipelineDefinition {
     pub name: String,
     pub id: PipelineDefinitionId,
     pub description: String,
-    pub actions: Vec<PipelineActionDefinition>,
+    pub selection: Selection,
 }
 
 #[derive(Serialize, Deserialize, JsonSchema)]
@@ -31,69 +31,45 @@ pub struct PipelineActionDefinition {
     pub id: PipelineActionDefinitionId,
     /// The name of the action
     pub name: String,
-    /// The schema of the pipeline action, serialized to json
-    schemas: IndexMap<PipelineActionId, RootSchema>,
     /// The value of the pipeline action
-    pub selection: SelectionType,
+    pub selection: Selection,
     /// Flags whether the selection is optional. If None, not optional. If Some(true), optional and enabled, else disabled.
     pub optional: Option<bool>,
 }
 
 impl PipelineActionDefinition {
-    pub fn new<A: ErasedPipelineAction>(
+    pub fn new(
         name: String,
         id: PipelineActionDefinitionId,
-        selection: SelectionType,
         optional: Option<bool>,
+        selection: Selection,
     ) -> Self {
-        let schemas = selection.schemas();
         Self {
-            schemas,
             name,
             id,
-            selection,
             optional,
+            selection,
         }
     }
 }
 
-fn value_schema(gen: &mut SchemaGenerator) -> Schema {
-    let mut schema: SchemaObject = String::json_schema(gen).into();
-    schema.instance_type = Some(schemars::schema::SingleOrVec::Single(Box::new(
-        InstanceType::Object,
-    )));
-    schema.object = None;
-    schema.string = None;
-    schema.into()
-}
+// fn value_schema(gen: &mut SchemaGenerator) -> Schema {
+//     let mut schema: SchemaObject = String::json_schema(gen).into();
+//     schema.instance_type = Some(schemars::schema::SingleOrVec::Single(Box::new(
+//         InstanceType::Object,
+//     )));
+//     schema.object = None;
+//     schema.string = None;
+//     schema.into()
+// }
 
 #[derive(Serialize, Deserialize, JsonSchema)]
-pub struct SelectionType {
-    selected: PipelineActionId,
-    #[schemars(schema_with = "value_schema")]
-    values: IndexMap<PipelineActionId, PipelineAction>,
-}
 
-impl SelectionType {
-    pub fn single(action: PipelineAction) -> Self {
-        Self::one_of(vec![action])
-    }
-
-    pub fn one_of(values: Vec<PipelineAction>) -> Self {
-        let selected = values
-            .first()
-            .expect("selection type values should contain at least one action")
-            .id();
-        Self {
-            selected,
-            values: IndexMap::from_iter(values.into_iter().map(|v| (v.id(), v))),
-        }
-    }
-
-    pub fn schemas(&self) -> IndexMap<PipelineActionId, RootSchema> {
-        self.values
-            .iter()
-            .map(|(id, v)| (id, v.get_schema()))
-            .collect()
-    }
+pub enum Selection {
+    Action(PipelineAction),
+    OneOf {
+        selection: PipelineActionDefinitionId,
+        actions: IndexMap<PipelineActionDefinitionId, PipelineActionDefinition>,
+    },
+    AllOf(Vec<PipelineActionDefinition>),
 }
