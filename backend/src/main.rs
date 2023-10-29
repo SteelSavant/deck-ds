@@ -53,11 +53,10 @@ fn main() -> Result<()> {
         description: "Maps the internal and external monitor to a single virtual screen. Useful for emulators like melonDS which do not currently support multiple windows".to_string(),
         selection: Selection::AllOf(vec![
             PipelineActionDefinition {
-                optional:None,
+                optional: None,
                 id: todo!(),
                 name: todo!(),
-                selection:
-                    DisplayConfig {
+                selection: DisplayConfig {
                         teardown_external_settings:TeardownExternalSettings::Previous,
                         teardown_deck_location:RelativeLocation::Below
                     }.into(),

@@ -96,24 +96,10 @@ pub enum PipelineAction {
     VirtualScreen(VirtualScreen),
 }
 
-impl From<PipelineAction> for Selection {
-    fn from(value: PipelineAction) -> Self {
-        Selection::Action(value)
+impl<T: Into<PipelineAction>> From<T> for Selection {
+    fn from(value: T) -> Self {
+        Selection::Action(value.into())
     }
 }
 
-macro_rules! impl_selection {
-    ($action_type: ty) => {
-        impl From<$action_type> for Selection {
-            fn from(value: $action_type) -> Self {
-                Selection::Action(value.into())
-            }
-        }
-    };
-    ($action_type: ty, $($rest: ty),+) => {
-        impl_selection!($action_type);
-        impl_selection!($($rest),+);
-    };
-}
 
-impl_selection!(VirtualScreen, DisplayConfig);
