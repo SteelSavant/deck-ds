@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 use self::{display_teardown::DisplayConfig, virtual_screen::VirtualScreen};
 
-use super::{dependency::DependencyId, executor::PipelineContext};
+use super::{config::Selection, dependency::DependencyId, executor::PipelineContext};
 use anyhow::Result;
 
 pub mod display_teardown;
@@ -95,3 +95,25 @@ pub enum PipelineAction {
     DisplayConfig(DisplayConfig),
     VirtualScreen(VirtualScreen),
 }
+
+impl From<PipelineAction> for Selection {
+    fn from(value: PipelineAction) -> Self {
+        Selection::Action(value)
+    }
+}
+
+macro_rules! impl_selection {
+    ($action_type: ty) => {
+        impl From<$action_type> for Selection {
+            fn from(value: $action_type) -> Self {
+                Selection::Action(value.into())
+            }
+        }
+    };
+    ($action_type: ty, $($rest: ty),+) => {
+        impl_selection!($action_type);
+        impl_selection!($($rest),+);
+    };
+}
+
+impl_selection!(VirtualScreen, DisplayConfig);

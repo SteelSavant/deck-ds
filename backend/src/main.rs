@@ -56,13 +56,13 @@ fn main() -> Result<()> {
                 optional:None,
                 id: todo!(),
                 name: todo!(),
-                selection: Selection::Action( PipelineAction::DisplayConfig(
+                selection:
                     DisplayConfig {
                         teardown_external_settings:TeardownExternalSettings::Previous,
                         teardown_deck_location:RelativeLocation::Below
-                    })),
+                    }.into(),
             },
-            PipelineActionDefinition {selection: Selection::Action(PipelineAction::VirtualScreen(VirtualScreen)),optional:None, id: todo!(), name: todo!(), }])
+            PipelineActionDefinition {selection: VirtualScreen.into(),optional:None, id: todo!(), name: todo!(), }])
     };
 
     #[cfg(debug_assertions)]
