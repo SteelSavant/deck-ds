@@ -84,25 +84,31 @@ impl PipelineActionImpl for DisplayConfig {
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {
+        let current_output = ctx.display.get_preferred_external_output()?;
+
         match ctx.get_state::<Self>() {
             Some(state) => {
                 let output = state.previous_output_id;
 
+                // Gets the current output. If it matches the saved, return it,
+                // otherwise exit teardown to avoid changing current monitor to
+                // old monitor settings.
+                let current_output = match current_output {
+                    Some(current) => {
+                        if current.xid == output {
+                            current
+                        } else {
+                            return Ok(());
+                        }
+                    }
+                    None => return Ok(()),
+                };
+
                 match self.teardown_external_settings {
                     TeardownExternalSettings::Previous => match state.previous_output_mode {
                         Some(mode) => {
-                            let current_output = ctx.display.get_preferred_external_output()?;
-                            match current_output {
-                                Some(current) => {
-                                    if current.xid == output {
-                                        let mode = ctx.display.get_mode(mode)?;
-                                        ctx.display.set_output_mode(&current, &mode)
-                                    } else {
-                                        Ok(())
-                                    }
-                                }
-                                None => Ok(()),
-                            }
+                            let mode = ctx.display.get_mode(mode)?;
+                            ctx.display.set_output_mode(&current_output, &mode)
                         }
                         None => DisplayConfig {
                             teardown_external_settings: TeardownExternalSettings::Native,
@@ -117,7 +123,14 @@ impl PipelineActionImpl for DisplayConfig {
                         r,
                         use_native_aspect_ratio,
                     } => todo!(),
-                }
+                }?;
+
+                let deck = ctx.display.get_embedded_output()?.unwrap();
+                ctx.display.set_output_position(
+                    &deck,
+                    &self.teardown_deck_location.into(),
+                    &current_output,
+                )
             }
             // No state, nothing to tear down
             None => Ok(()),

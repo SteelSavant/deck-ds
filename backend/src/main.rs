@@ -11,7 +11,7 @@ use deck_ds::{
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
     pipeline::{
         action::{
-            display_teardown::{DisplayConfig, RelativeLocation, TeardownExternalSettings},
+            display_config::{DisplayConfig, RelativeLocation, TeardownExternalSettings},
             virtual_screen::VirtualScreen,
         },
         config::{
@@ -139,7 +139,10 @@ fn main() -> Result<()> {
                 .with_context(|| "Could not find autostart configuration file")?;
             let autostart_settings: AutoStartSettings = serde_json::from_str(&autostart_settings)?;
 
-            let mut executor = PipelineExecutor::new(PathBuf::from("/home/deck/homebrew/plugins/deck-ds/defaults"), config_dir)?;
+            let mut executor = PipelineExecutor::new(
+                PathBuf::from("/home/deck/homebrew/plugins/deck-ds/defaults"),
+                config_dir,
+            )?;
 
             executor.exec(&autostart_settings, &definition)
         }

@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use schemars::{schema::RootSchema, schema_for, JsonSchema};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use self::{display_teardown::DisplayConfig, virtual_screen::VirtualScreen};
+use self::{display_config::DisplayConfig, virtual_screen::VirtualScreen};
 
 use super::{
     config::{PipelineActionId, Selection},
@@ -12,7 +12,7 @@ use super::{
 };
 use anyhow::Result;
 
-pub mod display_teardown;
+pub mod display_config;
 pub mod virtual_screen;
 
 pub trait PipelineActionImpl: DeserializeOwned + Serialize {

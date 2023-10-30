@@ -47,7 +47,6 @@ edid = "0.3.0"
 float-cmp = "0.9.0"
 enum_delegate = "0.2.0"
 uuid = { version = "1.5.0", features = ["serde", "v4"] }
-x11 = { version = "2.21.0", features = ["xrandr"] }
 xrandr = { git = "https://github.com/dzfranklin/xrandr-rs", features = [
     "serialize",
 ] }

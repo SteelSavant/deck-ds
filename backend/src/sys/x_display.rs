@@ -1,20 +1,8 @@
-use std::{
-    cmp::Ordering,
-    collections::{hash_map::RandomState, HashMap},
-    error::Error,
-    process::Command,
-    ptr,
-    str::FromStr,
-};
+use std::{cmp::Ordering, process::Command, str::FromStr};
 
 use float_cmp::approx_eq;
-use indexmap::IndexMap;
 use regex::Regex;
-use x11::{
-    xlib,
-    xrandr::{XRRModeFlags, XRRModeInfo},
-};
-use xrandr::{Mode, Output, Relation, ScreenResources, XHandle, XId, XrandrError};
+use xrandr::{Mode, Output, Relation, ScreenResources, XHandle, XId};
 
 use anyhow::{Ok, Result};
 
@@ -112,7 +100,19 @@ impl XDisplay {
 
     /// Sets the mode of an output.
     pub fn set_output_mode(&mut self, output: &Output, mode: &Mode) -> Result<()> {
-        Ok(self.xhandle.set_mode(output, mode)?)
+        println!("setting output {} mode to {}", output.name, mode.name);
+
+        let res = Command::new("xrandr")
+            .args(["--output", &output.name, "--mode", &mode.name])
+            .output()?;
+        if res.status.success() {
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!(
+                "Error setting output mode: {}",
+                String::from_utf8_lossy(&res.stderr)
+            ))
+        }
     }
 
     /// Sets the position of one output relative to another.

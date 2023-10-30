@@ -399,7 +399,6 @@ dependencies = [
  "ureq",
  "usdpl-back",
  "uuid",
- "x11",
  "xrandr",
 ]
 
