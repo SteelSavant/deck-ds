@@ -171,9 +171,9 @@ impl XDisplay {
     /// * native_ar - native aspect ratio
     /// * modes - Modes to select from, in the format ([Mode], is_preferred_mode)
     /// * pref - the preferences for the selected mode
-    fn get_preferred_mode<'a>(
+    fn get_preferred_mode(
         native_ar: f32,
-        modes: &'a [(Mode, bool)],
+        modes: &[(Mode, bool)],
         pref: &ModePreference,
     ) -> Result<Option<XId>> {
         struct ModeDiff {
@@ -183,7 +183,7 @@ impl XDisplay {
         }
 
         let best_mode = modes
-            .into_iter()
+            .iter()
             .fold(None, |acc: Option<(&Mode, ModeDiff)>, e| {
                 let rr_diff = match pref.refresh {
                     ModeOption::Exact(rr) => {
@@ -317,7 +317,7 @@ impl XDisplay {
         };
 
         let screen = ScreenResources::new(&mut self.xhandle)?;
-        let nearest = Self::get_preferred_mode(native_ar, &modes, &nearest_pref)?.ok_or(
+        let nearest = Self::get_preferred_mode(native_ar, modes, &nearest_pref)?.ok_or(
             anyhow::anyhow!("Unable to find acceptable mode for {nearest_pref:?} from {modes:?}"),
         )?;
         let nearest = screen.mode(nearest)?;
@@ -395,7 +395,7 @@ impl XDisplay {
             {
                 Ok(captures
                     .name(name)
-                    .expect(&format!("expecting timing capture with name {name}"))
+                    .unwrap_or_else(|| panic!("expecting timing capture with name {name}"))
                     .as_str()
                     .parse::<T>()?
                     .clone())

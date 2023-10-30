@@ -20,6 +20,10 @@ pub struct KWinScriptConfig {
 
 impl KWin {
     pub fn new(bundles_path: PathBuf) -> Self {
+        println!("creating KWin with bundles at {:?}", bundles_path);
+
+        assert!(bundles_path.is_dir());
+
         Self {
             bundles_path,
             scripts: HashMap::new(),

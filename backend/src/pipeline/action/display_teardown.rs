@@ -64,9 +64,7 @@ impl PipelineActionImpl for DisplayConfig {
     type State = DisplayState;
 
     fn id(&self) -> PipelineActionId {
-        PipelineActionId(
-            Uuid::parse_str("be4b11ef-288f-4493-a28a-3dd790d05813").expect("guid should be valid"),
-        )
+        PipelineActionId::parse("be4b11ef-288f-4493-a28a-3dd790d05813")
     }
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
@@ -124,10 +122,6 @@ impl PipelineActionImpl for DisplayConfig {
             // No state, nothing to tear down
             None => Ok(()),
         }
-    }
-
-    fn get_schema(&self) -> schemars::schema::Schema {
-        todo!()
     }
 }
 

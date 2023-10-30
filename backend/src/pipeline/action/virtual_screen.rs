@@ -24,9 +24,7 @@ impl PipelineActionImpl for VirtualScreen {
     type State = ();
 
     fn id(&self) -> PipelineActionId {
-        PipelineActionId(
-            Uuid::parse_str("8bc7b827-1c31-41c2-a807-dc1e99f85922").expect("guid should be valid"),
-        )
+        PipelineActionId::parse("8bc7b827-1c31-41c2-a807-dc1e99f85922")
     }
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
@@ -71,9 +69,5 @@ impl PipelineActionImpl for VirtualScreen {
 
     fn get_dependencies(&self) -> Vec<DependencyId> {
         vec![TrueVideoWall::id()]
-    }
-
-    fn get_schema(&self) -> Schema {
-        todo!()
     }
 }

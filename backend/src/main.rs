@@ -1,6 +1,5 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
-use uuid::Uuid;
 
 use simplelog::{LevelFilter, WriteLogger};
 
@@ -14,11 +13,14 @@ use deck_ds::{
         action::{
             display_teardown::{DisplayConfig, RelativeLocation, TeardownExternalSettings},
             virtual_screen::VirtualScreen,
-            PipelineAction,
         },
-        config::{PipelineActionDefinition, PipelineDefinition, PipelineDefinitionId, Selection},
+        config::{
+            PipelineActionDefinition, PipelineActionDefinitionId, PipelineDefinition,
+            PipelineDefinitionId, Selection,
+        },
         executor::PipelineExecutor,
     },
+    settings::autostart::AutoStartSettings,
     util,
 };
 use derive_more::Display;
@@ -34,8 +36,6 @@ struct Cli {
 enum Modes {
     /// runs the autostart sequence
     Autostart,
-    /// collects information about currently connected displays
-    DisplayTest,
     /// runs the plugin server backend
     #[default]
     Serve,
@@ -47,23 +47,6 @@ enum Modes {
 }
 
 fn main() -> Result<()> {
-    let pipeline = PipelineDefinition {
-        name: "Single-Window Dual-Screen".to_string(),
-        id: PipelineDefinitionId(Uuid::new_v4()),
-        description: "Maps the internal and external monitor to a single virtual screen. Useful for emulators like melonDS which do not currently support multiple windows".to_string(),
-        selection: Selection::AllOf(vec![
-            PipelineActionDefinition {
-                optional: None,
-                id: todo!(),
-                name: todo!(),
-                selection: DisplayConfig {
-                        teardown_external_settings:TeardownExternalSettings::Previous,
-                        teardown_deck_location:RelativeLocation::Below
-                    }.into(),
-            },
-            PipelineActionDefinition {selection: VirtualScreen.into(),optional:None, id: todo!(), name: todo!(), }])
-    };
-
     #[cfg(debug_assertions)]
     let log_filepath = usdpl_back::api::dirs::home()
         .unwrap_or_else(|| "/tmp/".into())
@@ -71,13 +54,13 @@ fn main() -> Result<()> {
     #[cfg(not(debug_assertions))]
     let log_filepath = std::path::Path::new("/tmp").join(format!("{}.log", PACKAGE_NAME));
     #[cfg(debug_assertions)]
-    let old_log_filepath = usdpl_back::api::dirs::home()
-        .unwrap_or_else(|| "/tmp/".into())
-        .join(PACKAGE_NAME.to_owned() + ".log.old");
-    #[cfg(debug_assertions)]
     {
+        let old_log_filepath = usdpl_back::api::dirs::home()
+            .unwrap_or_else(|| "/tmp/".into())
+            .join(PACKAGE_NAME.to_owned() + ".log.old");
+
         if std::path::Path::new(&log_filepath).exists() {
-            std::fs::copy(&log_filepath, &old_log_filepath)
+            std::fs::copy(&log_filepath, old_log_filepath)
                 .expect("Unable to increment logs. Do you have write permissions?");
         }
     }
@@ -96,6 +79,15 @@ fn main() -> Result<()> {
     .unwrap();
     log::debug!("Logging to: {:?}.", log_filepath);
     println!("Logging to: {:?}", log_filepath);
+
+    #[cfg(not(debug_assertions))]
+    let config_dir = usdpl_back::api::dirs::home()
+        .unwrap_or_else(|| "/tmp/".into())
+        .join(".config/deck-ds");
+
+    #[cfg(debug_assertions)]
+    let config_dir = PathBuf::from(shellexpand::tilde("~/.config/deck-ds").to_string());
+
     log::info!("Starting back-end ({} v{})", PACKAGE_NAME, PACKAGE_VERSION);
     println!("Starting back-end ({} v{})", PACKAGE_NAME, PACKAGE_VERSION);
     log::info!(
@@ -106,6 +98,8 @@ fn main() -> Result<()> {
         "Current dir `{}`",
         std::env::current_dir().unwrap().display()
     );
+
+    println!("Config dir `{}`", config_dir.display());
 
     log::info!("home dir: {:?}", usdpl_back::api::dirs::home());
 
@@ -122,15 +116,33 @@ fn main() -> Result<()> {
 
     match mode {
         Modes::Autostart => {
-            let mut executor =
-                PipelineExecutor::new(PathBuf::from("./defaults"), PathBuf::from("todo"))?;
+            let definition = PipelineDefinition {
+                name: "Single-Window Dual-Screen".to_string(),
+                tags: vec!["NDS".to_string()],
+                id: PipelineDefinitionId::parse("d92ca87d-282f-4897-86f0-86a3af16bf3e"),
+                description: "Maps the internal and external monitor to a single virtual screen. Useful for emulators like melonDS which do not currently support multiple windows".to_string(),
+                selection: Selection::AllOf(vec![
+                    PipelineActionDefinition {
+                        optional: None,
+                        id: PipelineActionDefinitionId::parse("4ff26ece-dcab-4dd3-b941-96bd96a2c045"),
+                        name: "Display Configuration".to_string(),
+                        description: None,
+                        selection: DisplayConfig {
+                                teardown_external_settings:TeardownExternalSettings::Previous,
+                                teardown_deck_location:RelativeLocation::Below
+                            }.into(),
+                    },
+                    PipelineActionDefinition {selection: VirtualScreen.into(),optional:None, id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"), name: "Virtual Screen".to_string(), description: None,}])
+            };
 
-            let botw = "12146987087370911744";
-            // let gungeon = "311690";
-            // executor.exec(botw.to_string(), &pipeline)
-            todo!()
+            let autostart_settings = std::fs::read_to_string(config_dir.join("autostart.json"))
+                .with_context(|| "Could not find autostart configuration file")?;
+            let autostart_settings: AutoStartSettings = serde_json::from_str(&autostart_settings)?;
+
+            let mut executor = PipelineExecutor::new(PathBuf::from("/home/deck/homebrew/plugins/deck-ds/defaults"), config_dir)?;
+
+            executor.exec(&autostart_settings, &definition)
         }
-        Modes::DisplayTest => todo!(),
         Modes::Serve => {
             let instance = Instance::new(PORT)
                 .register("LOG", api::general::log_it())

@@ -8,21 +8,20 @@ use std::process::Command;
 use std::time::{Duration, Instant, SystemTime};
 use typemap::{Key, TypeMap};
 
-use crate::settings::Profile;
+use crate::pipeline::config::Selection;
+use crate::settings::autostart::AutoStartSettings;
 use crate::sys::kwin::{KWin, KWinScriptConfig};
 use crate::sys::process::AppProcess;
 use crate::sys::x_display::XDisplay;
 
-use super::action::display_teardown::{DisplayConfig, RelativeLocation, TeardownExternalSettings};
-use super::action::virtual_screen::VirtualScreen;
-use super::action::{ErasedPipelineAction, PipelineActionId};
+use super::action::{ErasedPipelineAction, PipelineAction};
+use super::config::PipelineDefinition;
 use super::dependency::{Dependency, DependencyExecutor, DependencyId};
 
 use super::{action::PipelineActionImpl, dependency::true_video_wall::TrueVideoWall};
 
 pub struct PipelineExecutor {
     ctx: PipelineContext,
-    actions: HashMap<PipelineActionId, Box<dyn ErasedPipelineAction>>,
 }
 
 pub struct PipelineContext {
@@ -81,7 +80,7 @@ impl PipelineExecutor {
         )
         .expect("TrueVideoWall script should exist");
 
-        let mut s = Self {
+        let s = Self {
             ctx: PipelineContext {
                 defaults_dir,
                 config_dir,
@@ -93,85 +92,70 @@ impl PipelineExecutor {
                 display: XDisplay::new()?,
                 state: TypeMap::new(),
             },
-            actions: HashMap::new(),
-        }
-        .with_action(DisplayConfig {
-            teardown_external_settings: TeardownExternalSettings::Previous,
-            teardown_deck_location: RelativeLocation::Below,
-        })
-        .with_action(VirtualScreen);
+        };
 
         Ok(s)
     }
 
-    fn with_action<A: ErasedPipelineAction + 'static>(mut self, action: A) -> Self {
-        self.actions.insert(action.id(), Box::new(action));
-        self
+    pub fn exec(
+        &mut self,
+        settings: &AutoStartSettings,
+        definition: &PipelineDefinition,
+    ) -> Result<()> {
+        let pipeline = self.build(definition);
+
+        // Install dependencies
+        for action in pipeline.iter() {
+            if let Err(err) = action.exec(&mut self.ctx, ActionType::Dependencies) {
+                return Err(err).with_context(|| "Error installing dependencies");
+            }
+        }
+
+        // Set up pipeline
+        let mut run = vec![];
+        let mut errors = vec![];
+
+        for action in pipeline {
+            run.push(action);
+            let res = run
+                .last()
+                .expect("action should exist")
+                .exec(&mut self.ctx, ActionType::Setup);
+
+            if let Err(err) = res {
+                errors.push(err);
+                break;
+            }
+        }
+
+        if errors.is_empty() {
+            // Run app
+            if let Err(err) = self.run_app(&settings.app_id) {
+                errors.push(err);
+            }
+        }
+
+        // Teardown pipeline
+        for action in run.into_iter().rev() {
+            let ctx = &mut self.ctx;
+
+            let res = action.exec(ctx, ActionType::Teardown);
+            if let Err(err) = res {
+                errors.push(err);
+            }
+        }
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!(
+                "Encountered errors executing pipeline: {:?}",
+                errors
+            ))
+        }
     }
 
-    // pub fn exec(&mut self, game_id: String, pipeline: &PipelineDefinition) -> Result<()> {
-    //     let res = self.build(pipeline);
-
-    //     match res {
-    //         Ok(pipeline) => {
-    //             // Install dependencies
-    //             for action in pipeline.iter() {
-    //                 if let Err(err) = action.exec(&mut self.ctx, ActionType::Dependencies) {
-    //                     return Err(err).with_context(|| "Error installing dependencies");
-    //                 }
-    //             }
-
-    //             // Set up pipeline
-    //             let mut run = vec![];
-    //             let mut errors = vec![];
-
-    //             for action in pipeline {
-    //                 run.push(action);
-    //                 let res = run
-    //                     .last()
-    //                     .expect("action should exist")
-    //                     .exec(&mut self.ctx, ActionType::Setup);
-
-    //                 if let Err(err) = res {
-    //                     errors.push(err);
-    //                     break;
-    //                 }
-    //             }
-
-    //             if errors.is_empty() {
-    //                 // Run app
-    //                 if let Err(err) = self.run_app(game_id) {
-    //                     errors.push(err);
-    //                 }
-    //             }
-
-    //             // Teardown pipeline
-    //             for action in run.into_iter().rev() {
-    //                 let ctx = &mut self.ctx;
-
-    //                 let res = action.exec(ctx, ActionType::Teardown);
-    //                 if let Err(err) = res {
-    //                     errors.push(err);
-    //                 }
-    //             }
-
-    //             if errors.is_empty() {
-    //                 Ok(())
-    //             } else {
-    //                 Err(anyhow::anyhow!(
-    //                     "Encountered errors executing pipeline: {:?}",
-    //                     errors
-    //                 ))
-    //             }
-    //         }
-    //         Err(err) => Err(anyhow::anyhow!(
-    //             "Encountered errors assembling pipeline: {:?}",
-    //             vec![err]
-    //         )),
-    //     }
-    // }
-
-    fn run_app(&self, app_id: String) -> Result<()> {
+    fn run_app(&self, app_id: &str) -> Result<()> {
         let status = Command::new("steam")
             .arg(format!("steam://rungameid/{app_id}"))
             .status()
@@ -183,7 +167,7 @@ impl PipelineExecutor {
             ));
         }
 
-        let app_process = AppProcess::find(Duration::from_secs(5))?;
+        let app_process = AppProcess::find(Duration::from_secs(30))?;
 
         let mut gilrs = gilrs::Gilrs::new().unwrap();
         let mut state = IndexMap::<GamepadId, (bool, bool, Option<Instant>)>::new();
@@ -265,43 +249,21 @@ impl PipelineExecutor {
         Ok(())
     }
 
-    fn build(&self, profile: &Profile) -> Result<Vec<Box<dyn ErasedPipelineAction>>> {
-        todo!()
-        // pipeline
-        //     .actions
-        //     .iter()
-        //     .map(|s| {
-        //         if matches!(s.optional, Some(true) | None) {
-        //             match &s.value {
-        //                 SelectionType::Single(a) => Ok(vec![a.clone()]),
-        //                 SelectionType::OneOf(values, key) => values
-        //                     .get(key)
-        //                     .ok_or(anyhow!("missing action {key}"))
-        //                     .map(|a| vec![a.clone()]),
-        //                 SelectionType::AnyOf(values, keys) => {
-        //                     let mut ordered = keys
-        //                         .iter()
-        //                         .map(|k| {
-        //                             values
-        //                                 .get_index_of(k)
-        //                                 .map(|i| (i, k))
-        //                                 .ok_or_else(|| anyhow!("missing action {k}"))
-        //                         })
-        //                         .collect::<Result<Vec<_>, _>>()?;
-        //                     ordered.sort_by_key(|v| v.0);
+    fn build<'a>(&self, definition: &'a PipelineDefinition) -> Vec<&'a PipelineAction> {
+        fn build_recursive(selection: &Selection) -> Vec<&PipelineAction> {
+            match selection {
+                Selection::Action(action) => vec![action],
+                Selection::OneOf { selection, actions } => {
+                    build_recursive(&actions[selection].selection)
+                }
+                Selection::AllOf(definitions) => definitions
+                    .iter()
+                    .flat_map(|d| build_recursive(&d.selection))
+                    .collect(),
+            }
+        }
 
-        //                     Ok(ordered
-        //                         .into_iter()
-        //                         .map(|(_, k)| values[k].clone())
-        //                         .collect())
-        //                 }
-        //             }
-        //         } else {
-        //             Ok(vec![])
-        //         }
-        //     })
-        //     .collect::<Result<Vec<_>, _>>()
-        //     .map(|v| v.into_iter().flatten().map(|v| v.) .collect())
+        build_recursive(&definition.selection)
     }
 }
 
@@ -311,7 +273,7 @@ enum ActionType {
     Teardown,
 }
 
-impl dyn ErasedPipelineAction {
+impl PipelineAction {
     fn exec(&self, ctx: &mut PipelineContext, action: ActionType) -> Result<()> {
         match action {
             ActionType::Dependencies => {
