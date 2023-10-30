@@ -1,10 +1,7 @@
-use std::cmp::Ordering;
-
 use anyhow::{Ok, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use xrandr::{Mode, Monitor, Output, Relation, ScreenResources, XHandle, XId};
+use xrandr::{Relation, XId};
 
 use crate::pipeline::executor::PipelineContext;
 

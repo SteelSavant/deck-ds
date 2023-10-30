@@ -1,5 +1,4 @@
 use anyhow::Result;
-use std::process::Command;
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

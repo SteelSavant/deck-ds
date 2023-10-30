@@ -88,7 +88,7 @@ impl PipelineExecutor {
                     TrueVideoWall::id(),
                     Dependency::TrueVideoWall(TrueVideoWall),
                 )]),
-                kwin: kwin,
+                kwin,
                 display: XDisplay::new()?,
                 state: TypeMap::new(),
             },

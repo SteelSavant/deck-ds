@@ -1,11 +1,7 @@
 use anyhow::Result;
-use schemars::{
-    schema::{RootSchema, Schema},
-    JsonSchema,
-};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use xrandr::{Relation, ScreenResources};
+use xrandr::Relation;
 
 use crate::{
     pipeline::{
