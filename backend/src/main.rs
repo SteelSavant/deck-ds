@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use include_dir::{include_dir, Dir};
 use std::path::{Path, PathBuf};
 
 use simplelog::{LevelFilter, WriteLogger};
@@ -45,6 +46,8 @@ enum Modes {
         output: String,
     },
 }
+
+static ASSETS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/assets");
 
 fn main() -> Result<()> {
     #[cfg(debug_assertions)]

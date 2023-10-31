@@ -1,0 +1,7 @@
+[Desktop Entry]
+Comment=Runs DeckDS plugin autostart script for dual screen applications.
+Exec=$Exec
+Path=$Path
+Name=DeckDS
+Type=Application
+
