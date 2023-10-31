@@ -719,6 +719,7 @@ mod tests {
         assert_eq!(Some(1), mode);
         Ok(())
     }
+
     #[test]
     fn test_get_preferred_mode_max_res_native_ar() -> Result<()> {
         let modes = vec![
