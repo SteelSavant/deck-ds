@@ -143,7 +143,7 @@ fn main() -> Result<()> {
             let autostart_settings: AutoStartSettings = serde_json::from_str(&autostart_settings)?;
 
             let mut executor = PipelineExecutor::new(
-                PathBuf::from("/home/deck/homebrew/plugins/deck-ds/defaults"),
+                &ASSETS_DIR,
                 config_dir,
             )?;
 

@@ -1,4 +1,5 @@
 use anyhow::Result;
+use include_dir::{Dir, File};
 use std::{
     collections::HashMap,
     ffi::OsStr,
@@ -7,8 +8,8 @@ use std::{
 };
 
 #[derive(Debug, Clone)]
-pub struct KWin {
-    bundles_path: PathBuf,
+pub struct KWin<'a> {
+    bundles_dir: &'a Dir<'a>,
     scripts: HashMap<String, KWinScriptConfig>,
 }
 
@@ -18,22 +19,21 @@ pub struct KWinScriptConfig {
     pub bundle_name: PathBuf,
 }
 
-impl KWin {
-    pub fn new(bundles_path: PathBuf) -> Self {
-        println!("creating KWin with bundles at {:?}", bundles_path);
+impl<'a> KWin<'a> {
+    pub fn new(bundles_dir: &'a Dir<'a>) -> Self {
+        println!("creating KWin with bundles at {:?}", bundles_dir);
 
-        assert!(bundles_path.is_dir());
 
         Self {
-            bundles_path,
+            bundles_dir,
             scripts: HashMap::new(),
         }
     }
 
-    pub fn register(&mut self, name: String, config: KWinScriptConfig) -> Result<()> {
-        if self.bundle_exists(&config.bundle_name) {
+    pub fn register(&mut self, name: String, config: KWinScriptConfig) -> Result<&mut Self> {
+        if self.get_bundle(&config.bundle_name).is_some() {
             self.scripts.insert(name, config);
-            Ok(())
+            Ok(self)
         } else {
             Err(anyhow::anyhow!(
                 "Could not find kwin bundle {}",
@@ -46,9 +46,9 @@ impl KWin {
         let script = self.scripts.get(script_name).ok_or(anyhow::anyhow!(
             "No kwin script named {script_name} registered"
         ))?;
-        let bundle_path = self.get_bundle_path(&script.bundle_name);
+        let bundle = self.get_bundle(&script.bundle_name).ok_or(anyhow::anyhow!("could not find bundle {script_name} to install"))?;
         let output = Command::new("kpackagetool5")
-            .args([&OsStr::new("i"), bundle_path.as_os_str()])
+            .args([&OsStr::new("i"), bundle.path().as_os_str()])
             .output()?;
         let stdout = String::from_utf8_lossy(&output.stdout);
         if output.status.success() || stdout.contains("already installed") {
@@ -88,12 +88,10 @@ impl KWin {
         }
     }
 
-    fn bundle_exists<P: AsRef<Path>>(&self, bundle_name: P) -> bool {
-        self.get_bundle_path(bundle_name).exists()
-    }
-
-    fn get_bundle_path<P: AsRef<Path>>(&self, bundle_name: P) -> PathBuf {
-        self.bundles_path.join(bundle_name)
+    fn get_bundle<P: AsRef<Path>>(&self, bundle_name: P) -> Option<&'a File> {
+        let rf = bundle_name.as_ref();
+        self.bundles_dir.files().filter(move |f| f.path().ends_with(rf)).next()
+        // self.bundles_dir.get_file(bundle_name)
     }
 
     fn reconfigure(&self) -> Result<()> {

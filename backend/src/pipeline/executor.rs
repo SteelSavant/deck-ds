@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
+use include_dir::Dir;
 use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::marker::PhantomData;
@@ -20,19 +21,17 @@ use super::dependency::{Dependency, DependencyExecutor, DependencyId};
 
 use super::{action::PipelineActionImpl, dependency::true_video_wall::TrueVideoWall};
 
-pub struct PipelineExecutor {
-    ctx: PipelineContext,
+pub struct PipelineExecutor<'a> {
+    ctx: PipelineContext<'a>,
 }
 
-pub struct PipelineContext {
-    /// path to directory containing contents of decky "defaults" folder
-    pub defaults_dir: PathBuf,
+pub struct PipelineContext<'a> {
     /// path to directory containing user configuration files
     pub config_dir: PathBuf,
     /// known dependencies
     pub dependencies: HashMap<DependencyId, Dependency>,
     /// KWin script handler
-    pub kwin: KWin,
+    pub kwin: KWin<'a>,
     /// Display handler,
     pub display: XDisplay,
     /// pipeline state
@@ -51,7 +50,7 @@ where
     type Value = T;
 }
 
-impl PipelineContext {
+impl<'a> PipelineContext<'a> {
     pub fn get_state<P: PipelineActionImpl + 'static>(&self) -> Option<&P::State> {
         self.state.get::<StateKey<P, P::State>>()
     }
@@ -68,21 +67,33 @@ impl PipelineContext {
     }
 }
 
-impl PipelineExecutor {
-    pub fn new(defaults_dir: PathBuf, config_dir: PathBuf) -> Result<Self> {
-        let mut kwin = KWin::new(defaults_dir.join("kwin"));
+impl<'a> PipelineExecutor<'a> {
+    pub fn new(assets_dir: &'a Dir<'a>, config_dir: PathBuf) -> Result<Self> {
+        let mut kwin = KWin::new(
+            assets_dir
+                .get_dir("kwin")
+                .ok_or(anyhow!("kwin dir does not exist"))?
+                ,
+        );
         kwin.register(
             "TrueVideoWall".to_string(),
             KWinScriptConfig {
                 enabled_key: "truevideowallEnabled".to_string(),
-                bundle_name: Path::new("170914-truevideowall-1.0.kwinscript").to_path_buf(),
+                bundle_name: Path::new("truevideowall-v1.kwinscript").to_path_buf(),
             },
         )
-        .expect("TrueVideoWall script should exist");
+        .expect("TrueVideoWall script should exist")
+        .register(
+            "Emulator Windowing".to_string(),
+            KWinScriptConfig {
+                enabled_key: "emulatorwindowingEnabled".to_string(),
+                bundle_name: Path::new("emulatorwindowing-v1.kwinscript").to_path_buf(),
+            },
+        )
+        .expect("EmulatorWindowing script should exist");
 
         let s = Self {
             ctx: PipelineContext {
-                defaults_dir,
                 config_dir,
                 dependencies: HashMap::from([(
                     TrueVideoWall::id(),
@@ -249,7 +260,7 @@ impl PipelineExecutor {
         Ok(())
     }
 
-    fn build<'a>(&self, definition: &'a PipelineDefinition) -> Vec<&'a PipelineAction> {
+    fn build<'b>(&self, definition: &'b PipelineDefinition) -> Vec<&'b PipelineAction> {
         fn build_recursive(selection: &Selection) -> Vec<&PipelineAction> {
             match selection {
                 Selection::Action(action) => vec![action],

@@ -1,6 +1,9 @@
 pub mod true_video_wall;
+pub mod emulator_windowing;
 
 use self::true_video_wall::TrueVideoWall;
+use self::emulator_windowing::EmulatorWindowing;
+
 use anyhow::Result;
 
 use super::executor::PipelineContext;
@@ -14,6 +17,7 @@ pub trait DependencyExecutor {
 #[enum_delegate::implement(DependencyExecutor)]
 pub enum Dependency {
     TrueVideoWall(TrueVideoWall),
+    EmulatorWindowing(EmulatorWindowing),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
