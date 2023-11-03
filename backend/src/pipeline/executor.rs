@@ -79,7 +79,7 @@ impl<'a> PipelineExecutor<'a> {
             "TrueVideoWall".to_string(),
             KWinScriptConfig {
                 enabled_key: "truevideowallEnabled".to_string(),
-                bundle_name: Path::new("truevideowall-v1.kwinscript").to_path_buf(),
+                bundle_name: Path::new("truevideowall-1.0.kwinscript").to_path_buf(),
             },
         )
         .expect("TrueVideoWall script should exist")
@@ -87,7 +87,7 @@ impl<'a> PipelineExecutor<'a> {
             "EmulatorWindowing".to_string(),
             KWinScriptConfig {
                 enabled_key: "emulatorwindowingEnabled".to_string(),
-                bundle_name: Path::new("emulatorwindowing-v1.kwinscript").to_path_buf(),
+                bundle_name: Path::new("emulatorwindowing-1.0.kwinscript").to_path_buf(),
             },
         )
         .expect("EmulatorWindowing script should exist");
