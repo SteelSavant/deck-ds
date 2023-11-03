@@ -23,7 +23,6 @@ impl<'a> KWin<'a> {
     pub fn new(bundles_dir: &'a Dir<'a>) -> Self {
         println!("creating KWin with bundles at {:?}", bundles_dir);
 
-
         Self {
             bundles_dir,
             scripts: HashMap::new(),
@@ -46,7 +45,9 @@ impl<'a> KWin<'a> {
         let script = self.scripts.get(script_name).ok_or(anyhow::anyhow!(
             "No kwin script named {script_name} registered"
         ))?;
-        let bundle = self.get_bundle(&script.bundle_name).ok_or(anyhow::anyhow!("could not find bundle {script_name} to install"))?;
+        let bundle = self.get_bundle(&script.bundle_name).ok_or(anyhow::anyhow!(
+            "could not find bundle {script_name} to install"
+        ))?;
         let output = Command::new("kpackagetool5")
             .args([&OsStr::new("i"), bundle.path().as_os_str()])
             .output()?;
@@ -90,7 +91,10 @@ impl<'a> KWin<'a> {
 
     fn get_bundle<P: AsRef<Path>>(&self, bundle_name: P) -> Option<&'a File> {
         let rf = bundle_name.as_ref();
-        self.bundles_dir.files().filter(move |f| f.path().ends_with(rf)).next()
+        self.bundles_dir
+            .files()
+            .filter(move |f| f.path().ends_with(rf))
+            .next()
         // self.bundles_dir.get_file(bundle_name)
     }
 

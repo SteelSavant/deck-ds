@@ -3,7 +3,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use xrandr::{Relation, XId};
 
-use crate::pipeline::executor::PipelineContext;
+use crate::{pipeline::executor::PipelineContext, sys::x_display::ModePreference};
 
 use super::{PipelineActionId, PipelineActionImpl};
 
@@ -48,13 +48,8 @@ pub enum TeardownExternalSettings {
     Previous,
     /// Native resolution
     Native,
-    /// Highest resolution <= h by v with refresh rate r. If use_native_aspect_ratio is true, select closest with native aspect ratio.
-    Limited {
-        h: u16,
-        v: u16,
-        r: u16,
-        use_native_aspect_ratio: bool,
-    },
+    /// Resolution based on specific settings
+    Preference(ModePreference),
 }
 
 impl PipelineActionImpl for DisplayConfig {
@@ -113,13 +108,34 @@ impl PipelineActionImpl for DisplayConfig {
                         }
                         .teardown(ctx),
                     },
-                    TeardownExternalSettings::Native => todo!(),
-                    TeardownExternalSettings::Limited {
-                        h,
-                        v,
-                        r,
-                        use_native_aspect_ratio,
-                    } => todo!(),
+                    TeardownExternalSettings::Native => {
+                        let mode = current_output
+                            .preferred_modes
+                            .iter()
+                            .map(|mode| ctx.display.get_mode(*mode))
+                            .collect::<Result<Vec<_>, _>>()?;
+                        let native_mode = mode.iter().reduce(|acc, e| {
+                            match (acc.width * acc.height).cmp(&(e.width * e.height)) {
+                                std::cmp::Ordering::Less => e,
+                                std::cmp::Ordering::Greater => acc,
+                                std::cmp::Ordering::Equal => {
+                                    if acc.rate > e.rate {
+                                        acc
+                                    } else {
+                                        e
+                                    }
+                                }
+                            }
+                        });
+                        if let Some(mode) = native_mode {
+                            ctx.display.set_output_mode(&current_output, &mode)
+                        } else {
+                            Ok(())
+                        }
+                    }
+                    TeardownExternalSettings::Preference(preference) => ctx
+                        .display
+                        .set_or_create_preferred_mode(&current_output, &preference),
                 }?;
 
                 let deck = ctx.display.get_embedded_output()?.unwrap();

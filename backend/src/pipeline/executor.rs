@@ -17,6 +17,7 @@ use crate::sys::x_display::XDisplay;
 
 use super::action::{ErasedPipelineAction, PipelineAction};
 use super::config::PipelineDefinition;
+use super::dependency::emulator_windowing::EmulatorWindowing;
 use super::dependency::{Dependency, DependencyExecutor, DependencyId};
 
 use super::{action::PipelineActionImpl, dependency::true_video_wall::TrueVideoWall};
@@ -72,8 +73,7 @@ impl<'a> PipelineExecutor<'a> {
         let mut kwin = KWin::new(
             assets_dir
                 .get_dir("kwin")
-                .ok_or(anyhow!("kwin dir does not exist"))?
-                ,
+                .ok_or(anyhow!("kwin dir does not exist"))?,
         );
         kwin.register(
             "TrueVideoWall".to_string(),
@@ -84,7 +84,7 @@ impl<'a> PipelineExecutor<'a> {
         )
         .expect("TrueVideoWall script should exist")
         .register(
-            "Emulator Windowing".to_string(),
+            "EmulatorWindowing".to_string(),
             KWinScriptConfig {
                 enabled_key: "emulatorwindowingEnabled".to_string(),
                 bundle_name: Path::new("emulatorwindowing-v1.kwinscript").to_path_buf(),
@@ -95,10 +95,16 @@ impl<'a> PipelineExecutor<'a> {
         let s = Self {
             ctx: PipelineContext {
                 config_dir,
-                dependencies: HashMap::from([(
-                    TrueVideoWall::id(),
-                    Dependency::TrueVideoWall(TrueVideoWall),
-                )]),
+                dependencies: HashMap::from([
+                    (
+                        TrueVideoWall::id(),
+                        Dependency::TrueVideoWall(TrueVideoWall),
+                    ),
+                    (
+                        EmulatorWindowing::id(),
+                        Dependency::EmulatorWindowing(EmulatorWindowing),
+                    ),
+                ]),
                 kwin,
                 display: XDisplay::new()?,
                 state: TypeMap::new(),

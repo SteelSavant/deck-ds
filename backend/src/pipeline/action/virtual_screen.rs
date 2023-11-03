@@ -63,6 +63,11 @@ impl PipelineActionImpl for VirtualScreen {
             .set_output_position(&deck, &Relation::Below, &external)
     }
 
+    fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {
+        ctx.kwin.set_script_enabled("TrueVideoWall", false)?;
+        Ok(())
+    }
+
     fn get_dependencies(&self) -> Vec<DependencyId> {
         vec![TrueVideoWall::id()]
     }

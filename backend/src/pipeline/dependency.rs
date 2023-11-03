@@ -1,8 +1,8 @@
-pub mod true_video_wall;
 pub mod emulator_windowing;
+pub mod true_video_wall;
 
-use self::true_video_wall::TrueVideoWall;
 use self::emulator_windowing::EmulatorWindowing;
+use self::true_video_wall::TrueVideoWall;
 
 use anyhow::Result;
 

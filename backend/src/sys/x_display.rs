@@ -2,6 +2,8 @@ use std::{cmp::Ordering, process::Command, str::FromStr};
 
 use float_cmp::approx_eq;
 use regex::Regex;
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use xrandr::{Mode, Output, Relation, ScreenResources, XHandle, XId};
 
 use anyhow::{Ok, Result};
@@ -13,34 +15,34 @@ pub struct XDisplay {
     timing_fallback: TimingFallbackMethod,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
 pub struct ModePreference {
     pub resolution: ModeOption<Resolution>,
     pub aspect_ratio: AspectRatioOption,
     pub refresh: ModeOption<f64>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
 pub enum ModeOption<T> {
     Exact(T),
     AtLeast(T),
     AtMost(T),
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
 pub struct Resolution {
     pub w: u32, // TODO::enforce w is multiple of 8 for CVT
     pub h: u32,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
 pub enum AspectRatioOption {
     Any,
     Native,
     Exact(f32),
 }
 
-#[derive(Debug, Default, Copy, Clone)]
+#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, JsonSchema)]
 pub enum TimingFallbackMethod {
     #[default]
     CvtR,

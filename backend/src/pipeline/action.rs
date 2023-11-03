@@ -3,7 +3,9 @@ use std::fmt::Debug;
 use schemars::{schema::RootSchema, schema_for, JsonSchema};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use self::{display_config::DisplayConfig, virtual_screen::VirtualScreen};
+use self::{
+    display_config::DisplayConfig, multi_window::MultiWindow, virtual_screen::VirtualScreen,
+};
 
 use super::{
     config::{PipelineActionId, Selection},
@@ -13,6 +15,7 @@ use super::{
 use anyhow::Result;
 
 pub mod display_config;
+pub mod multi_window;
 pub mod virtual_screen;
 
 pub trait PipelineActionImpl: DeserializeOwned + Serialize {
@@ -88,6 +91,7 @@ where
 pub enum PipelineAction {
     DisplayConfig(DisplayConfig),
     VirtualScreen(VirtualScreen),
+    MultiWindow(MultiWindow),
 }
 
 impl<T: Into<PipelineAction>> From<T> for Selection {
