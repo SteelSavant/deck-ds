@@ -280,7 +280,7 @@ impl<'a> PipelineExecutor<'a> {
             }
         }
 
-        build_recursive(&definition.selection)
+        build_recursive(&definition.action.selection)
     }
 }
 

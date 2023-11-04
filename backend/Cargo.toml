@@ -75,3 +75,6 @@ codegen-units = 16
 opt-level = 2
 debug-assertions = false
 overflow-checks = false
+
+[dev-dependencies]
+pretty_assertions = "1.4.0"

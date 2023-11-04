@@ -1,11 +1,8 @@
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
-use crate::pipeline::config::{PipelineDefinition, PipelineDefinitionTemplate};
+use indexmap::IndexMap;
+use serde_json::Value;
+
+use crate::pipeline::config::PipelineDefinitionId;
 
 pub mod autostart;
-
-pub struct Settings {
-    dir: PathBuf,
-    templates: Vec<PipelineDefinitionTemplate>,
-    profiles: Vec<PipelineDefinition>,
-}

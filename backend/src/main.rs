@@ -14,7 +14,6 @@ use deck_ds::{
         action::{
             display_config::{DisplayConfig, RelativeLocation, TeardownExternalSettings},
             multi_window::MultiWindow,
-            virtual_screen::VirtualScreen,
         },
         config::{
             PipelineActionDefinition, PipelineActionDefinitionId, PipelineDefinition,
@@ -120,31 +119,35 @@ fn main() -> Result<()> {
 
     match mode {
         Modes::Autostart => {
-            let single_window_dual_screen = PipelineDefinition {
-                name: "Single-Window Dual-Screen".to_string(),
-                tags: vec!["NDS".to_string()],
-                id: PipelineDefinitionId::parse("d92ca87d-282f-4897-86f0-86a3af16bf3e"),
-                description: "Maps the internal and external monitor to a single virtual screen. Useful for emulators like melonDS which do not currently support multiple windows".to_string(),
-                selection: Selection::AllOf(vec![
-                    PipelineActionDefinition {
-                        optional: None,
-                        id: PipelineActionDefinitionId::parse("4ff26ece-dcab-4dd3-b941-96bd96a2c045"),
-                        name: "Display Configuration".to_string(),
-                        description: None,
-                        selection: DisplayConfig {
-                                teardown_external_settings:TeardownExternalSettings::Previous,
-                                teardown_deck_location:RelativeLocation::Below
-                            }.into(),
-                    },
-                    PipelineActionDefinition {selection: VirtualScreen.into(),optional:None, id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"), name: "Virtual Screen".to_string(), description: None,}])
-            };
+            // let single_window_dual_screen = PipelineDefinition::new(
+            //     PipelineDefinitionId::parse("d92ca87d-282f-4897-86f0-86a3af16bf3e"),
 
-            let multi_window_dual_screen = PipelineDefinition {
-                name: "Multi-Window Dual-Screen".to_string(),
-                tags: vec!["3DS".to_string(), "WIIU".to_string()]
-                , id: PipelineDefinitionId::parse("b0d6443d-6ae7-4085-87c1-b52aae5001a1"),
-                description: "Maps primary and secondary windows to different screens. Useful for emulators like Cemu and Citra".to_string(),
-                selection: Selection::AllOf(vec![
+            //     "Single-Window Dual-Screen".to_string(),
+            //     "Maps the internal and external monitor to a single virtual screen. Useful for emulators like melonDS which do not currently support multiple windows".to_string(),
+
+            //     vec!["NDS".to_string()],
+            //     Selection::AllOf(vec![
+            //         PipelineActionDefinition {
+            //             optional: None,
+            //             id: PipelineActionDefinitionId::parse("4ff26ece-dcab-4dd3-b941-96bd96a2c045"),
+            //             name: "Display Configuration".to_string(),
+            //             description: None,
+            //             selection: DisplayConfig {
+            //                     teardown_external_settings:TeardownExternalSettings::Previous,
+            //                     teardown_deck_location:RelativeLocation::Below
+            //                 }.into(),
+            //         },
+            //         PipelineActionDefinition {selection: VirtualScreen.into(),optional:None, id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"), name: "Virtual Screen".to_string(), description: None,}])
+            //     );
+
+            let multi_window_dual_screen = PipelineDefinition::new(
+                PipelineDefinitionId::parse("b0d6443d-6ae7-4085-87c1-b52aae5001a1"),
+                "Multi-Window Dual-Screen".to_string(),
+                "Maps primary and secondary windows to different screens. Useful for emulators like Cemu and Citra".to_string(),
+                vec!["3DS".to_string(), "WIIU".to_string(),
+                ],
+
+                Selection::AllOf(vec![
                     PipelineActionDefinition {
                         optional: None,
                         id: PipelineActionDefinitionId::parse("4ff26ece-dcab-4dd3-b941-96bd96a2c045"),
@@ -157,7 +160,7 @@ fn main() -> Result<()> {
                     },
                     PipelineActionDefinition {selection: MultiWindow.into(),optional:None, id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"), name: "Virtual Screen".to_string(), description: None,}
                 ]),
-            };
+                );
 
             let autostart_settings = std::fs::read_to_string(config_dir.join("autostart.json"))
                 .with_context(|| "Could not find autostart configuration file")?;
