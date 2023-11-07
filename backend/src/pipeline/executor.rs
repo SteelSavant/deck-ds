@@ -4,14 +4,14 @@ use include_dir::Dir;
 use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
 use std::time::{Duration, Instant, SystemTime};
 use typemap::{Key, TypeMap};
 
 use crate::pipeline::config::Selection;
-use crate::settings::autostart::AutoStartSettings;
-use crate::sys::kwin::{KWin, KWinScriptConfig};
+use crate::settings::AppId;
+use crate::sys::kwin::KWin;
 use crate::sys::process::AppProcess;
 use crate::sys::x_display::XDisplay;
 
@@ -23,6 +23,8 @@ use super::dependency::{Dependency, DependencyExecutor, DependencyId};
 use super::{action::PipelineActionImpl, dependency::true_video_wall::TrueVideoWall};
 
 pub struct PipelineExecutor<'a> {
+    app_id: AppId,
+    definition: PipelineDefinition,
     ctx: PipelineContext<'a>,
 }
 
@@ -69,30 +71,15 @@ impl<'a> PipelineContext<'a> {
 }
 
 impl<'a> PipelineExecutor<'a> {
-    pub fn new(assets_dir: &'a Dir<'a>, config_dir: PathBuf) -> Result<Self> {
-        let mut kwin = KWin::new(
-            assets_dir
-                .get_dir("kwin")
-                .ok_or(anyhow!("kwin dir does not exist"))?,
-        );
-        kwin.register(
-            "TrueVideoWall".to_string(),
-            KWinScriptConfig {
-                enabled_key: "truevideowallEnabled".to_string(),
-                bundle_name: Path::new("truevideowall-v1.kwinscript").to_path_buf(),
-            },
-        )
-        .expect("TrueVideoWall script should exist")
-        .register(
-            "EmulatorWindowing".to_string(),
-            KWinScriptConfig {
-                enabled_key: "emulatorwindowingEnabled".to_string(),
-                bundle_name: Path::new("emulatorwindowing-v1.kwinscript").to_path_buf(),
-            },
-        )
-        .expect("EmulatorWindowing script should exist");
-
+    pub fn new(
+        app_id: AppId,
+        pipeline_definition: PipelineDefinition,
+        assets_dir: &'a Dir<'a>,
+        config_dir: PathBuf,
+    ) -> Result<Self> {
         let s = Self {
+            app_id,
+            definition: pipeline_definition,
             ctx: PipelineContext {
                 config_dir,
                 dependencies: HashMap::from([
@@ -105,7 +92,7 @@ impl<'a> PipelineExecutor<'a> {
                         Dependency::EmulatorWindowing(EmulatorWindowing),
                     ),
                 ]),
-                kwin,
+                kwin: KWin::preregistered(assets_dir)?,
                 display: XDisplay::new()?,
                 state: TypeMap::new(),
             },
@@ -114,12 +101,8 @@ impl<'a> PipelineExecutor<'a> {
         Ok(s)
     }
 
-    pub fn exec(
-        &mut self,
-        settings: &AutoStartSettings,
-        definition: &PipelineDefinition,
-    ) -> Result<()> {
-        let pipeline = self.build(definition);
+    pub fn exec(&mut self) -> Result<()> {
+        let pipeline = self.definition.build_actions();
 
         // Install dependencies
         for action in pipeline.iter() {
@@ -147,7 +130,7 @@ impl<'a> PipelineExecutor<'a> {
 
         if errors.is_empty() {
             // Run app
-            if let Err(err) = self.run_app(&settings.app_id) {
+            if let Err(err) = self.run_app(self.app_id.raw()) {
                 errors.push(err);
             }
         }
@@ -265,8 +248,16 @@ impl<'a> PipelineExecutor<'a> {
 
         Ok(())
     }
+}
 
-    fn build<'b>(&self, definition: &'b PipelineDefinition) -> Vec<&'b PipelineAction> {
+enum ActionType {
+    Dependencies,
+    Setup,
+    Teardown,
+}
+
+impl PipelineDefinition {
+    fn build_actions(&self) -> Vec<&PipelineAction> {
         fn build_recursive(selection: &Selection) -> Vec<&PipelineAction> {
             match selection {
                 Selection::Action(action) => vec![action],
@@ -280,14 +271,8 @@ impl<'a> PipelineExecutor<'a> {
             }
         }
 
-        build_recursive(&definition.action.selection)
+        build_recursive(&self.action.selection)
     }
-}
-
-enum ActionType {
-    Dependencies,
-    Setup,
-    Teardown,
 }
 
 impl PipelineAction {

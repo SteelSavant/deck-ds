@@ -1,11 +1,5 @@
 use serde_json::Value;
 
-use crate::pipeline::config::{PipelineActionDefinition, PipelineActionDefinitionId, Selection};
-
-use self::internal::Patch;
-
-use super::Overrides;
-
 pub fn patch_json(current: Value, patch: Value) -> Value {
     match current {
         Value::Object(mut obj) => match patch {
@@ -22,61 +16,6 @@ pub fn patch_json(current: Value, patch: Value) -> Value {
             _ => patch,
         },
         _ => patch,
-    }
-}
-
-#[doc(hidden)]
-mod internal {
-    pub struct Patch;
-}
-
-pub trait Patchable: Clone {
-    fn get_definition_mut(
-        &mut self,
-        id: &PipelineActionDefinitionId,
-    ) -> Option<&mut PipelineActionDefinition>;
-
-    fn patched_with(&self, overrides: Overrides) -> Self {
-        let mut patched = (*self).clone();
-        for (id, value) in overrides.enabled.into_iter() {
-            patched.patch_enabled(&id, value, Patch);
-        }
-
-        for (id, value) in overrides.fields.into_iter() {
-            patched.patch_override(&id, value, Patch);
-        }
-        patched
-    }
-
-    #[doc(hidden)]
-    fn patch_enabled(&mut self, id: &PipelineActionDefinitionId, value: bool, _: Patch) {
-        let def = self.get_definition_mut(id);
-        if let Some(def) = def {
-            def.optional = def.optional.map(|_| value);
-        }
-    }
-
-    #[doc(hidden)]
-    fn patch_override(&mut self, id: &PipelineActionDefinitionId, value: Value, _: Patch) {
-        let def = self.get_definition_mut(id);
-        if let Some(def) = def {
-            def.selection = match &def.selection {
-                Selection::Action(action) => {
-                    let current_json = serde_json::to_value(action).unwrap();
-                    Selection::Action(
-                        serde_json::from_value(patch_json(current_json, value)).unwrap(),
-                    )
-                }
-                Selection::OneOf { actions, .. } => {
-                    let new_selection = value["selection"].as_str().unwrap();
-                    Selection::OneOf {
-                        selection: PipelineActionDefinitionId::parse(new_selection),
-                        actions: actions.clone(), // TODO::avoid this clone
-                    }
-                }
-                Selection::AllOf(_) => panic!("AllOf definitions are not patchable!"),
-            }
-        }
     }
 }
 

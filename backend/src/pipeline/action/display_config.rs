@@ -128,7 +128,7 @@ impl PipelineActionImpl for DisplayConfig {
                             }
                         });
                         if let Some(mode) = native_mode {
-                            ctx.display.set_output_mode(&current_output, &mode)
+                            ctx.display.set_output_mode(&current_output, mode)
                         } else {
                             Ok(())
                         }

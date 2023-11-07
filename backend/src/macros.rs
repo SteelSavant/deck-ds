@@ -2,6 +2,7 @@ macro_rules! newtype_uuid {
     ($id: ident) => {
         #[derive(
             Debug,
+            Copy,
             Clone,
             serde::Serialize,
             serde::Deserialize,
@@ -14,7 +15,11 @@ macro_rules! newtype_uuid {
         pub struct $id(uuid::Uuid);
 
         impl $id {
-            pub fn new(uuid: uuid::Uuid) -> Self {
+            pub fn new() -> Self {
+                Self(uuid::Uuid::new_v4())
+            }
+
+            pub fn from_uuid(uuid: uuid::Uuid) -> Self {
                 Self(uuid)
             }
 
@@ -28,6 +33,12 @@ macro_rules! newtype_uuid {
 
             pub fn raw(&self) -> String {
                 self.0.to_string()
+            }
+        }
+
+        impl Default for $id {
+            fn default() -> Self {
+                Self::new()
             }
         }
     };
@@ -49,12 +60,12 @@ macro_rules! newtype_strid {
         pub struct $id(String);
 
         impl $id {
-            pub fn new(id: String) -> Self {
-                Self(id)
+            pub fn new(id: &str) -> Self {
+                Self(id.to_string())
             }
 
-            pub fn raw(&self) -> String {
-                self.0.to_string()
+            pub fn raw(&self) -> &str {
+                &self.0
             }
         }
     };

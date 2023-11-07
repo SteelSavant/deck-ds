@@ -1,12 +1,13 @@
 use crate::{
     macros::newtype_uuid,
-    settings::patch::{patch_json, Patchable},
+    settings::{patch::patch_json, Overrides},
 };
 use anyhow::Result;
 
 use indexmap::IndexMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use super::action::PipelineAction;
 
@@ -76,7 +77,42 @@ pub enum Selection {
     AllOf(Vec<PipelineActionDefinition>),
 }
 
-impl Patchable for PipelineDefinition {
+impl PipelineDefinition {
+    pub fn new(
+        id: PipelineDefinitionId,
+        name: String,
+        description: String,
+        tags: Vec<String>,
+        selection: Selection,
+    ) -> Self {
+        let action = PipelineActionDefinition {
+            id: PipelineActionDefinitionId::from_uuid(id.0),
+            name: "root".to_string(),
+            description: None,
+            selection,
+            optional: None,
+        };
+        Self {
+            action,
+            name,
+            tags,
+            id,
+            description,
+        }
+    }
+
+    pub fn patched_with(&self, overrides: Overrides) -> Self {
+        let mut patched = (*self).clone();
+        for (id, value) in overrides.enabled.into_iter() {
+            patched.patch_enabled(&id, value);
+        }
+
+        for (id, value) in overrides.fields.into_iter() {
+            patched.patch_override(&id, value);
+        }
+        patched
+    }
+
     fn get_definition_mut(
         &mut self,
         id: &PipelineActionDefinitionId,
@@ -104,29 +140,33 @@ impl Patchable for PipelineDefinition {
 
         get_definition_rec(&mut self.action, id)
     }
-}
 
-impl PipelineDefinition {
-    pub fn new(
-        id: PipelineDefinitionId,
-        name: String,
-        description: String,
-        tags: Vec<String>,
-        selection: Selection,
-    ) -> Self {
-        let action = PipelineActionDefinition {
-            id: PipelineActionDefinitionId::new(id.0.clone()),
-            name: "root".to_string(),
-            description: None,
-            selection,
-            optional: None,
-        };
-        Self {
-            action,
-            name,
-            tags,
-            id,
-            description,
+    fn patch_enabled(&mut self, id: &PipelineActionDefinitionId, value: bool) {
+        let def = self.get_definition_mut(id);
+        if let Some(def) = def {
+            def.optional = def.optional.map(|_| value);
+        }
+    }
+
+    fn patch_override(&mut self, id: &PipelineActionDefinitionId, value: Value) {
+        let def = self.get_definition_mut(id);
+        if let Some(def) = def {
+            def.selection = match &def.selection {
+                Selection::Action(action) => {
+                    let current_json = serde_json::to_value(action).unwrap();
+                    Selection::Action(
+                        serde_json::from_value(patch_json(current_json, value)).unwrap(),
+                    )
+                }
+                Selection::OneOf { actions, .. } => {
+                    let new_selection = value["selection"].as_str().unwrap();
+                    Selection::OneOf {
+                        selection: PipelineActionDefinitionId::parse(new_selection),
+                        actions: actions.clone(), // TODO::avoid this clone
+                    }
+                }
+                Selection::AllOf(_) => panic!("AllOf definitions are not patchable!"),
+            }
         }
     }
 }

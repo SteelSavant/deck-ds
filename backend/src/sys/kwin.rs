@@ -20,7 +20,31 @@ pub struct KWinScriptConfig {
 }
 
 impl<'a> KWin<'a> {
-    pub fn new(bundles_dir: &'a Dir<'a>) -> Self {
+    pub fn preregistered(assets_dir: &'a Dir) -> Result<KWin<'a>> {
+        Ok(KWin::new(
+            assets_dir
+                .get_dir("kwin")
+                .ok_or(anyhow::anyhow!("kwin dir does not exist"))?,
+        )
+        .register(
+            "TrueVideoWall".to_string(),
+            KWinScriptConfig {
+                enabled_key: "truevideowallEnabled".to_string(),
+                bundle_name: Path::new("truevideowall-v1.kwinscript").to_path_buf(),
+            },
+        )
+        .expect("TrueVideoWall script should exist")
+        .register(
+            "EmulatorWindowing".to_string(),
+            KWinScriptConfig {
+                enabled_key: "emulatorwindowingEnabled".to_string(),
+                bundle_name: Path::new("emulatorwindowing-v1.kwinscript").to_path_buf(),
+            },
+        )
+        .expect("EmulatorWindowing script should exist"))
+    }
+
+    fn new(bundles_dir: &'a Dir<'a>) -> Self {
         println!("creating KWin with bundles at {:?}", bundles_dir);
 
         Self {
@@ -29,7 +53,7 @@ impl<'a> KWin<'a> {
         }
     }
 
-    pub fn register(&mut self, name: String, config: KWinScriptConfig) -> Result<&mut Self> {
+    pub fn register(mut self, name: String, config: KWinScriptConfig) -> Result<Self> {
         if self.get_bundle(&config.bundle_name).is_some() {
             self.scripts.insert(name, config);
             Ok(self)
@@ -52,7 +76,9 @@ impl<'a> KWin<'a> {
             .args([&OsStr::new("i"), bundle.path().as_os_str()])
             .output()?;
         let stdout = String::from_utf8_lossy(&output.stdout);
-        if output.status.success() || stdout.contains("already installed") {
+        if !stdout.contains("kpackagetool5 [options]") && output.status.success()
+            || stdout.contains("already installed")
+        {
             Ok(())
         } else {
             Err(anyhow::anyhow!(
@@ -93,8 +119,8 @@ impl<'a> KWin<'a> {
         let rf = bundle_name.as_ref();
         self.bundles_dir
             .files()
-            .filter(move |f| f.path().ends_with(rf))
-            .next()
+            .find(move |f| f.path().ends_with(rf))
+
         // self.bundles_dir.get_file(bundle_name)
     }
 

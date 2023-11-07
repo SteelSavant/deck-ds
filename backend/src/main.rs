@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use include_dir::{include_dir, Dir};
 use std::path::{Path, PathBuf};
 
@@ -9,19 +9,10 @@ use usdpl_back::Instance;
 use clap::{Parser, Subcommand};
 use deck_ds::{
     api,
+    autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
-    pipeline::{
-        action::{
-            display_config::{DisplayConfig, RelativeLocation, TeardownExternalSettings},
-            multi_window::MultiWindow,
-        },
-        config::{
-            PipelineActionDefinition, PipelineActionDefinitionId, PipelineDefinition,
-            PipelineDefinitionId, Selection,
-        },
-        executor::PipelineExecutor,
-    },
-    settings::autostart::AutoStartSettings,
+    pipeline::config::PipelineDefinition,
+    settings::{AppId, Overrides, Profile, ProfileId, Settings},
     util,
 };
 use derive_more::Display;
@@ -85,11 +76,12 @@ fn main() -> Result<()> {
 
     #[cfg(not(debug_assertions))]
     let config_dir = usdpl_back::api::dirs::home()
-        .unwrap_or_else(|| "/tmp/".into())
+        .unwrap()
         .join(".config/deck-ds");
 
     #[cfg(debug_assertions)]
-    let config_dir = PathBuf::from(shellexpand::tilde("~/.config/deck-ds").to_string());
+    let system_config_dir = PathBuf::from(shellexpand::tilde("~/.config").to_string());
+    let config_dir = system_config_dir.join("deck-ds");
 
     log::info!("Starting back-end ({} v{})", PACKAGE_NAME, PACKAGE_VERSION);
     println!("Starting back-end ({} v{})", PACKAGE_NAME, PACKAGE_VERSION);
@@ -117,58 +109,36 @@ fn main() -> Result<()> {
     println!("got arg {:?}", args.mode);
     let mode = args.mode.unwrap_or_default();
 
+    let settings = Settings::new(&config_dir);
+    {
+        // temp test code
+        let template = &settings.get_templates()[1];
+
+        let test_profile = ProfileId::from_uuid(uuid::Uuid::nil());
+
+        settings.set_profile(&Profile {
+            id: test_profile,
+            template: template.id,
+            tags: vec![],
+            overrides: Overrides::default(),
+        })?;
+
+        settings.set_autostart_cfg(&Some(deck_ds::settings::AutoStart {
+            app_id: AppId::new("12146987087370911744"), //botw
+            profile_id: test_profile,
+        }))?;
+    }
+
     match mode {
         Modes::Autostart => {
-            // let single_window_dual_screen = PipelineDefinition::new(
-            //     PipelineDefinitionId::parse("d92ca87d-282f-4897-86f0-86a3af16bf3e"),
-
-            //     "Single-Window Dual-Screen".to_string(),
-            //     "Maps the internal and external monitor to a single virtual screen. Useful for emulators like melonDS which do not currently support multiple windows".to_string(),
-
-            //     vec!["NDS".to_string()],
-            //     Selection::AllOf(vec![
-            //         PipelineActionDefinition {
-            //             optional: None,
-            //             id: PipelineActionDefinitionId::parse("4ff26ece-dcab-4dd3-b941-96bd96a2c045"),
-            //             name: "Display Configuration".to_string(),
-            //             description: None,
-            //             selection: DisplayConfig {
-            //                     teardown_external_settings:TeardownExternalSettings::Previous,
-            //                     teardown_deck_location:RelativeLocation::Below
-            //                 }.into(),
-            //         },
-            //         PipelineActionDefinition {selection: VirtualScreen.into(),optional:None, id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"), name: "Virtual Screen".to_string(), description: None,}])
-            //     );
-
-            let multi_window_dual_screen = PipelineDefinition::new(
-                PipelineDefinitionId::parse("b0d6443d-6ae7-4085-87c1-b52aae5001a1"),
-                "Multi-Window Dual-Screen".to_string(),
-                "Maps primary and secondary windows to different screens. Useful for emulators like Cemu and Citra".to_string(),
-                vec!["3DS".to_string(), "WIIU".to_string(),
-                ],
-
-                Selection::AllOf(vec![
-                    PipelineActionDefinition {
-                        optional: None,
-                        id: PipelineActionDefinitionId::parse("4ff26ece-dcab-4dd3-b941-96bd96a2c045"),
-                        name: "Display Configuration".to_string(),
-                        description: None,
-                        selection: DisplayConfig {
-                                teardown_external_settings:TeardownExternalSettings::Previous,
-                                teardown_deck_location:RelativeLocation::Below
-                            }.into(),
-                    },
-                    PipelineActionDefinition {selection: MultiWindow.into(),optional:None, id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"), name: "Virtual Screen".to_string(), description: None,}
-                ]),
-                );
-
-            let autostart_settings = std::fs::read_to_string(config_dir.join("autostart.json"))
-                .with_context(|| "Could not find autostart configuration file")?;
-            let autostart_settings: AutoStartSettings = serde_json::from_str(&autostart_settings)?;
-
-            let mut executor = PipelineExecutor::new(&ASSETS_DIR, config_dir)?;
-
-            executor.exec(&autostart_settings, &multi_window_dual_screen)
+            let executor = AutoStart::new(settings)
+                .load()?
+                .map(|l| l.build_executor(&ASSETS_DIR, config_dir))
+                .transpose()?;
+            match executor {
+                Some(mut executor) => executor.exec(),
+                None => Ok(()),
+            }
         }
         Modes::Serve => {
             let instance = Instance::new(PORT)
