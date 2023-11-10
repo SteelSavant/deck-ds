@@ -28,7 +28,7 @@ impl<'a> KWin<'a> {
                 "TrueVideoWall".to_string(),
                 KWinScriptConfig {
                     enabled_key: "truevideowallEnabled".to_string(),
-                    bundle_name: Path::new("truevideowall-v1.kwinscript").to_path_buf(),
+                    bundle_name: Path::new("truevideowall-1.0.kwinscript").to_path_buf(),
                 },
             )
             .expect("TrueVideoWall script should exist")
@@ -36,7 +36,7 @@ impl<'a> KWin<'a> {
                 "EmulatorWindowing".to_string(),
                 KWinScriptConfig {
                     enabled_key: "emulatorwindowingEnabled".to_string(),
-                    bundle_name: Path::new("emulatorwindowing-v1.kwinscript").to_path_buf(),
+                    bundle_name: Path::new("emulatorwindowing-1.0.kwinscript").to_path_buf(),
                 },
             )
             .expect("EmulatorWindowing script should exist"))
@@ -72,12 +72,17 @@ impl<'a> KWin<'a> {
             "could not find bundle {script_name} to install"
         ))?;
         let bundle_path = bundle.external_file_path()?;
+
         let output = Command::new("kpackagetool5")
             .args([&OsStr::new("-i"), bundle_path.as_os_str()])
             .output()?;
         let stdout = String::from_utf8_lossy(&output.stdout);
-        if !stdout.contains("kpackagetool5 [options]") && output.status.success()
-            || stdout.contains("already installed")
+        let stderr = String::from_utf8_lossy(&output.stderr);
+
+        if !stdout.contains("kpackagetool5 [options]")
+            && (output.status.success()
+                || stdout.contains("already exists")
+                || stderr.contains("already exists"))
         {
             Ok(())
         } else {
