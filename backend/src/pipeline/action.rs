@@ -86,7 +86,7 @@ where
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[enum_delegate::implement(ErasedPipelineAction)]
 pub enum PipelineAction {
     DisplayConfig(DisplayConfig),

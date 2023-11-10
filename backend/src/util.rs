@@ -1,8 +1,10 @@
 use std::fmt::Display;
 //use std::sync::{LockResult, MutexGuard};
 //use std::fs::{Permissions, metadata};
+use anyhow::{Context, Result};
 use std::io::{Read, Write};
 use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
 
 pub fn unwrap_maybe_fatal<T: Sized, E: Display>(result: Result<T, E>, message: &str) -> T {
     match result {
@@ -99,5 +101,15 @@ pub fn read_version_file() -> String {
             log::warn!("Cannot read version file: {}", e);
             crate::consts::PACKAGE_VERSION.to_owned()
         }
+    }
+}
+
+pub fn create_dir_all<A: AsRef<Path> + std::fmt::Debug>(path: A) -> Result<()> {
+    if !path.as_ref().is_dir() {
+        log::debug!("creating path {path:?}");
+        std::fs::create_dir_all(&path)
+            .with_context(|| format!("failed to create dirs for path {:?}", path))
+    } else {
+        Ok(())
     }
 }

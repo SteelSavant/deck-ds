@@ -1,5 +1,4 @@
 use anyhow::Result;
-use include_dir::{Dir, File};
 use std::{
     collections::HashMap,
     ffi::OsStr,
@@ -7,9 +6,12 @@ use std::{
     process::Command,
 };
 
-#[derive(Debug, Clone)]
+use crate::asset::{Asset, AssetManager};
+
+#[derive(Debug)]
 pub struct KWin<'a> {
-    bundles_dir: &'a Dir<'a>,
+    assets_manager: AssetManager<'a>,
+    bundles_dir: PathBuf,
     scripts: HashMap<String, KWinScriptConfig>,
 }
 
@@ -20,16 +22,37 @@ pub struct KWinScriptConfig {
 }
 
 impl<'a> KWin<'a> {
-    pub fn new(bundles_dir: &'a Dir<'a>) -> Self {
+    pub fn preregistered(assets_manager: AssetManager<'a>) -> Result<KWin<'a>> {
+        Ok(KWin::new(assets_manager, "kwin".into())
+            .register(
+                "TrueVideoWall".to_string(),
+                KWinScriptConfig {
+                    enabled_key: "truevideowallEnabled".to_string(),
+                    bundle_name: Path::new("truevideowall-1.0.kwinscript").to_path_buf(),
+                },
+            )
+            .expect("TrueVideoWall script should exist")
+            .register(
+                "EmulatorWindowing".to_string(),
+                KWinScriptConfig {
+                    enabled_key: "emulatorwindowingEnabled".to_string(),
+                    bundle_name: Path::new("emulatorwindowing-1.0.kwinscript").to_path_buf(),
+                },
+            )
+            .expect("EmulatorWindowing script should exist"))
+    }
+
+    fn new(assets_manager: AssetManager<'a>, bundles_dir: PathBuf) -> Self {
         println!("creating KWin with bundles at {:?}", bundles_dir);
 
         Self {
+            assets_manager,
             bundles_dir,
             scripts: HashMap::new(),
         }
     }
 
-    pub fn register(&mut self, name: String, config: KWinScriptConfig) -> Result<&mut Self> {
+    pub fn register(mut self, name: String, config: KWinScriptConfig) -> Result<Self> {
         if self.get_bundle(&config.bundle_name).is_some() {
             self.scripts.insert(name, config);
             Ok(self)
@@ -48,11 +71,19 @@ impl<'a> KWin<'a> {
         let bundle = self.get_bundle(&script.bundle_name).ok_or(anyhow::anyhow!(
             "could not find bundle {script_name} to install"
         ))?;
+        let bundle_path = bundle.external_file_path()?;
+
         let output = Command::new("kpackagetool5")
-            .args([&OsStr::new("i"), bundle.path().as_os_str()])
+            .args([&OsStr::new("-i"), bundle_path.as_os_str()])
             .output()?;
         let stdout = String::from_utf8_lossy(&output.stdout);
-        if output.status.success() || stdout.contains("already installed") {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+
+        if !stdout.contains("kpackagetool5 [options]")
+            && (output.status.success()
+                || stdout.contains("already exists")
+                || stderr.contains("already exists"))
+        {
             Ok(())
         } else {
             Err(anyhow::anyhow!(
@@ -89,13 +120,8 @@ impl<'a> KWin<'a> {
         }
     }
 
-    fn get_bundle<P: AsRef<Path>>(&self, bundle_name: P) -> Option<&'a File> {
-        let rf = bundle_name.as_ref();
-        self.bundles_dir
-            .files()
-            .filter(move |f| f.path().ends_with(rf))
-            .next()
-        // self.bundles_dir.get_file(bundle_name)
+    fn get_bundle<P: AsRef<Path>>(&self, bundle_name: P) -> Option<Asset> {
+        self.assets_manager.get(self.bundles_dir.join(bundle_name))
     }
 
     fn reconfigure(&self) -> Result<()> {
