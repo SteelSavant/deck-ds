@@ -1,3 +1,6 @@
+use derive_more::Display;
+use std::collections::HashMap;
+
 use crate::{
     macros::newtype_uuid,
     settings::{patch::patch_json, Overrides},
@@ -15,13 +18,19 @@ newtype_uuid!(PipelineActionId);
 newtype_uuid!(PipelineActionDefinitionId);
 newtype_uuid!(PipelineDefinitionId);
 
+#[derive(Copy, Debug, Display, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, JsonSchema)]
+pub enum PipelineTarget {
+    Desktop,
+    Gamemode,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct PipelineDefinition {
     pub name: String,
     pub tags: Vec<String>,
     pub id: PipelineDefinitionId,
     pub description: String,
-    pub action: PipelineActionDefinition,
+    pub targets: HashMap<PipelineTarget, PipelineActionDefinition>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -83,17 +92,23 @@ impl PipelineDefinition {
         name: String,
         description: String,
         tags: Vec<String>,
-        selection: Selection,
+        selections: HashMap<PipelineTarget, Selection>,
     ) -> Self {
-        let action = PipelineActionDefinition {
-            id: PipelineActionDefinitionId::from_uuid(id.0),
-            name: "root".to_string(),
-            description: None,
-            selection,
-            optional: None,
-        };
+        let targets = selections.into_iter().map(|(t, s)| {
+            (
+                t,
+                PipelineActionDefinition {
+                    id: PipelineActionDefinitionId::from_uuid(id.0),
+                    name: format!("root:{}", t),
+                    description: None,
+                    selection: s,
+                    optional: None,
+                },
+            )
+        });
+
         Self {
-            action,
+            targets: targets.collect(),
             name,
             tags,
             id,
@@ -138,7 +153,10 @@ impl PipelineDefinition {
             }
         }
 
-        get_definition_rec(&mut self.action, id)
+        self.targets
+            .values_mut()
+            .filter_map(|pipeline| get_definition_rec(pipeline, id))
+            .next()
     }
 
     fn patch_enabled(&mut self, id: &PipelineActionDefinitionId, value: bool) {

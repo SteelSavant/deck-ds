@@ -12,7 +12,7 @@ use deck_ds::{
     asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
-    pipeline::config::PipelineDefinition,
+    pipeline::config::{PipelineDefinition, PipelineTarget},
     settings::{AppId, Overrides, Profile, ProfileId, Settings},
     util,
 };
@@ -140,7 +140,7 @@ fn main() -> Result<()> {
                 .map(|l| l.build_executor(asset_manager, config_dir))
                 .transpose()?;
             match executor {
-                Some(mut executor) => executor.exec(),
+                Some(mut executor) => executor.exec(PipelineTarget::Desktop),
                 None => Ok(()),
             }
         }

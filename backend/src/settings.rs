@@ -19,7 +19,7 @@ use crate::{
         },
         config::{
             PipelineActionDefinition, PipelineActionDefinitionId, PipelineDefinition,
-            PipelineDefinitionId, Selection,
+            PipelineDefinitionId, Selection, PipelineTarget,
         },
         dependency::Dependency,
     }, util::create_dir_all,
@@ -54,7 +54,7 @@ impl Settings {
                 "Single-Window Dual-Screen".to_string(),
                 "Maps the internal and external monitor to a single virtual screen. Useful for emulators like melonDS which do not currently support multiple windows".to_string(),
                 vec!["NDS".to_string()],
-                Selection::AllOf(vec![
+                HashMap::from_iter([(PipelineTarget::Desktop, Selection::AllOf(vec![
                     PipelineActionDefinition {
                         optional: None,
                         id: PipelineActionDefinitionId::parse("4ff26ece-dcab-4dd3-b941-96bd96a2c045"),
@@ -71,9 +71,8 @@ impl Settings {
                         id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"), 
                         name: "Virtual Screen".to_string(), 
                         description: None,
-                    }])
-                    // TODO::optional features for changing MelonDS layout in config file, since it isn't currently supported in cli
-                ),
+                }]))]) // TODO::optional features for changing MelonDS layout in config file, since it isn't currently supported in cli
+                ,),
 
             // Multi-Window Dual-Screen
             PipelineDefinition::new(
@@ -81,7 +80,7 @@ impl Settings {
                 "Multi-Window Dual-Screen".to_string(),
                 "Maps primary and secondary windows to different screens. Useful for emulators like Cemu and Citra".to_string(),
                 vec!["3DS".to_string(), "WIIU".to_string(),],
-                Selection::AllOf(vec![
+                HashMap::from_iter([(PipelineTarget::Desktop, Selection::AllOf(vec![
                     PipelineActionDefinition {
                         optional: None,
                         id: PipelineActionDefinitionId::parse("4ff26ece-dcab-4dd3-b941-96bd96a2c045"),
@@ -100,7 +99,7 @@ impl Settings {
                         description: None,
                     },
                     // TODO::optional features for changing Cemu/Citra layout in config file, since it isn't currently supported in cli
-                ]),
+                ]))]),
             )
         ];
 

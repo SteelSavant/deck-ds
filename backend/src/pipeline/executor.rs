@@ -16,7 +16,7 @@ use crate::sys::process::AppProcess;
 use crate::sys::x_display::XDisplay;
 
 use super::action::{ErasedPipelineAction, PipelineAction};
-use super::config::PipelineDefinition;
+use super::config::{PipelineDefinition, PipelineTarget};
 use super::dependency::emulator_windowing::EmulatorWindowing;
 use super::dependency::{Dependency, DependencyExecutor, DependencyId};
 
@@ -101,8 +101,8 @@ impl<'a> PipelineExecutor<'a> {
         Ok(s)
     }
 
-    pub fn exec(&mut self) -> Result<()> {
-        let pipeline = self.definition.build_actions();
+    pub fn exec(&mut self, target: PipelineTarget) -> Result<()> {
+        let pipeline = self.definition.build_actions(target);
 
         // Install dependencies
         for action in pipeline.iter() {
@@ -257,7 +257,7 @@ enum ActionType {
 }
 
 impl PipelineDefinition {
-    fn build_actions(&self) -> Vec<&PipelineAction> {
+    fn build_actions(&self, target: PipelineTarget) -> Vec<&PipelineAction> {
         fn build_recursive(selection: &Selection) -> Vec<&PipelineAction> {
             match selection {
                 Selection::Action(action) => vec![action],
@@ -271,7 +271,10 @@ impl PipelineDefinition {
             }
         }
 
-        build_recursive(&self.action.selection)
+        self.targets
+            .get(&target)
+            .map(|action| build_recursive(&action.selection))
+            .unwrap_or_default()
     }
 }
 
