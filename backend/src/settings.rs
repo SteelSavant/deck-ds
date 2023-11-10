@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{Context, Result};
+use anyhow::{Result};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -22,7 +22,7 @@ use crate::{
             PipelineDefinitionId, Selection,
         },
         dependency::Dependency,
-    },
+    }, util::create_dir_all,
 };
 
 pub mod patch;
@@ -125,7 +125,7 @@ impl Settings {
     }
 
     pub fn set_profile(&self, profile: &Profile) -> Result<()> {
-        Self::create_dir_all(&self.profiles_dir)?;
+        create_dir_all(&self.profiles_dir)?;
 
         let raw = profile.id.raw();
 
@@ -150,7 +150,7 @@ impl Settings {
     }
 
     pub fn set_app(&self, app: &App) -> Result<()> {
-        Self::create_dir_all(&self.apps_dir)?;
+        create_dir_all(&self.apps_dir)?;
 
         let raw = app.id.raw();
 
@@ -167,7 +167,7 @@ impl Settings {
     }
 
     pub fn set_autostart_cfg(&self, autostart: &Option<AutoStart>) -> Result<()> {
-        Self::create_dir_all(
+        create_dir_all(
             self.autostart_path
                 .parent()
                 .expect("autostart.json path should have parent"),
@@ -186,16 +186,6 @@ impl Settings {
 
     pub fn get_dependencies(&self) -> &[Dependency] {
         &self.dependencies
-    }
-
-    fn create_dir_all<P: AsRef<Path> + Debug>(path: P) -> Result<()> {
-        if !path.as_ref().is_dir() {
-            log::debug!("creating path {path:?}");
-            std::fs::create_dir_all(&path)
-                .with_context(|| format!("failed to create dirs for path {:?}", path))
-        } else {
-            Ok(())
-        }
     }
 }
 

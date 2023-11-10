@@ -9,6 +9,7 @@ use std::process::Command;
 use std::time::{Duration, Instant, SystemTime};
 use typemap::{Key, TypeMap};
 
+use crate::asset::AssetManager;
 use crate::pipeline::config::Selection;
 use crate::settings::AppId;
 use crate::sys::kwin::KWin;
@@ -74,7 +75,7 @@ impl<'a> PipelineExecutor<'a> {
     pub fn new(
         app_id: AppId,
         pipeline_definition: PipelineDefinition,
-        assets_dir: &'a Dir<'a>,
+        assets_manager: AssetManager<'a>,
         config_dir: PathBuf,
     ) -> Result<Self> {
         let s = Self {
@@ -92,7 +93,7 @@ impl<'a> PipelineExecutor<'a> {
                         Dependency::EmulatorWindowing(EmulatorWindowing),
                     ),
                 ]),
-                kwin: KWin::preregistered(assets_dir)?,
+                kwin: KWin::preregistered(assets_manager)?,
                 display: XDisplay::new()?,
                 state: TypeMap::new(),
             },

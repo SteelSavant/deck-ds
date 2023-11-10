@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use anyhow::{anyhow, Result};
 use include_dir::Dir;
 
-use crate::{pipeline::executor::PipelineExecutor, settings::Settings};
+use crate::{asset::AssetManager, pipeline::executor::PipelineExecutor, settings::Settings};
 
 #[derive(Debug)]
 pub struct AutoStart {
@@ -44,7 +44,7 @@ impl AutoStart {
 impl LoadedAutoStart {
     pub fn build_executor<'a>(
         self,
-        assets_dir: &'a Dir<'a>,
+        assets_manager: AssetManager,
         config_dir: PathBuf,
     ) -> Result<PipelineExecutor> {
         let profile = self.settings.get_profile(&self.autostart.profile_id)?;
@@ -65,7 +65,7 @@ impl LoadedAutoStart {
                 .map(|o| patched.patched_with(o))
                 .unwrap_or(patched);
 
-            PipelineExecutor::new(self.autostart.app_id, patched, assets_dir, config_dir)
+            PipelineExecutor::new(self.autostart.app_id, patched, assets_manager, config_dir)
         } else {
             Err(anyhow!(
                 "pipeline definition {:?} not found",

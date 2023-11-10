@@ -9,6 +9,7 @@ use usdpl_back::Instance;
 use clap::{Parser, Subcommand};
 use deck_ds::{
     api,
+    asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
     pipeline::config::PipelineDefinition,
@@ -131,9 +132,12 @@ fn main() -> Result<()> {
 
     match mode {
         Modes::Autostart => {
+            let assets_dir = config_dir.join("assets"); // TODO::keep assets with decky plugin, not config
+            let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
+
             let executor = AutoStart::new(settings)
                 .load()?
-                .map(|l| l.build_executor(&ASSETS_DIR, config_dir))
+                .map(|l| l.build_executor(asset_manager, config_dir))
                 .transpose()?;
             match executor {
                 Some(mut executor) => executor.exec(),
