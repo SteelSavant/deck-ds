@@ -72,6 +72,7 @@ impl CitraIniSource {
 pub struct CitraConfig {
     pub ini_source: CitraIniSource,
     pub layout_option: CitraLayoutOption,
+    // TODO:: pub swap_screens: bool,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, JsonSchema)]

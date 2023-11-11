@@ -36,6 +36,7 @@ impl CemuXmlSource {
 pub struct CemuConfig {
     pub xml_source: CemuXmlSource,
     pub separate_gamepad_view: bool,
+    // TODO:: pub swap_screens: bool,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, JsonSchema)]
