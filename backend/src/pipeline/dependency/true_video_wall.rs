@@ -16,7 +16,7 @@ impl TrueVideoWall {
 }
 
 impl DependencyExecutor for TrueVideoWall {
-    fn install(&self, ctx: &mut PipelineContext) -> Result<()> {
+    fn verify_or_install(&self, ctx: &mut PipelineContext) -> Result<()> {
         ctx.kwin.install_script("TrueVideoWall")
     }
 }

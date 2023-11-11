@@ -16,7 +16,7 @@ impl EmulatorWindowing {
 }
 
 impl DependencyExecutor for EmulatorWindowing {
-    fn install(&self, ctx: &mut PipelineContext) -> Result<()> {
+    fn verify_or_install(&self, ctx: &mut PipelineContext) -> Result<()> {
         ctx.kwin.install_script("EmulatorWindowing")
     }
 }

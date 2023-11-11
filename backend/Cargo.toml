@@ -52,6 +52,8 @@ xrandr = { git = "https://github.com/dzfranklin/xrandr-rs", features = [
 ] }
 shellexpand = "3.1.0"
 include_dir = "0.7.3"
+rust-ini = "0.20.0"
+lazy_static = "1.4.0"
 
 [features]
 default = ["online", "decky"]

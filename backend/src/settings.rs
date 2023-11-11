@@ -4,8 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{Result};
-
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -19,10 +18,11 @@ use crate::{
         },
         config::{
             PipelineActionDefinition, PipelineActionDefinitionId, PipelineDefinition,
-            PipelineDefinitionId, Selection, PipelineTarget,
+            PipelineDefinitionId, PipelineTarget, Selection,
         },
         dependency::Dependency,
-    }, util::create_dir_all,
+    },
+    util::create_dir_all,
 };
 
 pub mod patch;
@@ -67,7 +67,7 @@ impl Settings {
                     },
                     PipelineActionDefinition {
                         selection: VirtualScreen.into(),
-                        optional:None, 
+                        optional: None,
                         id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"), 
                         name: "Virtual Screen".to_string(), 
                         description: None,
@@ -93,7 +93,7 @@ impl Settings {
                     },
                     PipelineActionDefinition {
                         selection: MultiWindow.into(),
-                        optional:None, 
+                        optional:None,
                         id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"), 
                         name: "MultiWindow".to_string(), 
                         description: None,

@@ -182,7 +182,7 @@ impl PipelineDefinition {
                         actions: actions.clone(), // TODO::avoid this clone
                     }
                 }
-                Selection::AllOf(_) => panic!("AllOf definitions are not patchable!"),
+                Selection::AllOf(_) => unreachable!("AllOf definitions are not patchable!"),
             }
         }
     }

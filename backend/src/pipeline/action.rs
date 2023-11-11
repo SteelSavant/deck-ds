@@ -10,7 +10,10 @@ use self::{
 use super::{config::Selection, dependency::DependencyId, executor::PipelineContext};
 use anyhow::Result;
 
+pub mod cemu_config;
+pub mod citra_config;
 pub mod display_config;
+pub mod melonds_config;
 pub mod multi_window;
 pub mod virtual_screen;
 
