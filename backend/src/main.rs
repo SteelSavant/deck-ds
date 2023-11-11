@@ -1,6 +1,6 @@
 use anyhow::Result;
 use include_dir::{include_dir, Dir};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use simplelog::{LevelFilter, WriteLogger};
 
@@ -76,7 +76,7 @@ fn main() -> Result<()> {
     println!("Logging to: {:?}", log_filepath);
 
     let home_dir = usdpl_back::api::dirs::home()
-        .or_else(|| dirs::home_dir())
+        .or_else(dirs::home_dir)
         .expect("home dir must exist");
 
     let config_dir = home_dir.join(".config/deck-ds");
