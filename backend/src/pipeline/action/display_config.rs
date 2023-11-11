@@ -5,7 +5,7 @@ use xrandr::{Relation, XId};
 
 use crate::{pipeline::executor::PipelineContext, sys::x_display::ModePreference};
 
-use super::{PipelineActionId, PipelineActionImpl};
+use super::PipelineActionImpl;
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct DisplayConfig {
@@ -54,10 +54,6 @@ pub enum TeardownExternalSettings {
 
 impl PipelineActionImpl for DisplayConfig {
     type State = DisplayState;
-
-    fn id(&self) -> PipelineActionId {
-        PipelineActionId::parse("be4b11ef-288f-4493-a28a-3dd790d05813")
-    }
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let preferred = ctx.display.get_preferred_external_output()?;

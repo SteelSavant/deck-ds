@@ -8,17 +8,13 @@ use crate::pipeline::{
     executor::PipelineContext,
 };
 
-use super::{PipelineActionId, PipelineActionImpl};
+use super::PipelineActionImpl;
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct MultiWindow;
 
 impl PipelineActionImpl for MultiWindow {
     type State = ();
-
-    fn id(&self) -> PipelineActionId {
-        PipelineActionId::parse("41354511-6dac-4d2d-b523-1dbcb4642562")
-    }
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         ctx.kwin.set_script_enabled("EmulatorWindowing", true)?;

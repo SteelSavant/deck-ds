@@ -11,17 +11,13 @@ use crate::{
     sys::x_display::{AspectRatioOption, ModeOption, ModePreference, Resolution},
 };
 
-use super::{PipelineActionId, PipelineActionImpl};
+use super::PipelineActionImpl;
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct VirtualScreen;
 
 impl PipelineActionImpl for VirtualScreen {
     type State = ();
-
-    fn id(&self) -> PipelineActionId {
-        PipelineActionId::parse("8bc7b827-1c31-41c2-a807-dc1e99f85922")
-    }
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         ctx.kwin.set_script_enabled("TrueVideoWall", true)?;

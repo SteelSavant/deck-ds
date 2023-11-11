@@ -7,11 +7,7 @@ use self::{
     display_config::DisplayConfig, multi_window::MultiWindow, virtual_screen::VirtualScreen,
 };
 
-use super::{
-    config::{PipelineActionId, Selection},
-    dependency::DependencyId,
-    executor::PipelineContext,
-};
+use super::{config::Selection, dependency::DependencyId, executor::PipelineContext};
 use anyhow::Result;
 
 pub mod display_config;
@@ -21,8 +17,6 @@ pub mod virtual_screen;
 pub trait PipelineActionImpl: DeserializeOwned + Serialize {
     /// Type of runtime state of the action
     type State: 'static;
-
-    fn id(&self) -> PipelineActionId;
 
     fn setup(&self, _ctx: &mut PipelineContext) -> Result<()> {
         // default to no setup
@@ -49,7 +43,6 @@ pub trait PipelineActionImpl: DeserializeOwned + Serialize {
 
 #[enum_delegate::register]
 pub trait ErasedPipelineAction {
-    fn id(&self) -> PipelineActionId;
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()>;
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()>;
     fn get_dependencies(&self) -> Vec<DependencyId>;
@@ -61,10 +54,6 @@ impl<T> ErasedPipelineAction for T
 where
     T: PipelineActionImpl + JsonSchema + Serialize + DeserializeOwned + Debug + Clone,
 {
-    fn id(&self) -> PipelineActionId {
-        self.id()
-    }
-
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         self.setup(ctx)
     }

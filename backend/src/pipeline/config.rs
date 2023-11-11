@@ -14,7 +14,6 @@ use serde_json::Value;
 
 use super::action::PipelineAction;
 
-newtype_uuid!(PipelineActionId);
 newtype_uuid!(PipelineActionDefinitionId);
 newtype_uuid!(PipelineDefinitionId);
 
