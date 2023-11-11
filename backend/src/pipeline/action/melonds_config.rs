@@ -49,13 +49,11 @@ pub enum MelonDSIniSource {
 }
 
 impl MelonDSIniSource {
-    pub fn get_path(&self) -> Result<Cow<PathBuf>> {
+    pub fn get_path<P: AsRef<Path>>(&self, home_dir: P) -> Result<Cow<PathBuf>> {
         Ok(match self {
             MelonDSIniSource::Flatpak => Cow::Owned(
-                usdpl_back::api::dirs::home()
-                    .ok_or(anyhow::anyhow!(
-                        "need access to home dir to edit MelonDS flatpak ini"
-                    ))?
+                home_dir
+                    .as_ref()
                     .join(".var/app/net.kuribo64.melonDS/config/melonDS/melonDS.ini"),
             ),
             MelonDSIniSource::Custom(path) => Cow::Borrowed(path),
@@ -119,7 +117,7 @@ impl PipelineActionImpl for MelonDSConfig {
     type State = internal::RawMelonDSState;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
-        let ini_path = self.get_ini_path()?;
+        let ini_path = self.get_ini_path(&ctx.home_dir)?;
 
         let mut ini = Ini::load_from_file(ini_path.as_path())?;
         let layout_section = ini.general_section_mut();
@@ -182,7 +180,7 @@ impl PipelineActionImpl for MelonDSConfig {
 
         match state {
             Some(state) => {
-                let ini_path = self.get_ini_path()?;
+                let ini_path = self.get_ini_path(&ctx.home_dir)?;
                 let ini = Ini::load_from_file(ini_path.as_path())?;
 
                 state.write(ini_path.as_path(), ini)
@@ -193,8 +191,8 @@ impl PipelineActionImpl for MelonDSConfig {
 }
 
 impl MelonDSConfig {
-    fn get_ini_path(&self) -> Result<Cow<PathBuf>> {
-        let ini_path = self.ini_source.get_path()?;
+    fn get_ini_path<P: AsRef<Path>>(&self, home_dir: P) -> Result<Cow<PathBuf>> {
+        let ini_path = self.ini_source.get_path(home_dir)?;
         if ini_path.is_file() {
             Ok(ini_path)
         } else {

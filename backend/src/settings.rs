@@ -14,7 +14,7 @@ use crate::{
         action::{
             display_config::{DisplayConfig, RelativeLocation, TeardownExternalSettings},
             multi_window::MultiWindow,
-            virtual_screen::VirtualScreen,
+            virtual_screen::VirtualScreen, melonds_config::{MelonDSConfig, MelonDSIniSource, MelonDSLayoutOption, MelonDSSizingOption}, citra_config::{CitraConfig, CitraIniSource, CitraLayoutOption}, cemu_config::{CemuConfig, CemuXmlSource},
         },
         config::{
             PipelineActionDefinition, PipelineActionDefinitionId, PipelineDefinition,
@@ -52,7 +52,7 @@ impl Settings {
             PipelineDefinition::new(
                 PipelineDefinitionId::parse("d92ca87d-282f-4897-86f0-86a3af16bf3e"),
                 "Single-Window Dual-Screen".to_string(),
-                "Maps the internal and external monitor to a single virtual screen. Useful for emulators like melonDS which do not currently support multiple windows".to_string(),
+                "Maps the internal and external monitor to a single virtual screen. Useful for emulators dual-screen like melonDS which do not currently support multiple windows".to_string(),
                 vec!["NDS".to_string()],
                 HashMap::from_iter([(PipelineTarget::Desktop, Selection::AllOf(vec![
                     PipelineActionDefinition {
@@ -71,14 +71,28 @@ impl Settings {
                         id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"), 
                         name: "Virtual Screen".to_string(), 
                         description: None,
-                }]))]) // TODO::optional features for changing MelonDS layout in config file, since it isn't currently supported in cli
-                ,),
+                    },
+                    PipelineActionDefinition {
+                        id: PipelineActionDefinitionId::parse("d7838726-448c-4817-bcd6-d982c0bad7f6"),
+                        description: Some("Edits melonDS ini file to desired settings".to_string()),
+                        name: "melonDS Config".to_string(),
+                        selection: MelonDSConfig { 
+                            ini_source: MelonDSIniSource::Flatpak, 
+                            layout_option: MelonDSLayoutOption::Vertical, 
+                            sizing_option: MelonDSSizingOption::Even, 
+                            book_mode: false, 
+                            swap_screens: false, 
+                        }.into(),
+                        optional: Some(false)
+                    }
+                ]))]) // TODO::optional features for changing MelonDS layout in config file, since it isn't currently supported in cli
+            ,),
 
             // Multi-Window Dual-Screen
             PipelineDefinition::new(
                 PipelineDefinitionId::parse("b0d6443d-6ae7-4085-87c1-b52aae5001a1"),
                 "Multi-Window Dual-Screen".to_string(),
-                "Maps primary and secondary windows to different screens. Useful for emulators like Cemu and Citra".to_string(),
+                "Maps primary and secondary windows to different screens".to_string(),
                 vec!["3DS".to_string(), "WIIU".to_string(),],
                 HashMap::from_iter([(PipelineTarget::Desktop, Selection::AllOf(vec![
                     PipelineActionDefinition {
@@ -93,12 +107,31 @@ impl Settings {
                     },
                     PipelineActionDefinition {
                         selection: MultiWindow.into(),
-                        optional:None,
+                        optional: None,
                         id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"), 
                         name: "MultiWindow".to_string(), 
                         description: None,
                     },
-                    // TODO::optional features for changing Cemu/Citra layout in config file, since it isn't currently supported in cli
+                    PipelineActionDefinition {
+                        id: PipelineActionDefinitionId::parse("d7838726-448c-4817-bcd6-d982c0bad7f6"),
+                        description: Some("Edits Citra ini file to desired settings".to_string()),
+                        name: "Citra Config".to_string(),
+                        selection: CitraConfig { 
+                            ini_source: CitraIniSource::Flatpak, 
+                            layout_option: CitraLayoutOption::Default, 
+                        }.into(),
+                        optional: Some(false)
+                    },
+                    PipelineActionDefinition {
+                        id: PipelineActionDefinitionId::parse("461c1ea6-8dd3-434e-b87d-8981c82b94c2"),
+                        description: Some("Edits Cemu settings.xml file to desired settings".to_string()),
+                        name: "Cemu Config".to_string(),
+                        selection: CemuConfig {
+                            xml_source: CemuXmlSource::Flatpak,
+                            separate_gamepad_view: true,
+                        }.into(),
+                        optional: Some(true),
+                    }
                 ]))]),
             )
         ];

@@ -1,4 +1,7 @@
-use std::{borrow::Cow, path::PathBuf};
+use std::{
+    borrow::Cow,
+    path::{Path, PathBuf},
+};
 
 use crate::pipeline::executor::PipelineContext;
 
@@ -53,13 +56,11 @@ pub enum CitraIniSource {
 }
 
 impl CitraIniSource {
-    pub fn get_path(&self) -> Result<Cow<PathBuf>> {
+    pub fn get_path<P: AsRef<Path>>(&self, home_dir: P) -> Result<Cow<PathBuf>> {
         Ok(match self {
             CitraIniSource::Flatpak => Cow::Owned(
-                usdpl_back::api::dirs::home()
-                    .ok_or(anyhow::anyhow!(
-                        "need access to home dir to edit Citra flatpak ini"
-                    ))?
+                home_dir
+                    .as_ref()
                     .join(".var/app/org.citra_emu.citra/config/citra-emu/qt-config.ini"),
             ),
             CitraIniSource::Custom(path) => Cow::Borrowed(path),
@@ -82,7 +83,7 @@ impl PipelineActionImpl for CitraConfig {
     type State = CitraState;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
-        let ini_path = self.get_ini_path()?;
+        let ini_path = self.get_ini_path(&ctx.home_dir)?;
         let mut ini = Ini::load_from_file(ini_path.as_path())?;
 
         let layout_section = ini
@@ -109,7 +110,7 @@ impl PipelineActionImpl for CitraConfig {
 
         match state {
             Some(state) => {
-                let ini_path = self.get_ini_path()?;
+                let ini_path = self.get_ini_path(&ctx.home_dir)?;
                 let mut ini = Ini::load_from_file(ini_path.as_path())?;
 
                 let layout_section = ini
@@ -126,8 +127,8 @@ impl PipelineActionImpl for CitraConfig {
 }
 
 impl CitraConfig {
-    fn get_ini_path(&self) -> Result<Cow<PathBuf>> {
-        let ini_path = self.ini_source.get_path()?;
+    fn get_ini_path<P: AsRef<Path>>(&self, home_dir: P) -> Result<Cow<PathBuf>> {
+        let ini_path = self.ini_source.get_path(home_dir)?;
         if ini_path.is_file() {
             Ok(ini_path)
         } else {

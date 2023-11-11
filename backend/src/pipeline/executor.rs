@@ -29,6 +29,8 @@ pub struct PipelineExecutor<'a> {
 }
 
 pub struct PipelineContext<'a> {
+    /// path to directory containing the user's home directory
+    pub home_dir: PathBuf,
     /// path to directory containing user configuration files
     pub config_dir: PathBuf,
     /// known dependencies
@@ -75,12 +77,14 @@ impl<'a> PipelineExecutor<'a> {
         app_id: AppId,
         pipeline_definition: PipelineDefinition,
         assets_manager: AssetManager<'a>,
+        home_dir: PathBuf,
         config_dir: PathBuf,
     ) -> Result<Self> {
         let s = Self {
             app_id,
             definition: pipeline_definition,
             ctx: PipelineContext {
+                home_dir,
                 config_dir,
                 dependencies: HashMap::from([
                     (
@@ -260,10 +264,17 @@ impl PipelineDefinition {
             match selection {
                 Selection::Action(action) => vec![action],
                 Selection::OneOf { selection, actions } => {
-                    build_recursive(&actions[selection].selection)
+                    let selected = &actions[selection];
+
+                    if matches!(selected.optional, None | Some(true)) {
+                        build_recursive(&selected.selection)
+                    } else {
+                        vec![]
+                    }
                 }
                 Selection::AllOf(definitions) => definitions
                     .iter()
+                    .filter(|def| matches!(def.optional, None | Some(true)))
                     .flat_map(|d| build_recursive(&d.selection))
                     .collect(),
             }

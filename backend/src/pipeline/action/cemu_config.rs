@@ -1,4 +1,7 @@
-use std::{borrow::Cow, path::PathBuf};
+use std::{
+    borrow::Cow,
+    path::{Path, PathBuf},
+};
 
 use crate::pipeline::executor::PipelineContext;
 
@@ -17,13 +20,11 @@ pub enum CemuXmlSource {
 }
 
 impl CemuXmlSource {
-    pub fn get_path(&self) -> Result<Cow<PathBuf>> {
+    pub fn get_path<P: AsRef<Path>>(&self, home_dir: P) -> Result<Cow<PathBuf>> {
         Ok(match self {
             CemuXmlSource::Flatpak => Cow::Owned(
-                usdpl_back::api::dirs::home()
-                    .ok_or(anyhow::anyhow!(
-                        "need access to home dir to edit Cemu flatpak xml"
-                    ))?
+                home_dir
+                    .as_ref()
                     .join(".var/app/info.cemu.Cemu/config/Cemu/settings.xml"),
             ),
             CemuXmlSource::Custom(path) => Cow::Borrowed(path),
@@ -50,7 +51,7 @@ impl PipelineActionImpl for CemuConfig {
     type State = CemuState;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
-        let xml_path = self.get_xml_path()?;
+        let xml_path = self.get_xml_path(&ctx.home_dir)?;
         let xml = std::fs::read_to_string(xml_path.as_path())?;
 
         let current = RXP
@@ -75,7 +76,7 @@ impl PipelineActionImpl for CemuConfig {
 
         match state {
             Some(state) => {
-                let xml_path = self.get_xml_path()?;
+                let xml_path = self.get_xml_path(&ctx.home_dir)?;
                 let xml = std::fs::read_to_string(xml_path.as_path())?;
 
                 let out = format!("<open_pad>{}</open_pad>", state.separate_gamepad_view);
@@ -91,8 +92,8 @@ impl PipelineActionImpl for CemuConfig {
 }
 
 impl CemuConfig {
-    fn get_xml_path(&self) -> Result<Cow<PathBuf>> {
-        let xml_path = self.xml_source.get_path()?;
+    fn get_xml_path<P: AsRef<Path>>(&self, home_dir: P) -> Result<Cow<PathBuf>> {
+        let xml_path = self.xml_source.get_path(home_dir)?;
         if xml_path.is_file() {
             Ok(xml_path)
         } else {

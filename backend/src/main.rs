@@ -74,15 +74,12 @@ fn main() -> Result<()> {
     .unwrap();
     log::debug!("Logging to: {:?}.", log_filepath);
     println!("Logging to: {:?}", log_filepath);
-
     #[cfg(not(debug_assertions))]
-    let config_dir = usdpl_back::api::dirs::home()
-        .unwrap()
-        .join(".config/deck-ds");
-
+    let home_dir = usdpl_back::api::dirs::home().unwrap();
     #[cfg(debug_assertions)]
-    let system_config_dir = PathBuf::from(shellexpand::tilde("~/.config").to_string());
-    let config_dir = system_config_dir.join("deck-ds");
+    let home_dir = PathBuf::from(shellexpand::tilde("~/").to_string());
+
+    let config_dir = home_dir.join(".config/deck-ds");
 
     log::info!("Starting back-end ({} v{})", PACKAGE_NAME, PACKAGE_VERSION);
     println!("Starting back-end ({} v{})", PACKAGE_NAME, PACKAGE_VERSION);
@@ -137,7 +134,7 @@ fn main() -> Result<()> {
 
             let executor = AutoStart::new(settings)
                 .load()?
-                .map(|l| l.build_executor(asset_manager, config_dir))
+                .map(|l| l.build_executor(asset_manager, home_dir, config_dir))
                 .transpose()?;
             match executor {
                 Some(mut executor) => executor.exec(PipelineTarget::Desktop),

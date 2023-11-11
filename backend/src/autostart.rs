@@ -44,6 +44,7 @@ impl LoadedAutoStart {
     pub fn build_executor(
         self,
         assets_manager: AssetManager,
+        home_dir: PathBuf,
         config_dir: PathBuf,
     ) -> Result<PipelineExecutor> {
         let profile = self.settings.get_profile(&self.autostart.profile_id)?;
@@ -64,7 +65,13 @@ impl LoadedAutoStart {
                 .map(|o| patched.patched_with(o))
                 .unwrap_or(patched);
 
-            PipelineExecutor::new(self.autostart.app_id, patched, assets_manager, config_dir)
+            PipelineExecutor::new(
+                self.autostart.app_id,
+                patched,
+                assets_manager,
+                home_dir,
+                config_dir,
+            )
         } else {
             Err(anyhow!(
                 "pipeline definition {:?} not found",
