@@ -74,10 +74,10 @@ fn main() -> Result<()> {
     .unwrap();
     log::debug!("Logging to: {:?}.", log_filepath);
     println!("Logging to: {:?}", log_filepath);
-    #[cfg(not(debug_assertions))]
-    let home_dir = usdpl_back::api::dirs::home().unwrap();
-    #[cfg(debug_assertions)]
-    let home_dir = PathBuf::from(shellexpand::tilde("~/").to_string());
+
+    let home_dir = usdpl_back::api::dirs::home()
+        .or_else(|| dirs::home_dir())
+        .expect("home dir must exist");
 
     let config_dir = home_dir.join(".config/deck-ds");
 
