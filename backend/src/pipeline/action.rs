@@ -4,13 +4,17 @@ use schemars::{schema::RootSchema, schema_for, JsonSchema};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use self::{
-    display_config::DisplayConfig, multi_window::MultiWindow, virtual_screen::VirtualScreen,
+    cemu_config::CemuConfig, citra_config::CitraConfig, display_config::DisplayConfig,
+    melonds_config::MelonDSConfig, multi_window::MultiWindow, virtual_screen::VirtualScreen,
 };
 
 use super::{config::Selection, dependency::DependencyId, executor::PipelineContext};
 use anyhow::Result;
 
+pub mod cemu_config;
+pub mod citra_config;
 pub mod display_config;
+pub mod melonds_config;
 pub mod multi_window;
 pub mod virtual_screen;
 
@@ -81,6 +85,9 @@ pub enum PipelineAction {
     DisplayConfig(DisplayConfig),
     VirtualScreen(VirtualScreen),
     MultiWindow(MultiWindow),
+    CitraConfig(CitraConfig),
+    CemuConfig(CemuConfig),
+    MelonDSConfig(MelonDSConfig),
 }
 
 impl<T: Into<PipelineAction>> From<T> for Selection {

@@ -10,7 +10,7 @@ use super::executor::PipelineContext;
 
 #[enum_delegate::register]
 pub trait DependencyExecutor {
-    fn install(&self, ctx: &mut PipelineContext) -> Result<()>;
+    fn verify_or_install(&self, ctx: &mut PipelineContext) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]

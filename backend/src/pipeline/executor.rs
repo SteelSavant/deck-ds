@@ -29,6 +29,8 @@ pub struct PipelineExecutor<'a> {
 }
 
 pub struct PipelineContext<'a> {
+    /// path to directory containing the user's home directory
+    pub home_dir: PathBuf,
     /// path to directory containing user configuration files
     pub config_dir: PathBuf,
     /// known dependencies
@@ -75,12 +77,14 @@ impl<'a> PipelineExecutor<'a> {
         app_id: AppId,
         pipeline_definition: PipelineDefinition,
         assets_manager: AssetManager<'a>,
+        home_dir: PathBuf,
         config_dir: PathBuf,
     ) -> Result<Self> {
         let s = Self {
             app_id,
             definition: pipeline_definition,
             ctx: PipelineContext {
+                home_dir,
                 config_dir,
                 dependencies: HashMap::from([
                     (
@@ -172,6 +176,9 @@ impl<'a> PipelineExecutor<'a> {
         let mut gilrs = gilrs::Gilrs::new().unwrap();
         let mut state = IndexMap::<GamepadId, (bool, bool, Option<Instant>)>::new();
 
+        const BTN0: gilrs::Button = gilrs::Button::Start;
+        const BTN1: gilrs::Button = gilrs::Button::Select;
+
         while app_process.is_alive() {
             std::thread::sleep(std::time::Duration::from_millis(100));
             while let Some(Event { id, event, time }) = gilrs.next_event() {
@@ -179,13 +186,11 @@ impl<'a> PipelineExecutor<'a> {
                     let elapsed = time.elapsed().unwrap_or_default();
                     Instant::now() - elapsed
                 }
+                println!("Event: {:?}", event);
                 match event {
-                    EventType::ButtonPressed(
-                        btn @ (gilrs::Button::Start | gilrs::Button::Select),
-                        _,
-                    ) => {
+                    EventType::ButtonPressed(btn @ (BTN0 | BTN1), _) => {
                         let entry = state.entry(id).or_default();
-                        if btn == Button::Start {
+                        if btn == BTN0 {
                             entry.0 = true;
                         } else {
                             entry.1 = true;
@@ -195,10 +200,7 @@ impl<'a> PipelineExecutor<'a> {
                             entry.2 = Some(create_instant(time))
                         }
                     }
-                    EventType::ButtonReleased(
-                        btn @ (gilrs::Button::Start | gilrs::Button::Select),
-                        _,
-                    ) => {
+                    EventType::ButtonReleased(btn @ (BTN0 | BTN1), _) => {
                         let entry = state.entry(id).or_default();
                         if btn == Button::Start {
                             entry.0 = false;
@@ -217,15 +219,15 @@ impl<'a> PipelineExecutor<'a> {
                                 .unwrap_or_default()
                         }
 
-                        let start_pressed = check_pressed(gamepad, Button::Start);
-                        let select_pressed = check_pressed(gamepad, Button::Select);
-                        let instant = if start_pressed && select_pressed {
+                        let btn0_pressed = check_pressed(gamepad, BTN0);
+                        let btn1_pressed = check_pressed(gamepad, BTN1);
+                        let instant = if btn0_pressed && btn1_pressed {
                             Some(create_instant(time))
                         } else {
                             None
                         };
 
-                        state.insert(id, (start_pressed, select_pressed, instant));
+                        state.insert(id, (btn0_pressed, btn1_pressed, instant));
                     }
                     EventType::Disconnected => {
                         state.remove(&id);
@@ -262,10 +264,17 @@ impl PipelineDefinition {
             match selection {
                 Selection::Action(action) => vec![action],
                 Selection::OneOf { selection, actions } => {
-                    build_recursive(&actions[selection].selection)
+                    let selected = &actions[selection];
+
+                    if matches!(selected.optional, None | Some(true)) {
+                        build_recursive(&selected.selection)
+                    } else {
+                        vec![]
+                    }
                 }
                 Selection::AllOf(definitions) => definitions
                     .iter()
+                    .filter(|def| matches!(def.optional, None | Some(true)))
                     .flat_map(|d| build_recursive(&d.selection))
                     .collect(),
             }
@@ -296,7 +305,7 @@ impl PipelineAction {
 
                 for d in deps {
                     // TODO::consider tracking installs to avoid reinstalling dependencies
-                    d.install(ctx)?;
+                    d.verify_or_install(ctx)?;
                 }
 
                 Ok(())
