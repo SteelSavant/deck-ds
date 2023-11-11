@@ -1,6 +1,9 @@
 use anyhow::Result;
 use include_dir::{include_dir, Dir};
-use std::path::Path;
+use std::{
+    path::Path,
+    sync::{Arc, Mutex},
+};
 
 use simplelog::{LevelFilter, WriteLogger};
 
@@ -115,6 +118,7 @@ fn main() -> Result<()> {
         let test_profile = ProfileId::from_uuid(uuid::Uuid::nil());
 
         settings.set_profile(&Profile {
+            name: "Temp".to_string(),
             id: test_profile,
             template: template.id,
             tags: vec![],
@@ -126,6 +130,8 @@ fn main() -> Result<()> {
             profile_id: test_profile,
         }))?;
     }
+
+    let settings = Arc::new(Mutex::new(settings));
 
     match mode {
         Modes::Autostart => {
@@ -146,7 +152,11 @@ fn main() -> Result<()> {
                 .register("LOG", api::general::log_it())
                 .register("LOGPATH", move |_| {
                     vec![log_filepath.to_string_lossy().to_string().into()]
-                });
+                })
+                .register(
+                    "create_profile",
+                    api::profile::create_profile(settings.clone()),
+                );
 
             instance
                 .run_blocking()

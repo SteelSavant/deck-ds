@@ -29,9 +29,9 @@ pub enum RelativeLocation {
     SameAs,
 }
 
-impl Into<Relation> for RelativeLocation {
-    fn into(self) -> Relation {
-        match self {
+impl From<RelativeLocation> for Relation {
+    fn from(value: RelativeLocation) -> Self {
+        match value {
             RelativeLocation::Above => Relation::Above,
             RelativeLocation::Below => Relation::Below,
             RelativeLocation::LeftOf => Relation::LeftOf,

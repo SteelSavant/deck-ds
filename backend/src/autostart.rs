@@ -1,4 +1,7 @@
-use std::path::PathBuf;
+use std::{
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
 use anyhow::{anyhow, Result};
 
@@ -6,22 +9,28 @@ use crate::{asset::AssetManager, pipeline::executor::PipelineExecutor, settings:
 
 #[derive(Debug)]
 pub struct AutoStart {
-    settings: Settings,
+    settings: Arc<Mutex<Settings>>,
 }
 
 #[derive(Debug)]
 pub struct LoadedAutoStart {
     autostart: crate::settings::AutoStart,
-    settings: Settings,
+    settings: Arc<Mutex<Settings>>,
 }
 
 impl AutoStart {
-    pub fn new(settings: Settings) -> Self {
+    pub fn new(settings: Arc<Mutex<Settings>>) -> Self {
         Self { settings }
     }
 
     pub fn load(self) -> Result<Option<LoadedAutoStart>> {
-        let autostart = self.settings.get_autostart()?;
+        let autostart = {
+            let settings = self
+                .settings
+                .lock()
+                .expect("settings mutex should be lockable");
+            settings.get_autostart()?
+        };
 
         self.teardown_leftovers();
 
@@ -47,16 +56,19 @@ impl LoadedAutoStart {
         home_dir: PathBuf,
         config_dir: PathBuf,
     ) -> Result<PipelineExecutor> {
-        let profile = self.settings.get_profile(&self.autostart.profile_id)?;
-
-        if let Some(definition) = self
+        let settings = self
             .settings
+            .lock()
+            .expect("settings mutex should be lockable");
+
+        let profile = settings.get_profile(&self.autostart.profile_id)?;
+
+        if let Some(definition) = settings
             .get_templates()
             .iter()
             .find(|pd| pd.id == profile.template)
         {
-            let app_settings = self
-                .settings
+            let app_settings = settings
                 .get_app(&self.autostart.app_id)?
                 .and_then(|s| s.overrides.get(&definition.id).cloned());
 

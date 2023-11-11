@@ -5,6 +5,7 @@ use std::{
 };
 
 use anyhow::Result;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -147,6 +148,20 @@ impl Settings {
 
     // File data
 
+    pub fn create_profile(&self, name: String, template_id: &PipelineDefinitionId) -> Result<Profile> {
+        // ensure template exists
+        self.templates.iter().find(|t| t.id == *template_id).ok_or(anyhow::anyhow!("Could not find matching template for {template_id:?}"))?;
+
+        Ok(Profile {
+            name,
+            id: ProfileId::new(),
+            template: *template_id,
+            tags: vec![],
+            overrides: Overrides::default(),
+        })
+
+    }
+
     pub fn get_profile(&self, id: &ProfileId) -> Result<Profile> {
         let raw = id.raw();
 
@@ -212,6 +227,10 @@ impl Settings {
 
     // In-memory configuration (currently readonly, but dependencies should ideally be configurable)
 
+    pub fn get_template(&self, id: &PipelineDefinitionId) -> Option<&PipelineDefinition> {
+        self.templates.iter().find(|t| t.id == *id)
+    }
+
     pub fn get_templates(&self) -> &[PipelineDefinition] {
         &self.templates
     }
@@ -227,8 +246,9 @@ pub struct AutoStart {
     pub profile_id: ProfileId,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct Profile {
+    pub name: String,
     pub id: ProfileId,
     pub template: PipelineDefinitionId,
     pub tags: Vec<String>,
@@ -262,7 +282,7 @@ pub struct App {
 /// ```
 ///
 /// All guids are flattened top-level, so [Selection::AllOf] and [Selection::OneOf]::actions will not exist.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, JsonSchema)]
 pub struct Overrides {
     pub fields: HashMap<PipelineActionDefinitionId, Value>,
     pub enabled: HashMap<PipelineActionDefinitionId, bool>,
