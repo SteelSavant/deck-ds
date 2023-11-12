@@ -113,7 +113,7 @@ fn main() -> Result<()> {
     let settings = Settings::new(&config_dir);
     {
         // temp test code
-        let template = &settings.get_templates()[1];
+        let template = &settings.get_templates()[2]; // Cemu Template
 
         let test_profile = ProfileId::from_uuid(uuid::Uuid::nil());
 
@@ -133,18 +133,38 @@ fn main() -> Result<()> {
 
     let settings = Arc::new(Mutex::new(settings));
 
+    let assets_dir = config_dir.join("assets"); // TODO::keep assets with decky plugin, not config
+    let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
+
     match mode {
         Modes::Autostart => {
-            let assets_dir = config_dir.join("assets"); // TODO::keep assets with decky plugin, not config
-            let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
-
-            let executor = AutoStart::new(settings)
+            // build the executor
+            let executor = AutoStart::new(settings.clone())
                 .load()?
                 .map(|l| l.build_executor(asset_manager, home_dir, config_dir))
-                .transpose()?;
-            match executor {
+                .transpose();
+
+            // remove autostart config, so we don't end up in a loop
+            let lock = settings
+                .lock()
+                .expect("settings mutex should be able to lock");
+            lock.set_autostart_cfg(&None)?;
+
+            // run the executor
+            let exec_result = executor.and_then(|executor| match executor {
                 Some(mut executor) => executor.exec(PipelineTarget::Desktop),
                 None => Ok(()),
+            });
+
+            // return to gamemode
+            #[cfg(not(debug_assertions))]
+            {
+                use deck_ds::sys::steamos_session_select::{steamos_session_select, Session};
+                steamos_session_select(Session::Gamescope).and(exec_result)
+            }
+            #[cfg(debug_assertions)]
+            {
+                exec_result // avoid gamemode switch during dev
             }
         }
         Modes::Serve => {
@@ -156,6 +176,12 @@ fn main() -> Result<()> {
                 .register(
                     "create_profile",
                     api::profile::create_profile(settings.clone()),
+                )
+                .register("get_profile", api::profile::get_profile(settings.clone()))
+                .register("set_profile", api::profile::set_profile(settings.clone()))
+                .register(
+                    "autostart",
+                    api::autostart::autostart(settings, asset_manager, home_dir, config_dir),
                 );
 
             instance

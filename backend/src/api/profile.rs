@@ -111,3 +111,40 @@ pub fn set_profile(
         }
     }
 }
+
+// Template Info
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+struct GetTemplateInfosResponse {
+    template_infos: Vec<TemplateInfo>,
+}
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+struct TemplateInfo {
+    id: PipelineDefinitionId,
+    tags: Vec<String>,
+    name: String,
+    description: String,
+}
+
+pub fn get_template_infos(
+    settings: Arc<Mutex<Settings>>,
+) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+    move |_: super::ApiParameterType| {
+        let lock = settings.lock().expect("settings mutex should be lockable");
+        let res = lock
+            .get_templates()
+            .iter()
+            .map(|t| TemplateInfo {
+                id: t.id,
+                tags: t.tags.clone(),
+                description: t.description.clone(),
+                name: t.name.clone(),
+            })
+            .collect();
+
+        GetTemplateInfosResponse {
+            template_infos: res,
+        }
+        .to_response()
+    }
+}

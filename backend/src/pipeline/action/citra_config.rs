@@ -87,6 +87,8 @@ impl PipelineActionImpl for CitraConfig {
         let ini_path = self.get_ini_path(&ctx.home_dir)?;
         let mut ini = Ini::load_from_file(ini_path.as_path())?;
 
+        // TODO::the Ini lib fails to load Citra's ini properly. Handle necessary fields with regex instead
+
         let layout_section = ini
             .section_mut(Some("Layout"))
             .expect("Layout section should exist");

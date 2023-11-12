@@ -1,3 +1,4 @@
+pub mod autostart;
 pub mod general;
 pub mod profile;
 
@@ -72,7 +73,7 @@ where
     }
 }
 
-pub struct ResponseErr(StatusCode, anyhow::Error);
+struct ResponseErr(StatusCode, anyhow::Error);
 
 impl ToResponseType for ResponseErr {
     fn to_response(&self) -> ApiParameterType {
@@ -86,7 +87,7 @@ impl ToResponseType for ResponseErr {
     }
 }
 
-pub struct ResponseOk;
+struct ResponseOk;
 
 impl ToResponseType for ResponseOk {
     fn to_response(&self) -> ApiParameterType {

@@ -32,8 +32,6 @@ impl AutoStart {
             settings.get_autostart()?
         };
 
-        self.teardown_leftovers();
-
         if let Some(autostart) = autostart {
             Ok(Some(LoadedAutoStart {
                 autostart,
@@ -43,13 +41,18 @@ impl AutoStart {
             Ok(None)
         }
     }
-
-    fn teardown_leftovers(&self) {
-        // TODO::this
-    }
 }
 
 impl LoadedAutoStart {
+    pub fn new(autostart: crate::settings::AutoStart, settings: Arc<Mutex<Settings>>) -> Self {
+        Self {
+            autostart,
+            settings,
+        }
+    }
+
+    // TODO::teardown leftover
+
     pub fn build_executor(
         self,
         assets_manager: AssetManager,

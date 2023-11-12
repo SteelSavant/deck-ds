@@ -127,6 +127,7 @@ impl<'a> PipelineExecutor<'a> {
                 .exec(&mut self.ctx, ActionType::Setup);
 
             if let Err(err) = res {
+                println!("{}", err);
                 errors.push(err);
                 break;
             }
@@ -134,7 +135,8 @@ impl<'a> PipelineExecutor<'a> {
 
         if errors.is_empty() {
             // Run app
-            if let Err(err) = self.run_app(self.app_id.raw()) {
+            if let Err(err) = self.run_app(&self.app_id, target) {
+                println!("{}", err);
                 errors.push(err);
             }
         }
@@ -145,6 +147,7 @@ impl<'a> PipelineExecutor<'a> {
 
             let res = action.exec(ctx, ActionType::Teardown);
             if let Err(err) = res {
+                println!("{}", err);
                 errors.push(err);
             }
         }
@@ -159,9 +162,15 @@ impl<'a> PipelineExecutor<'a> {
         }
     }
 
-    fn run_app(&self, app_id: &str) -> Result<()> {
+    fn run_app(&self, app_id: &AppId, target: PipelineTarget) -> Result<()> {
+        let app_id = app_id.raw();
+        let launch_type = match target {
+            PipelineTarget::Desktop => "rungameid",
+            PipelineTarget::Gamemode => "launch",
+        };
+
         let status = Command::new("steam")
-            .arg(format!("steam://rungameid/{app_id}"))
+            .arg(format!("steam://{launch_type}/{app_id}"))
             .status()
             .with_context(|| format!("Error starting application {app_id}"))?;
 
