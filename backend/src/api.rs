@@ -3,9 +3,18 @@ pub mod general;
 pub mod profile;
 
 use anyhow::Result;
+use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
 use serde_json::json;
 use usdpl_back::core::serdes::Primitive;
+
+use self::{
+    autostart::AutoStartRequest,
+    profile::{
+        CreateProfileRequest, CreateProfileResponse, GetProfileRequest, GetProfileResponse,
+        GetTemplateInfosResponse, SetProfileRequest,
+    },
+};
 
 pub(super) type ApiParameterType = Vec<Primitive>;
 
@@ -93,4 +102,19 @@ impl ToResponseType for ResponseOk {
     fn to_response(&self) -> ApiParameterType {
         vec![StatusCode::Ok.into()]
     }
+}
+
+/// Marker type for generating API json schema types for ts
+#[derive(JsonSchema)]
+pub struct __Api {
+    // profile
+    pub create_profile_request: CreateProfileRequest,
+    pub create_profile_response: CreateProfileResponse,
+    pub get_profile_request: GetProfileRequest,
+    pub get_profile_response: GetProfileResponse,
+    pub set_profile_request: SetProfileRequest,
+    pub get_template_infos_response: GetTemplateInfosResponse,
+
+    // autostart
+    pub autostart_request: AutoStartRequest,
 }

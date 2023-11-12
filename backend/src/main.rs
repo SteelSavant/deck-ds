@@ -1,5 +1,6 @@
 use anyhow::Result;
 use include_dir::{include_dir, Dir};
+use schemars::JsonSchema;
 use std::{
     path::Path,
     sync::{Arc, Mutex},
@@ -11,13 +12,13 @@ use usdpl_back::Instance;
 
 use clap::{Parser, Subcommand};
 use deck_ds::{
-    api,
+    api::{self, __Api},
     asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
     pipeline::config::{PipelineDefinition, PipelineTarget},
     settings::{AppId, Overrides, Profile, ProfileId, Settings},
-    util,
+    util::{self, create_dir_all},
 };
 use derive_more::Display;
 
@@ -190,13 +191,22 @@ fn main() -> Result<()> {
         }
         Modes::Schema { output } => {
             let path = Path::new(&output);
-            if path.is_dir() {
-                Err(anyhow::anyhow!("output must be a file"))
+            if path.is_file() {
+                Err(anyhow::anyhow!("output must be a directory"))
             } else {
-                let schema = schemars::schema_for!(PipelineDefinition);
+                create_dir_all(&path)?;
+
+                #[derive(JsonSchema)]
+                /// Marker type for generating json schema types for ts
+                struct __Backend {
+                    pub _api: __Api,
+                    pub _pipeline_definition: PipelineDefinition,
+                }
+
+                let pipeline_schema = schemars::schema_for!(__Backend);
                 Ok(std::fs::write(
-                    path,
-                    serde_json::to_string_pretty(&schema)?,
+                    path.join("schema.json"),
+                    serde_json::to_string_pretty(&pipeline_schema)?,
                 )?)
             }
         }

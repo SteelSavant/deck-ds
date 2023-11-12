@@ -4,6 +4,7 @@ use std::{
 };
 
 use anyhow::Result;
+use schemars::JsonSchema;
 use serde::Deserialize;
 
 use crate::{
@@ -16,8 +17,8 @@ use crate::{
 
 use super::{ParsePrimitiveAt, ResponseErr, ResponseOk, StatusCode, ToResponseType};
 
-#[derive(Debug, Clone, Deserialize)]
-struct AutoStartRequest {
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct AutoStartRequest {
     app: AppId,
     profile: ProfileId,
     target: PipelineTarget,

@@ -13,13 +13,13 @@ use super::{ParsePrimitiveAt, ResponseErr, ResponseOk, StatusCode, ToResponseTyp
 // Create Profile
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
-struct CreateProfileRequest {
+pub struct CreateProfileRequest {
     profile_name: String,
     template_id: PipelineDefinitionId,
 }
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
-struct CreateProfileResponse {
+pub struct CreateProfileResponse {
     profile_id: ProfileId,
 }
 
@@ -45,12 +45,12 @@ pub fn create_profile(
 // Get Profile
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
-struct GetProfileRequest {
+pub struct GetProfileRequest {
     profile_id: ProfileId,
 }
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
-struct GetProfileResponse {
+pub struct GetProfileResponse {
     profile: Profile,
     template: PipelineDefinition,
 }
@@ -88,7 +88,7 @@ pub fn get_profile(
 // Set Profile
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
-struct SetProfileRequest {
+pub struct SetProfileRequest {
     profile: Profile,
 }
 
@@ -115,11 +115,11 @@ pub fn set_profile(
 // Template Info
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
-struct GetTemplateInfosResponse {
+pub struct GetTemplateInfosResponse {
     template_infos: Vec<TemplateInfo>,
 }
 #[derive(Debug, Clone, Serialize, JsonSchema)]
-struct TemplateInfo {
+pub struct TemplateInfo {
     id: PipelineDefinitionId,
     tags: Vec<String>,
     name: String,
