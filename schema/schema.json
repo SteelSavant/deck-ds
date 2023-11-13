@@ -1,0 +1,831 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "__Backend",
+  "description": "Marker type for generating json schema types for ts",
+  "type": "object",
+  "required": [
+    "_api",
+    "_pipeline_definition"
+  ],
+  "properties": {
+    "_api": {
+      "$ref": "#/definitions/__Api"
+    },
+    "_pipeline_definition": {
+      "$ref": "#/definitions/PipelineDefinition"
+    }
+  },
+  "definitions": {
+    "AspectRatioOption": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "Any",
+            "Native"
+          ]
+        },
+        {
+          "type": "object",
+          "required": [
+            "Exact"
+          ],
+          "properties": {
+            "Exact": {
+              "type": "number",
+              "format": "float"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "AutoStartRequest": {
+      "type": "object",
+      "required": [
+        "app",
+        "profile",
+        "target"
+      ],
+      "properties": {
+        "app": {
+          "type": "string"
+        },
+        "profile": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "target": {
+          "$ref": "#/definitions/PipelineTarget"
+        }
+      }
+    },
+    "CemuConfig": {
+      "type": "object",
+      "required": [
+        "separate_gamepad_view",
+        "xml_source"
+      ],
+      "properties": {
+        "separate_gamepad_view": {
+          "type": "boolean"
+        },
+        "xml_source": {
+          "$ref": "#/definitions/CemuXmlSource"
+        }
+      }
+    },
+    "CemuXmlSource": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "Flatpak"
+          ]
+        },
+        {
+          "type": "object",
+          "required": [
+            "Custom"
+          ],
+          "properties": {
+            "Custom": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "CitraConfig": {
+      "type": "object",
+      "required": [
+        "ini_source",
+        "layout_option"
+      ],
+      "properties": {
+        "ini_source": {
+          "$ref": "#/definitions/CitraIniSource"
+        },
+        "layout_option": {
+          "$ref": "#/definitions/CitraLayoutOption"
+        }
+      }
+    },
+    "CitraIniSource": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "Flatpak"
+          ]
+        },
+        {
+          "type": "object",
+          "required": [
+            "Custom"
+          ],
+          "properties": {
+            "Custom": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "CitraLayoutOption": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "Default",
+            "SingleScreen",
+            "LargeScreen",
+            "SideBySide",
+            "SeparateWindows",
+            "HybridScreen"
+          ]
+        },
+        {
+          "type": "object",
+          "required": [
+            "Unknown"
+          ],
+          "properties": {
+            "Unknown": {
+              "type": "integer",
+              "format": "uint8",
+              "minimum": 0.0
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "CreateProfileRequest": {
+      "type": "object",
+      "required": [
+        "profile_name",
+        "template_id"
+      ],
+      "properties": {
+        "profile_name": {
+          "type": "string"
+        },
+        "template_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "CreateProfileResponse": {
+      "type": "object",
+      "required": [
+        "profile_id"
+      ],
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "DisplayConfig": {
+      "type": "object",
+      "required": [
+        "teardown_deck_location",
+        "teardown_external_settings"
+      ],
+      "properties": {
+        "teardown_deck_location": {
+          "$ref": "#/definitions/RelativeLocation"
+        },
+        "teardown_external_settings": {
+          "$ref": "#/definitions/TeardownExternalSettings"
+        }
+      }
+    },
+    "GetProfileRequest": {
+      "type": "object",
+      "required": [
+        "profile_id"
+      ],
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "GetProfileResponse": {
+      "type": "object",
+      "required": [
+        "profile",
+        "template"
+      ],
+      "properties": {
+        "profile": {
+          "$ref": "#/definitions/Profile"
+        },
+        "template": {
+          "$ref": "#/definitions/PipelineDefinition"
+        }
+      }
+    },
+    "GetTemplateInfosResponse": {
+      "type": "object",
+      "required": [
+        "template_infos"
+      ],
+      "properties": {
+        "template_infos": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TemplateInfo"
+          }
+        }
+      }
+    },
+    "MelonDSConfig": {
+      "type": "object",
+      "required": [
+        "book_mode",
+        "ini_source",
+        "layout_option",
+        "sizing_option",
+        "swap_screens"
+      ],
+      "properties": {
+        "book_mode": {
+          "type": "boolean"
+        },
+        "ini_source": {
+          "$ref": "#/definitions/MelonDSIniSource"
+        },
+        "layout_option": {
+          "$ref": "#/definitions/MelonDSLayoutOption"
+        },
+        "sizing_option": {
+          "$ref": "#/definitions/MelonDSSizingOption"
+        },
+        "swap_screens": {
+          "type": "boolean"
+        }
+      }
+    },
+    "MelonDSIniSource": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "Flatpak"
+          ]
+        },
+        {
+          "type": "object",
+          "required": [
+            "Custom"
+          ],
+          "properties": {
+            "Custom": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "MelonDSLayoutOption": {
+      "description": "melonDS layout options. Because of the \"unique\" way melonDS handles layouts, these options do not map 1:1.",
+      "type": "string",
+      "enum": [
+        "Natural",
+        "Vertical",
+        "Horizontal",
+        "Hybrid",
+        "Single"
+      ]
+    },
+    "MelonDSSizingOption": {
+      "type": "string",
+      "enum": [
+        "Even",
+        "EmphasizeTop",
+        "EmphasizeBottom",
+        "Auto"
+      ]
+    },
+    "ModeOption_for_Resolution": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "Exact"
+          ],
+          "properties": {
+            "Exact": {
+              "$ref": "#/definitions/Resolution"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "AtLeast"
+          ],
+          "properties": {
+            "AtLeast": {
+              "$ref": "#/definitions/Resolution"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "AtMost"
+          ],
+          "properties": {
+            "AtMost": {
+              "$ref": "#/definitions/Resolution"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ModeOption_for_double": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "Exact"
+          ],
+          "properties": {
+            "Exact": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "AtLeast"
+          ],
+          "properties": {
+            "AtLeast": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "AtMost"
+          ],
+          "properties": {
+            "AtMost": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ModePreference": {
+      "type": "object",
+      "required": [
+        "aspect_ratio",
+        "refresh",
+        "resolution"
+      ],
+      "properties": {
+        "aspect_ratio": {
+          "$ref": "#/definitions/AspectRatioOption"
+        },
+        "refresh": {
+          "$ref": "#/definitions/ModeOption_for_double"
+        },
+        "resolution": {
+          "$ref": "#/definitions/ModeOption_for_Resolution"
+        }
+      }
+    },
+    "MultiWindow": {
+      "type": "null"
+    },
+    "Overrides": {
+      "description": "Overrides for a pipeline definition.\n\nJson is in the format\n\n```json { \"guid_for_action_selection\": { \"overridden_field1\": \"value1\", \"overridden_field2\": 2, \"overridden_field3\": { \"nested_field\": 4.5 } }, \"guid_for_oneof\": { \"selection\": \"some_guid\", }, } ```\n\nAll guids are flattened top-level, so [Selection::AllOf] and [Selection::OneOf]::actions will not exist.",
+      "type": "object",
+      "required": [
+        "enabled",
+        "fields"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        },
+        "fields": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "PipelineAction": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "DisplayConfig"
+          ],
+          "properties": {
+            "DisplayConfig": {
+              "$ref": "#/definitions/DisplayConfig"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "VirtualScreen"
+          ],
+          "properties": {
+            "VirtualScreen": {
+              "$ref": "#/definitions/VirtualScreen"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "MultiWindow"
+          ],
+          "properties": {
+            "MultiWindow": {
+              "$ref": "#/definitions/MultiWindow"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "CitraConfig"
+          ],
+          "properties": {
+            "CitraConfig": {
+              "$ref": "#/definitions/CitraConfig"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "CemuConfig"
+          ],
+          "properties": {
+            "CemuConfig": {
+              "$ref": "#/definitions/CemuConfig"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "MelonDSConfig"
+          ],
+          "properties": {
+            "MelonDSConfig": {
+              "$ref": "#/definitions/MelonDSConfig"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "PipelineActionDefinition": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "selection"
+      ],
+      "properties": {
+        "description": {
+          "description": "An optional description of what the action does.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "description": "The id of the action",
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "description": "The name of the action",
+          "type": "string"
+        },
+        "optional": {
+          "description": "Flags whether the selection is optional. If None, not optional. If Some(true), optional and enabled, else disabled.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "selection": {
+          "description": "The value of the pipeline action",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Selection"
+            }
+          ]
+        }
+      }
+    },
+    "PipelineDefinition": {
+      "type": "object",
+      "required": [
+        "description",
+        "id",
+        "name",
+        "tags",
+        "targets"
+      ],
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "targets": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PipelineActionDefinition"
+          }
+        }
+      }
+    },
+    "PipelineTarget": {
+      "type": "string",
+      "enum": [
+        "Desktop",
+        "Gamemode"
+      ]
+    },
+    "Profile": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "overrides",
+        "tags",
+        "template"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "overrides": {
+          "$ref": "#/definitions/Overrides"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "template": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "RelativeLocation": {
+      "type": "string",
+      "enum": [
+        "Above",
+        "Below",
+        "LeftOf",
+        "RightOf",
+        "SameAs"
+      ]
+    },
+    "Resolution": {
+      "type": "object",
+      "required": [
+        "h",
+        "w"
+      ],
+      "properties": {
+        "h": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0.0
+        },
+        "w": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0.0
+        }
+      }
+    },
+    "Selection": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "Action"
+          ],
+          "properties": {
+            "Action": {
+              "$ref": "#/definitions/PipelineAction"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "OneOf"
+          ],
+          "properties": {
+            "OneOf": {
+              "type": "object",
+              "required": [
+                "actions",
+                "selection"
+              ],
+              "properties": {
+                "actions": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/definitions/PipelineActionDefinition"
+                  }
+                },
+                "selection": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "AllOf"
+          ],
+          "properties": {
+            "AllOf": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PipelineActionDefinition"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "SetProfileRequest": {
+      "type": "object",
+      "required": [
+        "profile"
+      ],
+      "properties": {
+        "profile": {
+          "$ref": "#/definitions/Profile"
+        }
+      }
+    },
+    "TeardownExternalSettings": {
+      "oneOf": [
+        {
+          "description": "Previous resolution, before setup",
+          "type": "string",
+          "enum": [
+            "Previous"
+          ]
+        },
+        {
+          "description": "Native resolution",
+          "type": "string",
+          "enum": [
+            "Native"
+          ]
+        },
+        {
+          "description": "Resolution based on specific settings",
+          "type": "object",
+          "required": [
+            "Preference"
+          ],
+          "properties": {
+            "Preference": {
+              "$ref": "#/definitions/ModePreference"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "TemplateInfo": {
+      "type": "object",
+      "required": [
+        "description",
+        "id",
+        "name",
+        "tags"
+      ],
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "VirtualScreen": {
+      "type": "null"
+    },
+    "__Api": {
+      "description": "Marker type for generating API json schema types for ts",
+      "type": "object",
+      "required": [
+        "autostart_request",
+        "create_profile_request",
+        "create_profile_response",
+        "get_profile_request",
+        "get_profile_response",
+        "get_template_infos_response",
+        "set_profile_request"
+      ],
+      "properties": {
+        "autostart_request": {
+          "$ref": "#/definitions/AutoStartRequest"
+        },
+        "create_profile_request": {
+          "$ref": "#/definitions/CreateProfileRequest"
+        },
+        "create_profile_response": {
+          "$ref": "#/definitions/CreateProfileResponse"
+        },
+        "get_profile_request": {
+          "$ref": "#/definitions/GetProfileRequest"
+        },
+        "get_profile_response": {
+          "$ref": "#/definitions/GetProfileResponse"
+        },
+        "get_template_infos_response": {
+          "$ref": "#/definitions/GetTemplateInfosResponse"
+        },
+        "set_profile_request": {
+          "$ref": "#/definitions/SetProfileRequest"
+        }
+      }
+    }
+  }
+}

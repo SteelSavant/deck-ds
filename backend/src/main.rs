@@ -196,8 +196,8 @@ fn main() -> Result<()> {
             } else {
                 create_dir_all(&path)?;
 
-                #[derive(JsonSchema)]
                 /// Marker type for generating json schema types for ts
+                #[derive(JsonSchema)]
                 struct __Backend {
                     pub _api: __Api,
                     pub _pipeline_definition: PipelineDefinition,
