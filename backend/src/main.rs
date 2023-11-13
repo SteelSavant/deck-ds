@@ -183,6 +183,10 @@ fn main() -> Result<()> {
                 .register(
                     "autostart",
                     api::autostart::autostart(settings, asset_manager, home_dir, config_dir),
+                )
+                .register(
+                    "get_template_infos",
+                    api::profile::get_template_infos(settings),
                 );
 
             instance

@@ -1,4 +1,29 @@
-import {init_usdpl, target_usdpl, init_embedded, call_backend, init_tr} from "usdpl-front";
+import { init_usdpl, target_usdpl, init_embedded, call_backend, init_tr } from "usdpl-front";
+import { AutoStartRequest, CreateProfileRequest, CreateProfileResponse, GetProfileRequest, GetProfileResponse, GetTemplateInfosResponse, SetProfileRequest } from "./types/backend_api";
+import { Result, ok, err } from "@kherge/result";
+
+export {
+    // Api Types
+    AutoStartRequest,
+    CreateProfileRequest,
+    CreateProfileResponse,
+    GetProfileRequest,
+    GetProfileResponse,
+    SetProfileRequest,
+    GetTemplateInfosResponse,
+
+    // Profile Types
+    Profile,
+    Overrides,
+    TemplateInfo,
+
+    // Pipeline Types
+    PipelineTarget,
+    Selection,
+    PipelineAction,
+    PipelineDefinition,
+    PipelineActionDefinition,
+} from "./types/backend_api";
 
 const USDPL_PORT: number = 44666;
 
@@ -41,6 +66,33 @@ export async function initBackend() {
     //setReady(true);
 }
 
+export enum StatusCode {
+    Ok = 200,
+    BadRequest = 400,
+    ServerError = 500,
+}
+
+export type Response<T> = Promise<Result<T, { code: StatusCode.BadRequest | StatusCode.ServerError, err: string }>>
+
+async function call_backend_typed<T, R>(fn: string, args: T): Response<R> {
+    const res = (await call_backend(fn, [args]));
+    const code = res[0];
+
+    switch (code) {
+        case StatusCode.Ok: {
+            return ok(res[1]); // no good way to typecheck here, so we assume the value is valid.
+        }
+        default: {
+            return err({
+                code: code,
+                err: res[1] // assume an error string
+            })
+        }
+    }
+}
+
+// Logging
+
 export enum LogLevel {
     Trace = 1,
     Debug = 2,
@@ -55,5 +107,27 @@ export async function log(level: LogLevel, msg: string): Promise<boolean> {
 
 export async function logPath(): Promise<String> {
     return (await call_backend("LOGPATH", []))[0];
+}
+
+// API
+
+export async function autoStart(request: AutoStartRequest): Response<void> {
+    return await call_backend_typed("autostart", request)
+}
+
+export async function createProfile(request: CreateProfileRequest): Response<CreateProfileResponse> {
+    return await call_backend_typed("create_profile", request)
+}
+
+export async function getProfile(request: GetProfileRequest): Response<GetProfileResponse> {
+    return await call_backend_typed("get_profile", request)
+}
+
+export async function setProfile(request: SetProfileRequest): Response<void> {
+    return await call_backend_typed("set_profile", request)
+}
+
+export async function getTemplateInfos(request: void): Response<GetTemplateInfosResponse> {
+    return await call_backend_typed("get_template_infos", request)
 }
 
