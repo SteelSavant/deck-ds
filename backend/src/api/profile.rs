@@ -42,6 +42,26 @@ pub fn create_profile(
     }
 }
 
+// Get Profiles
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct GetProfilesResponse {
+    profiles: Vec<Profile>,
+}
+
+pub fn get_profiles(
+    settings: Arc<Mutex<Settings>>,
+) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+    move |_: super::ApiParameterType| {
+        let lock = settings.lock().expect("settings mutex should be lockable");
+        let res = lock.get_profiles();
+        match res {
+            Ok(profiles) => GetProfilesResponse { profiles }.to_response(),
+            Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
+        }
+    }
+}
+
 // Get Profile
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]

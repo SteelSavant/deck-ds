@@ -4,8 +4,9 @@
   "description": "Decky plugin for launching dual-screen games from game mode on Steam Deck",
   "scripts": {
     "build": "shx rm -rf dist && rollup -c",
-    "build_schema_types": "pnpm json2ts schema/schema.json src/types/backend_api.d.ts --additionalProperties=false",
-    "build_all": "shx rm -rf dist && rollup -c && cargo build && mkdir -p bin && cp ./target/debug/deck-ds ./bin/backend && echo Done",
+    "build_schema_types": "./bin/backend schema ./schema && pnpm json2ts schema/schema.json src/types/backend_api.d.ts --additionalProperties=false",
+    "build_backend": "cargo build --release && mkdir -p bin && cp ./target/release/deck-ds ./bin/backend",
+    "build_all": "pnpm build_backend && pnpm build_schema_types && pnpm build",
     "watch": "rollup -c -w",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -233,6 +233,20 @@
         }
       }
     },
+    "GetProfilesResponse": {
+      "type": "object",
+      "required": [
+        "profiles"
+      ],
+      "properties": {
+        "profiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Profile"
+          }
+        }
+      }
+    },
     "GetTemplateInfosResponse": {
       "type": "object",
       "required": [
@@ -800,6 +814,7 @@
         "create_profile_response",
         "get_profile_request",
         "get_profile_response",
+        "get_profiles_response",
         "get_template_infos_response",
         "set_profile_request"
       ],
@@ -818,6 +833,9 @@
         },
         "get_profile_response": {
           "$ref": "#/definitions/GetProfileResponse"
+        },
+        "get_profiles_response": {
+          "$ref": "#/definitions/GetProfilesResponse"
         },
         "get_template_infos_response": {
           "$ref": "#/definitions/GetTemplateInfosResponse"
