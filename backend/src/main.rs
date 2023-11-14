@@ -182,11 +182,16 @@ fn main() -> Result<()> {
                 .register("set_profile", api::profile::set_profile(settings.clone()))
                 .register(
                     "autostart",
-                    api::autostart::autostart(settings, asset_manager, home_dir, config_dir),
+                    api::autostart::autostart(
+                        settings.clone(),
+                        asset_manager,
+                        home_dir,
+                        config_dir,
+                    ),
                 )
                 .register(
                     "get_template_infos",
-                    api::profile::get_template_infos(settings),
+                    api::profile::get_template_infos(settings.clone()),
                 );
 
             instance

@@ -3,12 +3,13 @@ import {
 } from "decky-frontend-lib"
 import { VFC } from "react"
 import { HiOutlineArchive, HiOutlineTemplate } from "react-icons/hi"
+import { ProfilesPage } from "./Profiles";
 
 const SettingsRouter: VFC = () => {
     const pages = [
         {
             title: 'Profiles',
-            content: <div > Profiles </div>,
+            content: <div > <ProfilesPage /> </div>,
             icon: <HiOutlineArchive />,
             hideTitle: false
         },

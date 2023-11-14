@@ -21,7 +21,7 @@ import logo from "../assets/logo.png";
 import * as backend from "./backend";
 import { tr } from "usdpl-front";
 import { set_value, get_value } from "usdpl-front";
-import SettingsRouter from "./settings/SettingsRouter";
+import SettingsRouter from "./Settings/SettingsRouter";
 
 var usdplReady = false;
 
@@ -54,11 +54,11 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
         </ButtonItem>
       </PanelSection>
     )
-  } 
-    
+  }
+
   return (
     <PanelSection title="Panel Section">
-        <PanelSectionRow>
+      <PanelSectionRow>
         <ButtonItem
           layout="below"
           onClick={() => {
@@ -68,7 +68,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
         >
           Configuration
         </ButtonItem>
-      </PanelSectionRow> 
+      </PanelSectionRow>
     </PanelSection>
   );
 }
