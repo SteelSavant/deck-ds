@@ -1,12 +1,7 @@
 import {
   ButtonItem,
   definePlugin,
-  DialogButton,
-  findModule,
-  findModuleChild,
-  Menu,
-  MenuItem,
-  Module,
+
   PanelSection,
   PanelSectionRow,
   Router,
@@ -16,11 +11,7 @@ import {
 import { VFC } from "react";
 import { FaShip } from "react-icons/fa";
 
-import logo from "../assets/logo.png";
-
 import * as backend from "./backend";
-import { tr } from "usdpl-front";
-import { set_value, get_value } from "usdpl-front";
 import SettingsRouter from "./Settings/SettingsRouter";
 
 var usdplReady = false;

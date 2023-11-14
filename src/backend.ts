@@ -1,6 +1,5 @@
 import { init_usdpl, target_usdpl, init_embedded, call_backend, init_tr } from "usdpl-front";
-import { AutoStartRequest, CreateProfileRequest, CreateProfileResponse, GetProfileRequest, GetProfileResponse, GetTemplateInfosResponse, SetProfileRequest } from "./types/backend_api";
-import { Result, ok, err } from "@kherge/result";
+import { AutoStartRequest, CreateProfileRequest, CreateProfileResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplateInfosResponse, SetProfileRequest } from "./types/backend_api";
 
 export {
     // Api Types
@@ -10,6 +9,7 @@ export {
     GetProfileRequest,
     GetProfileResponse,
     SetProfileRequest,
+    GetProfilesResponse,
     GetTemplateInfosResponse,
 
     // Profile Types
@@ -80,10 +80,10 @@ async function call_backend_typed<T, R>(fn: string, args: T): Response<R> {
 
     switch (code) {
         case StatusCode.Ok: {
-            return ok(res[1]); // no good way to typecheck here, so we assume the value is valid.
+            return new Ok(res[1]); // no good way to typecheck here, so we assume the value is valid.
         }
         default: {
-            return err({
+            return new Err({
                 code: code,
                 err: res[1] // assume an error string
             })
@@ -127,7 +127,11 @@ export async function setProfile(request: SetProfileRequest): Response<void> {
     return await call_backend_typed("set_profile", request)
 }
 
-export async function getTemplateInfos(request: void): Response<GetTemplateInfosResponse> {
-    return await call_backend_typed("get_template_infos", request)
+export async function getProfiles(): Response<GetProfilesResponse> {
+    return await call_backend_typed("get_profiles", undefined);
+}
+
+export async function getTemplateInfos(): Response<GetTemplateInfosResponse> {
+    return await call_backend_typed("get_template_infos", undefined);
 }
 
