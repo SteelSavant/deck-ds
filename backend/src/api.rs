@@ -12,7 +12,7 @@ use self::{
     autostart::AutoStartRequest,
     profile::{
         CreateProfileRequest, CreateProfileResponse, GetProfileRequest, GetProfileResponse,
-        GetTemplateInfosResponse, SetProfileRequest,
+        GetProfilesResponse, GetTemplateInfosResponse, SetProfileRequest,
     },
 };
 
@@ -113,6 +113,7 @@ pub struct __Api {
     pub get_profile_request: GetProfileRequest,
     pub get_profile_response: GetProfileResponse,
     pub set_profile_request: SetProfileRequest,
+    pub get_profiles_response: GetProfilesResponse,
     pub get_template_infos_response: GetTemplateInfosResponse,
 
     // autostart

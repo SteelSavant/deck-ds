@@ -13,9 +13,14 @@ use crate::{
     macros::{newtype_strid, newtype_uuid},
     pipeline::{
         action::{
+            cemu_config::{CemuConfig, CemuXmlSource},
+            citra_config::{CitraConfig, CitraIniSource, CitraLayoutOption},
             display_config::{DisplayConfig, RelativeLocation, TeardownExternalSettings},
+            melonds_config::{
+                MelonDSConfig, MelonDSIniSource, MelonDSLayoutOption, MelonDSSizingOption,
+            },
             multi_window::MultiWindow,
-            virtual_screen::VirtualScreen, melonds_config::{MelonDSConfig, MelonDSIniSource, MelonDSLayoutOption, MelonDSSizingOption}, citra_config::{CitraConfig, CitraIniSource, CitraLayoutOption}, cemu_config::{CemuConfig, CemuXmlSource},
+            virtual_screen::VirtualScreen,
         },
         config::{
             PipelineActionDefinition, PipelineActionDefinitionId, PipelineDefinition,
@@ -126,7 +131,7 @@ impl Settings {
                                 name: "Citra Config".to_string(),
                                 selection: CitraConfig { 
                                     ini_source: CitraIniSource::Flatpak, 
-                                    layout_option: CitraLayoutOption::Default, 
+                                    layout_option: CitraLayoutOption::Default,
                                 }.into(),
                                 optional: Some(true)
                             },
@@ -149,15 +154,15 @@ impl Settings {
                             },
                         ])
                     ),
-                    (PipelineTarget::Gamemode, 
+                    (PipelineTarget::Gamemode,
                         Selection::AllOf(vec![
                             PipelineActionDefinition {
                                 id: PipelineActionDefinitionId::parse("f39d953b-7cbe-43b0-acf9-3d789d26fb8b"),
                                 description: Some("Edits Citra ini file to desired settings".to_string()),
                                 name: "Citra Config".to_string(),
-                                selection: CitraConfig { 
-                                    ini_source: CitraIniSource::Flatpak, 
-                                    layout_option: CitraLayoutOption::SideBySide, 
+                                selection: CitraConfig {
+                                    ini_source: CitraIniSource::Flatpak,
+                                    layout_option: CitraLayoutOption::SideBySide,
                                 }.into(),
                                 optional: Some(true)
                             },
@@ -172,7 +177,7 @@ impl Settings {
                 "Maps primary and secondary windows to different screens for Cemu.".to_string(),
                 vec!["WIIU".to_string()],
                 HashMap::from_iter([
-                    (PipelineTarget::Desktop, 
+                    (PipelineTarget::Desktop,
                         Selection::AllOf(vec![
                             PipelineActionDefinition {
                                 id: PipelineActionDefinitionId::parse("461c1ea6-8dd3-434e-b87d-8981c82b94c2"),
@@ -203,7 +208,7 @@ impl Settings {
                             },
                         ])
                     ),
-                    (PipelineTarget::Gamemode, 
+                    (PipelineTarget::Gamemode,
                         Selection::AllOf(vec![
                             PipelineActionDefinition {
                                 id: PipelineActionDefinitionId::parse("f05d002b-9712-45e5-89e1-99f59aeeb25b"),
@@ -232,9 +237,18 @@ impl Settings {
 
     // File data
 
-    pub fn create_profile(&self, name: String, template_id: &PipelineDefinitionId) -> Result<Profile> {
+    pub fn create_profile(
+        &self,
+        name: String,
+        template_id: &PipelineDefinitionId,
+    ) -> Result<Profile> {
         // ensure template exists
-        self.templates.iter().find(|t| t.id == *template_id).ok_or(anyhow::anyhow!("Could not find matching template for {template_id:?}"))?;
+        self.templates
+            .iter()
+            .find(|t| t.id == *template_id)
+            .ok_or(anyhow::anyhow!(
+                "Could not find matching template for {template_id:?}"
+            ))?;
 
         Ok(Profile {
             name,
@@ -243,7 +257,6 @@ impl Settings {
             tags: vec![],
             overrides: Overrides::default(),
         })
-
     }
 
     pub fn get_profile(&self, id: &ProfileId) -> Result<Profile> {
@@ -264,6 +277,23 @@ impl Settings {
         let profile_path = self.profiles_dir.join(raw).with_extension("json");
 
         Ok(std::fs::write(profile_path, serialized)?)
+    }
+
+    pub fn get_profiles(&self) -> Result<Vec<Profile>> {
+        std::fs::read_dir(&self.profiles_dir)?
+            .filter_map(|f| {
+                f.ok().map(|entry| {
+                    if entry.path().ends_with(".json") {
+                        let contents = std::fs::read_to_string(entry.path()).ok();
+                        contents.map(|c| Ok(serde_json::from_str(&c).ok()))
+                    } else {
+                        None
+                    }
+                })
+            })
+            .flatten()
+            .filter_map(|f| f.transpose())
+            .collect::<Result<_>>()
     }
 
     pub fn get_app(&self, id: &AppId) -> Result<Option<App>> {

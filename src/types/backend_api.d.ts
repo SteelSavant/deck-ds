@@ -116,6 +116,7 @@ export interface __Api {
   create_profile_response: CreateProfileResponse;
   get_profile_request: GetProfileRequest;
   get_profile_response: GetProfileResponse;
+  get_profiles_response: GetProfilesResponse;
   get_template_infos_response: GetTemplateInfosResponse;
   set_profile_request: SetProfileRequest;
 }
@@ -220,6 +221,9 @@ export interface MelonDSConfig {
   layout_option: MelonDSLayoutOption;
   sizing_option: MelonDSSizingOption;
   swap_screens: boolean;
+}
+export interface GetProfilesResponse {
+  profiles: Profile[];
 }
 export interface GetTemplateInfosResponse {
   template_infos: TemplateInfo[];

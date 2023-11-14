@@ -181,6 +181,10 @@ fn main() -> Result<()> {
                 .register("get_profile", api::profile::get_profile(settings.clone()))
                 .register("set_profile", api::profile::set_profile(settings.clone()))
                 .register(
+                    "get_template_infos",
+                    api::profile::get_template_infos(settings.clone()),
+                )
+                .register(
                     "autostart",
                     api::autostart::autostart(settings, asset_manager, home_dir, config_dir),
                 );
@@ -194,7 +198,7 @@ fn main() -> Result<()> {
             if path.is_file() {
                 Err(anyhow::anyhow!("output must be a directory"))
             } else {
-                create_dir_all(&path)?;
+                create_dir_all(path)?;
 
                 /// Marker type for generating json schema types for ts
                 #[derive(JsonSchema)]

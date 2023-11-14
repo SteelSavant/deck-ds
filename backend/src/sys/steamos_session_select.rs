@@ -13,7 +13,7 @@ pub fn steamos_session_select(session: Session) -> Result<()> {
         Session::Plasma => "plasma",
     };
 
-    Ok(Command::new("steamos-session-select")
+    Command::new("steamos-session-select")
         .arg(s)
         .status()
         .map(|status| {
@@ -25,5 +25,5 @@ pub fn steamos_session_select(session: Session) -> Result<()> {
                     status.code()
                 ))
             }
-        })??)
+        })?
 }
