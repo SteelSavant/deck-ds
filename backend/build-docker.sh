@@ -6,7 +6,8 @@ rustc --version
 cargo --version
 
 echo "--- Building plugin backend ---"
-cargo build --profile docker --jobs 2
+mkdir -p schema
+cargo run --profile docker  -- schema schema
 mkdir -p out
 
 mv target/docker/deck-ds out/backend

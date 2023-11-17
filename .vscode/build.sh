@@ -7,4 +7,6 @@ printf "Please input sudo password to proceed.\n"
 
 # printf "\n"
 
+which npm
+
 echo $sudopass | sudo $CLI_LOCATION/decky plugin build $(pwd)

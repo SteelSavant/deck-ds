@@ -10,17 +10,28 @@ use simplelog::{LevelFilter, WriteLogger};
 
 use usdpl_back::Instance;
 
-use clap::{Parser, Subcommand};
-use deck_ds::{
-    api::{self, __Api},
+use crate::{
+    api::{__Api},
     asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
     pipeline::config::{PipelineDefinition, PipelineTarget},
     settings::{AppId, Overrides, Profile, ProfileId, Settings},
-    util::{self, create_dir_all},
+    util::{create_dir_all},
 };
+use clap::{Parser, Subcommand};
 use derive_more::Display;
+
+pub mod api;
+pub mod asset;
+pub mod consts;
+mod macros;
+pub mod pipeline;
+pub mod sys;
+pub mod util;
+
+pub mod autostart;
+pub mod settings;
 
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = None)]
@@ -46,6 +57,9 @@ enum Modes {
 static ASSETS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/assets");
 
 fn main() -> Result<()> {
+    let args: Vec<String> = std::env::args().collect();
+    println!("Running DeckDS from {}", args[0]);
+
     #[cfg(debug_assertions)]
     let log_filepath = usdpl_back::api::dirs::home()
         .unwrap_or_else(|| "/tmp/".into())
@@ -100,8 +114,8 @@ fn main() -> Result<()> {
 
     log::info!("home dir: {:?}", usdpl_back::api::dirs::home());
 
-    log::info!("Last version file: {}", util::read_version_file());
-    if let Err(e) = util::save_version_file() {
+    log::info!("Last version file: {}", crate::util::read_version_file());
+    if let Err(e) = crate::util::save_version_file() {
         log::error!("Error storing version: {}", e);
     } else {
         log::info!("Updated version file succesfully");
@@ -126,7 +140,7 @@ fn main() -> Result<()> {
             overrides: Overrides::default(),
         })?;
 
-        settings.set_autostart_cfg(&Some(deck_ds::settings::AutoStart {
+        settings.set_autostart_cfg(&Some(crate::settings::AutoStart {
             app_id: AppId::new("12146987087370911744"), //botw
             profile_id: test_profile,
         }))?;
@@ -160,7 +174,7 @@ fn main() -> Result<()> {
             // return to gamemode
             #[cfg(not(debug_assertions))]
             {
-                use deck_ds::sys::steamos_session_select::{steamos_session_select, Session};
+                use crate::sys::steamos_session_select::{steamos_session_select, Session};
                 steamos_session_select(Session::Gamescope).and(exec_result)
             }
             #[cfg(debug_assertions)]
@@ -170,7 +184,7 @@ fn main() -> Result<()> {
         }
         Modes::Serve => {
             let instance = Instance::new(PORT)
-                .register("LOG", api::general::log_it())
+                .register("LOG", crate::api::general::log_it())
                 .register("LOGPATH", move |_| {
                     vec![log_filepath.to_string_lossy().to_string().into()]
                 })
@@ -178,16 +192,16 @@ fn main() -> Result<()> {
                     "create_profile",
                     api::profile::create_profile(settings.clone()),
                 )
-                .register("get_profile", api::profile::get_profile(settings.clone()))
-                .register("set_profile", api::profile::set_profile(settings.clone()))
-                .register("get_profiles", api::profile::get_profiles(settings.clone()))
+                .register("get_profile", crate::api::profile::get_profile(settings.clone()))
+                .register("set_profile", crate::api::profile::set_profile(settings.clone()))
+                .register("get_profiles", crate::api::profile::get_profiles(settings.clone()))
                 .register(
                     "get_template_infos",
-                    api::profile::get_template_infos(settings.clone()),
+                    crate::api::profile::get_template_infos(settings.clone()),
                 )
                 .register(
                     "autostart",
-                    api::autostart::autostart(
+                    crate::api::autostart::autostart(
                         settings.clone(),
                         asset_manager,
                         home_dir,
