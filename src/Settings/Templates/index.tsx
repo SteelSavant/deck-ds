@@ -1,37 +1,18 @@
-import { VFC, useEffect, useState } from 'react';
-import { PipelineDefinition, getTemplates } from "../../backend";
+import { VFC } from 'react';
+import useTemplates from '../../hooks/useTemplates';
 
 
 export const TemplatesPage: VFC = () => {
-    const [loading, setLoading] = useState(true);
-    const [templates, setTemplates] = useState(Array<PipelineDefinition>);
-
-    useEffect(() => {
-        const loadTemplates = async () => {
-            setLoading(true);
-
-            const response = await getTemplates();
-
-            if (response.ok) {
-                console.log("Got ", response.data.templates.length, " templates");
-
-                setTemplates(response.data.templates);
-                setLoading(false);
-            } else {
-                console.log(response.err);
-
-                setTimeout(() => {
-                    loadTemplates();
-                }, 5000);
-            }
-        }
-    });
-
+    const templates = useTemplates();
 
     return <div>
         <div> Templates</div>
-        {loading
-            ? <div> Loading...</div>
-            : <div> Got {templates.length} Templates!</div>}
+        {
+            templates.isNone
+                ? <div> Loading...</div>
+                : templates.data.isOk
+                    ? <div> Got {length} Templates!</div>
+                    : <div> Error loading templates! {templates.data.err} </div>
+        }
     </div>
 }

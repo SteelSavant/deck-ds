@@ -275,7 +275,7 @@ impl PipelineDefinition {
                 Selection::OneOf { selection, actions } => {
                     let selected = &actions[selection];
 
-                    if matches!(selected.optional, None | Some(true)) {
+                    if matches!(selected.enabled, None | Some(true)) {
                         build_recursive(&selected.selection)
                     } else {
                         vec![]
@@ -283,7 +283,7 @@ impl PipelineDefinition {
                 }
                 Selection::AllOf(definitions) => definitions
                     .iter()
-                    .filter(|def| matches!(def.optional, None | Some(true)))
+                    .filter(|def| matches!(def.enabled, None | Some(true)))
                     .flat_map(|d| build_recursive(&d.selection))
                     .collect(),
             }

@@ -546,6 +546,13 @@
             "null"
           ]
         },
+        "enabled": {
+          "description": "Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "id": {
           "description": "The id of the action",
           "type": "string",
@@ -554,13 +561,6 @@
         "name": {
           "description": "The name of the action",
           "type": "string"
-        },
-        "optional": {
-          "description": "Flags whether the selection is optional. If None, not optional. If Some(true), optional and enabled, else disabled.",
-          "type": [
-            "boolean",
-            "null"
-          ]
         },
         "selection": {
           "description": "The value of the pipeline action",

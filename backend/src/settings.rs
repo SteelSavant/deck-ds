@@ -74,10 +74,10 @@ impl Settings {
                                     book_mode: false, 
                                     swap_screens: false, 
                                 }.into(),
-                                optional: Some(false)
+                                enabled: Some(false)
                             },
                             PipelineActionDefinition {
-                                optional: None,
+                                enabled: None,
                                 id: PipelineActionDefinitionId::parse("4ff26ece-dcab-4dd3-b941-96bd96a2c045"),
                                 name: "Display Configuration".to_string(),
                                 description: None,
@@ -88,7 +88,7 @@ impl Settings {
                             },
                             PipelineActionDefinition {
                                 selection: VirtualScreen.into(),
-                                optional: None,
+                                enabled: None,
                                 id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"), 
                                 name: "Virtual Screen".to_string(), 
                                 description: None,
@@ -109,7 +109,7 @@ impl Settings {
                                     book_mode: false, 
                                     swap_screens: false, 
                                 }.into(),
-                                optional: Some(false)
+                                enabled: Some(false)
                             },
                         ]),
                     )
@@ -133,10 +133,10 @@ impl Settings {
                                     ini_source: CitraIniSource::Flatpak, 
                                     layout_option: CitraLayoutOption::Default,
                                 }.into(),
-                                optional: Some(true)
+                                enabled: Some(true)
                             },
                             PipelineActionDefinition {
-                                optional: None,
+                                enabled: None,
                                 id: PipelineActionDefinitionId::parse("4ff26ece-dcab-4dd3-b941-96bd96a2c045"),
                                 name: "Display Configuration".to_string(),
                                 description: None,
@@ -147,7 +147,7 @@ impl Settings {
                             },
                             PipelineActionDefinition {
                                 selection: MultiWindow.into(),
-                                optional: None,
+                                enabled: None,
                                 id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"), 
                                 name: "MultiWindow".to_string(), 
                                 description: None,
@@ -164,7 +164,7 @@ impl Settings {
                                     ini_source: CitraIniSource::Flatpak,
                                     layout_option: CitraLayoutOption::SideBySide,
                                 }.into(),
-                                optional: Some(true)
+                                enabled: Some(true)
                             },
                         ]))
                 ]),
@@ -187,10 +187,10 @@ impl Settings {
                                     xml_source: CemuXmlSource::Flatpak,
                                     separate_gamepad_view: true,
                                 }.into(),
-                                optional: Some(true),
+                                enabled: Some(true),
                             },
                             PipelineActionDefinition {
-                                optional: None,
+                                enabled: None,
                                 id: PipelineActionDefinitionId::parse("4ff26ece-dcab-4dd3-b941-96bd96a2c045"),
                                 name: "Display Configuration".to_string(),
                                 description: None,
@@ -201,7 +201,7 @@ impl Settings {
                             },
                             PipelineActionDefinition {
                                 selection: MultiWindow.into(),
-                                optional: None,
+                                enabled: None,
                                 id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"), 
                                 name: "MultiWindow".to_string(), 
                                 description: None,
@@ -218,7 +218,7 @@ impl Settings {
                                     xml_source: CemuXmlSource::Flatpak,
                                     separate_gamepad_view: false,
                                 }.into(),
-                                optional: Some(true),
+                                enabled: Some(true),
                             },
                         ])
                     )

@@ -11,7 +11,7 @@ export const ProfilesPage: VFC = () => {
 
             const response = await getProfiles();
 
-            if (response.ok) {
+            if (response.isOk) {
                 setProfiles(response.data.profiles)
             } else {
                 console.log(response.err);

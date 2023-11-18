@@ -42,8 +42,8 @@ pub struct PipelineActionDefinition {
     pub description: Option<String>,
     /// The value of the pipeline action
     pub selection: Selection,
-    /// Flags whether the selection is optional. If None, not optional. If Some(true), optional and enabled, else disabled.
-    pub optional: Option<bool>,
+    /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+    pub enabled: Option<bool>,
 }
 
 impl PipelineActionDefinition {
@@ -51,14 +51,14 @@ impl PipelineActionDefinition {
         name: String,
         description: Option<String>,
         id: PipelineActionDefinitionId,
-        optional: Option<bool>,
+        enabled: Option<bool>,
         selection: Selection,
     ) -> Self {
         Self {
             name,
             description,
             id,
-            optional,
+            enabled,
             selection,
         }
     }
@@ -101,7 +101,7 @@ impl PipelineDefinition {
                     name: format!("root:{}", t),
                     description: None,
                     selection: s,
-                    optional: None,
+                    enabled: None,
                 },
             )
         });
@@ -161,7 +161,7 @@ impl PipelineDefinition {
     fn patch_enabled(&mut self, id: &PipelineActionDefinitionId, value: bool) {
         let def = self.get_definition_mut(id);
         if let Some(def) = def {
-            def.optional = def.optional.map(|_| value);
+            def.enabled = def.enabled.map(|_| value);
         }
     }
 

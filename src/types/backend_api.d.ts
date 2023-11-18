@@ -178,6 +178,10 @@ export interface PipelineActionDefinition {
    */
   description?: string | null;
   /**
+   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+   */
+  enabled?: boolean | null;
+  /**
    * The id of the action
    */
   id: string;
@@ -185,10 +189,6 @@ export interface PipelineActionDefinition {
    * The name of the action
    */
   name: string;
-  /**
-   * Flags whether the selection is optional. If None, not optional. If Some(true), optional and enabled, else disabled.
-   */
-  optional?: boolean | null;
   /**
    * The value of the pipeline action
    */

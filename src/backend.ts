@@ -1,6 +1,6 @@
-import { Err, Ok, Result } from "./result";
 import { AutoStartRequest, CreateProfileRequest, CreateProfileResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, SetProfileRequest } from "./types/backend_api";
 import { call_backend, init_embedded, init_usdpl, target_usdpl } from "./usdpl_front";
+import { Err, Ok, Result } from "./util/result";
 
 export {
     // Api Types
@@ -67,7 +67,9 @@ export enum StatusCode {
     ServerError = 500,
 }
 
-export type Response<T> = Promise<Result<T, { code: StatusCode.BadRequest | StatusCode.ServerError, err: string }>>
+export type ApiError = { code: StatusCode.BadRequest | StatusCode.ServerError, err: string };
+
+export type Response<T> = Promise<Result<T, ApiError>>
 
 async function call_backend_typed<T, R>(fn: string, arg: T): Response<R> {
     const args = [arg];

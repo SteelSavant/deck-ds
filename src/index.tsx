@@ -63,7 +63,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           layout="below"
           onClick={async () => {
             let res = await backend.getTemplates();
-            if (res.ok) {
+            if (res.isOk) {
               serverAPI.toaster.toast({
                 title: "Error",
                 body: ["Got ", res.data.templates.length, " templates."].join(''),
@@ -76,7 +76,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
             }
           }}
         >
-          Template Count (0)
+          Template Count (3)
         </ButtonItem>
       </PanelSectionRow>
     </PanelSection>
