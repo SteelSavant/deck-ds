@@ -11,13 +11,13 @@ use simplelog::{LevelFilter, WriteLogger};
 use usdpl_back::Instance;
 
 use crate::{
-    api::{__Api},
+    api::__Api,
     asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
     pipeline::config::{PipelineDefinition, PipelineTarget},
     settings::{AppId, Overrides, Profile, ProfileId, Settings},
-    util::{create_dir_all},
+    util::create_dir_all,
 };
 use clap::{Parser, Subcommand};
 use derive_more::Display;
@@ -58,7 +58,7 @@ static ASSETS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/assets");
 
 fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
-    println!("Running DeckDS from {}", args[0]);
+    log::info!("Running DeckDS from {}", args[0]);
 
     #[cfg(debug_assertions)]
     let log_filepath = usdpl_back::api::dirs::home()
@@ -110,6 +110,7 @@ fn main() -> Result<()> {
         std::env::current_dir().unwrap().display()
     );
 
+    log::info!("Config dir `{}`", config_dir.display());
     println!("Config dir `{}`", config_dir.display());
 
     log::info!("home dir: {:?}", usdpl_back::api::dirs::home());
@@ -122,7 +123,6 @@ fn main() -> Result<()> {
     }
 
     let args = Cli::parse();
-    println!("got arg {:?}", args.mode);
     let mode = args.mode.unwrap_or_default();
 
     let settings = Settings::new(&config_dir);
@@ -192,12 +192,21 @@ fn main() -> Result<()> {
                     "create_profile",
                     api::profile::create_profile(settings.clone()),
                 )
-                .register("get_profile", crate::api::profile::get_profile(settings.clone()))
-                .register("set_profile", crate::api::profile::set_profile(settings.clone()))
-                .register("get_profiles", crate::api::profile::get_profiles(settings.clone()))
                 .register(
-                    "get_template_infos",
-                    crate::api::profile::get_template_infos(settings.clone()),
+                    "get_profile",
+                    crate::api::profile::get_profile(settings.clone()),
+                )
+                .register(
+                    "set_profile",
+                    crate::api::profile::set_profile(settings.clone()),
+                )
+                .register(
+                    "get_profiles",
+                    crate::api::profile::get_profiles(settings.clone()),
+                )
+                .register(
+                    "get_templates",
+                    crate::api::profile::get_templates(settings.clone()),
                 )
                 .register(
                     "autostart",

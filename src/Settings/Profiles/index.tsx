@@ -1,5 +1,5 @@
 import { VFC, useEffect, useState } from "react";
-import { getProfiles, GetProfilesResponse, Profile } from "../../backend";
+import { Profile, getProfiles } from "../../backend";
 
 export const ProfilesPage: VFC = () => {
     const [loading, setLoading] = useState(false);
@@ -20,14 +20,14 @@ export const ProfilesPage: VFC = () => {
                 }, 5000);
             }
         }
-    })
+    });
 
 
 
     return <div>
         <div> Profiles</div>
-        loading
-        ? <div> Loading...</div>
-        : <div> Got {profiles.length} Profiles!</div>
+        {loading
+            ? <div> Loading...</div>
+            : <div> Got {profiles.length} Profiles!</div>}
     </div>
 }

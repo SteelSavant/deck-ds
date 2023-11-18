@@ -11,7 +11,7 @@ use self::{
     autostart::AutoStartRequest,
     profile::{
         CreateProfileRequest, CreateProfileResponse, GetProfileRequest, GetProfileResponse,
-        GetProfilesResponse, GetTemplateInfosResponse, SetProfileRequest,
+        GetProfilesResponse, GetTemplatesResponse, SetProfileRequest,
     },
 };
 
@@ -46,18 +46,7 @@ impl ParsePrimitiveAt for ApiParameterType {
         } else {
             Err(anyhow::anyhow!(
                 "Parameter {:?} could not be parsed into a value of type {}",
-                value.map(|v| match v {
-                    Primitive::Empty => "Empty".to_string(),
-                    Primitive::String(s) => format!("String({s})"),
-                    Primitive::F32(v) => format!("F32({v})"),
-                    Primitive::F64(v) => format!("F64({v})"),
-                    Primitive::U32(v) => format!("U32({v})"),
-                    Primitive::U64(v) => format!("U64({v})"),
-                    Primitive::I32(v) => format!("I32({v})"),
-                    Primitive::I64(v) => format!("I64({v})"),
-                    Primitive::Bool(v) => format!("Bool({v})"),
-                    Primitive::Json(v) => format!("Json({v})"),
-                }),
+                value.map(primitive_to_string),
                 std::any::type_name::<T>(),
             ))
         }
@@ -108,8 +97,30 @@ pub struct __Api {
     pub get_profile_response: GetProfileResponse,
     pub set_profile_request: SetProfileRequest,
     pub get_profiles_response: GetProfilesResponse,
-    pub get_template_infos_response: GetTemplateInfosResponse,
+    pub get_templates_response: GetTemplatesResponse,
 
     // autostart
     pub autostart_request: AutoStartRequest,
+}
+
+fn log_invoke(method: &str, args: &[Primitive]) {
+    log::debug!(
+        "API invoked {method}({:?})",
+        args.iter().map(primitive_to_string).collect::<Vec<_>>()
+    )
+}
+
+fn primitive_to_string(v: &Primitive) -> String {
+    match v {
+        Primitive::Empty => "Empty".to_string(),
+        Primitive::String(s) => format!("String({s})"),
+        Primitive::F32(v) => format!("F32({v})"),
+        Primitive::F64(v) => format!("F64({v})"),
+        Primitive::U32(v) => format!("U32({v})"),
+        Primitive::U64(v) => format!("U64({v})"),
+        Primitive::I32(v) => format!("I32({v})"),
+        Primitive::I64(v) => format!("I64({v})"),
+        Primitive::Bool(v) => format!("Bool({v})"),
+        Primitive::Json(v) => format!("Json({v})"),
+    }
 }

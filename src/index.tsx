@@ -59,6 +59,25 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
         >
           Configuration
         </ButtonItem>
+        <ButtonItem
+          layout="below"
+          onClick={async () => {
+            let res = await backend.getTemplates();
+            if (res.ok) {
+              serverAPI.toaster.toast({
+                title: "Error",
+                body: ["Got ", res.data.templates.length, " templates."].join(''),
+              });
+            } else {
+              serverAPI.toaster.toast({
+                title: "Error",
+                body: ["Err: ", res.err.code, ": ", res.err].join('')
+              });
+            }
+          }}
+        >
+          Template Count (0)
+        </ButtonItem>
       </PanelSectionRow>
     </PanelSection>
   );

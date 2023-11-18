@@ -74,12 +74,12 @@ impl AppProcess {
 
         for signal in [Signal::SIGTERM, Signal::SIGHUP, Signal::SIGKILL] {
             if !ids.is_empty() {
-                println!("sending signal {signal} to process tree");
+                log::debug!("sending signal {signal} to process tree");
             }
 
             for (pid, branch) in ids.into_iter() {
                 if Self::is_pid_alive(pid) {
-                    println!("sending signal {signal} to process {pid}");
+                    log::debug!("sending signal {signal} to process {pid}");
                     let timeout = Duration::from_millis(100);
                     if !kill_timeout(pid, signal, timeout, false) {
                         stack.push((pid, branch))

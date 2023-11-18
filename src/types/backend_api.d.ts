@@ -117,7 +117,7 @@ export interface __Api {
   get_profile_request: GetProfileRequest;
   get_profile_response: GetProfileResponse;
   get_profiles_response: GetProfilesResponse;
-  get_template_infos_response: GetTemplateInfosResponse;
+  get_templates_response: GetTemplatesResponse;
   set_profile_request: SetProfileRequest;
 }
 export interface AutoStartRequest {
@@ -225,14 +225,8 @@ export interface MelonDSConfig {
 export interface GetProfilesResponse {
   profiles: Profile[];
 }
-export interface GetTemplateInfosResponse {
-  template_infos: TemplateInfo[];
-}
-export interface TemplateInfo {
-  description: string;
-  id: string;
-  name: string;
-  tags: string[];
+export interface GetTemplatesResponse {
+  templates: PipelineDefinition[];
 }
 export interface SetProfileRequest {
   profile: Profile;

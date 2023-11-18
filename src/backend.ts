@@ -1,5 +1,6 @@
-import { init_usdpl, target_usdpl, init_embedded, call_backend, init_tr } from "usdpl-front";
-import { AutoStartRequest, CreateProfileRequest, CreateProfileResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplateInfosResponse, SetProfileRequest } from "./types/backend_api";
+import { Err, Ok, Result } from "./result";
+import { AutoStartRequest, CreateProfileRequest, CreateProfileResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, SetProfileRequest } from "./types/backend_api";
+import { call_backend, init_embedded, init_usdpl, target_usdpl } from "./usdpl_front";
 
 export {
     // Api Types
@@ -8,21 +9,15 @@ export {
     CreateProfileResponse,
     GetProfileRequest,
     GetProfileResponse,
-    SetProfileRequest,
     GetProfilesResponse,
-    GetTemplateInfosResponse,
-
-    // Profile Types
-    Profile,
-    Overrides,
-    TemplateInfo,
-
+    GetTemplatesResponse,
     // Pipeline Types
-    PipelineTarget,
-    Selection,
-    PipelineAction,
-    PipelineDefinition,
+    Overrides, PipelineAction,
     PipelineActionDefinition,
+    PipelineDefinition,
+    PipelineTarget,
+    // Profile Types
+    Profile, Selection, SetProfileRequest
 } from "./types/backend_api";
 
 const USDPL_PORT: number = 44666;
@@ -61,7 +56,7 @@ export async function initBackend() {
             : navigator.language;
     console.log("DeckDS: locale", user_locale);
     //let mo_path = "../plugins/DeckDS/translations/" + user_locale.toString() + ".mo";
-    await init_tr(user_locale);
+    // await init_tr(user_locale);
     //await init_tr("../plugins/DeckDS/translations/test.mo");
     //setReady(true);
 }
@@ -74,16 +69,18 @@ export enum StatusCode {
 
 export type Response<T> = Promise<Result<T, { code: StatusCode.BadRequest | StatusCode.ServerError, err: string }>>
 
-async function call_backend_typed<T, R>(fn: string, args: T): Response<R> {
-    const res = (await call_backend(fn, [args]));
+async function call_backend_typed<T, R>(fn: string, arg: T): Response<R> {
+    const args = [arg];
+    const res = (await call_backend(fn, args));
+    console.log("DeckDS: api", `${fn}(${args}) ->`, res);
     const code = res[0];
 
     switch (code) {
         case StatusCode.Ok: {
-            return new Ok(res[1]); // no good way to typecheck here, so we assume the value is valid.
+            return Ok(res[1]); // no good way to typecheck here, so we assume the value is valid.
         }
         default: {
-            return new Err({
+            return Err({
                 code: code,
                 err: res[1] // assume an error string
             })
@@ -128,10 +125,10 @@ export async function setProfile(request: SetProfileRequest): Response<void> {
 }
 
 export async function getProfiles(): Response<GetProfilesResponse> {
-    return await call_backend_typed("get_profiles", undefined);
+    return await call_backend_typed("get_profiles", null);
 }
 
-export async function getTemplateInfos(): Response<GetTemplateInfosResponse> {
-    return await call_backend_typed("get_template_infos", undefined);
+export async function getTemplates(): Response<GetTemplatesResponse> {
+    return await call_backend_typed("get_templates", null);
 }
 

@@ -102,7 +102,7 @@ impl XDisplay {
 
     /// Sets the mode of an output.
     pub fn set_output_mode(&mut self, output: &Output, mode: &Mode) -> Result<()> {
-        println!("setting output {} mode to {}", output.name, mode.name);
+        log::debug!("setting output {} mode to {}", output.name, mode.name);
 
         let res = Command::new("xrandr")
             .args(["--output", &output.name, "--mode", &mode.name])

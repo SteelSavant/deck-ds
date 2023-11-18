@@ -1,22 +1,37 @@
 
-class Ok<T> {
-    ok: true;
-    data: T;
+module Impl {
+    export class Result<T, E, O extends boolean> {
+        readonly ok: O;
+        readonly data: T;
+        readonly err: E;
 
-    constructor(data: T) {
-        this.ok = true;
-        this.data = data;
+        constructor(data: T, err: E, ok: O) {
+            this.ok = ok;
+            this.data = data;
+            this.err = err;
+        }
     }
 }
 
-class Err<E> {
-    ok: false;
-    err: E;
+export module Result {
+    export interface Ok<T> {
+        ok: true,
+        data: T,
+    }
 
-    constructor(err: E) {
-        this.ok = false;
-        this.err = err;
+    export interface Err<E> {
+        ok: false,
+        err: E,
     }
 }
 
-type Result<T, E> = Ok<T> | Err<E>
+
+export type Result<T, E> = Result.Ok<T> | Result.Err<E>
+
+export function Ok<T>(data: T): Result.Ok<T> {
+    return new Impl.Result(data, undefined, true);
+}
+
+export function Err<E>(err: E): Result.Err<E> {
+    return new Impl.Result(undefined, err, false);
+}

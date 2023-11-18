@@ -247,16 +247,16 @@
         }
       }
     },
-    "GetTemplateInfosResponse": {
+    "GetTemplatesResponse": {
       "type": "object",
       "required": [
-        "template_infos"
+        "templates"
       ],
       "properties": {
-        "template_infos": {
+        "templates": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/TemplateInfo"
+            "$ref": "#/definitions/PipelineDefinition"
           }
         }
       }
@@ -775,33 +775,6 @@
         }
       ]
     },
-    "TemplateInfo": {
-      "type": "object",
-      "required": [
-        "description",
-        "id",
-        "name",
-        "tags"
-      ],
-      "properties": {
-        "description": {
-          "type": "string"
-        },
-        "id": {
-          "type": "string",
-          "format": "uuid"
-        },
-        "name": {
-          "type": "string"
-        },
-        "tags": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
     "VirtualScreen": {
       "type": "null"
     },
@@ -815,7 +788,7 @@
         "get_profile_request",
         "get_profile_response",
         "get_profiles_response",
-        "get_template_infos_response",
+        "get_templates_response",
         "set_profile_request"
       ],
       "properties": {
@@ -837,8 +810,8 @@
         "get_profiles_response": {
           "$ref": "#/definitions/GetProfilesResponse"
         },
-        "get_template_infos_response": {
-          "$ref": "#/definitions/GetTemplateInfosResponse"
+        "get_templates_response": {
+          "$ref": "#/definitions/GetTemplatesResponse"
         },
         "set_profile_request": {
           "$ref": "#/definitions/SetProfileRequest"

@@ -1,9 +1,10 @@
 import {
     SidebarNavigation
-} from "decky-frontend-lib"
-import { VFC } from "react"
-import { HiOutlineArchive, HiOutlineTemplate } from "react-icons/hi"
+} from "decky-frontend-lib";
+import { VFC } from "react";
+import { HiOutlineArchive, HiOutlineTemplate } from "react-icons/hi";
 import { ProfilesPage } from "./Profiles";
+import { TemplatesPage } from "./Templates";
 
 const SettingsRouter: VFC = () => {
     const pages = [
@@ -15,7 +16,7 @@ const SettingsRouter: VFC = () => {
         },
         {
             title: 'Templates',
-            content: <div> Templates </div>,
+            content: <div> <TemplatesPage /> </div>,
             icon: <HiOutlineTemplate />,
             hideTitle: false
         },

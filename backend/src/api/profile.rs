@@ -8,7 +8,7 @@ use crate::{
     settings::{Profile, ProfileId, Settings},
 };
 
-use super::{ParsePrimitiveAt, ResponseErr, ResponseOk, StatusCode, ToResponseType};
+use super::{log_invoke, ParsePrimitiveAt, ResponseErr, ResponseOk, StatusCode, ToResponseType};
 
 // Create Profile
 
@@ -132,39 +132,21 @@ pub fn set_profile(
     }
 }
 
-// Template Info
+// Templates
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
-pub struct GetTemplateInfosResponse {
-    template_infos: Vec<TemplateInfo>,
-}
-#[derive(Debug, Clone, Serialize, JsonSchema)]
-pub struct TemplateInfo {
-    id: PipelineDefinitionId,
-    tags: Vec<String>,
-    name: String,
-    description: String,
+pub struct GetTemplatesResponse {
+    templates: Vec<PipelineDefinition>,
 }
 
-pub fn get_template_infos(
+pub fn get_templates(
     settings: Arc<Mutex<Settings>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |_: super::ApiParameterType| {
+    move |args: super::ApiParameterType| {
+        log_invoke("get_templates", &args);
         let lock = settings.lock().expect("settings mutex should be lockable");
-        let res = lock
-            .get_templates()
-            .iter()
-            .map(|t| TemplateInfo {
-                id: t.id,
-                tags: t.tags.clone(),
-                description: t.description.clone(),
-                name: t.name.clone(),
-            })
-            .collect();
+        let res = lock.get_templates().iter().map(|v| v.clone()).collect();
 
-        GetTemplateInfosResponse {
-            template_infos: res,
-        }
-        .to_response()
+        GetTemplatesResponse { templates: res }.to_response()
     }
 }

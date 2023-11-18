@@ -43,7 +43,7 @@ impl<'a> KWin<'a> {
     }
 
     fn new(assets_manager: AssetManager<'a>, bundles_dir: PathBuf) -> Self {
-        println!("creating KWin with bundles at {:?}", bundles_dir);
+        log::info!("creating KWin with bundles at {:?}", bundles_dir);
 
         Self {
             assets_manager,

@@ -83,7 +83,7 @@ impl<'a, 'b> Asset<'a, 'b> {
                 )
                 .with_context(|| "failed to create dir to write bundled asset")?;
 
-                println!("Writing bundled asset to {external_path:?}");
+                log::info!("Writing bundled asset to {external_path:?}");
 
                 std::fs::write(&external_path, file.contents())?;
                 Ok(external_path)

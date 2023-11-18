@@ -127,7 +127,7 @@ impl<'a> PipelineExecutor<'a> {
                 .exec(&mut self.ctx, ActionType::Setup);
 
             if let Err(err) = res {
-                println!("{}", err);
+                log::error!("{}", err);
                 errors.push(err);
                 break;
             }
@@ -136,7 +136,7 @@ impl<'a> PipelineExecutor<'a> {
         if errors.is_empty() {
             // Run app
             if let Err(err) = self.run_app(&self.app_id, target) {
-                println!("{}", err);
+                log::error!("{}", err);
                 errors.push(err);
             }
         }
@@ -147,7 +147,7 @@ impl<'a> PipelineExecutor<'a> {
 
             let res = action.exec(ctx, ActionType::Teardown);
             if let Err(err) = res {
-                println!("{}", err);
+                log::error!("{}", err);
                 errors.push(err);
             }
         }
@@ -195,7 +195,7 @@ impl<'a> PipelineExecutor<'a> {
                     let elapsed = time.elapsed().unwrap_or_default();
                     Instant::now() - elapsed
                 }
-                println!("Event: {:?}", event);
+                log::trace!("Event: {:?}", event);
                 match event {
                     EventType::ButtonPressed(btn @ (BTN0 | BTN1), _) => {
                         let entry = state.entry(id).or_default();
@@ -245,12 +245,12 @@ impl<'a> PipelineExecutor<'a> {
                 }
             }
 
-            println!("Gamepad State: {state:?}");
+            log::trace!("Gamepad State: {state:?}");
 
             for (_, _, instant) in state.values() {
                 let hold_duration = std::time::Duration::from_secs(2);
                 if matches!(instant, &Some(i) if i.elapsed() > hold_duration) {
-                    println!("Received exit signal. Closing application...");
+                    log::info!("Received exit signal. Closing application...");
 
                     return app_process.kill();
                 }
