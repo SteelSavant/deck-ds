@@ -14,7 +14,14 @@ const useTemplates = (): Loading<Array<PipelineDefinition>> => {
 
                 if (!active) { return; }
 
-                setResult(res.map((v) => v.templates));
+                setResult(res.map((v) => {
+                    v.templates.sort((a, b) =>
+                        a.name < b.name ? -1
+                            : a.name > b.name ? 1
+                                : a.id < b.id ? -1
+                                    : 1);
+                    return v.templates;
+                }));
             })();
         }
 

@@ -12,7 +12,7 @@ import { VFC } from "react";
 import { FaShip } from "react-icons/fa";
 
 import * as backend from "./backend";
-import SettingsRouter from "./Settings/SettingsRouter";
+import SettingsRouter from "./views/Settings/SettingsRouter";
 
 var usdplReady = false;
 
@@ -21,12 +21,6 @@ var usdplReady = false;
   await backend.initBackend();
   usdplReady = true;
 })()
-
-
-// interface AddMethodArgs {
-//   left: number;
-//   right: number;
-// }
 
 const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
   if (!usdplReady) {
@@ -84,6 +78,14 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
 }
 
 export default definePlugin((serverApi: ServerAPI) => {
+  // Template Preview Route
+  serverApi.routerHook.addRoute("/deck-ds/template/:templateid", () => (
+    <div />
+  ), {
+    exact: true
+  });
+
+  // Settings Route
   serverApi.routerHook.addRoute("/deck-ds", SettingsRouter, {
     exact: true,
   });

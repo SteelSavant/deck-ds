@@ -1,8 +1,8 @@
 // reference: https://github.com/SteamDeckHomebrew/decky-loader/blob/main/frontend/src/components/settings/index.tsx
 
-import { ControlsList, DialogControlsSection, Spinner } from 'decky-frontend-lib';
+import { DialogBody, DialogControlsSection } from 'decky-frontend-lib';
 import { VFC } from 'react';
-import useTemplates from '../../hooks/useTemplates';
+import useTemplates from '../../../hooks/useTemplates';
 import TemplateMenuItem from './TemplateMenuItem';
 
 
@@ -12,13 +12,13 @@ export const TemplatesPage: VFC = () => {
     return <div>
         {
             templates === null
-                ? <div> <Spinner /> </div>
+                ? <div />
                 : templates.isOk
-                    ? <DialogControlsSection>
-                        <ControlsList>
+                    ? <DialogBody>
+                        <DialogControlsSection>
                             {templates.data.map((t) => <TemplateMenuItem template={t} />)}
-                        </ControlsList>
-                    </DialogControlsSection>
+                        </DialogControlsSection>
+                    </DialogBody>
                     : <div> Error loading templates! {templates.err} </div>
         }
     </div>

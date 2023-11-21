@@ -1,5 +1,5 @@
 import { VFC, useEffect, useState } from "react";
-import { Profile, getProfiles } from "../../backend";
+import { Profile, getProfiles } from "../../../backend";
 
 export const ProfilesPage: VFC = () => {
     const [loading, setLoading] = useState(false);
