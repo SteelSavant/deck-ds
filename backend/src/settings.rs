@@ -61,24 +61,24 @@ impl Settings {
                 "Maps the internal and external monitor to a single virtual screen, as melonDS does not currently support multiple windows. Allows optional melonDS configuration editing.".to_string(),
                 vec!["NDS".to_string()],
                 HashMap::from_iter([
-                    (PipelineTarget::Desktop, 
+                    (PipelineTarget::Desktop, (PipelineActionDefinitionId::parse("15544db8-2e64-46b7-9be6-ade53ea93076"),
                         Selection::AllOf(vec![
                             PipelineActionDefinition {
                                 id: PipelineActionDefinitionId::parse("d7838726-448c-4817-bcd6-d982c0bad7f6"),
                                 description: Some("Edits melonDS ini file to desired settings".to_string()),
                                 name: "melonDS Config".to_string(),
-                                selection: MelonDSConfig { 
-                                    ini_source: MelonDSIniSource::Flatpak, 
-                                    layout_option: MelonDSLayoutOption::Vertical, 
-                                    sizing_option: MelonDSSizingOption::Even, 
-                                    book_mode: false, 
-                                    swap_screens: false, 
+                                selection: MelonDSConfig {
+                                    ini_source: MelonDSIniSource::Flatpak,
+                                    layout_option: MelonDSLayoutOption::Vertical,
+                                    sizing_option: MelonDSSizingOption::Even,
+                                    book_mode: false,
+                                    swap_screens: false,
                                 }.into(),
                                 enabled: Some(false)
                             },
                             PipelineActionDefinition {
                                 enabled: None,
-                                id: PipelineActionDefinitionId::parse("4ff26ece-dcab-4dd3-b941-96bd96a2c045"),
+                                id: PipelineActionDefinitionId::parse("278d1921-3996-458e-8db2-9ca4541ab4aa"),
                                 name: "Display Configuration".to_string(),
                                 description: None,
                                 selection: DisplayConfig {
@@ -89,29 +89,28 @@ impl Settings {
                             PipelineActionDefinition {
                                 selection: VirtualScreen.into(),
                                 enabled: None,
-                                id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"), 
-                                name: "Virtual Screen".to_string(), 
+                                id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"),
+                                name: "Virtual Screen".to_string(),
                                 description: None,
                             },
-                
-                        ])
+                        ]),)
                     ),
-                    (PipelineTarget::Gamemode, 
+                    (PipelineTarget::Gamemode, (PipelineActionDefinitionId::parse("0da77860-c7ee-4851-9ea7-9ff048551112"),
                         Selection::AllOf(vec![
                             PipelineActionDefinition {
                                 id: PipelineActionDefinitionId::parse("6714f40e-fd68-49b6-8ed6-eea238b677b8"),
                                 description: Some("Edits melonDS ini file to desired settings".to_string()),
                                 name: "melonDS Config".to_string(),
-                                selection: MelonDSConfig { 
-                                    ini_source: MelonDSIniSource::Flatpak, 
-                                    layout_option: MelonDSLayoutOption::Horizontal, 
-                                    sizing_option: MelonDSSizingOption::Even, 
-                                    book_mode: false, 
-                                    swap_screens: false, 
+                                selection: MelonDSConfig {
+                                    ini_source: MelonDSIniSource::Flatpak,
+                                    layout_option: MelonDSLayoutOption::Horizontal,
+                                    sizing_option: MelonDSSizingOption::Even,
+                                    book_mode: false,
+                                    swap_screens: false,
                                 }.into(),
                                 enabled: Some(false)
                             },
-                        ]),
+                        ]),)
                     )
                 ]),
             ),
@@ -123,14 +122,14 @@ impl Settings {
                 "Maps primary and secondary windows to different screens for Citra. Allows optional Citra configuration editing.".to_string(),
                 vec!["3DS".to_string()],
                 HashMap::from_iter([
-                    (PipelineTarget::Desktop, 
+                    (PipelineTarget::Desktop, (PipelineActionDefinitionId::parse("4bdf8588-40fe-4997-b367-5f6dbc638f5c"),
                         Selection::AllOf(vec![
                             PipelineActionDefinition {
-                                id: PipelineActionDefinitionId::parse("d7838726-448c-4817-bcd6-d982c0bad7f6"),
+                                id: PipelineActionDefinitionId::parse("c7848776-c48d-2317-5541-d9a2c0dc7722"),
                                 description: Some("Edits Citra ini file to desired settings".to_string()),
                                 name: "Citra Config".to_string(),
-                                selection: CitraConfig { 
-                                    ini_source: CitraIniSource::Flatpak, 
+                                selection: CitraConfig {
+                                    ini_source: CitraIniSource::Flatpak,
                                     layout_option: CitraLayoutOption::Default,
                                 }.into(),
                                 enabled: Some(true)
@@ -148,13 +147,13 @@ impl Settings {
                             PipelineActionDefinition {
                                 selection: MultiWindow.into(),
                                 enabled: None,
-                                id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"), 
-                                name: "MultiWindow".to_string(), 
+                                id: PipelineActionDefinitionId::parse("4b635b4f-031b-4a80-87d9-5bf0cdcdc77f"),
+                                name: "MultiWindow".to_string(),
                                 description: None,
                             },
                         ])
-                    ),
-                    (PipelineTarget::Gamemode,
+                    )),
+                    (PipelineTarget::Gamemode, (PipelineActionDefinitionId::parse("d6ec1667-2d14-44ac-affc-cc308aa58d23"),
                         Selection::AllOf(vec![
                             PipelineActionDefinition {
                                 id: PipelineActionDefinitionId::parse("f39d953b-7cbe-43b0-acf9-3d789d26fb8b"),
@@ -166,7 +165,7 @@ impl Settings {
                                 }.into(),
                                 enabled: Some(true)
                             },
-                        ]))
+                        ])))
                 ]),
             ),
 
@@ -177,7 +176,8 @@ impl Settings {
                 "Maps primary and secondary windows to different screens for Cemu.".to_string(),
                 vec!["WIIU".to_string()],
                 HashMap::from_iter([
-                    (PipelineTarget::Desktop, 
+                    (PipelineTarget::Desktop, (PipelineActionDefinitionId::parse("5a35f2a9-9934-4e32-bc7c-b73278ed1db0"),
+
                         Selection::AllOf(vec![
                             PipelineActionDefinition {
                                 id: PipelineActionDefinitionId::parse("461c1ea6-8dd3-434e-b87d-8981c82b94c2"),
@@ -191,7 +191,7 @@ impl Settings {
                             },
                             PipelineActionDefinition {
                                 enabled: None,
-                                id: PipelineActionDefinitionId::parse("4ff26ece-dcab-4dd3-b941-96bd96a2c045"),
+                                id: PipelineActionDefinitionId::parse("100127cb-9201-4262-90ec-02b7b3127023"),
                                 name: "Display Configuration".to_string(),
                                 description: None,
                                 selection: DisplayConfig {
@@ -202,13 +202,13 @@ impl Settings {
                             PipelineActionDefinition {
                                 selection: MultiWindow.into(),
                                 enabled: None,
-                                id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"), 
-                                name: "MultiWindow".to_string(), 
+                                id: PipelineActionDefinitionId::parse("468ee444-e2b5-47af-af6b-9ccc2bf97c2d"),
+                                name: "MultiWindow".to_string(),
                                 description: None,
                             },
-                        ])
+                        ]))
                     ),
-                    (PipelineTarget::Gamemode, 
+                    (PipelineTarget::Gamemode, (PipelineActionDefinitionId::parse("d758067d-c419-490e-b305-a72746c2f9c8"),
                         Selection::AllOf(vec![
                             PipelineActionDefinition {
                                 id: PipelineActionDefinitionId::parse("f05d002b-9712-45e5-89e1-99f59aeeb25b"),
@@ -220,7 +220,7 @@ impl Settings {
                                 }.into(),
                                 enabled: Some(true),
                             },
-                        ])
+                        ]))
                     )
                 ]),
             )

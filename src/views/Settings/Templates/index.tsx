@@ -10,8 +10,6 @@ import TemplateMenuItem from './TemplateMenuItem';
 export const TemplatesPage: VFC = () => {
     const templates = useTemplates();
 
-    console.log("Got templates:", templates);
-
     return <HandleLoading
         value={templates}
         onOk={

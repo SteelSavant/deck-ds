@@ -11,8 +11,6 @@ export default function HandleLoading<T>({ value, onOk, onErr, onLoading }: {
     const definiteOnLoading = onLoading ?? (() => <div />);
     const definiteOnErr = onErr ?? ((err) => <div>Loading error! Server returned {err.code}: {err.err}</div>)
 
-    console.log("Handling loading for", value, "with ", onOk, definiteOnErr, definiteOnLoading);
-
     return !value
         ? definiteOnLoading() : value.isOk
             ? onOk(value.data)

@@ -91,13 +91,13 @@ impl PipelineDefinition {
         name: String,
         description: String,
         tags: Vec<String>,
-        selections: HashMap<PipelineTarget, Selection>,
+        selections: HashMap<PipelineTarget, (PipelineActionDefinitionId, Selection)>,
     ) -> Self {
-        let targets = selections.into_iter().map(|(t, s)| {
+        let targets = selections.into_iter().map(|(t, (root_id, s))| {
             (
                 t,
                 PipelineActionDefinition {
-                    id: PipelineActionDefinitionId::from_uuid(id.0),
+                    id: root_id,
                     name: format!("root:{}", t),
                     description: None,
                     selection: s,
