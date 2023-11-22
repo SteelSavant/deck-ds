@@ -12,15 +12,22 @@ const SettingsRouter: VFC = () => {
             title: 'Profiles',
             content: <div > <ProfilesPage /> </div>,
             icon: <HiOutlineArchive />,
-            hideTitle: false
+            hideTitle: false,
+            identifier: 'profiles',
         },
         {
             title: 'Templates',
             content: <div> <TemplatesPage /> </div>,
             icon: <HiOutlineTemplate />,
-            hideTitle: false
+            hideTitle: false,
+            identifier: 'templates',
         },
-    ]
+    ].map((p) => {
+        return {
+            route: `/deck-ds/settings/${p.identifier}`,
+            ...p,
+        }
+    });
 
     return (
         <SidebarNavigation pages={pages} />

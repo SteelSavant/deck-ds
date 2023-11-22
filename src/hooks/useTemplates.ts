@@ -12,7 +12,9 @@ const useTemplates = (): Loading<Array<PipelineDefinition>> => {
             (async function load() {
                 const res = await getTemplates();
 
-                if (!active) { return; }
+                if (!active) {
+                    return;
+                }
 
                 setResult(res.map((v) => {
                     v.templates.sort((a, b) =>

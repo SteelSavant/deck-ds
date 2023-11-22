@@ -2,6 +2,7 @@
 
 import { DialogBody, DialogControlsSection } from 'decky-frontend-lib';
 import { VFC } from 'react';
+import HandleLoading from '../../../components/HandleLoading';
 import useTemplates from '../../../hooks/useTemplates';
 import TemplateMenuItem from './TemplateMenuItem';
 
@@ -9,17 +10,16 @@ import TemplateMenuItem from './TemplateMenuItem';
 export const TemplatesPage: VFC = () => {
     const templates = useTemplates();
 
-    return <div>
-        {
-            templates === null
-                ? <div />
-                : templates.isOk
-                    ? <DialogBody>
-                        <DialogControlsSection>
-                            {templates.data.map((t) => <TemplateMenuItem template={t} />)}
-                        </DialogControlsSection>
-                    </DialogBody>
-                    : <div> Error loading templates! {templates.err} </div>
+    console.log("Got templates:", templates);
+
+    return <HandleLoading
+        value={templates}
+        onOk={
+            (templates) => <DialogBody>
+                <DialogControlsSection>
+                    {templates.map((t) => <TemplateMenuItem template={t} />)}
+                </DialogControlsSection>
+            </DialogBody>
         }
-    </div>
+    />;
 }

@@ -13,6 +13,7 @@ import { FaShip } from "react-icons/fa";
 
 import * as backend from "./backend";
 import SettingsRouter from "./views/Settings/SettingsRouter";
+import TemplatePreviewRoute from "./views/TemplatePreviewRoute";
 
 var usdplReady = false;
 
@@ -48,7 +49,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           layout="below"
           onClick={() => {
             Router.CloseSideMenus();
-            Router.Navigate("/deck-ds");
+            Router.Navigate("/deck-ds/settings/profiles");
           }}
         >
           Configuration
@@ -79,14 +80,12 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
 
 export default definePlugin((serverApi: ServerAPI) => {
   // Template Preview Route
-  serverApi.routerHook.addRoute("/deck-ds/template/:templateid", () => (
-    <div />
-  ), {
+  serverApi.routerHook.addRoute("/deck-ds/settings/templates/:templateid", () => <TemplatePreviewRoute />, {
     exact: true
   });
 
   // Settings Route
-  serverApi.routerHook.addRoute("/deck-ds", SettingsRouter, {
+  serverApi.routerHook.addRoute("/deck-ds/settings/:setting", SettingsRouter, {
     exact: true,
   });
 
@@ -96,8 +95,8 @@ export default definePlugin((serverApi: ServerAPI) => {
     icon: <FaShip />,
     onDismount() {
       backend.log(backend.LogLevel.Debug, "DeckDS shutting down");
-
-      serverApi.routerHook.removeRoute("/deck-ds");
+      serverApi.routerHook.removeRoute("/deck-ds/settings/templates/:templateid");
+      serverApi.routerHook.removeRoute("/deck-ds/settings/:setting");
     },
   };
 });
