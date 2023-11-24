@@ -15,7 +15,7 @@ pub struct KWin<'a> {
 }
 
 impl<'a> KWin<'a> {
-    fn new(assets_manager: AssetManager<'a>) -> Self {
+    pub fn new(assets_manager: AssetManager<'a>) -> Self {
         Self {
             assets_manager,
             bundles_dir: PathBuf::from_str("kwin").expect("kwin path should be valid"),
@@ -23,7 +23,7 @@ impl<'a> KWin<'a> {
     }
 
     pub fn install_script(&self, bundle_name: &str) -> Result<()> {
-        let bundle = self.get_bundle(&bundle_name).ok_or(anyhow::anyhow!(
+        let bundle = self.get_bundle(bundle_name).ok_or(anyhow::anyhow!(
             "could not find bundle {bundle_name} to install"
         ))?;
         let bundle_path = bundle.external_file_path()?;

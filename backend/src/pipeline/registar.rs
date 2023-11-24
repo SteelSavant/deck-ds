@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use super::{
     action::{
         cemu_config::{CemuConfig, CemuXmlSource},
@@ -10,18 +8,38 @@ use super::{
     },
     config::{PipelineActionDefinition, PipelineActionDefinitionId, PipelineTarget},
 };
+use std::{collections::HashMap, sync::Arc};
 
 use self::internal::{PipelineActionRegistarBuilder, PluginScopeBuilder};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PipelineActionRegistar {
-    actions: HashMap<PipelineActionDefinitionId, PipelineActionDefinition>,
+    actions: Arc<HashMap<PipelineActionDefinitionId, PipelineActionDefinition>>,
 }
 
 impl PipelineActionRegistar {
     pub fn builder() -> internal::PipelineActionRegistarBuilder {
         PipelineActionRegistarBuilder::default()
     }
+
+    pub fn get(
+        &self,
+        id: &PipelineActionDefinitionId,
+        target: PipelineTarget,
+    ) -> Option<&PipelineActionDefinition> {
+        self.actions
+            .get(&format_variant(id.raw(), target))
+            .or_else(|| self.actions.get(id))
+    }
+}
+
+fn format_variant(id: &str, target: PipelineTarget) -> PipelineActionDefinitionId {
+    let variant = match target {
+        PipelineTarget::Desktop => "desktop",
+        PipelineTarget::Gamemode => "gamemode",
+    };
+
+    PipelineActionDefinitionId::new(&format!("{id}:{variant}"))
 }
 
 mod internal {
@@ -40,7 +58,8 @@ mod internal {
         where
             F: FnOnce(PluginScopeBuilder) -> PluginScopeBuilder,
         {
-            self.scopes[name] = f(PluginScopeBuilder::default()).build();
+            self.scopes
+                .insert(name.to_string(), f(PluginScopeBuilder::default()).build());
             self
         }
     }
@@ -55,7 +74,8 @@ mod internal {
         where
             F: FnOnce(GroupScopeBuilder) -> GroupScopeBuilder,
         {
-            self.groups[name] = f(GroupScopeBuilder::default()).build();
+            self.groups
+                .insert(name.to_string(), f(GroupScopeBuilder::default()).build());
             self
         }
 
@@ -76,7 +96,7 @@ mod internal {
             target: Option<PipelineTarget>,
             action: PipelineActionDefinition,
         ) -> Self {
-            self.actions[name] = (target, action);
+            self.actions.insert(name.to_string(), (target, action));
             self
         }
 
@@ -84,14 +104,11 @@ mod internal {
             self.actions
                 .into_iter()
                 .map(|(k, (t, v))| {
-                    (
-                        match t {
-                            Some(PipelineTarget::Desktop) => format!("{k}:desktop"),
-                            Some(PipelineTarget::Gamemode) => format!("{k}:gamemode"),
-                            None => k,
-                        },
-                        v,
-                    )
+                    let id = match t {
+                        Some(t) => format_variant(&k, t).raw().to_string(),
+                        None => k,
+                    };
+                    (id, v)
                 })
                 .collect()
         }
@@ -103,32 +120,41 @@ impl PipelineActionRegistarBuilder {
     where
         F: FnOnce(PluginScopeBuilder) -> PluginScopeBuilder,
     {
-        self.scopes[name] = f(PluginScopeBuilder::default()).build();
+        self.scopes
+            .insert(name.to_string(), f(PluginScopeBuilder::default()).build());
         self
     }
 
     pub fn build(self) -> PipelineActionRegistar {
-        PipelineActionRegistar {
-            actions: self
-                .scopes
-                .into_iter()
-                .flat_map(|(scope_id, scope)| {
-                    scope.into_iter().flat_map(|(group_id, group)| {
-                        group.into_iter().map(|(action_id, action)| {
-                            (
-                                PipelineActionDefinitionId::new(&format!(
-                                    "{scope_id}:{group_id}:{action_id}"
-                                )),
-                                action,
-                            )
-                        })
+        let actions = self
+            .scopes
+            .into_iter()
+            .flat_map(|(ref scope_id, scope)| {
+                scope
+                    .into_iter()
+                    .flat_map(|(ref group_id, group)| {
+                        group
+                            .into_iter()
+                            .map(move |(ref action_id, action)| {
+                                (
+                                    PipelineActionDefinitionId::new(&format!(
+                                        "{scope_id}:{group_id}:{action_id}"
+                                    )),
+                                    action,
+                                )
+                            })
+                            .collect::<Vec<_>>()
                     })
-                })
-                .collect(),
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+
+        PipelineActionRegistar {
+            actions: Arc::new(actions),
         }
     }
 
-    pub fn with_core(mut self) -> Self {
+    pub fn with_core(self) -> Self {
         self.with_scope("core", |scope| {
             scope
                 .with_group("display", |group| {

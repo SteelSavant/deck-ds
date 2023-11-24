@@ -1,7 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
-use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::process::Command;
@@ -17,14 +16,14 @@ use crate::sys::x_display::XDisplay;
 
 use super::action::{ErasedPipelineAction, PipelineAction};
 use super::config::{PipelineTarget, TemplateDefinition};
-use super::dependency::emulator_windowing::EmulatorWindowing;
-use super::dependency::Dependency;
 
-use super::{action::PipelineActionImpl, dependency::true_video_wall::TrueVideoWall};
+use super::action::PipelineActionImpl;
+use super::registar::PipelineActionRegistar;
 
 pub struct PipelineExecutor<'a> {
     app_id: AppId,
     definition: TemplateDefinition,
+    target: PipelineTarget,
     ctx: PipelineContext<'a>,
 }
 
@@ -74,6 +73,7 @@ impl<'a> PipelineExecutor<'a> {
     pub fn new(
         app_id: AppId,
         pipeline_definition: TemplateDefinition,
+        target: PipelineTarget,
         assets_manager: AssetManager<'a>,
         home_dir: PathBuf,
         config_dir: PathBuf,
@@ -81,11 +81,12 @@ impl<'a> PipelineExecutor<'a> {
         let s = Self {
             app_id,
             definition: pipeline_definition,
+            target,
             ctx: PipelineContext {
                 home_dir,
                 config_dir,
 
-                kwin: KWin::new(assets_manager, config_dir),
+                kwin: KWin::new(assets_manager),
                 display: XDisplay::new()?,
                 state: TypeMap::new(),
             },
@@ -94,51 +95,63 @@ impl<'a> PipelineExecutor<'a> {
         Ok(s)
     }
 
-    pub fn exec(&mut self, target: PipelineTarget) -> Result<()> {
-        let pipeline = self.definition.build_actions(target);
-
-        // Install dependencies
-        for action in pipeline.iter() {
-            if let Err(err) = action.exec(&mut self.ctx, ActionType::Dependencies) {
-                return Err(err).with_context(|| "Error installing dependencies");
-            }
-        }
-
+    pub fn exec(&mut self, action_registrar: &PipelineActionRegistar) -> Result<()> {
         // Set up pipeline
         let mut run = vec![];
         let mut errors = vec![];
 
-        for action in pipeline {
-            run.push(action);
-            let res = run
-                .last()
-                .expect("action should exist")
-                .exec(&mut self.ctx, ActionType::Setup);
+        let pipeline = self.definition.build_actions(self.target, action_registrar);
 
-            if let Err(err) = res {
-                log::error!("{}", err);
-                errors.push(err);
-                break;
+        match pipeline {
+            Some(Ok(pipeline)) => {
+                // Install dependencies
+                for action in pipeline.iter() {
+                    if let Err(err) = action.exec(&mut self.ctx, ActionType::Dependencies) {
+                        return Err(err).with_context(|| "Error installing dependencies");
+                    }
+                }
+
+                for action in pipeline {
+                    run.push(action);
+                    let res = run
+                        .last()
+                        .expect("action should exist")
+                        .exec(&mut self.ctx, ActionType::Setup);
+
+                    if let Err(err) = res {
+                        log::error!("{}", err);
+                        errors.push(err);
+                        break;
+                    }
+                }
+
+                if errors.is_empty() {
+                    // Run app
+                    if let Err(err) = self.run_app(&self.app_id) {
+                        log::error!("{}", err);
+                        errors.push(err);
+                    }
+                }
+
+                // Teardown pipeline
+                for action in run.into_iter().rev() {
+                    let ctx = &mut self.ctx;
+
+                    let res = action.exec(ctx, ActionType::Teardown);
+                    if let Err(err) = res {
+                        log::error!("{}", err);
+                        errors.push(err);
+                    }
+                }
             }
-        }
-
-        if errors.is_empty() {
-            // Run app
-            if let Err(err) = self.run_app(&self.app_id, target) {
-                log::error!("{}", err);
-                errors.push(err);
+            None => {
+                // Run app
+                if let Err(err) = self.run_app(&self.app_id) {
+                    log::error!("{}", err);
+                    errors.push(err);
+                }
             }
-        }
-
-        // Teardown pipeline
-        for action in run.into_iter().rev() {
-            let ctx = &mut self.ctx;
-
-            let res = action.exec(ctx, ActionType::Teardown);
-            if let Err(err) = res {
-                log::error!("{}", err);
-                errors.push(err);
-            }
+            Some(Err(err)) => errors.push(err),
         }
 
         if errors.is_empty() {
@@ -151,9 +164,9 @@ impl<'a> PipelineExecutor<'a> {
         }
     }
 
-    fn run_app(&self, app_id: &AppId, target: PipelineTarget) -> Result<()> {
+    fn run_app(&self, app_id: &AppId) -> Result<()> {
         let app_id = app_id.raw();
-        let launch_type = match target {
+        let launch_type = match self.target {
             PipelineTarget::Desktop => "rungameid",
             PipelineTarget::Gamemode => "launch",
         };
@@ -257,31 +270,61 @@ enum ActionType {
 }
 
 impl TemplateDefinition {
-    fn build_actions(&self, target: PipelineTarget) -> Vec<&PipelineAction> {
-        fn build_recursive(selection: &Selection) -> Vec<&PipelineAction> {
+    fn build_actions<'a, 'b>(
+        &'b self,
+        target: PipelineTarget,
+        action_registrar: &'a PipelineActionRegistar,
+    ) -> Option<Result<Vec<&PipelineAction>>>
+    where
+        'a: 'b,
+    {
+        fn build_recursive<'a, 'b>(
+            selection: &'b Selection,
+            target: PipelineTarget,
+            action_registrar: &'a PipelineActionRegistar,
+        ) -> Result<Vec<&'b PipelineAction>>
+        where
+            'a: 'b,
+        {
             match selection {
-                Selection::Action(action) => vec![action],
-                Selection::OneOf { selection, actions } => {
-                    let selected = &actions[selection];
+                Selection::Action(action) => Ok(vec![action]),
+                Selection::OneOf { selection: id, .. } => {
+                    let selected = &action_registrar.get(id, target);
 
-                    if matches!(selected.enabled, None | Some(true)) {
-                        build_recursive(&selected.selection)
-                    } else {
-                        vec![]
-                    }
+                    Ok(selected
+                        .ok_or_else(|| anyhow::anyhow!("Could not find action with id {id:?}"))
+                        .and_then(|selected| {
+                            build_recursive(&selected.selection, target, action_registrar)
+                        })?)
                 }
-                Selection::AllOf(definitions) => definitions
+                Selection::AllOf(definitions) => Ok(definitions
                     .iter()
                     .filter(|def| matches!(def.enabled, None | Some(true)))
-                    .flat_map(|d| build_recursive(&d.selection))
-                    .collect(),
+                    .flat_map(|d| {
+                        let selected = &action_registrar.get(&d.selection, target);
+
+                        Ok::<_, anyhow::Error>(
+                            selected
+                                .ok_or_else(|| {
+                                    anyhow::anyhow!(
+                                        "Could not find action with id {:?}",
+                                        d.selection
+                                    )
+                                })
+                                .and_then(|selected| {
+                                    build_recursive(&selected.selection, target, action_registrar)
+                                }),
+                        )
+                    })
+                    .flatten()
+                    .flatten()
+                    .collect()),
             }
         }
 
         self.targets
             .get(&target)
-            .map(|action| build_recursive(&action.selection))
-            .unwrap_or_default()
+            .map(move |action| build_recursive(action, target, action_registrar))
     }
 }
 

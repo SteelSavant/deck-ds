@@ -5,7 +5,13 @@ use std::{
 
 use anyhow::{anyhow, Result};
 
-use crate::{asset::AssetManager, pipeline::executor::PipelineExecutor, settings::Settings};
+use crate::{
+    asset::AssetManager,
+    pipeline::{
+        config::PipelineTarget, executor::PipelineExecutor, registar::PipelineActionRegistar,
+    },
+    settings::Settings,
+};
 
 #[derive(Debug)]
 pub struct AutoStart {
@@ -16,6 +22,7 @@ pub struct AutoStart {
 pub struct LoadedAutoStart {
     autostart: crate::settings::AutoStart,
     settings: Arc<Mutex<Settings>>,
+    target: PipelineTarget,
 }
 
 impl AutoStart {
@@ -36,6 +43,7 @@ impl AutoStart {
             Ok(Some(LoadedAutoStart {
                 autostart,
                 settings: self.settings,
+                target: PipelineTarget::Desktop, // autostart load only invoked from desktop; gamemode has settings in memory
             }))
         } else {
             Ok(None)
@@ -44,21 +52,27 @@ impl AutoStart {
 }
 
 impl LoadedAutoStart {
-    pub fn new(autostart: crate::settings::AutoStart, settings: Arc<Mutex<Settings>>) -> Self {
+    pub fn new(
+        autostart: crate::settings::AutoStart,
+        settings: Arc<Mutex<Settings>>,
+        target: PipelineTarget,
+    ) -> Self {
         Self {
             autostart,
             settings,
+            target,
         }
     }
 
     // TODO::teardown leftover
 
-    pub fn build_executor(
+    pub fn build_executor<'a>(
         self,
-        assets_manager: AssetManager,
+        assets_manager: AssetManager<'a>,
         home_dir: PathBuf,
         config_dir: PathBuf,
-    ) -> Result<PipelineExecutor> {
+        action_registrar: &PipelineActionRegistar,
+    ) -> Result<PipelineExecutor<'a>> {
         let settings = self
             .settings
             .lock()
@@ -75,14 +89,15 @@ impl LoadedAutoStart {
                 .get_app(&self.autostart.app_id)?
                 .and_then(|s| s.overrides.get(&definition.id).cloned());
 
-            let patched = definition.patched_with(profile.overrides);
+            let patched = definition.patched_with(profile.overrides, self.target, action_registrar);
             let patched = app_settings
-                .map(|o| patched.patched_with(o))
+                .map(|o| patched.patched_with(o, self.target, action_registrar))
                 .unwrap_or(patched);
 
             PipelineExecutor::new(
                 self.autostart.app_id,
                 patched,
+                self.target,
                 assets_manager,
                 home_dir,
                 config_dir,

@@ -11,7 +11,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use super::action::PipelineAction;
+use super::{action::PipelineAction, registar::PipelineActionRegistar};
 
 newtype_strid!(
     r#"Id in the form "plugin:group:action" | "plugin:group:action:variant""#,
@@ -51,7 +51,6 @@ impl PipelineActionDefinition {
     pub fn new(
         name: String,
         description: Option<String>,
-        id: PipelineActionDefinitionId,
         exported: bool,
         selection: Selection,
     ) -> Self {
@@ -132,28 +131,43 @@ impl TemplateDefinition {
         }
     }
 
-    pub fn patched_with(&self, overrides: Overrides) -> Self {
+    pub fn patched_with(
+        &self,
+        overrides: Overrides,
+        target: PipelineTarget,
+        action_registrar: &PipelineActionRegistar,
+    ) -> Self {
         let mut patched = (*self).clone();
         for (id, value) in overrides.enabled.into_iter() {
-            patched.patch_enabled(&id, value);
+            patched.patch_enabled(&id, value, target, action_registrar);
         }
 
         for (id, value) in overrides.fields.into_iter() {
-            patched.patch_override(&id, value);
+            patched.patch_override(&id, value, target, action_registrar);
         }
         patched
     }
 
-    fn patch_enabled(&mut self, id: &PipelineActionDefinitionId, value: bool) {
-        let def = self.get_definition_mut(id);
-        if let Some(def) = def {
-            def.enabled = def.enabled.map(|_| value);
-        }
+    fn patch_enabled(
+        &mut self,
+        id: &PipelineActionDefinitionId,
+        _value: bool,
+        target: PipelineTarget,
+        action_registrar: &PipelineActionRegistar,
+    ) {
+        let _def = action_registrar.get(id, target).cloned();
+        todo!();
     }
 
-    fn patch_override(&mut self, id: &PipelineActionDefinitionId, value: Value) {
-        let def = self.get_definition_mut(id);
-        if let Some(def) = def {
+    fn patch_override(
+        &mut self,
+        id: &PipelineActionDefinitionId,
+        value: Value,
+        target: PipelineTarget,
+        action_registrar: &PipelineActionRegistar,
+    ) {
+        let def = action_registrar.get(id, target).cloned();
+        if let Some(mut def) = def {
             def.selection = match &def.selection {
                 Selection::Action(action) => {
                     let current_json = serde_json::to_value(action).unwrap();
@@ -164,7 +178,7 @@ impl TemplateDefinition {
                 Selection::OneOf { actions, .. } => {
                     let new_selection = value["selection"].as_str().unwrap();
                     Selection::OneOf {
-                        selection: PipelineActionDefinitionId::parse(new_selection),
+                        selection: PipelineActionDefinitionId::new(new_selection),
                         actions: actions.clone(), // TODO::avoid this clone
                     }
                 }

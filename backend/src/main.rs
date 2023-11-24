@@ -14,7 +14,7 @@ use crate::{
     asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
-    pipeline::{config::PipelineTarget, registar::PipelineActionRegistar},
+    pipeline::registar::PipelineActionRegistar,
     settings::{AppId, Overrides, Profile, ProfileId, Settings},
     util::create_dir_all,
 };
@@ -124,8 +124,6 @@ fn main() -> Result<()> {
     let args = Cli::parse();
     let mode = args.mode.unwrap_or_default();
 
-    let action_registrar = PipelineActionRegistar::builder().with_core().build();
-
     let settings = Settings::new(&config_dir);
     {
         // temp test code
@@ -151,13 +149,14 @@ fn main() -> Result<()> {
 
     let assets_dir = config_dir.join("assets"); // TODO::keep assets with decky plugin, not config
     let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
+    let action_registrar = PipelineActionRegistar::builder().with_core().build();
 
     match mode {
         Modes::Autostart => {
             // build the executor
             let executor = AutoStart::new(settings.clone())
                 .load()?
-                .map(|l| l.build_executor(asset_manager, home_dir, config_dir))
+                .map(|l| l.build_executor(asset_manager, home_dir, config_dir, &action_registrar))
                 .transpose();
 
             // remove autostart config, so we don't end up in a loop
@@ -168,7 +167,7 @@ fn main() -> Result<()> {
 
             // run the executor
             let exec_result = executor.and_then(|executor| match executor {
-                Some(mut executor) => executor.exec(PipelineTarget::Desktop),
+                Some(mut executor) => executor.exec(&action_registrar),
                 None => Ok(()),
             });
 
@@ -216,6 +215,7 @@ fn main() -> Result<()> {
                         asset_manager,
                         home_dir,
                         config_dir,
+                        action_registrar,
                     ),
                 );
 

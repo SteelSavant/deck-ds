@@ -10,7 +10,7 @@ use serde::Deserialize;
 use crate::{
     asset::AssetManager,
     autostart::LoadedAutoStart,
-    pipeline::config::PipelineTarget,
+    pipeline::{config::PipelineTarget, registar::PipelineActionRegistar},
     settings::{self, AppId, ProfileId, Settings},
     sys::steamos_session_select::{steamos_session_select, Session},
 };
@@ -29,6 +29,7 @@ pub fn autostart(
     assets_manager: AssetManager<'static>,
     home_dir: PathBuf,
     config_dir: PathBuf,
+    action_registrar: PipelineActionRegistar,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     let assets_manager = Arc::new(assets_manager);
     let home_dir = Arc::new(home_dir);
@@ -64,15 +65,17 @@ pub fn autostart(
                             profile_id: args.profile,
                         },
                         settings.clone(),
+                        PipelineTarget::Gamemode,
                     )
                     .build_executor(
                         (*assets_manager).clone(),
                         (*home_dir).clone(),
                         (*config_dir).clone(),
+                        &action_registrar,
                     );
 
                     match executor {
-                        Ok(mut executor) => match executor.exec(PipelineTarget::Gamemode) {
+                        Ok(mut executor) => match executor.exec(&action_registrar) {
                             Ok(_) => ResponseOk.to_response(),
                             Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
                         },

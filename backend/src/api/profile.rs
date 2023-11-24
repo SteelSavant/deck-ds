@@ -145,7 +145,7 @@ pub fn get_templates(
     move |args: super::ApiParameterType| {
         log_invoke("get_templates", &args);
         let lock = settings.lock().expect("settings mutex should be lockable");
-        let res = lock.get_templates().iter().map(|v| v.clone()).collect();
+        let res = lock.get_templates().to_vec();
 
         GetTemplatesResponse { templates: res }.to_response()
     }
