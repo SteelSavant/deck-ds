@@ -4,10 +4,7 @@ use serde::{Deserialize, Serialize};
 use xrandr::Relation;
 
 use crate::{
-    pipeline::{
-        dependency::{true_video_wall::TrueVideoWall, DependencyId},
-        executor::PipelineContext,
-    },
+    pipeline::{dependency::Dependency, executor::PipelineContext},
     sys::x_display::{AspectRatioOption, ModeOption, ModePreference, Resolution},
 };
 
@@ -20,7 +17,7 @@ impl PipelineActionImpl for VirtualScreen {
     type State = ();
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
-        ctx.kwin.set_script_enabled("TrueVideoWall", true)?;
+        ctx.kwin.set_script_enabled("truevideowall", true)?;
         let external = ctx
             .display
             .get_preferred_external_output()?
@@ -60,11 +57,13 @@ impl PipelineActionImpl for VirtualScreen {
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {
-        ctx.kwin.set_script_enabled("TrueVideoWall", false)?;
+        ctx.kwin.set_script_enabled("truevideowall", false)?;
         Ok(())
     }
 
-    fn get_dependencies(&self) -> Vec<DependencyId> {
-        vec![TrueVideoWall::id()]
+    fn get_dependencies(&self) -> Vec<Dependency> {
+        vec![Dependency::KwinScript(
+            "truevideowall-v1.0.kwinscript".to_string(),
+        )]
     }
 }

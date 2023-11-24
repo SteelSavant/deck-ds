@@ -55,6 +55,7 @@ include_dir = "0.7.3"
 rust-ini = "0.20.0"
 lazy_static = "1.4.0"
 dirs = "5.0.1"
+which = "5.0.0"
 
 [features]
 default = ["online", "decky"]

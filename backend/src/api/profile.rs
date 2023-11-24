@@ -4,7 +4,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    pipeline::config::{PipelineDefinition, PipelineDefinitionId},
+    pipeline::config::{TemplateDefinition, TemplateDefinitionId},
     settings::{Profile, ProfileId, Settings},
 };
 
@@ -15,7 +15,7 @@ use super::{log_invoke, ParsePrimitiveAt, ResponseErr, ResponseOk, StatusCode, T
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct CreateProfileRequest {
     profile_name: String,
-    template_id: PipelineDefinitionId,
+    template_id: TemplateDefinitionId,
 }
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
@@ -72,7 +72,7 @@ pub struct GetProfileRequest {
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetProfileResponse {
     profile: Profile,
-    template: PipelineDefinition,
+    template: TemplateDefinition,
 }
 
 pub fn get_profile(
@@ -136,7 +136,7 @@ pub fn set_profile(
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetTemplatesResponse {
-    templates: Vec<PipelineDefinition>,
+    templates: Vec<TemplateDefinition>,
 }
 
 pub fn get_templates(

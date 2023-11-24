@@ -45,7 +45,8 @@ macro_rules! newtype_uuid {
 }
 
 macro_rules! newtype_strid {
-    ($id: ident) => {
+    ( $doc: literal, $id: ident) => {
+        #[doc = $doc]
         #[derive(
             Debug,
             Clone,

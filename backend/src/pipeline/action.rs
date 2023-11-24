@@ -8,7 +8,7 @@ use self::{
     melonds_config::MelonDSConfig, multi_window::MultiWindow, virtual_screen::VirtualScreen,
 };
 
-use super::{config::Selection, dependency::DependencyId, executor::PipelineContext};
+use super::{config::Selection, dependency::Dependency, executor::PipelineContext};
 use anyhow::Result;
 
 pub mod cemu_config;
@@ -32,7 +32,7 @@ pub trait PipelineActionImpl: DeserializeOwned + Serialize {
         Ok(())
     }
 
-    fn get_dependencies(&self) -> Vec<DependencyId> {
+    fn get_dependencies(&self) -> Vec<Dependency> {
         // default to no dependencies
         vec![]
     }
@@ -49,7 +49,7 @@ pub trait PipelineActionImpl: DeserializeOwned + Serialize {
 pub trait ErasedPipelineAction {
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()>;
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()>;
-    fn get_dependencies(&self) -> Vec<DependencyId>;
+    fn get_dependencies(&self) -> Vec<Dependency>;
     fn update_from(&mut self, value: &str) -> Result<()>;
     fn get_schema(&self) -> RootSchema;
 }
@@ -66,7 +66,7 @@ where
         self.teardown(ctx)
     }
 
-    fn get_dependencies(&self) -> Vec<DependencyId> {
+    fn get_dependencies(&self) -> Vec<Dependency> {
         self.get_dependencies()
     }
 

@@ -16,15 +16,15 @@ use crate::sys::process::AppProcess;
 use crate::sys::x_display::XDisplay;
 
 use super::action::{ErasedPipelineAction, PipelineAction};
-use super::config::{PipelineDefinition, PipelineTarget};
+use super::config::{PipelineTarget, TemplateDefinition};
 use super::dependency::emulator_windowing::EmulatorWindowing;
-use super::dependency::{Dependency, DependencyExecutor, DependencyId};
+use super::dependency::Dependency;
 
 use super::{action::PipelineActionImpl, dependency::true_video_wall::TrueVideoWall};
 
 pub struct PipelineExecutor<'a> {
     app_id: AppId,
-    definition: PipelineDefinition,
+    definition: TemplateDefinition,
     ctx: PipelineContext<'a>,
 }
 
@@ -33,8 +33,6 @@ pub struct PipelineContext<'a> {
     pub home_dir: PathBuf,
     /// path to directory containing user configuration files
     pub config_dir: PathBuf,
-    /// known dependencies
-    pub dependencies: HashMap<DependencyId, Dependency>,
     /// KWin script handler
     pub kwin: KWin<'a>,
     /// Display handler,
@@ -75,7 +73,7 @@ impl<'a> PipelineContext<'a> {
 impl<'a> PipelineExecutor<'a> {
     pub fn new(
         app_id: AppId,
-        pipeline_definition: PipelineDefinition,
+        pipeline_definition: TemplateDefinition,
         assets_manager: AssetManager<'a>,
         home_dir: PathBuf,
         config_dir: PathBuf,
@@ -86,17 +84,8 @@ impl<'a> PipelineExecutor<'a> {
             ctx: PipelineContext {
                 home_dir,
                 config_dir,
-                dependencies: HashMap::from([
-                    (
-                        TrueVideoWall::id(),
-                        Dependency::TrueVideoWall(TrueVideoWall),
-                    ),
-                    (
-                        EmulatorWindowing::id(),
-                        Dependency::EmulatorWindowing(EmulatorWindowing),
-                    ),
-                ]),
-                kwin: KWin::preregistered(assets_manager)?,
+
+                kwin: KWin::new(assets_manager, config_dir),
                 display: XDisplay::new()?,
                 state: TypeMap::new(),
             },
@@ -267,7 +256,7 @@ enum ActionType {
     Teardown,
 }
 
-impl PipelineDefinition {
+impl TemplateDefinition {
     fn build_actions(&self, target: PipelineTarget) -> Vec<&PipelineAction> {
         fn build_recursive(selection: &Selection) -> Vec<&PipelineAction> {
             match selection {
@@ -300,17 +289,7 @@ impl PipelineAction {
     fn exec(&self, ctx: &mut PipelineContext, action: ActionType) -> Result<()> {
         match action {
             ActionType::Dependencies => {
-                let ids = self.get_dependencies();
-
-                let deps = ids
-                    .iter()
-                    .map(|id: &super::dependency::DependencyId| {
-                        ctx.dependencies
-                            .get(id)
-                            .map(|d| (*d).clone())
-                            .ok_or_else(|| anyhow!("missing dependency {id:?}"))
-                    })
-                    .collect::<Result<Vec<_>>>()?;
+                let deps = self.get_dependencies();
 
                 for d in deps {
                     // TODO::consider tracking installs to avoid reinstalling dependencies

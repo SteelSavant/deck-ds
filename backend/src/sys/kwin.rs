@@ -1,9 +1,9 @@
 use anyhow::Result;
 use std::{
-    collections::HashMap,
     ffi::OsStr,
     path::{Path, PathBuf},
     process::Command,
+    str::FromStr,
 };
 
 use crate::asset::{Asset, AssetManager};
@@ -12,64 +12,19 @@ use crate::asset::{Asset, AssetManager};
 pub struct KWin<'a> {
     assets_manager: AssetManager<'a>,
     bundles_dir: PathBuf,
-    scripts: HashMap<String, KWinScriptConfig>,
-}
-
-#[derive(Debug, Clone)]
-pub struct KWinScriptConfig {
-    pub enabled_key: String,
-    pub bundle_name: PathBuf,
 }
 
 impl<'a> KWin<'a> {
-    pub fn preregistered(assets_manager: AssetManager<'a>) -> Result<KWin<'a>> {
-        Ok(KWin::new(assets_manager, "kwin".into())
-            .register(
-                "TrueVideoWall".to_string(),
-                KWinScriptConfig {
-                    enabled_key: "truevideowallEnabled".to_string(),
-                    bundle_name: Path::new("truevideowall-1.0.kwinscript").to_path_buf(),
-                },
-            )
-            .expect("TrueVideoWall script should exist")
-            .register(
-                "EmulatorWindowing".to_string(),
-                KWinScriptConfig {
-                    enabled_key: "emulatorwindowingEnabled".to_string(),
-                    bundle_name: Path::new("emulatorwindowing-1.0.kwinscript").to_path_buf(),
-                },
-            )
-            .expect("EmulatorWindowing script should exist"))
-    }
-
-    fn new(assets_manager: AssetManager<'a>, bundles_dir: PathBuf) -> Self {
-        log::info!("creating KWin with bundles at {:?}", bundles_dir);
-
+    fn new(assets_manager: AssetManager<'a>) -> Self {
         Self {
             assets_manager,
-            bundles_dir,
-            scripts: HashMap::new(),
+            bundles_dir: PathBuf::from_str("kwin").expect("kwin path should be valid"),
         }
     }
 
-    pub fn register(mut self, name: String, config: KWinScriptConfig) -> Result<Self> {
-        if self.get_bundle(&config.bundle_name).is_some() {
-            self.scripts.insert(name, config);
-            Ok(self)
-        } else {
-            Err(anyhow::anyhow!(
-                "Could not find kwin bundle {}",
-                config.bundle_name.display()
-            ))
-        }
-    }
-
-    pub fn install_script(&self, script_name: &str) -> Result<()> {
-        let script = self.scripts.get(script_name).ok_or(anyhow::anyhow!(
-            "No kwin script named {script_name} registered"
-        ))?;
-        let bundle = self.get_bundle(&script.bundle_name).ok_or(anyhow::anyhow!(
-            "could not find bundle {script_name} to install"
+    pub fn install_script(&self, bundle_name: &str) -> Result<()> {
+        let bundle = self.get_bundle(&bundle_name).ok_or(anyhow::anyhow!(
+            "could not find bundle {bundle_name} to install"
         ))?;
         let bundle_path = bundle.external_file_path()?;
 
@@ -87,16 +42,12 @@ impl<'a> KWin<'a> {
             Ok(())
         } else {
             Err(anyhow::anyhow!(
-                "failed to install kwin script {script_name}"
+                "failed to install kwin script bundle {bundle_name}"
             ))
         }
     }
 
     pub fn set_script_enabled(&self, script_name: &str, is_enabled: bool) -> Result<()> {
-        let script = self.scripts.get(script_name).ok_or(anyhow::anyhow!(
-            "No kwin script named {script_name} registered"
-        ))?;
-
         let set_cmd_out = Command::new("kwriteconfig5")
             .args([
                 "--file",
@@ -104,7 +55,7 @@ impl<'a> KWin<'a> {
                 "--group",
                 "Plugins",
                 "--key",
-                &script.enabled_key,
+                &format!("{}Enabled", script_name),
                 &is_enabled.to_string(),
             ])
             .output()?;

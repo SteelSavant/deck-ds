@@ -2,20 +2,22 @@ use derive_more::Display;
 use std::collections::HashMap;
 
 use crate::{
-    macros::newtype_uuid,
+    macros::{newtype_strid, newtype_uuid},
     settings::{patch::patch_json, Overrides},
 };
 use anyhow::Result;
 
-use indexmap::IndexMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::action::PipelineAction;
 
-newtype_uuid!(PipelineActionDefinitionId);
-newtype_uuid!(PipelineDefinitionId);
+newtype_strid!(
+    r#"Id in the form "plugin:group:action" | "plugin:group:action:variant""#,
+    PipelineActionDefinitionId
+);
+newtype_uuid!(TemplateDefinitionId);
 
 #[derive(Copy, Debug, Display, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, JsonSchema)]
 pub enum PipelineTarget {
@@ -24,26 +26,25 @@ pub enum PipelineTarget {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct PipelineDefinition {
+pub struct TemplateDefinition {
     pub name: String,
     pub tags: Vec<String>,
-    pub id: PipelineDefinitionId,
+    pub id: TemplateDefinitionId,
     pub description: String,
-    pub targets: HashMap<PipelineTarget, PipelineActionDefinition>,
+    pub targets: HashMap<PipelineTarget, Selection>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct PipelineActionDefinition {
-    /// The id of the action
-    pub id: PipelineActionDefinitionId,
     /// The name of the action
     pub name: String,
     /// An optional description of what the action does.
     pub description: Option<String>,
     /// The value of the pipeline action
     pub selection: Selection,
-    /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
-    pub enabled: Option<bool>,
+
+    /// Flags whether the selection is exported for use in other actions.
+    pub exported: bool,
 }
 
 impl PipelineActionDefinition {
@@ -51,15 +52,14 @@ impl PipelineActionDefinition {
         name: String,
         description: Option<String>,
         id: PipelineActionDefinitionId,
-        enabled: Option<bool>,
+        exported: bool,
         selection: Selection,
     ) -> Self {
         Self {
             name,
             description,
-            id,
-            enabled,
             selection,
+            exported,
         }
     }
 }
@@ -80,34 +80,51 @@ pub enum Selection {
     Action(PipelineAction),
     OneOf {
         selection: PipelineActionDefinitionId,
-        actions: IndexMap<PipelineActionDefinitionId, PipelineActionDefinition>,
+        actions: Vec<PipelineActionDefinitionId>,
     },
-    AllOf(Vec<PipelineActionDefinition>),
+    AllOf(Vec<Enabled<PipelineActionDefinitionId>>),
 }
 
-impl PipelineDefinition {
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct Enabled<T> {
+    /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+    pub enabled: Option<bool>,
+    pub selection: T,
+}
+
+impl<T> Enabled<T> {
+    pub fn force(selection: T) -> Self {
+        Self {
+            enabled: None,
+            selection,
+        }
+    }
+
+    pub fn default_true(selection: T) -> Self {
+        Self {
+            enabled: Some(true),
+            selection,
+        }
+    }
+
+    pub fn default_false(selection: T) -> Self {
+        Self {
+            enabled: Some(false),
+            selection,
+        }
+    }
+}
+
+impl TemplateDefinition {
     pub fn new(
-        id: PipelineDefinitionId,
+        id: TemplateDefinitionId,
         name: String,
         description: String,
         tags: Vec<String>,
-        selections: HashMap<PipelineTarget, (PipelineActionDefinitionId, Selection)>,
+        targets: HashMap<PipelineTarget, Selection>,
     ) -> Self {
-        let targets = selections.into_iter().map(|(t, (root_id, s))| {
-            (
-                t,
-                PipelineActionDefinition {
-                    id: root_id,
-                    name: format!("root:{}", t),
-                    description: None,
-                    selection: s,
-                    enabled: None,
-                },
-            )
-        });
-
         Self {
-            targets: targets.collect(),
+            targets,
             name,
             tags,
             id,
@@ -125,37 +142,6 @@ impl PipelineDefinition {
             patched.patch_override(&id, value);
         }
         patched
-    }
-
-    fn get_definition_mut(
-        &mut self,
-        id: &PipelineActionDefinitionId,
-    ) -> Option<&mut PipelineActionDefinition> {
-        fn get_definition_rec<'a>(
-            def: &'a mut PipelineActionDefinition,
-            id: &PipelineActionDefinitionId,
-        ) -> Option<&'a mut PipelineActionDefinition> {
-            if def.id == *id {
-                return Some(def);
-            }
-
-            match def.selection {
-                Selection::Action(_) => None,
-                Selection::OneOf {
-                    ref mut actions, ..
-                } => actions
-                    .iter_mut()
-                    .fold(None, |acc, a| if a.0 == id { Some(a.1) } else { acc }),
-                Selection::AllOf(ref mut definitions) => definitions
-                    .iter_mut()
-                    .fold(None, |acc, d| if d.id == *id { Some(d) } else { acc }),
-            }
-        }
-
-        self.targets
-            .values_mut()
-            .filter_map(|pipeline| get_definition_rec(pipeline, id))
-            .next()
     }
 
     fn patch_enabled(&mut self, id: &PipelineActionDefinitionId, value: bool) {

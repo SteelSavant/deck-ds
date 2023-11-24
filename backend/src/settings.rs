@@ -11,22 +11,9 @@ use serde_json::Value;
 
 use crate::{
     macros::{newtype_strid, newtype_uuid},
-    pipeline::{
-        action::{
-            cemu_config::{CemuConfig, CemuXmlSource},
-            citra_config::{CitraConfig, CitraIniSource, CitraLayoutOption},
-            display_config::{DisplayConfig, RelativeLocation, TeardownExternalSettings},
-            melonds_config::{
-                MelonDSConfig, MelonDSIniSource, MelonDSLayoutOption, MelonDSSizingOption,
-            },
-            multi_window::MultiWindow,
-            virtual_screen::VirtualScreen,
-        },
-        config::{
-            PipelineActionDefinition, PipelineActionDefinitionId, PipelineDefinition,
-            PipelineDefinitionId, PipelineTarget, Selection,
-        },
-        dependency::Dependency,
+    pipeline::config::{
+        Enabled, PipelineActionDefinitionId, PipelineTarget, Selection, TemplateDefinition,
+        TemplateDefinitionId,
     },
     util::create_dir_all,
 };
@@ -34,7 +21,7 @@ use crate::{
 pub mod patch;
 
 newtype_uuid!(ProfileId);
-newtype_strid!(AppId);
+newtype_strid!("", AppId);
 
 #[derive(Debug, Clone)]
 pub struct Settings {
@@ -44,184 +31,67 @@ pub struct Settings {
     autostart_path: PathBuf,
 
     // in-memory configurations -- consider moving
-    templates: Vec<PipelineDefinition>,
-    dependencies: Vec<Dependency>,
+    templates: Vec<TemplateDefinition>,
 }
 
 impl Settings {
     pub fn new<P: AsRef<Path>>(config_dir: P) -> Self {
         let config_dir = config_dir.as_ref();
 
-        let dependencies = vec![];
         let templates = vec![
             // melonDS
-            PipelineDefinition::new(
-                PipelineDefinitionId::parse("d92ca87d-282f-4897-86f0-86a3af16bf3e"),
+            TemplateDefinition::new(
+                TemplateDefinitionId::parse("d92ca87d-282f-4897-86f0-86a3af16bf3e"),
                 "melonDS".to_string(),
                 "Maps the internal and external monitor to a single virtual screen, as melonDS does not currently support multiple windows. Allows optional melonDS configuration editing.".to_string(),
-                vec!["NDS".to_string()],
+                vec!["NDS".to_string(), "nds".to_string()],
                 HashMap::from_iter([
-                    (PipelineTarget::Desktop, (PipelineActionDefinitionId::parse("15544db8-2e64-46b7-9be6-ade53ea93076"),
-                        Selection::AllOf(vec![
-                            PipelineActionDefinition {
-                                id: PipelineActionDefinitionId::parse("d7838726-448c-4817-bcd6-d982c0bad7f6"),
-                                description: Some("Edits melonDS ini file to desired settings".to_string()),
-                                name: "melonDS Config".to_string(),
-                                selection: MelonDSConfig {
-                                    ini_source: MelonDSIniSource::Flatpak,
-                                    layout_option: MelonDSLayoutOption::Vertical,
-                                    sizing_option: MelonDSSizingOption::Even,
-                                    book_mode: false,
-                                    swap_screens: false,
-                                }.into(),
-                                enabled: Some(false)
-                            },
-                            PipelineActionDefinition {
-                                enabled: None,
-                                id: PipelineActionDefinitionId::parse("278d1921-3996-458e-8db2-9ca4541ab4aa"),
-                                name: "Display Configuration".to_string(),
-                                description: None,
-                                selection: DisplayConfig {
-                                        teardown_external_settings:TeardownExternalSettings::Previous,
-                                        teardown_deck_location:RelativeLocation::Below
-                                    }.into(),
-                            },
-                            PipelineActionDefinition {
-                                selection: VirtualScreen.into(),
-                                enabled: None,
-                                id: PipelineActionDefinitionId::parse("2c843c15-fafa-4ee1-b960-e0e0aaa60882"),
-                                name: "Virtual Screen".to_string(),
-                                description: None,
-                            },
-                        ]),)
-                    ),
-                    (PipelineTarget::Gamemode, (PipelineActionDefinitionId::parse("0da77860-c7ee-4851-9ea7-9ff048551112"),
-                        Selection::AllOf(vec![
-                            PipelineActionDefinition {
-                                id: PipelineActionDefinitionId::parse("6714f40e-fd68-49b6-8ed6-eea238b677b8"),
-                                description: Some("Edits melonDS ini file to desired settings".to_string()),
-                                name: "melonDS Config".to_string(),
-                                selection: MelonDSConfig {
-                                    ini_source: MelonDSIniSource::Flatpak,
-                                    layout_option: MelonDSLayoutOption::Horizontal,
-                                    sizing_option: MelonDSSizingOption::Even,
-                                    book_mode: false,
-                                    swap_screens: false,
-                                }.into(),
-                                enabled: Some(false)
-                            },
-                        ]),)
-                    )
+                    (PipelineTarget::Desktop, Selection::AllOf(vec![
+                        Enabled::force(PipelineActionDefinitionId::new("core:melonds:layout")),
+                        Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")), 
+                        Enabled::force(PipelineActionDefinitionId::new("core:display:virtual_screen"))
+                    ])),
+                    (PipelineTarget::Gamemode, Selection::AllOf(vec![
+                        Enabled::force(PipelineActionDefinitionId::new("core:melonds:layout")),
+                    ]))
                 ]),
             ),
 
             // Citra
-            PipelineDefinition::new(
-                PipelineDefinitionId::parse("ed6fc4bb-ec6d-4b0f-97e7-70709066dcba"),
+            TemplateDefinition::new(
+                TemplateDefinitionId::parse("ed6fc4bb-ec6d-4b0f-97e7-70709066dcba"),
                 "Citra".to_string(),
                 "Maps primary and secondary windows to different screens for Citra. Allows optional Citra configuration editing.".to_string(),
-                vec!["3DS".to_string()],
+                vec!["3DS".to_string(),"3ds".to_string()],
                 HashMap::from_iter([
-                    (PipelineTarget::Desktop, (PipelineActionDefinitionId::parse("4bdf8588-40fe-4997-b367-5f6dbc638f5c"),
-                        Selection::AllOf(vec![
-                            PipelineActionDefinition {
-                                id: PipelineActionDefinitionId::parse("c7848776-c48d-2317-5541-d9a2c0dc7722"),
-                                description: Some("Edits Citra ini file to desired settings".to_string()),
-                                name: "Citra Config".to_string(),
-                                selection: CitraConfig {
-                                    ini_source: CitraIniSource::Flatpak,
-                                    layout_option: CitraLayoutOption::Default,
-                                }.into(),
-                                enabled: Some(true)
-                            },
-                            PipelineActionDefinition {
-                                enabled: None,
-                                id: PipelineActionDefinitionId::parse("4ff26ece-dcab-4dd3-b941-96bd96a2c045"),
-                                name: "Display Configuration".to_string(),
-                                description: None,
-                                selection: DisplayConfig {
-                                        teardown_external_settings:TeardownExternalSettings::Previous,
-                                        teardown_deck_location:RelativeLocation::Below
-                                    }.into(),
-                            },
-                            PipelineActionDefinition {
-                                selection: MultiWindow.into(),
-                                enabled: None,
-                                id: PipelineActionDefinitionId::parse("4b635b4f-031b-4a80-87d9-5bf0cdcdc77f"),
-                                name: "MultiWindow".to_string(),
-                                description: None,
-                            },
-                        ])
-                    )),
-                    (PipelineTarget::Gamemode, (PipelineActionDefinitionId::parse("d6ec1667-2d14-44ac-affc-cc308aa58d23"),
-                        Selection::AllOf(vec![
-                            PipelineActionDefinition {
-                                id: PipelineActionDefinitionId::parse("f39d953b-7cbe-43b0-acf9-3d789d26fb8b"),
-                                description: Some("Edits Citra ini file to desired settings".to_string()),
-                                name: "Citra Config".to_string(),
-                                selection: CitraConfig {
-                                    ini_source: CitraIniSource::Flatpak,
-                                    layout_option: CitraLayoutOption::SideBySide,
-                                }.into(),
-                                enabled: Some(true)
-                            },
-                        ])))
+                    (PipelineTarget::Desktop, Selection::AllOf(vec![
+                        Enabled::force(PipelineActionDefinitionId::new("core:citra:layout")),
+                        Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")), 
+                        Enabled::force(PipelineActionDefinitionId::new("core:display:multi_window"))
+                    ])),
+                    (PipelineTarget::Gamemode, Selection::AllOf(vec![
+                        Enabled::force(PipelineActionDefinitionId::new("core:citra:layout")),
+                    ]))
                 ]),
             ),
 
             // Cemu
-            PipelineDefinition::new(
-                PipelineDefinitionId::parse("b0d6443d-6ae7-4085-87c1-b52aae5001a1"),
+            TemplateDefinition::new(
+                TemplateDefinitionId::parse("b0d6443d-6ae7-4085-87c1-b52aae5001a1"),
                 "Cemu".to_string(),
                 "Maps primary and secondary windows to different screens for Cemu.".to_string(),
-                vec!["WIIU".to_string()],
+                vec!["WIIU".to_string(), "WiiU".to_string()],
                 HashMap::from_iter([
-                    (PipelineTarget::Desktop, (PipelineActionDefinitionId::parse("5a35f2a9-9934-4e32-bc7c-b73278ed1db0"),
-
+                    (PipelineTarget::Desktop,
                         Selection::AllOf(vec![
-                            PipelineActionDefinition {
-                                id: PipelineActionDefinitionId::parse("461c1ea6-8dd3-434e-b87d-8981c82b94c2"),
-                                description: Some("Edits Cemu settings.xml file to desired settings".to_string()),
-                                name: "Cemu Config".to_string(),
-                                selection: CemuConfig {
-                                    xml_source: CemuXmlSource::Flatpak,
-                                    separate_gamepad_view: true,
-                                }.into(),
-                                enabled: Some(true),
-                            },
-                            PipelineActionDefinition {
-                                enabled: None,
-                                id: PipelineActionDefinitionId::parse("100127cb-9201-4262-90ec-02b7b3127023"),
-                                name: "Display Configuration".to_string(),
-                                description: None,
-                                selection: DisplayConfig {
-                                        teardown_external_settings:TeardownExternalSettings::Previous,
-                                        teardown_deck_location:RelativeLocation::Below
-                                    }.into(),
-                            },
-                            PipelineActionDefinition {
-                                selection: MultiWindow.into(),
-                                enabled: None,
-                                id: PipelineActionDefinitionId::parse("468ee444-e2b5-47af-af6b-9ccc2bf97c2d"),
-                                name: "MultiWindow".to_string(),
-                                description: None,
-                            },
-                        ]))
-                    ),
-                    (PipelineTarget::Gamemode, (PipelineActionDefinitionId::parse("d758067d-c419-490e-b305-a72746c2f9c8"),
+                            Enabled::force(PipelineActionDefinitionId::new("core:cemu:layout")),
+                            Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")), 
+                            Enabled::force(PipelineActionDefinitionId::new("core:display:multi_window"))
+                    ])),
+                    (PipelineTarget::Gamemode,
                         Selection::AllOf(vec![
-                            PipelineActionDefinition {
-                                id: PipelineActionDefinitionId::parse("f05d002b-9712-45e5-89e1-99f59aeeb25b"),
-                                description: Some("Edits Cemu settings.xml file to desired settings".to_string()),
-                                name: "Cemu Config".to_string(),
-                                selection: CemuConfig {
-                                    xml_source: CemuXmlSource::Flatpak,
-                                    separate_gamepad_view: false,
-                                }.into(),
-                                enabled: Some(true),
-                            },
-                        ]))
-                    )
+                            Enabled::force(PipelineActionDefinitionId::new("core:cemu:layout"))
+                    ]))
                 ]),
             )
         ];
@@ -230,7 +100,6 @@ impl Settings {
             profiles_dir: config_dir.join("profiles"),
             apps_dir: config_dir.join("apps"),
             autostart_path: config_dir.join("autostart.json"),
-            dependencies,
             templates,
         }
     }
@@ -240,7 +109,7 @@ impl Settings {
     pub fn create_profile(
         &self,
         name: String,
-        template_id: &PipelineDefinitionId,
+        template_id: &TemplateDefinitionId,
     ) -> Result<Profile> {
         // ensure template exists
         self.templates
@@ -341,16 +210,12 @@ impl Settings {
 
     // In-memory configuration (currently readonly, but dependencies should ideally be configurable)
 
-    pub fn get_template(&self, id: &PipelineDefinitionId) -> Option<&PipelineDefinition> {
+    pub fn get_template(&self, id: &TemplateDefinitionId) -> Option<&TemplateDefinition> {
         self.templates.iter().find(|t| t.id == *id)
     }
 
-    pub fn get_templates(&self) -> &[PipelineDefinition] {
+    pub fn get_templates(&self) -> &[TemplateDefinition] {
         &self.templates
-    }
-
-    pub fn get_dependencies(&self) -> &[Dependency] {
-        &self.dependencies
     }
 }
 
@@ -364,7 +229,7 @@ pub struct AutoStart {
 pub struct Profile {
     pub name: String,
     pub id: ProfileId,
-    pub template: PipelineDefinitionId,
+    pub template: TemplateDefinitionId,
     pub tags: Vec<String>,
     pub overrides: Overrides,
 }
@@ -372,8 +237,8 @@ pub struct Profile {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct App {
     id: AppId,
-    active_profile: PipelineDefinitionId,
-    pub overrides: HashMap<PipelineDefinitionId, Overrides>,
+    active_profile: TemplateDefinitionId,
+    pub overrides: HashMap<TemplateDefinitionId, Overrides>,
 }
 
 /// Overrides for a pipeline definition.

@@ -12,6 +12,7 @@ use crate::util::create_dir_all;
 pub struct AssetManager<'a> {
     embedded_assets: &'a Dir<'a>,
     external_asset_path: PathBuf,
+    // TODO::in-memory assets (default templates)
 }
 
 impl<'a> AssetManager<'a> {

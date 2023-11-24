@@ -1,6 +1,5 @@
 use anyhow::Result;
 use include_dir::{include_dir, Dir};
-use schemars::JsonSchema;
 use std::{
     path::Path,
     sync::{Arc, Mutex},
@@ -15,7 +14,7 @@ use crate::{
     asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
-    pipeline::config::{PipelineDefinition, PipelineTarget},
+    pipeline::{config::PipelineTarget, registar::PipelineActionRegistar},
     settings::{AppId, Overrides, Profile, ProfileId, Settings},
     util::create_dir_all,
 };
@@ -49,7 +48,7 @@ enum Modes {
     Serve,
     /// generates the schema definitions to ts type generation.
     Schema {
-        /// The file in which to store the schema
+        /// The folder in which to store the schema
         output: String,
     },
 }
@@ -124,6 +123,8 @@ fn main() -> Result<()> {
 
     let args = Cli::parse();
     let mode = args.mode.unwrap_or_default();
+
+    let action_registrar = PipelineActionRegistar::builder().with_core().build();
 
     let settings = Settings::new(&config_dir);
     {
@@ -229,14 +230,7 @@ fn main() -> Result<()> {
             } else {
                 create_dir_all(path)?;
 
-                /// Marker type for generating json schema types for ts
-                #[derive(JsonSchema)]
-                struct __Backend {
-                    pub _api: __Api,
-                    pub _pipeline_definition: PipelineDefinition,
-                }
-
-                let pipeline_schema = schemars::schema_for!(__Backend);
+                let pipeline_schema = schemars::schema_for!(__Api);
                 Ok(std::fs::write(
                     path.join("schema.json"),
                     serde_json::to_string_pretty(&pipeline_schema)?,

@@ -3,10 +3,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use xrandr::Relation;
 
-use crate::pipeline::{
-    dependency::{emulator_windowing::EmulatorWindowing, DependencyId},
-    executor::PipelineContext,
-};
+use crate::pipeline::{dependency::Dependency, executor::PipelineContext};
 
 use super::PipelineActionImpl;
 
@@ -17,7 +14,7 @@ impl PipelineActionImpl for MultiWindow {
     type State = ();
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
-        ctx.kwin.set_script_enabled("EmulatorWindowing", true)?;
+        ctx.kwin.set_script_enabled("emulatorwindowing", true)?;
         let external = ctx
             .display
             .get_preferred_external_output()?
@@ -32,11 +29,13 @@ impl PipelineActionImpl for MultiWindow {
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {
-        ctx.kwin.set_script_enabled("EmulatorWindowing", false)?;
+        ctx.kwin.set_script_enabled("emulatorwindowing", false)?;
         Ok(())
     }
 
-    fn get_dependencies(&self) -> Vec<DependencyId> {
-        vec![EmulatorWindowing::id()]
+    fn get_dependencies(&self) -> Vec<Dependency> {
+        vec![Dependency::KwinScript(
+            "emulatorwindowing-v1.0.kwinscript".to_string(),
+        )]
     }
 }
