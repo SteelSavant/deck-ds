@@ -85,18 +85,18 @@ impl LoadedAutoStart {
             .iter()
             .find(|pd| pd.id == profile.template)
         {
-            let app_settings = settings
-                .get_app(&self.autostart.app_id)?
-                .and_then(|s| s.overrides.get(&definition.id).cloned());
+            // let app_settings = settings
+            //     .get_app(&self.autostart.app_id)?
+            //     .and_then(|s| s.overrides.get(&definition.id).cloned());
 
-            let patched = definition.patched_with(profile.overrides, self.target, action_registrar);
-            let patched = app_settings
-                .map(|o| patched.patched_with(o, self.target, action_registrar))
-                .unwrap_or(patched);
+            // let patched = definition.patched_with(profile.overrides, self.target, action_registrar);
+            // let patched = app_settings
+            //     .map(|o| patched.patched_with(o, self.target, action_registrar))
+            //     .unwrap_or(patched);
 
             PipelineExecutor::new(
                 self.autostart.app_id,
-                patched,
+                definition.clone(),
                 self.target,
                 assets_manager,
                 home_dir,

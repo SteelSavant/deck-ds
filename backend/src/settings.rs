@@ -43,7 +43,7 @@ impl Settings {
             TemplateDefinition::new(
                 TemplateDefinitionId::parse("d92ca87d-282f-4897-86f0-86a3af16bf3e"),
                 "melonDS".to_string(),
-                "Maps the internal and external monitor to a single virtual screen, as melonDS does not currently support multiple windows. Allows optional melonDS configuration editing.".to_string(),
+                "Maps the internal and external monitor to a single virtual screen, as melonDS does not currently support multiple windows. Allows optional melonDS layout configuration.".to_string(),
                 vec!["NDS".to_string(), "nds".to_string()],
                 HashMap::from_iter([
                     (PipelineTarget::Desktop, Selection::AllOf(vec![
@@ -61,7 +61,7 @@ impl Settings {
             TemplateDefinition::new(
                 TemplateDefinitionId::parse("ed6fc4bb-ec6d-4b0f-97e7-70709066dcba"),
                 "Citra".to_string(),
-                "Maps primary and secondary windows to different screens for Citra. Allows optional Citra configuration editing.".to_string(),
+                "Maps primary and secondary windows to different screens for Citra. Allows optional Citra layout configuration".to_string(),
                 vec!["3DS".to_string(),"3ds".to_string()],
                 HashMap::from_iter([
                     (PipelineTarget::Desktop, Selection::AllOf(vec![
