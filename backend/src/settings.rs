@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -29,6 +29,7 @@ pub struct Settings {
     profiles_dir: PathBuf,
     apps_dir: PathBuf,
     autostart_path: PathBuf,
+    system_autostart_dir: PathBuf,
 
     // in-memory configurations -- consider moving
     templates: Vec<TemplateDefinition>,
@@ -100,6 +101,7 @@ impl Settings {
             profiles_dir: config_dir.join("profiles"),
             apps_dir: config_dir.join("apps"),
             autostart_path: config_dir.join("autostart.json"),
+            system_autostart_dir: config_dir.join("../autostart"), // quick hack
             templates,
         }
     }
@@ -197,19 +199,41 @@ impl Settings {
     }
 
     pub fn set_autostart_cfg(&self, autostart: &Option<AutoStart>) -> Result<()> {
-        create_dir_all(
-            self.autostart_path
-                .parent()
-                .expect("autostart.json path should have parent"),
-        )?;
+        // always set system autostart, since we (eventually) want to be able to auto-configure displays
+        // whether or not an app is run
+        create_dir_all(&self.system_autostart_dir)?;
 
-        let serialized = serde_json::to_string_pretty(autostart)?;
+        let autostart_parent = self
+            .autostart_path
+            .parent()
+            .expect("autostart.json path should have parent");
 
-        Ok(std::fs::write(&self.autostart_path, serialized)?)
+        let desktop_contents = r"[Desktop Entry]
+        Comment=Runs DeckDS plugin autostart script for dual screen applications.
+        Exec=$Exec
+        Path=$Path
+        Name=DeckDS
+        Type=Application"
+            .replace("$Exec", "$HOME/homebrew/plugins/DeckDS/bin/backend") // hardcode for now
+            .replace("$Path", &autostart_parent.to_string_lossy());
+
+        // set autostart config
+        create_dir_all(autostart_parent)?;
+
+        let autostart_cfg = serde_json::to_string_pretty(autostart)?;
+
+        std::fs::write(
+            self.system_autostart_dir.join("deck-ds.desktop"),
+            desktop_contents,
+        )
+        .with_context(|| "failed to create autostart desktop file")
+        .and_then(move |_| {
+            std::fs::write(&self.autostart_path, autostart_cfg)
+                .with_context(|| "failed to create autostart config file")
+        })
     }
 
-    // In-memory configuration (currently readonly, but dependencies should ideally be configurable)
-
+    // In-memory configuration (currently readonly, but should ideally be configurable)
     pub fn get_template(&self, id: &TemplateDefinitionId) -> Option<&TemplateDefinition> {
         self.templates.iter().find(|t| t.id == *id)
     }

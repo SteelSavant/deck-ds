@@ -27,9 +27,12 @@ impl<'a> AssetManager<'a> {
     ///
     /// # Example
     /// ```
-    /// let asset = manager.get(PathBuf::from("kwin/emulatorwindowing-1.0.kwinscript"))
+    /// let asset = manager.get(PathBuf::from("kwin/emulatorwindowing-v1.0.kwinscript"))
     /// ```
-    pub fn get<'b, P: AsRef<Path>>(&'b self, asset_path: P) -> Option<Asset<'a, 'b>> {
+    pub fn get<'b, P: AsRef<Path> + std::fmt::Debug>(
+        &'b self,
+        asset_path: P,
+    ) -> Option<Asset<'a, 'b>> {
         let external = self.external_asset_path.join(&asset_path);
 
         fn get_external(external: PathBuf) -> Result<Option<AssetType<'static>>> {
@@ -44,9 +47,8 @@ impl<'a> AssetManager<'a> {
             .ok()
             .flatten()
             .or_else(|| {
-                let internal_path = self.embedded_assets.path().join(&asset_path);
                 self.embedded_assets
-                    .get_file(&internal_path)
+                    .get_file(&asset_path)
                     .map(AssetType::Internal)
             })
             .map(|a| Asset {
