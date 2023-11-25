@@ -203,21 +203,15 @@ impl Settings {
         // whether or not an app is run
         create_dir_all(&self.system_autostart_dir)?;
 
+        let desktop_contents = self.create_desktop_contents();
+
         let autostart_parent = self
             .autostart_path
             .parent()
             .expect("autostart.json path should have parent");
 
-        let desktop_contents = r"[Desktop Entry]
-        Comment=Runs DeckDS plugin autostart script for dual screen applications.
-        Exec=$Exec
-        Path=$Path
-        Name=DeckDS
-        Type=Application"
-            .replace("$Exec", "$HOME/homebrew/plugins/DeckDS/bin/backend") // hardcode for now
-            .replace("$Path", &autostart_parent.to_string_lossy());
-
         // set autostart config
+
         create_dir_all(autostart_parent)?;
 
         let autostart_cfg = serde_json::to_string_pretty(autostart)?;
@@ -231,6 +225,22 @@ impl Settings {
             std::fs::write(&self.autostart_path, autostart_cfg)
                 .with_context(|| "failed to create autostart config file")
         })
+    }
+
+    fn create_desktop_contents(&self) -> String {
+        let autostart_parent = self
+            .autostart_path
+            .parent()
+            .expect("autostart.json path should have parent");
+
+        r"[Desktop Entry]
+        Comment=Runs DeckDS plugin autostart script for dual screen applications.
+        Exec=$Exec
+        Path=$Path
+        Name=DeckDS
+        Type=Application"
+            .replace("$Exec", "$HOME/homebrew/plugins/deck-ds/bin/backend") // hardcode for now
+            .replace("$Path", &autostart_parent.to_string_lossy())
     }
 
     // In-memory configuration (currently readonly, but should ideally be configurable)
@@ -289,4 +299,27 @@ pub struct App {
 pub struct Overrides {
     pub fields: HashMap<PipelineActionDefinitionId, Value>,
     pub enabled: HashMap<PipelineActionDefinitionId, bool>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn desktop_contents_correct() {
+        let settings = Settings::new(Path::new("$HOME/.config/deck-ds"));
+
+        let actual = settings.create_desktop_contents();
+        let expected = r"[Desktop Entry]
+        Comment=Runs DeckDS plugin autostart script for dual screen applications.
+        Exec=$HOME/homebrew/plugins/deck-ds/bin/backend
+        Path=$HOME/.config/deck-ds
+        Name=DeckDS
+        Type=Application";
+
+        println!("{expected}");
+
+        assert_eq!(expected, actual);
+    }
 }

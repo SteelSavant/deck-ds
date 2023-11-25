@@ -54,7 +54,7 @@ pub fn chown_settings_dir() -> std::io::Result<()> {
         .parse()
         .unwrap_or(1000);
     log::info!(
-        "chmod/chown ~/.config/deckdsd for user `{}` ({})",
+        "chmod/chown ~/.config/deck-ds for user `{}` ({})",
         deck_user,
         uid
     );
