@@ -7,7 +7,6 @@ use std::{
 use anyhow::{Context, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 use crate::{
     macros::{newtype_strid, newtype_uuid},
@@ -125,7 +124,7 @@ impl Settings {
     pub fn delete_profile(&self, id: &ProfileId) -> Result<()> {
         let profile_path = self.profiles_dir.join(id.raw()).with_extension("json");
         std::fs::remove_file(profile_path)
-            .with_context(|| format!("failed to remove profile {id:?}"))
+            .with_context(|| format!("failed to remove profile settings {id:?}"))
     }
 
     pub fn get_profile(&self, id: &ProfileId) -> Result<Profile> {
@@ -163,6 +162,14 @@ impl Settings {
             .flatten()
             .filter_map(|f| f.transpose())
             .collect::<Result<_>>()
+    }
+
+    pub fn delete_app(&self, id: &AppId) -> Result<()> {
+        let raw = id.raw();
+
+        let app_path = self.apps_dir.join(raw).with_extension("json");
+        std::fs::remove_file(app_path)
+            .with_context(|| format!("failed to remove app settings for {id:?}"))
     }
 
     pub fn get_app(&self, id: &AppId) -> Result<Option<App>> {
@@ -335,6 +342,44 @@ mod tests {
         assert_eq!(expected.pipeline.name, actual.pipeline.name);
 
         settings.delete_profile(&expected.id)?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_app_crud() -> Result<()> {
+        let settings = Settings::new(Path::new("test/.config/deck-ds"));
+
+        let mut expected = App {
+            id: AppId("test_app".to_string()),
+            profiles: vec![ActionOrProfilePipeline {
+                name: "Test Pipeline".to_string(),
+                tags: vec!["TEST".to_string()],
+                description: "Test Pipeline".to_string(),
+                targets: HashMap::from_iter([(PipelineTarget::Desktop, Selection::AllOf(vec![]))]),
+            }],
+        };
+
+        settings.set_app(&expected)?;
+        let actual = settings
+            .get_app(&expected.id)?
+            .with_context(|| "app should exist")?;
+
+        assert_eq!(expected.id, actual.id);
+        assert_eq!(expected.profiles[0].name, actual.profiles[0].name);
+
+        expected.profiles[0].name = "Updated".to_string();
+
+        settings.set_app(&expected)?;
+
+        let actual = settings
+            .get_app(&expected.id)?
+            .with_context(|| "app should exist")?;
+
+        assert_eq!(expected.id, actual.id);
+        assert_eq!(expected.profiles[0].name, actual.profiles[0].name);
+
+        settings.delete_app(&expected.id)?;
 
         Ok(())
     }
