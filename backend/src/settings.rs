@@ -239,11 +239,11 @@ impl Settings {
             .expect("autostart.json path should have parent");
 
         r"[Desktop Entry]
-        Comment=Runs DeckDS plugin autostart script for dual screen applications.
-        Exec=$Exec
-        Path=$Path
-        Name=DeckDS
-        Type=Application"
+Comment=Runs DeckDS plugin autostart script for dual screen applications.
+Exec=$Exec
+Path=$Path
+Name=DeckDS
+Type=Application"
             .replace(
                 "$Exec",
                 "$HOME/homebrew/plugins/deck-ds/bin/backend autostart",
@@ -292,11 +292,11 @@ mod tests {
 
         let actual = settings.create_desktop_contents();
         let expected = r"[Desktop Entry]
-        Comment=Runs DeckDS plugin autostart script for dual screen applications.
-        Exec=$HOME/homebrew/plugins/deck-ds/bin/backend autostart
-        Path=$HOME/.config/deck-ds
-        Name=DeckDS
-        Type=Application";
+Comment=Runs DeckDS plugin autostart script for dual screen applications.
+Exec=$HOME/homebrew/plugins/deck-ds/bin/backend autostart
+Path=$HOME/.config/deck-ds
+Name=DeckDS
+Type=Application";
 
         assert_eq!(expected, actual);
     }
