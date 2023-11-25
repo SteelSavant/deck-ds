@@ -1,4 +1,4 @@
-import { AutoStartRequest, CreateProfileRequest, CreateProfileResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, SetProfileRequest } from "./types/backend_api";
+import { AutoStartRequest, CreateProfileRequest, CreateProfileResponse, GetPipelineActionsResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, SetProfileRequest } from "./types/backend_api";
 import { call_backend, init_embedded, init_usdpl, target_usdpl } from "./usdpl_front";
 import { Err, Ok, Result } from "./util/result";
 
@@ -12,13 +12,16 @@ export {
     GetProfilesResponse,
     GetTemplatesResponse,
     // Pipeline Types
-    Overrides, PipelineAction,
+    Overrides,
+    PipelineAction,
     PipelineActionDefinition,
     PipelineDefinition,
     PipelineTarget,
     // Profile Types
-    Profile, Selection, SetProfileRequest
+    Profile, Selection, SetProfileRequest, Template
 } from "./types/backend_api";
+
+export { ActionSelection, AllOfSelection, OneOfSelection, isAction, isAllOf, isOneOf } from "./types/narrowing";
 
 const USDPL_PORT: number = 44666;
 
@@ -131,6 +134,10 @@ export async function getProfiles(): Response<GetProfilesResponse> {
 }
 
 export async function getTemplates(): Response<GetTemplatesResponse> {
+    return await call_backend_typed("get_templates", null);
+}
+
+export async function getPipelineActions(): Response<GetPipelineActionsResponse> {
     return await call_backend_typed("get_templates", null);
 }
 

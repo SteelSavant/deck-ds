@@ -71,7 +71,31 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
             }
           }}
         >
-          Template Count (3)
+          Template Count
+        </ButtonItem>
+        <ButtonItem
+          layout="below"
+          onClick={async () => {
+            await backend.autoStart({
+              app: "12146987087370911744",
+              profile: "00000000-0000-0000-0000-000000000000",
+              target: "Desktop"
+            })
+          }}
+        >
+          Desktop Test
+        </ButtonItem>
+        <ButtonItem
+          layout="below"
+          onClick={async () => {
+            await backend.autoStart({
+              app: "12146987087370911744",
+              profile: "00000000-0000-0000-0000-000000000000",
+              target: "Gamemode"
+            })
+          }}
+        >
+          Gamemode Test
         </ButtonItem>
       </PanelSectionRow>
     </PanelSection>

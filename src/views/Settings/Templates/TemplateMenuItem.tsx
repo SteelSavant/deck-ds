@@ -1,9 +1,9 @@
 import { DialogButton, Field, Focusable, Navigation } from "decky-frontend-lib";
 import { ReactElement } from "react";
 import { FaEye, FaPlus } from "react-icons/fa";
-import { PipelineDefinition } from "../../../backend";
+import { Template } from "../../../backend";
 
-export default function TemplateMenuItem({ template }: { template: PipelineDefinition }): ReactElement {
+export default function TemplateMenuItem({ template }: { template: Template }): ReactElement {
 
     function previewTemplate(templateId: string) {
         const route = `/deck-ds/settings/templates/${templateId}`;
@@ -12,7 +12,7 @@ export default function TemplateMenuItem({ template }: { template: PipelineDefin
     }
 
     return (
-        <Field focusable={false} label={template.name} description={template.description} children={
+        <Field focusable={false} label={template.pipeline.name} description={template.pipeline.description} children={
             <Focusable style={{ display: 'flex', width: '100%', position: 'relative' }}>
                 <DialogButton
                     style={{ height: '40px', minWidth: '60px', marginRight: '10px' }}
@@ -35,8 +35,8 @@ export default function TemplateMenuItem({ template }: { template: PipelineDefin
                         flexDirection: 'column',
                         justifyContent: 'center',
                     }}
-                    onClick={() => console.log("pressed", template.name)}
-                    onOKButton={() => console.log("ok", template.name)}
+                    onClick={() => console.log("pressed", template.pipeline.name)}
+                    onOKButton={() => console.log("ok", template.pipeline.name)}
                 >
                     <FaPlus />
                 </DialogButton>

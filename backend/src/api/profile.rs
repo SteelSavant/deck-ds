@@ -1,10 +1,18 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    pipeline::config::{PipelineDefinition, Template},
+    pipeline::{
+        config::{
+            PipelineActionDefinition, PipelineActionDefinitionId, PipelineDefinition, Template,
+        },
+        registar::PipelineActionRegistrar,
+    },
     settings::{Profile, ProfileId, Settings},
 };
 
@@ -134,5 +142,23 @@ pub fn get_templates(
         let res = lock.get_templates().to_vec();
 
         GetTemplatesResponse { templates: res }.to_response()
+    }
+}
+
+// Pipeline Actions
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct GetPipelineActionsResponse {
+    pipeline_actions: HashMap<PipelineActionDefinitionId, PipelineActionDefinition>,
+}
+
+pub fn get_pipeline_actions(
+    action_registrar: PipelineActionRegistrar,
+) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+    move |_: super::ApiParameterType| {
+        GetPipelineActionsResponse {
+            pipeline_actions: action_registrar.all().as_ref().clone(),
+        }
+        .to_response()
     }
 }

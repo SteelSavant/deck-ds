@@ -18,7 +18,7 @@ use super::action::{ErasedPipelineAction, PipelineAction};
 use super::config::{PipelineDefinition, PipelineTarget};
 
 use super::action::PipelineActionImpl;
-use super::registar::PipelineActionRegistar;
+use super::registar::PipelineActionRegistrar;
 
 pub struct PipelineExecutor<'a> {
     app_id: AppId,
@@ -95,7 +95,7 @@ impl<'a> PipelineExecutor<'a> {
         Ok(s)
     }
 
-    pub fn exec(&mut self, action_registrar: &PipelineActionRegistar) -> Result<()> {
+    pub fn exec(&mut self, action_registrar: &PipelineActionRegistrar) -> Result<()> {
         // Set up pipeline
         let mut run = vec![];
         let mut errors = vec![];
@@ -273,7 +273,7 @@ impl PipelineDefinition {
     fn build_actions<'a, 'b>(
         &'b self,
         target: PipelineTarget,
-        action_registrar: &'a PipelineActionRegistar,
+        action_registrar: &'a PipelineActionRegistrar,
     ) -> Option<Result<Vec<&PipelineAction>>>
     where
         'a: 'b,
@@ -281,7 +281,7 @@ impl PipelineDefinition {
         fn build_recursive<'a, 'b>(
             selection: &'b Selection,
             target: PipelineTarget,
-            action_registrar: &'a PipelineActionRegistar,
+            action_registrar: &'a PipelineActionRegistrar,
         ) -> Result<Vec<&'b PipelineAction>>
         where
             'a: 'b,

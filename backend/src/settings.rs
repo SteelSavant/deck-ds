@@ -43,64 +43,63 @@ impl Settings {
             // melonDS
             Template {
                 id: TemplateId::parse("c6430131-50e0-435e-a917-5ae3cfa46e3c"),
-
-             pipeline: PipelineDefinition::new(
-                "melonDS".to_string(),
-                "Maps the internal and external monitor to a single virtual screen, as melonDS does not currently support multiple windows. Allows optional melonDS layout configuration.".to_string(),
-                vec!["NDS".to_string(), "nds".to_string()],
-                HashMap::from_iter([
-                    (PipelineTarget::Desktop, Selection::AllOf(vec![
-                        Enabled::force(PipelineActionDefinitionId::new("core:melonds:layout")),
-                        Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")),
-                        Enabled::force(PipelineActionDefinitionId::new("core:display:virtual_screen"))
-                    ])),
-                    (PipelineTarget::Gamemode, Selection::AllOf(vec![
-                        Enabled::force(PipelineActionDefinitionId::new("core:melonds:layout")),
-                    ]))
-                ]),
-            )},
+                pipeline: PipelineDefinition::new(
+                    "melonDS".to_string(),
+                    "Maps the internal and external monitor to a single virtual screen, as melonDS does not currently support multiple windows. Allows optional melonDS layout configuration.".to_string(),
+                    vec!["NDS".to_string(), "nds".to_string()],
+                    HashMap::from_iter([
+                        (PipelineTarget::Desktop, Selection::AllOf(vec![
+                            Enabled::force(PipelineActionDefinitionId::new("core:melonds:layout")),
+                            Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")),
+                            Enabled::force(PipelineActionDefinitionId::new("core:display:virtual_screen"))
+                        ])),
+                        (PipelineTarget::Gamemode, Selection::AllOf(vec![
+                            Enabled::force(PipelineActionDefinitionId::new("core:melonds:layout")),
+                        ]))
+                    ]),
+                )
+            },
 
             // Citra
             Template {
-                id: TemplateId::parse("fe82be74-22b9-4135-b7a0-cb6d8f51aecd
-        ")
-,
-           pipeline: PipelineDefinition::new(
-                "Citra".to_string(),
-                "Maps primary and secondary windows to different screens for Citra. Allows optional Citra layout configuration".to_string(),
-                vec!["3DS".to_string(),"3ds".to_string()],
-                HashMap::from_iter([
-                    (PipelineTarget::Desktop, Selection::AllOf(vec![
-                        Enabled::force(PipelineActionDefinitionId::new("core:citra:layout")),
-                        Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")),
-                        Enabled::force(PipelineActionDefinitionId::new("core:display:multi_window"))
-                    ])),
-                    (PipelineTarget::Gamemode, Selection::AllOf(vec![
-                        Enabled::force(PipelineActionDefinitionId::new("core:citra:layout")),
-                    ]))
-                ]),
-            )},
+                id: TemplateId::parse("fe82be74-22b9-4135-b7a0-cb6d8f51aecd"),
+                pipeline: PipelineDefinition::new(
+                    "Citra".to_string(),
+                    "Maps primary and secondary windows to different screens for Citra. Allows optional Citra layout configuration".to_string(),
+                    vec!["3DS".to_string(),"3ds".to_string()],
+                    HashMap::from_iter([
+                        (PipelineTarget::Desktop, Selection::AllOf(vec![
+                            Enabled::force(PipelineActionDefinitionId::new("core:citra:layout")),
+                            Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")),
+                            Enabled::force(PipelineActionDefinitionId::new("core:display:multi_window"))
+                        ])),
+                        (PipelineTarget::Gamemode, Selection::AllOf(vec![
+                            Enabled::force(PipelineActionDefinitionId::new("core:citra:layout")),
+                        ]))
+                    ]),
+                )
+            },
 
             // Cemu
             Template {
                 id: TemplateId::parse("33c863e5-2739-4bc3-b9bc-4798bac8682d"),
-                pipeline:      PipelineDefinition::new(
-                "Cemu".to_string(),
-                "Maps primary and secondary windows to different screens for Cemu.".to_string(),
-                vec!["WIIU".to_string(), "WiiU".to_string()],
-                HashMap::from_iter([
-                    (PipelineTarget::Desktop,
-                        Selection::AllOf(vec![
-                            Enabled::force(PipelineActionDefinitionId::new("core:cemu:layout")),
-                            Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")),
-                            Enabled::force(PipelineActionDefinitionId::new("core:display:multi_window"))
-                    ])),
-                    (PipelineTarget::Gamemode,
-                        Selection::AllOf(vec![
-                            Enabled::force(PipelineActionDefinitionId::new("core:cemu:layout"))
-                    ]))
-                ]),
-            )
+                pipeline: PipelineDefinition::new(
+                    "Cemu".to_string(),
+                    "Maps primary and secondary windows to different screens for Cemu.".to_string(),
+                    vec!["WIIU".to_string(), "WiiU".to_string()],
+                    HashMap::from_iter([
+                        (PipelineTarget::Desktop,
+                            Selection::AllOf(vec![
+                                Enabled::force(PipelineActionDefinitionId::new("core:cemu:layout")),
+                                Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")),
+                                Enabled::force(PipelineActionDefinitionId::new("core:display:multi_window"))
+                        ])),
+                        (PipelineTarget::Gamemode,
+                            Selection::AllOf(vec![
+                                Enabled::force(PipelineActionDefinitionId::new("core:cemu:layout"))
+                        ]))
+                    ]),
+                )
             }
         ];
 
@@ -232,7 +231,10 @@ impl Settings {
         Path=$Path
         Name=DeckDS
         Type=Application"
-            .replace("$Exec", "$HOME/homebrew/plugins/deck-ds/bin/backend") // hardcode for now
+            .replace(
+                "$Exec",
+                "$HOME/homebrew/plugins/deck-ds/bin/backend autostart",
+            ) // hardcode for now
             .replace("$Path", &autostart_parent.to_string_lossy())
     }
 
@@ -304,7 +306,7 @@ mod tests {
         let actual = settings.create_desktop_contents();
         let expected = r"[Desktop Entry]
         Comment=Runs DeckDS plugin autostart script for dual screen applications.
-        Exec=$HOME/homebrew/plugins/deck-ds/bin/backend
+        Exec=$HOME/homebrew/plugins/deck-ds/bin/backend autostart
         Path=$HOME/.config/deck-ds
         Name=DeckDS
         Type=Application";

@@ -14,7 +14,7 @@ use crate::{
     asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
-    pipeline::registar::PipelineActionRegistar,
+    pipeline::registar::PipelineActionRegistrar,
     settings::{AppId, Overrides, Profile, ProfileId, Settings},
     util::create_dir_all,
 };
@@ -125,29 +125,29 @@ fn main() -> Result<()> {
     let mode = args.mode.unwrap_or_default();
 
     let settings = Settings::new(&config_dir);
-    {
-        // temp test code
-        let template = &settings.get_templates()[2]; // Cemu Template
+    // {
+    //     // temp test code
+    //     let template = &settings.get_templates()[2]; // Cemu Template
 
-        let test_profile = ProfileId::from_uuid(uuid::Uuid::nil());
+    //     let test_profile = ProfileId::from_uuid(uuid::Uuid::nil());
 
-        settings.set_profile(&Profile {
-            id: test_profile,
-            pipeline: template.pipeline.clone(),
-            overrides: Overrides::default(),
-        })?;
+    //     settings.set_profile(&Profile {
+    //         id: test_profile,
+    //         pipeline: template.pipeline.clone(),
+    //         overrides: Overrides::default(),
+    //     })?;
 
-        settings.set_autostart_cfg(&Some(crate::settings::AutoStart {
-            app_id: AppId::new("12146987087370911744"), //botw
-            profile_id: test_profile,
-        }))?;
-    }
+    //     settings.set_autostart_cfg(&Some(crate::settings::AutoStart {
+    //         app_id: AppId::new("12146987087370911744"), //botw
+    //         profile_id: test_profile,
+    //     }))?;
+    // }
 
     let settings = Arc::new(Mutex::new(settings));
 
     let assets_dir = config_dir.join("assets"); // TODO::keep assets with decky plugin, not config
     let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
-    let action_registrar = PipelineActionRegistar::builder().with_core().build();
+    let action_registrar = PipelineActionRegistrar::builder().with_core().build();
 
     match mode {
         Modes::Autostart => {
@@ -205,6 +205,10 @@ fn main() -> Result<()> {
                 .register(
                     "get_templates",
                     crate::api::profile::get_templates(settings.clone()),
+                )
+                .register(
+                    "get_pipeline_actions",
+                    crate::api::profile::get_pipeline_actions(action_registrar.clone()),
                 )
                 .register(
                     "autostart",

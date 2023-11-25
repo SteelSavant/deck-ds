@@ -8,7 +8,7 @@ use anyhow::{anyhow, Result};
 use crate::{
     asset::AssetManager,
     pipeline::{
-        config::PipelineTarget, executor::PipelineExecutor, registar::PipelineActionRegistar,
+        config::PipelineTarget, executor::PipelineExecutor, registar::PipelineActionRegistrar,
     },
     settings::Settings,
 };
@@ -71,7 +71,7 @@ impl LoadedAutoStart {
         assets_manager: AssetManager<'a>,
         home_dir: PathBuf,
         config_dir: PathBuf,
-        action_registrar: &PipelineActionRegistar,
+        action_registrar: &PipelineActionRegistrar,
     ) -> Result<PipelineExecutor<'a>> {
         let settings = self
             .settings

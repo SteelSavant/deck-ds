@@ -13,11 +13,11 @@ use std::{collections::HashMap, sync::Arc};
 use self::internal::{PipelineActionRegistarBuilder, PluginScopeBuilder};
 
 #[derive(Debug, Clone)]
-pub struct PipelineActionRegistar {
+pub struct PipelineActionRegistrar {
     actions: Arc<HashMap<PipelineActionDefinitionId, PipelineActionDefinition>>,
 }
 
-impl PipelineActionRegistar {
+impl PipelineActionRegistrar {
     pub fn builder() -> internal::PipelineActionRegistarBuilder {
         PipelineActionRegistarBuilder::default()
     }
@@ -30,6 +30,10 @@ impl PipelineActionRegistar {
         self.actions
             .get(&format_variant(id.raw(), target))
             .or_else(|| self.actions.get(id))
+    }
+
+    pub fn all(&self) -> Arc<HashMap<PipelineActionDefinitionId, PipelineActionDefinition>> {
+        self.actions.clone()
     }
 }
 
@@ -125,7 +129,7 @@ impl PipelineActionRegistarBuilder {
         self
     }
 
-    pub fn build(self) -> PipelineActionRegistar {
+    pub fn build(self) -> PipelineActionRegistrar {
         let actions = self
             .scopes
             .into_iter()
@@ -149,7 +153,7 @@ impl PipelineActionRegistarBuilder {
             })
             .collect();
 
-        PipelineActionRegistar {
+        PipelineActionRegistrar {
             actions: Arc::new(actions),
         }
     }

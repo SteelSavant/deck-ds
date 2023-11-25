@@ -8,90 +8,90 @@
 export type PipelineTarget = "Desktop" | "Gamemode";
 export type Selection =
   | {
-    Action: PipelineAction;
-  }
+      Action: PipelineAction;
+    }
   | {
-    OneOf: {
-      actions: string[];
-      selection: string;
+      OneOf: {
+        actions: string[];
+        selection: string;
+      };
+    }
+  | {
+      AllOf: EnabledFor_String[];
     };
-  }
-  | {
-    AllOf: EnabledFor_String[];
-  };
 export type PipelineAction =
   | {
-    DisplayConfig: DisplayConfig;
-  }
+      DisplayConfig: DisplayConfig;
+    }
   | {
-    VirtualScreen: VirtualScreen;
-  }
+      VirtualScreen: VirtualScreen;
+    }
   | {
-    MultiWindow: MultiWindow;
-  }
+      MultiWindow: MultiWindow;
+    }
   | {
-    CitraConfig: CitraConfig;
-  }
+      CitraConfig: CitraConfig;
+    }
   | {
-    CemuConfig: CemuConfig;
-  }
+      CemuConfig: CemuConfig;
+    }
   | {
-    MelonDSConfig: MelonDSConfig;
-  };
+      MelonDSConfig: MelonDSConfig;
+    };
 export type RelativeLocation = "Above" | "Below" | "LeftOf" | "RightOf" | "SameAs";
 export type TeardownExternalSettings =
   | "Previous"
   | "Native"
   | {
-    Preference: ModePreference;
-  };
+      Preference: ModePreference;
+    };
 export type AspectRatioOption =
   | ("Any" | "Native")
   | {
-    Exact: number;
-  };
+      Exact: number;
+    };
 export type ModeOptionForDouble =
   | {
-    Exact: number;
-  }
+      Exact: number;
+    }
   | {
-    AtLeast: number;
-  }
+      AtLeast: number;
+    }
   | {
-    AtMost: number;
-  };
+      AtMost: number;
+    };
 export type ModeOptionFor_Resolution =
   | {
-    Exact: Resolution;
-  }
+      Exact: Resolution;
+    }
   | {
-    AtLeast: Resolution;
-  }
+      AtLeast: Resolution;
+    }
   | {
-    AtMost: Resolution;
-  };
+      AtMost: Resolution;
+    };
 export type VirtualScreen = null;
 export type MultiWindow = null;
 export type CitraIniSource =
   | "Flatpak"
   | {
-    Custom: string;
-  };
+      Custom: string;
+    };
 export type CitraLayoutOption =
   | ("Default" | "SingleScreen" | "LargeScreen" | "SideBySide" | "SeparateWindows" | "HybridScreen")
   | {
-    Unknown: number;
-  };
+      Unknown: number;
+    };
 export type CemuXmlSource =
   | "Flatpak"
   | {
-    Custom: string;
-  };
+      Custom: string;
+    };
 export type MelonDSIniSource =
   | "Flatpak"
   | {
-    Custom: string;
-  };
+      Custom: string;
+    };
 /**
  * melonDS layout options. Because of the "unique" way melonDS handles layouts, these options do not map 1:1.
  */
@@ -105,6 +105,7 @@ export interface __Api {
   autostart_request: AutoStartRequest;
   create_profile_request: CreateProfileRequest;
   create_profile_response: CreateProfileResponse;
+  get_pipeline_actions_response: GetPipelineActionsResponse;
   get_profile_request: GetProfileRequest;
   get_profile_response: GetProfileResponse;
   get_profiles_response: GetProfilesResponse;
@@ -117,46 +118,10 @@ export interface AutoStartRequest {
   target: PipelineTarget;
 }
 export interface CreateProfileRequest {
-  profile_name: string;
-  template_id: string;
-}
-export interface CreateProfileResponse {
-  profile_id: string;
-}
-export interface GetProfileRequest {
-  profile_id: string;
-}
-export interface GetProfileResponse {
-  profile: Profile;
-  template: PipelineDefinition;
-}
-export interface Profile {
-  id: string;
-  name: string;
-  overrides: Overrides;
-  tags: string[];
-  template: string;
-}
-/**
- * Overrides for a pipeline definition.
- *
- * Json is in the format
- *
- * ```json { "guid_for_action_selection": { "overridden_field1": "value1", "overridden_field2": 2, "overridden_field3": { "nested_field": 4.5 } }, "guid_for_oneof": { "selection": "some_guid", }, } ```
- *
- * All guids are flattened top-level, so [Selection::AllOf] and [Selection::OneOf]::actions will not exist.
- */
-export interface Overrides {
-  enabled: {
-    [k: string]: boolean;
-  };
-  fields: {
-    [k: string]: unknown;
-  };
+  pipeline: PipelineDefinition;
 }
 export interface PipelineDefinition {
   description: string;
-  id: string;
   name: string;
   tags: string[];
   targets: {
@@ -198,11 +163,69 @@ export interface EnabledFor_String {
   enabled?: boolean | null;
   selection: string;
 }
+export interface CreateProfileResponse {
+  profile_id: string;
+}
+export interface GetPipelineActionsResponse {
+  pipeline_actions: {
+    [k: string]: PipelineActionDefinition;
+  };
+}
+export interface PipelineActionDefinition {
+  /**
+   * An optional description of what the action does.
+   */
+  description?: string | null;
+  /**
+   * Flags whether the selection is exported for use in other actions.
+   */
+  exported: boolean;
+  /**
+   * The name of the action
+   */
+  name: string;
+  /**
+   * The value of the pipeline action
+   */
+  selection: Selection;
+}
+export interface GetProfileRequest {
+  profile_id: string;
+}
+export interface GetProfileResponse {
+  profile: Profile;
+}
+export interface Profile {
+  id: string;
+  overrides: Overrides;
+  pipeline: PipelineDefinition;
+}
+/**
+ * Overrides for a pipeline definition.
+ *
+ * Json is in the format
+ *
+ * ```json { "guid_for_action_selection": { "overridden_field1": "value1", "overridden_field2": 2, "overridden_field3": { "nested_field": 4.5 } }, "guid_for_oneof": { "selection": "some_guid", }, } ```
+ *
+ * All guids are flattened top-level, so [Selection::AllOf] and [Selection::OneOf]::actions will not exist.
+ */
+export interface Overrides {
+  enabled: {
+    [k: string]: boolean;
+  };
+  fields: {
+    [k: string]: unknown;
+  };
+}
 export interface GetProfilesResponse {
   profiles: Profile[];
 }
 export interface GetTemplatesResponse {
-  templates: PipelineDefinition[];
+  templates: Template[];
+}
+export interface Template {
+  id: string;
+  pipeline: PipelineDefinition;
 }
 export interface SetProfileRequest {
   profile: Profile;

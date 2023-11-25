@@ -10,8 +10,8 @@ use usdpl_back::core::serdes::Primitive;
 use self::{
     autostart::AutoStartRequest,
     profile::{
-        CreateProfileRequest, CreateProfileResponse, GetProfileRequest, GetProfileResponse,
-        GetProfilesResponse, GetTemplatesResponse, SetProfileRequest,
+        CreateProfileRequest, CreateProfileResponse, GetPipelineActionsResponse, GetProfileRequest,
+        GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, SetProfileRequest,
     },
 };
 
@@ -98,6 +98,7 @@ pub struct __Api {
     pub set_profile_request: SetProfileRequest,
     pub get_profiles_response: GetProfilesResponse,
     pub get_templates_response: GetTemplatesResponse,
+    pub get_pipeline_actions_response: GetPipelineActionsResponse,
 
     // autostart
     pub autostart_request: AutoStartRequest,

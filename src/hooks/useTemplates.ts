@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { PipelineDefinition, getTemplates } from "../backend";
+import { Template, getTemplates } from "../backend";
 import { Loading } from "../util/loading";
 
-const useTemplates = (): Loading<Array<PipelineDefinition>> => {
-    const [result, setResult] = useState<Loading<Array<PipelineDefinition>>>(null);
+const useTemplates = (): Loading<Array<Template>> => {
+    const [result, setResult] = useState<Loading<Array<Template>>>(null);
 
     useEffect(() => {
         let active = true;
@@ -18,8 +18,8 @@ const useTemplates = (): Loading<Array<PipelineDefinition>> => {
 
                 setResult(res.map((v) => {
                     v.templates.sort((a, b) =>
-                        a.name < b.name ? -1
-                            : a.name > b.name ? 1
+                        a.pipeline.name < b.pipeline.name ? -1
+                            : a.pipeline.name > b.pipeline.name ? 1
                                 : a.id < b.id ? -1
                                     : 1);
                     return v.templates;

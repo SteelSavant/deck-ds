@@ -1,7 +1,8 @@
 import { Focusable, Tabs, useParams } from "decky-frontend-lib";
 import { ReactElement, useState } from "react";
-import { PipelineActionDefinition } from "../../backend";
+import { Selection } from "../../backend";
 import HandleLoading from "../../components/HandleLoading";
+import usePipelineActions from "../../hooks/usePipelineActions";
 import useTemplate from "../../hooks/useTemplate";
 import Pipeline from "./Pipeline";
 import TemplateInfo from "./TemplateInfo";
@@ -12,26 +13,40 @@ export default function TemplatePreviewRoute(): ReactElement {
     const { templateid } = useParams<{ templateid: string }>()
 
     const template = useTemplate(templateid);
+    const actions = usePipelineActions();
+
+    const mapped = template && actions ?
+        template.and_then((t) => {
+            return actions.map((a) => {
+                return {
+                    actions: a,
+                    template: t,
+                }
+            })
+        }) : null;
 
     return <HandleLoading
-        value={template}
+        value={mapped}
         onOk={
-            (template) => {
+            (loaded) => {
+                const template = loaded.template;
+                const actions = loaded.actions;
+
                 if (template === undefined) {
                     return <div> Template {templateid} does not exist!</div>;
                 } else {
                     interface KeyValue {
                         target: string,
-                        root: PipelineActionDefinition,
+                        root: Selection,
                     }
 
                     const defaultTargets: KeyValue[] = [];
-                    const extraTargets: KeyValue[] = []
+                    const extraTargets: KeyValue[] = [] // no real intention of actually supporting extra targets, but...
 
-                    for (const key in template.targets) {
-                        const value = {
+                    for (const key in template.pipeline.targets) {
+                        const value: KeyValue = {
                             target: key,
-                            root: template.targets[key],
+                            root: template.pipeline.targets[key],
                         };
 
                         if (key === 'Gamemode') {
@@ -55,13 +70,13 @@ export default function TemplatePreviewRoute(): ReactElement {
                         ...allTargets.map((kv) => {
                             return {
                                 title: kv.target,
-                                content: <Pipeline root={kv.root} />,
-                                id: kv.root.id,
+                                content: <Pipeline root={kv.root} actions={actions} />,
+                                id: kv.target.toLowerCase(),
                             };
                         }),
                     ];
 
-                    console.log(`Creating ${template.name} pipeline tags:`, tabs);
+                    console.log(`Creating ${template.pipeline.name} pipeline tags:`, tabs);
 
                     return <Focusable style={{ minWidth: "100%", minHeight: "100%" }}>
                         <div

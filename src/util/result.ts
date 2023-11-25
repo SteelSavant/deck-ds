@@ -17,6 +17,14 @@ module Impl {
                 return Err(this.err);
             }
         }
+
+        public and_then<R>(fn: (res: T) => Result<R, E>): Result<R, E> {
+            if (this.isOk) {
+                return fn(this.data);
+            } else {
+                return Err(this.err)
+            }
+        }
     }
 }
 
@@ -25,12 +33,14 @@ export module Result {
         isOk: true,
         data: T,
         map<R>(fn: (data: T) => R): Result<R, E>,
+        and_then<R>(fn: (res: T) => Result<R, E>): Result<R, E>
     }
 
     export interface Err<T, E> {
         isOk: false,
         err: E,
-        map<R>(fn: (data: T) => R): Result<R, E>
+        map<R>(fn: (data: T) => R): Result<R, E>,
+        and_then<R>(fn: (res: T) => Result<R, E>): Result<R, E>
     }
 }
 
