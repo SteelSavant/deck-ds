@@ -15,14 +15,14 @@ use crate::sys::process::AppProcess;
 use crate::sys::x_display::XDisplay;
 
 use super::action::{ErasedPipelineAction, PipelineAction};
-use super::config::{PipelineTarget, TemplateDefinition};
+use super::config::{PipelineDefinition, PipelineTarget};
 
 use super::action::PipelineActionImpl;
 use super::registar::PipelineActionRegistar;
 
 pub struct PipelineExecutor<'a> {
     app_id: AppId,
-    definition: TemplateDefinition,
+    definition: PipelineDefinition,
     target: PipelineTarget,
     ctx: PipelineContext<'a>,
 }
@@ -72,7 +72,7 @@ impl<'a> PipelineContext<'a> {
 impl<'a> PipelineExecutor<'a> {
     pub fn new(
         app_id: AppId,
-        pipeline_definition: TemplateDefinition,
+        pipeline_definition: PipelineDefinition,
         target: PipelineTarget,
         assets_manager: AssetManager<'a>,
         home_dir: PathBuf,
@@ -269,7 +269,7 @@ enum ActionType {
     Teardown,
 }
 
-impl TemplateDefinition {
+impl PipelineDefinition {
     fn build_actions<'a, 'b>(
         &'b self,
         target: PipelineTarget,

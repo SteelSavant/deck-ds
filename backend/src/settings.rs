@@ -12,8 +12,8 @@ use serde_json::Value;
 use crate::{
     macros::{newtype_strid, newtype_uuid},
     pipeline::config::{
-        Enabled, PipelineActionDefinitionId, PipelineTarget, Selection, TemplateDefinition,
-        TemplateDefinitionId,
+        Enabled, PipelineActionDefinitionId, PipelineDefinition, PipelineTarget, Selection,
+        Template, TemplateId,
     },
     util::create_dir_all,
 };
@@ -32,7 +32,7 @@ pub struct Settings {
     system_autostart_dir: PathBuf,
 
     // in-memory configurations -- consider moving
-    templates: Vec<TemplateDefinition>,
+    templates: Vec<Template>,
 }
 
 impl Settings {
@@ -41,44 +41,50 @@ impl Settings {
 
         let templates = vec![
             // melonDS
-            TemplateDefinition::new(
-                TemplateDefinitionId::parse("d92ca87d-282f-4897-86f0-86a3af16bf3e"),
+            Template {
+                id: TemplateId::parse("c6430131-50e0-435e-a917-5ae3cfa46e3c"),
+
+             pipeline: PipelineDefinition::new(
                 "melonDS".to_string(),
                 "Maps the internal and external monitor to a single virtual screen, as melonDS does not currently support multiple windows. Allows optional melonDS layout configuration.".to_string(),
                 vec!["NDS".to_string(), "nds".to_string()],
                 HashMap::from_iter([
                     (PipelineTarget::Desktop, Selection::AllOf(vec![
                         Enabled::force(PipelineActionDefinitionId::new("core:melonds:layout")),
-                        Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")), 
+                        Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")),
                         Enabled::force(PipelineActionDefinitionId::new("core:display:virtual_screen"))
                     ])),
                     (PipelineTarget::Gamemode, Selection::AllOf(vec![
                         Enabled::force(PipelineActionDefinitionId::new("core:melonds:layout")),
                     ]))
                 ]),
-            ),
+            )},
 
             // Citra
-            TemplateDefinition::new(
-                TemplateDefinitionId::parse("ed6fc4bb-ec6d-4b0f-97e7-70709066dcba"),
+            Template {
+                id: TemplateId::parse("fe82be74-22b9-4135-b7a0-cb6d8f51aecd
+        ")
+,
+           pipeline: PipelineDefinition::new(
                 "Citra".to_string(),
                 "Maps primary and secondary windows to different screens for Citra. Allows optional Citra layout configuration".to_string(),
                 vec!["3DS".to_string(),"3ds".to_string()],
                 HashMap::from_iter([
                     (PipelineTarget::Desktop, Selection::AllOf(vec![
                         Enabled::force(PipelineActionDefinitionId::new("core:citra:layout")),
-                        Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")), 
+                        Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")),
                         Enabled::force(PipelineActionDefinitionId::new("core:display:multi_window"))
                     ])),
                     (PipelineTarget::Gamemode, Selection::AllOf(vec![
                         Enabled::force(PipelineActionDefinitionId::new("core:citra:layout")),
                     ]))
                 ]),
-            ),
+            )},
 
             // Cemu
-            TemplateDefinition::new(
-                TemplateDefinitionId::parse("b0d6443d-6ae7-4085-87c1-b52aae5001a1"),
+            Template {
+                id: TemplateId::parse("33c863e5-2739-4bc3-b9bc-4798bac8682d"),
+                pipeline:      PipelineDefinition::new(
                 "Cemu".to_string(),
                 "Maps primary and secondary windows to different screens for Cemu.".to_string(),
                 vec!["WIIU".to_string(), "WiiU".to_string()],
@@ -86,7 +92,7 @@ impl Settings {
                     (PipelineTarget::Desktop,
                         Selection::AllOf(vec![
                             Enabled::force(PipelineActionDefinitionId::new("core:cemu:layout")),
-                            Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")), 
+                            Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")),
                             Enabled::force(PipelineActionDefinitionId::new("core:display:multi_window"))
                     ])),
                     (PipelineTarget::Gamemode,
@@ -95,6 +101,7 @@ impl Settings {
                     ]))
                 ]),
             )
+            }
         ];
 
         Self {
@@ -108,24 +115,10 @@ impl Settings {
 
     // File data
 
-    pub fn create_profile(
-        &self,
-        name: String,
-        template_id: &TemplateDefinitionId,
-    ) -> Result<Profile> {
-        // ensure template exists
-        self.templates
-            .iter()
-            .find(|t| t.id == *template_id)
-            .ok_or(anyhow::anyhow!(
-                "Could not find matching template for {template_id:?}"
-            ))?;
-
+    pub fn create_profile(&self, pipeline: PipelineDefinition) -> Result<Profile> {
         Ok(Profile {
-            name,
             id: ProfileId::new(),
-            template: *template_id,
-            tags: vec![],
+            pipeline,
             overrides: Overrides::default(),
         })
     }
@@ -244,11 +237,11 @@ impl Settings {
     }
 
     // In-memory configuration (currently readonly, but should ideally be configurable)
-    pub fn get_template(&self, id: &TemplateDefinitionId) -> Option<&TemplateDefinition> {
+    pub fn get_template(&self, id: &TemplateId) -> Option<&Template> {
         self.templates.iter().find(|t| t.id == *id)
     }
 
-    pub fn get_templates(&self) -> &[TemplateDefinition] {
+    pub fn get_templates(&self) -> &[Template] {
         &self.templates
     }
 }
@@ -261,18 +254,16 @@ pub struct AutoStart {
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct Profile {
-    pub name: String,
     pub id: ProfileId,
-    pub template: TemplateDefinitionId,
-    pub tags: Vec<String>,
+    pub pipeline: PipelineDefinition,
     pub overrides: Overrides,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct App {
     id: AppId,
-    active_profile: TemplateDefinitionId,
-    pub overrides: HashMap<TemplateDefinitionId, Overrides>,
+    active_profile: TemplateId,
+    pub overrides: HashMap<TemplateId, Overrides>,
 }
 
 /// Overrides for a pipeline definition.

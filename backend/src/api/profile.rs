@@ -4,7 +4,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    pipeline::config::{TemplateDefinition, TemplateDefinitionId},
+    pipeline::config::{PipelineDefinition, Template},
     settings::{Profile, ProfileId, Settings},
 };
 
@@ -14,8 +14,7 @@ use super::{log_invoke, ParsePrimitiveAt, ResponseErr, ResponseOk, StatusCode, T
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct CreateProfileRequest {
-    profile_name: String,
-    template_id: TemplateDefinitionId,
+    pipeline: PipelineDefinition,
 }
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
@@ -31,7 +30,7 @@ pub fn create_profile(
         match args {
             Ok(args) => {
                 let lock = settings.lock().expect("settings mutex should be lockable");
-                let res = lock.create_profile(args.profile_name, &args.template_id);
+                let res = lock.create_profile(args.pipeline);
                 match res {
                     Ok(res) => CreateProfileResponse { profile_id: res.id }.to_response(),
                     Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
@@ -72,7 +71,6 @@ pub struct GetProfileRequest {
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetProfileResponse {
     profile: Profile,
-    template: TemplateDefinition,
 }
 
 pub fn get_profile(
@@ -83,21 +81,9 @@ pub fn get_profile(
         match args {
             Ok(args) => {
                 let lock = settings.lock().expect("settings mutex should be lockable");
-                let profile = lock.get_profile(&args.profile_id);
-
-                match profile {
-                    Ok(profile) => {
-                        let template = lock.get_template(&profile.template);
-                        match template {
-                            Some(template) => GetProfileResponse {
-                                profile,
-                                template: template.clone(),
-                            }
-                            .to_response(),
-                            None => todo!(),
-                        }
-                    }
-                    Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
+                match lock.get_profile(&args.profile_id) {
+                    Ok(profile) => GetProfileResponse { profile }.to_response(),
+                    Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
                 }
             }
             Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
@@ -136,7 +122,7 @@ pub fn set_profile(
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetTemplatesResponse {
-    templates: Vec<TemplateDefinition>,
+    templates: Vec<Template>,
 }
 
 pub fn get_templates(

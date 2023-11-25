@@ -8,105 +8,96 @@
 export type PipelineTarget = "Desktop" | "Gamemode";
 export type Selection =
   | {
-      Action: PipelineAction;
-    }
+    Action: PipelineAction;
+  }
   | {
-      OneOf: {
-        actions: {
-          [k: string]: PipelineActionDefinition;
-        };
-        selection: string;
-      };
-    }
-  | {
-      AllOf: PipelineActionDefinition[];
+    OneOf: {
+      actions: string[];
+      selection: string;
     };
+  }
+  | {
+    AllOf: EnabledFor_String[];
+  };
 export type PipelineAction =
   | {
-      DisplayConfig: DisplayConfig;
-    }
+    DisplayConfig: DisplayConfig;
+  }
   | {
-      VirtualScreen: VirtualScreen;
-    }
+    VirtualScreen: VirtualScreen;
+  }
   | {
-      MultiWindow: MultiWindow;
-    }
+    MultiWindow: MultiWindow;
+  }
   | {
-      CitraConfig: CitraConfig;
-    }
+    CitraConfig: CitraConfig;
+  }
   | {
-      CemuConfig: CemuConfig;
-    }
+    CemuConfig: CemuConfig;
+  }
   | {
-      MelonDSConfig: MelonDSConfig;
-    };
+    MelonDSConfig: MelonDSConfig;
+  };
 export type RelativeLocation = "Above" | "Below" | "LeftOf" | "RightOf" | "SameAs";
 export type TeardownExternalSettings =
   | "Previous"
   | "Native"
   | {
-      Preference: ModePreference;
-    };
+    Preference: ModePreference;
+  };
 export type AspectRatioOption =
   | ("Any" | "Native")
   | {
-      Exact: number;
-    };
+    Exact: number;
+  };
 export type ModeOptionForDouble =
   | {
-      Exact: number;
-    }
+    Exact: number;
+  }
   | {
-      AtLeast: number;
-    }
+    AtLeast: number;
+  }
   | {
-      AtMost: number;
-    };
+    AtMost: number;
+  };
 export type ModeOptionFor_Resolution =
   | {
-      Exact: Resolution;
-    }
+    Exact: Resolution;
+  }
   | {
-      AtLeast: Resolution;
-    }
+    AtLeast: Resolution;
+  }
   | {
-      AtMost: Resolution;
-    };
+    AtMost: Resolution;
+  };
 export type VirtualScreen = null;
 export type MultiWindow = null;
 export type CitraIniSource =
   | "Flatpak"
   | {
-      Custom: string;
-    };
+    Custom: string;
+  };
 export type CitraLayoutOption =
   | ("Default" | "SingleScreen" | "LargeScreen" | "SideBySide" | "SeparateWindows" | "HybridScreen")
   | {
-      Unknown: number;
-    };
+    Unknown: number;
+  };
 export type CemuXmlSource =
   | "Flatpak"
   | {
-      Custom: string;
-    };
+    Custom: string;
+  };
 export type MelonDSIniSource =
   | "Flatpak"
   | {
-      Custom: string;
-    };
+    Custom: string;
+  };
 /**
  * melonDS layout options. Because of the "unique" way melonDS handles layouts, these options do not map 1:1.
  */
 export type MelonDSLayoutOption = "Natural" | "Vertical" | "Horizontal" | "Hybrid" | "Single";
 export type MelonDSSizingOption = "Even" | "EmphasizeTop" | "EmphasizeBottom" | "Auto";
 
-/**
- * Marker type for generating json schema types for ts
- */
-export interface __Backend {
-  _api: __Api;
-  _pipeline_definition: PipelineDefinition;
-}
 /**
  * Marker type for generating API json schema types for ts
  */
@@ -169,30 +160,8 @@ export interface PipelineDefinition {
   name: string;
   tags: string[];
   targets: {
-    [k: string]: PipelineActionDefinition;
+    [k: string]: Selection;
   };
-}
-export interface PipelineActionDefinition {
-  /**
-   * An optional description of what the action does.
-   */
-  description?: string | null;
-  /**
-   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
-   */
-  enabled?: boolean | null;
-  /**
-   * The id of the action
-   */
-  id: string;
-  /**
-   * The name of the action
-   */
-  name: string;
-  /**
-   * The value of the pipeline action
-   */
-  selection: Selection;
 }
 export interface DisplayConfig {
   teardown_deck_location: RelativeLocation;
@@ -221,6 +190,13 @@ export interface MelonDSConfig {
   layout_option: MelonDSLayoutOption;
   sizing_option: MelonDSSizingOption;
   swap_screens: boolean;
+}
+export interface EnabledFor_String {
+  /**
+   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+   */
+  enabled?: boolean | null;
+  selection: string;
 }
 export interface GetProfilesResponse {
   profiles: Profile[];

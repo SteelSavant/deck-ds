@@ -132,10 +132,8 @@ fn main() -> Result<()> {
         let test_profile = ProfileId::from_uuid(uuid::Uuid::nil());
 
         settings.set_profile(&Profile {
-            name: "Temp".to_string(),
             id: test_profile,
-            template: template.id,
-            tags: vec![],
+            pipeline: template.pipeline.clone(),
             overrides: Overrides::default(),
         })?;
 

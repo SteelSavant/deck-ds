@@ -13,7 +13,7 @@ newtype_strid!(
     r#"Id in the form "plugin:group:action" | "plugin:group:action:variant""#,
     PipelineActionDefinitionId
 );
-newtype_uuid!(TemplateDefinitionId);
+newtype_uuid!(TemplateId);
 
 #[derive(Copy, Debug, Display, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, JsonSchema)]
 pub enum PipelineTarget {
@@ -22,10 +22,15 @@ pub enum PipelineTarget {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct TemplateDefinition {
+pub struct Template {
+    pub id: TemplateId,
+    pub pipeline: PipelineDefinition,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct PipelineDefinition {
     pub name: String,
     pub tags: Vec<String>,
-    pub id: TemplateDefinitionId,
     pub description: String,
     pub targets: HashMap<PipelineTarget, Selection>,
 }
@@ -110,9 +115,8 @@ impl<T> Enabled<T> {
     }
 }
 
-impl TemplateDefinition {
+impl PipelineDefinition {
     pub fn new(
-        id: TemplateDefinitionId,
         name: String,
         description: String,
         tags: Vec<String>,
@@ -122,7 +126,6 @@ impl TemplateDefinition {
             targets,
             name,
             tags,
-            id,
             description,
         }
     }

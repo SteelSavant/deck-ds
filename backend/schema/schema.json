@@ -1,18 +1,42 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "__Backend",
-  "description": "Marker type for generating json schema types for ts",
+  "title": "__Api",
+  "description": "Marker type for generating API json schema types for ts",
   "type": "object",
   "required": [
-    "_api",
-    "_pipeline_definition"
+    "autostart_request",
+    "create_profile_request",
+    "create_profile_response",
+    "get_profile_request",
+    "get_profile_response",
+    "get_profiles_response",
+    "get_templates_response",
+    "set_profile_request"
   ],
   "properties": {
-    "_api": {
-      "$ref": "#/definitions/__Api"
+    "autostart_request": {
+      "$ref": "#/definitions/AutoStartRequest"
     },
-    "_pipeline_definition": {
-      "$ref": "#/definitions/PipelineDefinition"
+    "create_profile_request": {
+      "$ref": "#/definitions/CreateProfileRequest"
+    },
+    "create_profile_response": {
+      "$ref": "#/definitions/CreateProfileResponse"
+    },
+    "get_profile_request": {
+      "$ref": "#/definitions/GetProfileRequest"
+    },
+    "get_profile_response": {
+      "$ref": "#/definitions/GetProfileResponse"
+    },
+    "get_profiles_response": {
+      "$ref": "#/definitions/GetProfilesResponse"
+    },
+    "get_templates_response": {
+      "$ref": "#/definitions/GetTemplatesResponse"
+    },
+    "set_profile_request": {
+      "$ref": "#/definitions/SetProfileRequest"
     }
   },
   "definitions": {
@@ -206,6 +230,24 @@
         }
       }
     },
+    "Enabled_for_String": {
+      "type": "object",
+      "required": [
+        "selection"
+      ],
+      "properties": {
+        "enabled": {
+          "description": "Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "selection": {
+          "type": "string"
+        }
+      }
+    },
     "GetProfileRequest": {
       "type": "object",
       "required": [
@@ -229,7 +271,7 @@
           "$ref": "#/definitions/Profile"
         },
         "template": {
-          "$ref": "#/definitions/PipelineDefinition"
+          "$ref": "#/definitions/TemplateDefinition"
         }
       }
     },
@@ -256,7 +298,7 @@
         "templates": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/PipelineDefinition"
+            "$ref": "#/definitions/TemplateDefinition"
           }
         }
       }
@@ -531,81 +573,6 @@
         }
       ]
     },
-    "PipelineActionDefinition": {
-      "type": "object",
-      "required": [
-        "id",
-        "name",
-        "selection"
-      ],
-      "properties": {
-        "description": {
-          "description": "An optional description of what the action does.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "enabled": {
-          "description": "Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.",
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
-        "id": {
-          "description": "The id of the action",
-          "type": "string",
-          "format": "uuid"
-        },
-        "name": {
-          "description": "The name of the action",
-          "type": "string"
-        },
-        "selection": {
-          "description": "The value of the pipeline action",
-          "allOf": [
-            {
-              "$ref": "#/definitions/Selection"
-            }
-          ]
-        }
-      }
-    },
-    "PipelineDefinition": {
-      "type": "object",
-      "required": [
-        "description",
-        "id",
-        "name",
-        "tags",
-        "targets"
-      ],
-      "properties": {
-        "description": {
-          "type": "string"
-        },
-        "id": {
-          "type": "string",
-          "format": "uuid"
-        },
-        "name": {
-          "type": "string"
-        },
-        "tags": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "targets": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/PipelineActionDefinition"
-          }
-        }
-      }
-    },
     "PipelineTarget": {
       "type": "string",
       "enum": [
@@ -702,14 +669,13 @@
               ],
               "properties": {
                 "actions": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "$ref": "#/definitions/PipelineActionDefinition"
+                  "type": "array",
+                  "items": {
+                    "type": "string"
                   }
                 },
                 "selection": {
-                  "type": "string",
-                  "format": "uuid"
+                  "type": "string"
                 }
               }
             }
@@ -725,7 +691,7 @@
             "AllOf": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/PipelineActionDefinition"
+                "$ref": "#/definitions/Enabled_for_String"
               }
             }
           },
@@ -775,48 +741,42 @@
         }
       ]
     },
-    "VirtualScreen": {
-      "type": "null"
-    },
-    "__Api": {
-      "description": "Marker type for generating API json schema types for ts",
+    "TemplateDefinition": {
       "type": "object",
       "required": [
-        "autostart_request",
-        "create_profile_request",
-        "create_profile_response",
-        "get_profile_request",
-        "get_profile_response",
-        "get_profiles_response",
-        "get_templates_response",
-        "set_profile_request"
+        "description",
+        "id",
+        "name",
+        "tags",
+        "targets"
       ],
       "properties": {
-        "autostart_request": {
-          "$ref": "#/definitions/AutoStartRequest"
+        "description": {
+          "type": "string"
         },
-        "create_profile_request": {
-          "$ref": "#/definitions/CreateProfileRequest"
+        "id": {
+          "type": "string",
+          "format": "uuid"
         },
-        "create_profile_response": {
-          "$ref": "#/definitions/CreateProfileResponse"
+        "name": {
+          "type": "string"
         },
-        "get_profile_request": {
-          "$ref": "#/definitions/GetProfileRequest"
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
-        "get_profile_response": {
-          "$ref": "#/definitions/GetProfileResponse"
-        },
-        "get_profiles_response": {
-          "$ref": "#/definitions/GetProfilesResponse"
-        },
-        "get_templates_response": {
-          "$ref": "#/definitions/GetTemplatesResponse"
-        },
-        "set_profile_request": {
-          "$ref": "#/definitions/SetProfileRequest"
+        "targets": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Selection"
+          }
         }
       }
+    },
+    "VirtualScreen": {
+      "type": "null"
     }
   }
 }
