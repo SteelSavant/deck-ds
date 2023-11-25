@@ -8,7 +8,7 @@ use self::{
     melonds_config::MelonDSConfig, multi_window::MultiWindow, virtual_screen::VirtualScreen,
 };
 
-use super::{config::Selection, dependency::Dependency, executor::PipelineContext};
+use super::{data::Selection, dependency::Dependency, executor::PipelineContext};
 use anyhow::Result;
 
 pub mod cemu_config;
@@ -18,7 +18,7 @@ pub mod melonds_config;
 pub mod multi_window;
 pub mod virtual_screen;
 
-pub trait PipelineActionImpl: DeserializeOwned + Serialize {
+pub trait ActionImpl: DeserializeOwned + Serialize {
     /// Type of runtime state of the action
     type State: 'static;
 
@@ -56,7 +56,7 @@ pub trait ErasedPipelineAction {
 
 impl<T> ErasedPipelineAction for T
 where
-    T: PipelineActionImpl + JsonSchema + Serialize + DeserializeOwned + Debug + Clone,
+    T: ActionImpl + JsonSchema + Serialize + DeserializeOwned + Debug + Clone,
 {
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         self.setup(ctx)
@@ -81,7 +81,7 @@ where
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[enum_delegate::implement(ErasedPipelineAction)]
-pub enum PipelineAction {
+pub enum Action {
     DisplayConfig(DisplayConfig),
     VirtualScreen(VirtualScreen),
     MultiWindow(MultiWindow),
@@ -90,7 +90,7 @@ pub enum PipelineAction {
     MelonDSConfig(MelonDSConfig),
 }
 
-impl<T: Into<PipelineAction>> From<T> for Selection {
+impl<T: Into<Action>, R> From<T> for Selection<R> {
     fn from(value: T) -> Self {
         Selection::Action(value.into())
     }

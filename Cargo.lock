@@ -409,6 +409,7 @@ dependencies = [
  "derive_more",
  "dirs",
  "edid",
+ "either",
  "enum_delegate",
  "float-cmp",
  "gilrs",
@@ -522,6 +523,9 @@ name = "either"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a26ae43d7bcc3b814de94796a5e736d4029efb0ee900c12e2d54c993ad1a1e07"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "encoding"
@@ -1456,6 +1460,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f7b0ce13155372a76ee2e1c5ffba1fe61ede73fbea5630d61eee6fac4929c0c"
 dependencies = [
  "dyn-clone",
+ "either",
  "indexmap 2.0.2",
  "schemars_derive",
  "serde",

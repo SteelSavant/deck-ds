@@ -10,8 +10,13 @@ use serde::Deserialize;
 use crate::{
     asset::AssetManager,
     autostart::LoadedAutoStart,
-    pipeline::{config::PipelineTarget, registar::PipelineActionRegistrar},
-    settings::{self, AppId, ProfileId, Settings},
+    pipeline::{
+        data::{
+            ActionOrProfilePipeline, PipelineTarget, Selection, WrappedPipelineActionOrProfile,
+        },
+        registar::PipelineActionRegistrar,
+    },
+    settings::{self, AppId, Settings},
     sys::steamos_session_select::{steamos_session_select, Session},
 };
 
@@ -20,7 +25,7 @@ use super::{ParsePrimitiveAt, ResponseErr, ResponseOk, StatusCode, ToResponseTyp
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct AutoStartRequest {
     app: AppId,
-    profile: ProfileId,
+    pipeline: ActionOrProfilePipeline,
     target: PipelineTarget,
 }
 
@@ -29,7 +34,6 @@ pub fn autostart(
     assets_manager: AssetManager<'static>,
     home_dir: PathBuf,
     config_dir: PathBuf,
-    action_registrar: PipelineActionRegistrar,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     let assets_manager = Arc::new(assets_manager);
     let home_dir = Arc::new(home_dir);
@@ -43,7 +47,7 @@ pub fn autostart(
                     let lock = settings.lock().expect("settings mutex should be lockable");
                     let res = lock.set_autostart_cfg(&Some(settings::AutoStart {
                         app_id: args.app,
-                        profile_id: args.profile,
+                        pipeline: args.pipeline,
                     }));
                     match res {
                         Ok(_) => match steamos_session_select(Session::Plasma) {
@@ -62,7 +66,7 @@ pub fn autostart(
                     let executor = LoadedAutoStart::new(
                         settings::AutoStart {
                             app_id: args.app,
-                            profile_id: args.profile,
+                            pipeline: args.pipeline,
                         },
                         settings.clone(),
                         PipelineTarget::Gamemode,
@@ -71,11 +75,10 @@ pub fn autostart(
                         (*assets_manager).clone(),
                         (*home_dir).clone(),
                         (*config_dir).clone(),
-                        &action_registrar,
                     );
 
                     match executor {
-                        Ok(mut executor) => match executor.exec(&action_registrar) {
+                        Ok(mut executor) => match executor.exec() {
                             Ok(_) => ResponseOk.to_response(),
                             Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
                         },

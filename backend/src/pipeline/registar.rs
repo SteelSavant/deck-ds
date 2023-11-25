@@ -6,7 +6,7 @@ use super::{
         multi_window::MultiWindow,
         virtual_screen::VirtualScreen,
     },
-    config::{PipelineActionDefinition, PipelineActionDefinitionId, PipelineTarget},
+    data::{PipelineActionDefinition, PipelineActionDefinitionId, PipelineTarget},
 };
 use std::{collections::HashMap, sync::Arc};
 
@@ -47,7 +47,7 @@ fn format_variant(id: &str, target: PipelineTarget) -> PipelineActionDefinitionI
 }
 
 mod internal {
-    use crate::pipeline::config::PipelineTarget;
+    use crate::pipeline::data::PipelineTarget;
 
     use super::*;
 
@@ -140,12 +140,10 @@ impl PipelineActionRegistarBuilder {
                         group
                             .into_iter()
                             .map(move |(ref action_id, action)| {
-                                (
-                                    PipelineActionDefinitionId::new(&format!(
-                                        "{scope_id}:{group_id}:{action_id}"
-                                    )),
-                                    action,
-                                )
+                                let id = PipelineActionDefinitionId::new(&format!(
+                                    "{scope_id}:{group_id}:{action_id}"
+                                ));
+                                (id.clone(), PipelineActionDefinition { id, ..action })
                             })
                             .collect::<Vec<_>>()
                     })
@@ -166,68 +164,67 @@ impl PipelineActionRegistarBuilder {
                         "display_config",
                         Some(PipelineTarget::Desktop),
                         PipelineActionDefinition {
+                            id: PipelineActionDefinitionId::new(""),
                             name: "Display Configuration".to_string(),
                             description: Some("Ensures the display resolution and layout are correctly configured before and after executing pipeline actions.".into()),
                             selection: DisplayConfig {
                                 teardown_external_settings: TeardownExternalSettings::Previous,
                                 teardown_deck_location: RelativeLocation::Below,
                             } .into(),
-                            exported: true,
                         },
                     ).with_action("virtual_screen",      
                                        Some(PipelineTarget::Desktop),
                     PipelineActionDefinition {
+                        id: PipelineActionDefinitionId::new(""),
                         name: "Virtual Screen".to_string(),
                         description: Some("Maps the internal and external monitor to a single virtual screen, for applications that do not support multiple windows.".into()),
-                         selection: VirtualScreen.into(),
-                         exported: true,
-
+                        selection: VirtualScreen.into(),
                     },).with_action("multi_window",    Some(PipelineTarget::Desktop), PipelineActionDefinition {
+                        id: PipelineActionDefinitionId::new(""),
                         name: "Multi-Window Emulation".to_string(),
                         description: Some("Manages windows for known emulators configurations with multiple display windows.".into()),
                         selection: MultiWindow.into(),
-                        exported: true,
 
                     })
                 })
                 .with_group("citra", |group| {
                     group.with_action("layout",    Some(PipelineTarget::Desktop),   PipelineActionDefinition {
+                        id: PipelineActionDefinitionId::new(""),
                         name: "Citra Layout".to_string(),
                         description: Some("Edits Citra ini file to desired layout settings".to_string()),
                         selection: CitraConfig {
                             ini_source: CitraIniSource::Flatpak,
                             layout_option: CitraLayoutOption::Default,
                         }.into(),
-                        exported: true,
                     },
-                ).with_action("layout",    Some(PipelineTarget::Gamemode),   PipelineActionDefinition {
+                ).with_action("layout",    Some(PipelineTarget::Gamemode),PipelineActionDefinition {
+                    id: PipelineActionDefinitionId::new(""),
                     name: "Citra Layout".to_string(),
                     description: Some("Edits Citra ini file to desired layout settings".to_string()),
                     selection: CitraConfig {
                         ini_source: CitraIniSource::Flatpak,
                         layout_option: CitraLayoutOption::HybridScreen,
                     }.into(),
-                    exported: true,
                 },
             )
                 })
                 .with_group("cemu", |group| {
                     group.with_action("layout", Some(PipelineTarget::Desktop),     PipelineActionDefinition {
+                        id: PipelineActionDefinitionId::new(""),
                         name: "Cemu Layout".to_string(),
                         description: Some("Edits Cemu settings.xml file to desired settings".to_string()),
                         selection: CemuConfig {
                             xml_source: CemuXmlSource::Flatpak,
                             separate_gamepad_view: true,
                         }.into(),
-                        exported: true
                     },).with_action("layout",  Some(PipelineTarget::Gamemode),    PipelineActionDefinition {
+                        id: PipelineActionDefinitionId::new(""),
                         name: "Cemu Layout".to_string(),
                         description: Some("Edits Cemu settings.xml file to desired settings".to_string()),
                         selection: CemuConfig {
                             xml_source: CemuXmlSource::Flatpak,
                             separate_gamepad_view: false,
                         }.into(),
-                        exported: true
                     },)
                 })
                 .with_group("melonds", |group| {

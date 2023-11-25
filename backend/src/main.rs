@@ -15,7 +15,7 @@ use crate::{
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
     pipeline::registar::PipelineActionRegistrar,
-    settings::{AppId, Overrides, Profile, ProfileId, Settings},
+    settings::Settings,
     util::create_dir_all,
 };
 use clap::{Parser, Subcommand};
@@ -154,7 +154,7 @@ fn main() -> Result<()> {
             // build the executor
             let executor = AutoStart::new(settings.clone())
                 .load()?
-                .map(|l| l.build_executor(asset_manager, home_dir, config_dir, &action_registrar))
+                .map(|l| l.build_executor(asset_manager, home_dir, config_dir))
                 .transpose();
 
             // remove autostart config, so we don't end up in a loop
@@ -165,7 +165,7 @@ fn main() -> Result<()> {
 
             // run the executor
             let exec_result = executor.and_then(|executor| match executor {
-                Some(mut executor) => executor.exec(&action_registrar),
+                Some(mut executor) => executor.exec(),
                 None => Ok(()),
             });
 
@@ -217,7 +217,6 @@ fn main() -> Result<()> {
                         asset_manager,
                         home_dir,
                         config_dir,
-                        action_registrar,
                     ),
                 );
 

@@ -8,12 +8,12 @@ use crate::{
     sys::x_display::{AspectRatioOption, ModeOption, ModePreference, Resolution},
 };
 
-use super::PipelineActionImpl;
+use super::ActionImpl;
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct VirtualScreen;
 
-impl PipelineActionImpl for VirtualScreen {
+impl ActionImpl for VirtualScreen {
     type State = ();
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {

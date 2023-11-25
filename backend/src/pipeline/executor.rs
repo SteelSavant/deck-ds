@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
+use std::iter;
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::process::Command;
@@ -8,21 +9,20 @@ use std::time::{Duration, Instant, SystemTime};
 use typemap::{Key, TypeMap};
 
 use crate::asset::AssetManager;
-use crate::pipeline::config::Selection;
+use crate::pipeline::data::{PipelineAction, Selection, WrappedPipelineAction};
 use crate::settings::AppId;
 use crate::sys::kwin::KWin;
 use crate::sys::process::AppProcess;
 use crate::sys::x_display::XDisplay;
 
-use super::action::{ErasedPipelineAction, PipelineAction};
-use super::config::{PipelineDefinition, PipelineTarget};
+use super::action::{Action, ErasedPipelineAction};
+use super::data::{ActionPipeline, PipelineTarget};
 
-use super::action::PipelineActionImpl;
-use super::registar::PipelineActionRegistrar;
+use super::action::ActionImpl;
 
 pub struct PipelineExecutor<'a> {
     app_id: AppId,
-    definition: PipelineDefinition,
+    pipeline: ActionPipeline,
     target: PipelineTarget,
     ctx: PipelineContext<'a>,
 }
@@ -53,18 +53,15 @@ where
 }
 
 impl<'a> PipelineContext<'a> {
-    pub fn get_state<P: PipelineActionImpl + 'static>(&self) -> Option<&P::State> {
+    pub fn get_state<P: ActionImpl + 'static>(&self) -> Option<&P::State> {
         self.state.get::<StateKey<P, P::State>>()
     }
 
-    pub fn get_state_mut<P: PipelineActionImpl + 'static>(&mut self) -> Option<&mut P::State> {
+    pub fn get_state_mut<P: ActionImpl + 'static>(&mut self) -> Option<&mut P::State> {
         self.state.get_mut::<StateKey<P, P::State>>()
     }
 
-    pub fn set_state<P: PipelineActionImpl + 'static>(
-        &mut self,
-        state: P::State,
-    ) -> Option<P::State> {
+    pub fn set_state<P: ActionImpl + 'static>(&mut self, state: P::State) -> Option<P::State> {
         self.state.insert::<StateKey<P, P::State>>(state)
     }
 }
@@ -72,7 +69,7 @@ impl<'a> PipelineContext<'a> {
 impl<'a> PipelineExecutor<'a> {
     pub fn new(
         app_id: AppId,
-        pipeline_definition: PipelineDefinition,
+        pipeline: ActionPipeline,
         target: PipelineTarget,
         assets_manager: AssetManager<'a>,
         home_dir: PathBuf,
@@ -80,7 +77,7 @@ impl<'a> PipelineExecutor<'a> {
     ) -> Result<Self> {
         let s = Self {
             app_id,
-            definition: pipeline_definition,
+            pipeline: pipeline,
             target,
             ctx: PipelineContext {
                 home_dir,
@@ -95,63 +92,52 @@ impl<'a> PipelineExecutor<'a> {
         Ok(s)
     }
 
-    pub fn exec(&mut self, action_registrar: &PipelineActionRegistrar) -> Result<()> {
+    pub fn exec(&mut self) -> Result<()> {
         // Set up pipeline
         let mut run = vec![];
         let mut errors = vec![];
 
-        let pipeline = self.definition.build_actions(self.target, action_registrar);
+        let pipeline = self.pipeline.build_actions(self.target);
 
-        match pipeline {
-            Some(Ok(pipeline)) => {
-                // Install dependencies
-                for action in pipeline.iter() {
-                    if let Err(err) = action.exec(&mut self.ctx, ActionType::Dependencies) {
-                        return Err(err).with_context(|| "Error installing dependencies");
-                    }
-                }
-
-                for action in pipeline {
-                    run.push(action);
-                    let res = run
-                        .last()
-                        .expect("action should exist")
-                        .exec(&mut self.ctx, ActionType::Setup);
-
-                    if let Err(err) = res {
-                        log::error!("{}", err);
-                        errors.push(err);
-                        break;
-                    }
-                }
-
-                if errors.is_empty() {
-                    // Run app
-                    if let Err(err) = self.run_app(&self.app_id) {
-                        log::error!("{}", err);
-                        errors.push(err);
-                    }
-                }
-
-                // Teardown pipeline
-                for action in run.into_iter().rev() {
-                    let ctx = &mut self.ctx;
-
-                    let res = action.exec(ctx, ActionType::Teardown);
-                    if let Err(err) = res {
-                        log::error!("{}", err);
-                        errors.push(err);
-                    }
-                }
+        // Install dependencies
+        for action in pipeline.iter() {
+            if let Err(err) = action.exec(&mut self.ctx, ActionType::Dependencies) {
+                return Err(err).with_context(|| "Error installing dependencies");
             }
-            None => {
-                // Run app
-                if let Err(err) = self.run_app(&self.app_id) {
-                    log::error!("{}", err);
-                    errors.push(err);
-                }
+        }
+
+        // Setup
+        for action in pipeline {
+            run.push(action);
+            let res = run
+                .last()
+                .expect("action should exist")
+                .exec(&mut self.ctx, ActionType::Setup);
+
+            if let Err(err) = res {
+                log::error!("{}", err);
+                errors.push(err);
+                break;
             }
-            Some(Err(err)) => errors.push(err),
+        }
+
+        if errors.is_empty() {
+            // Run app
+            if let Err(err) = self.run_app() {
+                log::error!("{}", err);
+                errors.push(err);
+            }
+        }
+
+        // Teardown
+        for action in run.into_iter().rev() {
+            let ctx = &mut self.ctx;
+
+            let res = action.exec(ctx, ActionType::Teardown);
+            if let Err(err) = res {
+                log::error!("{}", err);
+                errors.push(err);
+            }
         }
 
         if errors.is_empty() {
@@ -164,8 +150,8 @@ impl<'a> PipelineExecutor<'a> {
         }
     }
 
-    fn run_app(&self, app_id: &AppId) -> Result<()> {
-        let app_id = app_id.raw();
+    fn run_app(&self) -> Result<()> {
+        let app_id = self.app_id.raw();
         let launch_type = match self.target {
             PipelineTarget::Desktop => "rungameid",
             PipelineTarget::Gamemode => "launch",
@@ -269,73 +255,45 @@ enum ActionType {
     Teardown,
 }
 
-impl PipelineDefinition {
-    fn build_actions<'a, 'b>(
-        &'b self,
-        target: PipelineTarget,
-        action_registrar: &'a PipelineActionRegistrar,
-    ) -> Option<Result<Vec<&PipelineAction>>>
-    where
-        'a: 'b,
-    {
-        fn build_recursive<'a, 'b>(
-            selection: &'b Selection,
-            target: PipelineTarget,
-            action_registrar: &'a PipelineActionRegistrar,
-        ) -> Result<Vec<&'b PipelineAction>>
-        where
-            'a: 'b,
-        {
+impl ActionPipeline {
+    fn build_actions(&self, target: PipelineTarget) -> Vec<&Action> {
+        fn build_recursive(selection: &Selection<WrappedPipelineAction>) -> Vec<&Action> {
             match selection {
-                Selection::Action(action) => Ok(vec![action]),
-                Selection::OneOf { selection: id, .. } => {
-                    let selected = &action_registrar.get(id, target);
+                Selection::Action(action) => vec![action],
+                Selection::OneOf { selection, actions } => {
+                    let action = actions
+                        .iter()
+                        .find(|a| a.0.id == *selection)
+                        .unwrap_or_else(|| panic!("Selection {selection:?} should exist"));
 
-                    Ok(selected
-                        .ok_or_else(|| anyhow::anyhow!("Could not find action with id {id:?}"))
-                        .and_then(|selected| {
-                            build_recursive(&selected.selection, target, action_registrar)
-                        })?)
+                    build_recursive(&action.0.selection)
                 }
-                Selection::AllOf(definitions) => Ok(definitions
+                Selection::AllOf(actions) => actions
                     .iter()
-                    .filter(|def| matches!(def.enabled, None | Some(true)))
-                    .flat_map(|d| {
-                        let selected = &action_registrar.get(&d.selection, target);
-
-                        Ok::<_, anyhow::Error>(
-                            selected
-                                .ok_or_else(|| {
-                                    anyhow::anyhow!(
-                                        "Could not find action with id {:?}",
-                                        d.selection
-                                    )
-                                })
-                                .and_then(|selected| {
-                                    build_recursive(&selected.selection, target, action_registrar)
-                                }),
-                        )
+                    .filter_map(|a| match a.enabled {
+                        None | Some(true) => Some(&a.selection),
+                        Some(false) => None,
                     })
-                    .flatten()
-                    .flatten()
-                    .collect()),
+                    .flat_map(|a| build_recursive(&a.0.selection))
+                    .collect(),
             }
         }
 
         self.targets
             .get(&target)
-            .map(move |action| build_recursive(action, target, action_registrar))
+            .into_iter()
+            .flat_map(move |action| build_recursive(action))
+            .collect()
     }
 }
 
-impl PipelineAction {
+impl Action {
     fn exec(&self, ctx: &mut PipelineContext, action: ActionType) -> Result<()> {
         match action {
             ActionType::Dependencies => {
                 let deps = self.get_dependencies();
 
                 for d in deps {
-                    // TODO::consider tracking installs to avoid reinstalling dependencies
                     d.verify_or_install(ctx)?;
                 }
 

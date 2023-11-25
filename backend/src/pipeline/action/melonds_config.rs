@@ -5,7 +5,7 @@ use std::{
 
 use crate::pipeline::executor::PipelineContext;
 
-use super::PipelineActionImpl;
+use super::ActionImpl;
 use anyhow::Result;
 use ini::{Ini, Properties};
 use schemars::JsonSchema;
@@ -113,7 +113,7 @@ impl internal::RawMelonDSState {
     }
 }
 
-impl PipelineActionImpl for MelonDSConfig {
+impl ActionImpl for MelonDSConfig {
     type State = internal::RawMelonDSState;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {

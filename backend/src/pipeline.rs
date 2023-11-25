@@ -1,5 +1,5 @@
 pub mod action;
-pub mod config;
+pub mod data;
 pub mod dependency;
 pub mod executor;
 pub mod registar;

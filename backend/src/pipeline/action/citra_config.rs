@@ -5,7 +5,7 @@ use std::{
 
 use crate::pipeline::executor::PipelineContext;
 
-use super::PipelineActionImpl;
+use super::ActionImpl;
 use anyhow::Result;
 use ini::Ini;
 use schemars::JsonSchema;
@@ -80,7 +80,7 @@ pub struct CitraState {
     pub layout_option: CitraLayoutOption,
 }
 
-impl PipelineActionImpl for CitraConfig {
+impl ActionImpl for CitraConfig {
     type State = CitraState;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {

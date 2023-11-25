@@ -8,9 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     pipeline::{
-        config::{
-            PipelineActionDefinition, PipelineActionDefinitionId, PipelineDefinition, Template,
-        },
+        data::{ActionPipeline, PipelineActionDefinition, PipelineActionDefinitionId, Template},
         registar::PipelineActionRegistrar,
     },
     settings::{Profile, ProfileId, Settings},
@@ -22,7 +20,7 @@ use super::{log_invoke, ParsePrimitiveAt, ResponseErr, ResponseOk, StatusCode, T
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct CreateProfileRequest {
-    pipeline: PipelineDefinition,
+    pipeline: ActionPipeline,
 }
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]

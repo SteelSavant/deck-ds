@@ -11,9 +11,10 @@ use serde_json::Value;
 
 use crate::{
     macros::{newtype_strid, newtype_uuid},
-    pipeline::config::{
-        Enabled, PipelineActionDefinitionId, PipelineDefinition, PipelineTarget, Selection,
-        Template, TemplateId,
+    pipeline::data::{
+        ActionOrProfilePipeline, ActionPipeline, DefinitionPipeline, Enabled,
+        PipelineActionDefinitionId, PipelineTarget, Selection, Template, TemplateId,
+        WrappedPipelineActionOrProfile,
     },
     util::create_dir_all,
 };
@@ -43,7 +44,7 @@ impl Settings {
             // melonDS
             Template {
                 id: TemplateId::parse("c6430131-50e0-435e-a917-5ae3cfa46e3c"),
-                pipeline: PipelineDefinition::new(
+                pipeline: DefinitionPipeline::new(
                     "melonDS".to_string(),
                     "Maps the internal and external monitor to a single virtual screen, as melonDS does not currently support multiple windows. Allows optional melonDS layout configuration.".to_string(),
                     vec!["NDS".to_string(), "nds".to_string()],
@@ -63,7 +64,7 @@ impl Settings {
             // Citra
             Template {
                 id: TemplateId::parse("fe82be74-22b9-4135-b7a0-cb6d8f51aecd"),
-                pipeline: PipelineDefinition::new(
+                pipeline: DefinitionPipeline::new(
                     "Citra".to_string(),
                     "Maps primary and secondary windows to different screens for Citra. Allows optional Citra layout configuration".to_string(),
                     vec!["3DS".to_string(),"3ds".to_string()],
@@ -83,7 +84,7 @@ impl Settings {
             // Cemu
             Template {
                 id: TemplateId::parse("33c863e5-2739-4bc3-b9bc-4798bac8682d"),
-                pipeline: PipelineDefinition::new(
+                pipeline: DefinitionPipeline::new(
                     "Cemu".to_string(),
                     "Maps primary and secondary windows to different screens for Cemu.".to_string(),
                     vec!["WIIU".to_string(), "WiiU".to_string()],
@@ -114,12 +115,17 @@ impl Settings {
 
     // File data
 
-    pub fn create_profile(&self, pipeline: PipelineDefinition) -> Result<Profile> {
+    pub fn create_profile(&self, pipeline: ActionPipeline) -> Result<Profile> {
         Ok(Profile {
             id: ProfileId::new(),
             pipeline,
-            overrides: Overrides::default(),
         })
+    }
+
+    pub fn delete_profile(&self, id: &ProfileId) -> Result<()> {
+        let profile_path = self.profiles_dir.join(id.raw()).with_extension("json");
+        std::fs::remove_file(profile_path)
+            .with_context(|| format!("failed to remove profile {id:?}"))
     }
 
     pub fn get_profile(&self, id: &ProfileId) -> Result<Profile> {
@@ -251,56 +257,30 @@ impl Settings {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AutoStart {
     pub app_id: AppId,
-    pub profile_id: ProfileId,
+    pub pipeline: ActionOrProfilePipeline,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct Profile {
     pub id: ProfileId,
-    pub pipeline: PipelineDefinition,
-    pub overrides: Overrides,
+    pub pipeline: ActionPipeline,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct App {
     id: AppId,
-    active_profile: TemplateId,
-    pub overrides: HashMap<TemplateId, Overrides>,
-}
-
-/// Overrides for a pipeline definition.
-///
-/// Json is in the format
-///
-/// ```json
-/// {
-///     "guid_for_action_selection": {
-///         "overridden_field1": "value1",
-///         "overridden_field2": 2,
-///         "overridden_field3": {
-///             "nested_field": 4.5
-///         }
-///     },
-///     "guid_for_oneof": {
-///         "selection": "some_guid",
-///     },
-/// }
-/// ```
-///
-/// All guids are flattened top-level, so [Selection::AllOf] and [Selection::OneOf]::actions will not exist.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, JsonSchema)]
-pub struct Overrides {
-    pub fields: HashMap<PipelineActionDefinitionId, Value>,
-    pub enabled: HashMap<PipelineActionDefinitionId, bool>,
+    profiles: Vec<ActionOrProfilePipeline>,
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::pipeline::{action::virtual_screen::VirtualScreen, data::PipelineAction};
+
     use super::*;
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn desktop_contents_correct() {
+    fn test_desktop_contents_correct() {
         let settings = Settings::new(Path::new("$HOME/.config/deck-ds"));
 
         let actual = settings.create_desktop_contents();
@@ -311,8 +291,51 @@ mod tests {
         Name=DeckDS
         Type=Application";
 
-        println!("{expected}");
-
         assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_profile_crud() -> Result<()> {
+        let settings = Settings::new(Path::new("test/.config/deck-ds"));
+
+        let mut expected = Profile {
+            id: ProfileId::from_uuid(uuid::Uuid::nil()),
+            pipeline: ActionPipeline {
+                name: "Test Pipeline".to_string(),
+                tags: vec!["TEST".to_string()],
+                description: "Test Pipeline".to_string(),
+                targets: HashMap::from_iter([(
+                    PipelineTarget::Desktop,
+                    Selection::AllOf(vec![Enabled::force(
+                        PipelineAction {
+                            name: "test action".to_string(),
+                            id: PipelineActionDefinitionId::new("test:test:action"),
+                            description: None,
+                            selection: VirtualScreen.into(),
+                        }
+                        .into(),
+                    )]),
+                )]),
+            },
+        };
+
+        settings.set_profile(&expected)?;
+        let actual = settings.get_profile(&expected.id)?;
+
+        assert_eq!(expected.id, actual.id);
+        assert_eq!(expected.pipeline.name, actual.pipeline.name);
+
+        expected.pipeline.name = "Updated".to_string();
+
+        settings.set_profile(&expected)?;
+
+        let actual = settings.get_profile(&expected.id)?;
+
+        assert_eq!(expected.id, actual.id);
+        assert_eq!(expected.pipeline.name, actual.pipeline.name);
+
+        settings.delete_profile(&expected.id)?;
+
+        Ok(())
     }
 }

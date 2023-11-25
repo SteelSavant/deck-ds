@@ -35,7 +35,7 @@ indexmap = { version = "2.0.2", features = ["serde"] }
 schemars = { version = "0.8.15", features = [
     "indexmap2",
     "uuid1",
-    "impl_json_schema",
+    "either",
 ] }
 
 typemap = "0.3.3"
@@ -56,6 +56,7 @@ rust-ini = "0.20.0"
 lazy_static = "1.4.0"
 dirs = "5.0.1"
 which = "5.0.0"
+either = { version = "1.9.0", features = ["serde"] }
 
 [features]
 default = ["online", "decky"]

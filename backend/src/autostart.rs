@@ -3,12 +3,13 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 
 use crate::{
     asset::AssetManager,
     pipeline::{
-        config::PipelineTarget, executor::PipelineExecutor, registar::PipelineActionRegistrar,
+        data::{PipelineTarget, ReifiablePipeline},
+        executor::PipelineExecutor,
     },
     settings::Settings,
 };
@@ -71,27 +72,20 @@ impl LoadedAutoStart {
         assets_manager: AssetManager<'a>,
         home_dir: PathBuf,
         config_dir: PathBuf,
-        action_registrar: &PipelineActionRegistrar,
     ) -> Result<PipelineExecutor<'a>> {
         let settings = self
             .settings
             .lock()
             .expect("settings mutex should be lockable");
 
-        let profile = settings.get_profile(&self.autostart.profile_id)?;
-
-        // let app_settings = settings
-        //     .get_app(&self.autostart.app_id)?
-        //     .and_then(|s| s.overrides.get(&definition.id).cloned());
-
-        // let patched = definition.patched_with(profile.overrides, self.target, action_registrar);
-        // let patched = app_settings
-        //     .map(|o| patched.patched_with(o, self.target, action_registrar))
-        //     .unwrap_or(patched);
+        let pipeline = self
+            .autostart
+            .pipeline
+            .reify(&settings.get_profiles()?.as_slice())?;
 
         PipelineExecutor::new(
             self.autostart.app_id,
-            profile.pipeline,
+            pipeline,
             self.target,
             assets_manager,
             home_dir,

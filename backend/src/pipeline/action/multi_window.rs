@@ -5,12 +5,12 @@ use xrandr::Relation;
 
 use crate::pipeline::{dependency::Dependency, executor::PipelineContext};
 
-use super::PipelineActionImpl;
+use super::ActionImpl;
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct MultiWindow;
 
-impl PipelineActionImpl for MultiWindow {
+impl ActionImpl for MultiWindow {
     type State = ();
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {

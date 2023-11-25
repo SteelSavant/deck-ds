@@ -5,7 +5,7 @@ use std::{
 
 use crate::pipeline::executor::PipelineContext;
 
-use super::PipelineActionImpl;
+use super::ActionImpl;
 use anyhow::Result;
 use regex::Regex;
 use schemars::JsonSchema;
@@ -48,7 +48,7 @@ lazy_static::lazy_static! {
     static ref RXP: Regex =  Regex::new("<open_pad>((?:true)|(?:false))</open_pad>").unwrap();
 }
 
-impl PipelineActionImpl for CemuConfig {
+impl ActionImpl for CemuConfig {
     type State = CemuState;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
