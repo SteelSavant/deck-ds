@@ -1,14 +1,13 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use anyhow::Result;
+
 use crate::{
     pipeline::{
-        data::{ActionPipeline, PipelineActionDefinition, PipelineActionId, Template},
+        data::{ActionPipeline, ReifiablePipeline, TemplateId},
         registar::PipelineActionRegistrar,
     },
     settings::{Profile, ProfileId, Settings},
@@ -128,35 +127,53 @@ pub fn set_profile(
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetTemplatesResponse {
-    templates: Vec<Template>,
+    templates: Vec<ReifiedTemplate>,
+}
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+struct ReifiedTemplate {
+    id: TemplateId,
+    pipeline: ActionPipeline,
 }
 
 pub fn get_templates(
     settings: Arc<Mutex<Settings>>,
+    action_registrar: PipelineActionRegistrar,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
         log_invoke("get_templates", &args);
         let lock = settings.lock().expect("settings mutex should be lockable");
-        let res = lock.get_templates().to_vec();
-
-        GetTemplatesResponse { templates: res }.to_response()
-    }
-}
-
-// Pipeline Actions
-
-#[derive(Debug, Clone, Serialize, JsonSchema)]
-pub struct GetPipelineActionsResponse {
-    pipeline_actions: HashMap<PipelineActionId, PipelineActionDefinition>,
-}
-
-pub fn get_pipeline_actions(
-    action_registrar: PipelineActionRegistrar,
-) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |_: super::ApiParameterType| {
-        GetPipelineActionsResponse {
-            pipeline_actions: action_registrar.all().as_ref().clone(),
+        let res = lock
+            .get_templates()
+            .iter()
+            .map(|t| {
+                t.pipeline
+                    .clone()
+                    .reify(&action_registrar)
+                    .map(|pipeline| ReifiedTemplate { id: t.id, pipeline })
+            })
+            .collect::<Result<_>>();
+        match res {
+            Ok(templates) => GetTemplatesResponse { templates }.to_response(),
+            Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
         }
-        .to_response()
     }
 }
+
+// // Pipeline Actions
+
+// #[derive(Debug, Clone, Serialize, JsonSchema)]
+// pub struct GetPipelineActionsResponse {
+//     pipeline_actions: HashMap<PipelineActionId, PipelineActionDefinition>,
+// }
+
+// pub fn get_pipeline_actions(
+//     action_registrar: PipelineActionRegistrar,
+// ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+//     move |_: super::ApiParameterType| {
+//         GetPipelineActionsResponse {
+//             pipeline_actions: action_registrar.all().as_ref().clone(),
+//         }
+//         .to_response()
+//     }
+// }

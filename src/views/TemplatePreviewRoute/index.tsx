@@ -1,7 +1,7 @@
 import { Focusable, Tabs, useParams } from "decky-frontend-lib";
 import { ReactElement, useState } from "react";
+import { ActionSelection } from "../../backend";
 import HandleLoading from "../../components/HandleLoading";
-import usePipelineActions from "../../hooks/usePipelineActions";
 import useTemplate from "../../hooks/useTemplate";
 import Pipeline from "./Pipeline";
 import TemplateInfo from "./TemplateInfo";
@@ -12,31 +12,21 @@ export default function TemplatePreviewRoute(): ReactElement {
     const { templateid } = useParams<{ templateid: string }>()
 
     const template = useTemplate(templateid);
-    const actions = usePipelineActions();
 
-    const mapped = template && actions ?
-        template.and_then((t) => {
-            return actions.map((a) => {
-                return {
-                    actions: a,
-                    template: t,
-                }
-            })
-        }) : null;
+
 
     return <HandleLoading
-        value={mapped}
+        value={template}
         onOk={
-            (loaded) => {
-                const template = loaded.template;
-                const actions = loaded.actions;
+            (template) => {
+
 
                 if (template === undefined) {
                     return <div> Template {templateid} does not exist!</div>;
                 } else {
                     interface KeyValue {
                         target: string,
-                        root: Selection,
+                        root: ActionSelection,
                     }
 
                     const defaultTargets: KeyValue[] = [];
@@ -69,7 +59,7 @@ export default function TemplatePreviewRoute(): ReactElement {
                         ...allTargets.map((kv) => {
                             return {
                                 title: kv.target,
-                                content: <Pipeline root={kv.root} actions={actions} />,
+                                content: <Pipeline root={kv.root} />,
                                 id: kv.target.toLowerCase(),
                             };
                         }),

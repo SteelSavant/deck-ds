@@ -204,12 +204,12 @@ fn main() -> Result<()> {
                 )
                 .register(
                     "get_templates",
-                    crate::api::profile::get_templates(settings.clone()),
+                    crate::api::profile::get_templates(settings.clone(), action_registrar.clone()),
                 )
-                .register(
-                    "get_pipeline_actions",
-                    crate::api::profile::get_pipeline_actions(action_registrar.clone()),
-                )
+                // .register(
+                //     "get_pipeline_actions",
+                //     crate::api::profile::get_pipeline_actions(action_registrar.clone()),
+                // )
                 .register(
                     "autostart",
                     crate::api::autostart::autostart(

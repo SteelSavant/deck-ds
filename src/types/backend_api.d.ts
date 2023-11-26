@@ -165,22 +165,6 @@ export type SelectionFor_WrappedPipelineAction =
       value: EnabledFor_WrappedPipelineAction[];
     };
 export type PipelineTarget = "Desktop" | "Gamemode";
-export type SelectionFor_String =
-  | {
-      type: "Action";
-      value: Action;
-    }
-  | {
-      type: "OneOf";
-      value: {
-        actions: string[];
-        selection: string;
-      };
-    }
-  | {
-      type: "AllOf";
-      value: EnabledFor_String[];
-    };
 
 /**
  * Marker type for generating API json schema types for ts
@@ -189,7 +173,6 @@ export interface Api {
   autostart_request: AutoStartRequest;
   create_profile_request: CreateProfileRequest;
   create_profile_response: CreateProfileResponse;
-  get_pipeline_actions_response: GetPipelineActionsResponse;
   get_profile_request: GetProfileRequest;
   get_profile_response: GetProfileResponse;
   get_profiles_response: GetProfilesResponse;
@@ -306,33 +289,6 @@ export interface PipelineImplFor_WrappedPipelineAction {
 export interface CreateProfileResponse {
   profile_id: string;
 }
-export interface GetPipelineActionsResponse {
-  pipeline_actions: {
-    [k: string]: PipelineActionImplFor_String;
-  };
-}
-export interface PipelineActionImplFor_String {
-  /**
-   * An optional description of what the action does.
-   */
-  description?: string | null;
-  id: string;
-  /**
-   * The name of the action
-   */
-  name: string;
-  /**
-   * The value of the pipeline action
-   */
-  selection: SelectionFor_String;
-}
-export interface EnabledFor_String {
-  /**
-   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
-   */
-  enabled?: boolean | null;
-  selection: string;
-}
 export interface GetProfileRequest {
   profile_id: string;
 }
@@ -347,19 +303,11 @@ export interface GetProfilesResponse {
   profiles: Profile[];
 }
 export interface GetTemplatesResponse {
-  templates: Template[];
+  templates: ReifiedTemplate[];
 }
-export interface Template {
+export interface ReifiedTemplate {
   id: string;
-  pipeline: PipelineImplFor_String;
-}
-export interface PipelineImplFor_String {
-  description: string;
-  name: string;
-  tags: string[];
-  targets: {
-    [k: string]: SelectionFor_String;
-  };
+  pipeline: PipelineImplFor_WrappedPipelineAction;
 }
 export interface SetProfileRequest {
   profile: Profile;

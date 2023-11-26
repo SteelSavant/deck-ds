@@ -1,9 +1,9 @@
-import { AutoStartRequest, CreateProfileRequest, CreateProfileResponse, GetPipelineActionsResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction, PipelineActionImplFor_String, PipelineActionImplFor_WrappedPipelineAction, PipelineImplFor_String, PipelineImplFor_WrappedPipelineAction, SelectionFor_Either_WrappedPipelineActionOr_ProfileAction, SelectionFor_String, SelectionFor_WrappedPipelineAction, SetProfileRequest } from "./types/backend_api";
+import { AutoStartRequest, CreateProfileRequest, CreateProfileResponse, EnabledFor_Either_WrappedPipelineActionOr_ProfileAction, EnabledFor_WrappedPipelineAction, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction, PipelineActionImplFor_WrappedPipelineAction, PipelineImplFor_WrappedPipelineAction, ReifiedTemplate, SelectionFor_Either_WrappedPipelineActionOr_ProfileAction, SelectionFor_WrappedPipelineAction, SetProfileRequest } from "./types/backend_api";
 import { call_backend, init_embedded, init_usdpl, target_usdpl } from "./usdpl_front";
 import { Err, Ok, Result } from "./util/result";
 
 export {
-    // Api Types
+    Action,
     AutoStartRequest,
     CreateProfileRequest,
     CreateProfileResponse,
@@ -11,21 +11,26 @@ export {
     GetProfileResponse,
     GetProfilesResponse,
     GetTemplatesResponse,
-    // Pipeline Types
     PipelineTarget,
-    // Profile Types
-    Profile, SetProfileRequest, Template
+    Profile, SetProfileRequest
 } from "./types/backend_api";
 
-export type DefinitionPipeline = PipelineImplFor_String;
+export type Template = ReifiedTemplate;
+
+export type OneOf = {
+    actions: PipelineActionImplFor_WrappedPipelineAction[];
+    selection: string;
+}
+
+export type ActionEnabled = EnabledFor_WrappedPipelineAction;
+export type ActionOrProfileEnabled = EnabledFor_Either_WrappedPipelineActionOr_ProfileAction;
+
 export type ActionPipeline = PipelineImplFor_WrappedPipelineAction;
 export type ActionOrProfilePipleine = PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction;
 
-export type DefinitionSelection = SelectionFor_String;
 export type ActionSelection = SelectionFor_WrappedPipelineAction;
 export type ActionOrProfileSelection = SelectionFor_Either_WrappedPipelineActionOr_ProfileAction;
 
-export type PipelineDefinition = PipelineActionImplFor_String;
 export type PipelineAction = PipelineActionImplFor_WrappedPipelineAction;
 export type PipelineOrProfileAction = PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction;
 
@@ -144,7 +149,4 @@ export async function getTemplates(): Response<GetTemplatesResponse> {
     return await call_backend_typed("get_templates", null);
 }
 
-export async function getPipelineActions(): Response<GetPipelineActionsResponse> {
-    return await call_backend_typed("get_templates", null);
-}
 
