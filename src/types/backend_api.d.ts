@@ -5,38 +5,46 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-export type PipelineTarget = "Desktop" | "Gamemode";
-export type Selection =
+export type SelectionFor_PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction =
   | {
-      Action: PipelineAction;
+      type: "Action";
+      value: Action;
     }
   | {
-      OneOf: {
-        actions: string[];
+      type: "OneOf";
+      value: {
+        actions: PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction[];
         selection: string;
       };
     }
   | {
-      AllOf: EnabledFor_String[];
+      type: "AllOf";
+      value: EnabledFor_PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction[];
     };
-export type PipelineAction =
+export type Action =
   | {
-      DisplayConfig: DisplayConfig;
+      type: "DisplayConfig";
+      value: DisplayConfig;
     }
   | {
-      VirtualScreen: VirtualScreen;
+      type: "VirtualScreen";
+      value: VirtualScreen;
     }
   | {
-      MultiWindow: MultiWindow;
+      type: "MultiWindow";
+      value: MultiWindow;
     }
   | {
-      CitraConfig: CitraConfig;
+      type: "CitraConfig";
+      value: CitraConfig;
     }
   | {
-      CemuConfig: CemuConfig;
+      type: "CemuConfig";
+      value: CemuConfig;
     }
   | {
-      MelonDSConfig: MelonDSConfig;
+      type: "MelonDSConfig";
+      value: MelonDSConfig;
     };
 export type RelativeLocation = "Above" | "Below" | "LeftOf" | "RightOf" | "SameAs";
 export type TeardownExternalSettings =
@@ -73,35 +81,111 @@ export type ModeOptionFor_Resolution =
 export type VirtualScreen = null;
 export type MultiWindow = null;
 export type CitraIniSource =
-  | "Flatpak"
   | {
-      Custom: string;
+      type: "Flatpak";
+    }
+  | {
+      type: "Custom";
+      value: string;
     };
 export type CitraLayoutOption =
-  | ("Default" | "SingleScreen" | "LargeScreen" | "SideBySide" | "SeparateWindows" | "HybridScreen")
   | {
-      Unknown: number;
+      type: "Default";
+    }
+  | {
+      type: "SingleScreen";
+    }
+  | {
+      type: "LargeScreen";
+    }
+  | {
+      type: "SideBySide";
+    }
+  | {
+      type: "SeparateWindows";
+    }
+  | {
+      type: "HybridScreen";
+    }
+  | {
+      type: "Unknown";
+      value: number;
     };
 export type CemuXmlSource =
-  | "Flatpak"
   | {
-      Custom: string;
+      type: "Flatpak";
+    }
+  | {
+      type: "Custom";
+      value: string;
     };
 export type MelonDSIniSource =
-  | "Flatpak"
   | {
-      Custom: string;
+      type: "Flatpak";
+    }
+  | {
+      type: "Custom";
+      value: string;
     };
 /**
  * melonDS layout options. Because of the "unique" way melonDS handles layouts, these options do not map 1:1.
  */
 export type MelonDSLayoutOption = "Natural" | "Vertical" | "Horizontal" | "Hybrid" | "Single";
 export type MelonDSSizingOption = "Even" | "EmphasizeTop" | "EmphasizeBottom" | "Auto";
+export type SelectionFor_Either_WrappedPipelineActionOr_ProfileAction =
+  | {
+      type: "Action";
+      value: Action;
+    }
+  | {
+      type: "OneOf";
+      value: {
+        actions: (PipelineActionImplFor_WrappedPipelineAction | ProfileAction)[];
+        selection: string;
+      };
+    }
+  | {
+      type: "AllOf";
+      value: EnabledFor_Either_WrappedPipelineActionOr_ProfileAction[];
+    };
+export type SelectionFor_WrappedPipelineAction =
+  | {
+      type: "Action";
+      value: Action;
+    }
+  | {
+      type: "OneOf";
+      value: {
+        actions: PipelineActionImplFor_WrappedPipelineAction[];
+        selection: string;
+      };
+    }
+  | {
+      type: "AllOf";
+      value: EnabledFor_WrappedPipelineAction[];
+    };
+export type PipelineTarget = "Desktop" | "Gamemode";
+export type SelectionFor_String =
+  | {
+      type: "Action";
+      value: Action;
+    }
+  | {
+      type: "OneOf";
+      value: {
+        actions: string[];
+        selection: string;
+      };
+    }
+  | {
+      type: "AllOf";
+      value: EnabledFor_String[];
+    };
 
 /**
  * Marker type for generating API json schema types for ts
  */
-export interface __Api {
+export interface Api {
   autostart_request: AutoStartRequest;
   create_profile_request: CreateProfileRequest;
   create_profile_response: CreateProfileResponse;
@@ -114,18 +198,15 @@ export interface __Api {
 }
 export interface AutoStartRequest {
   app: string;
-  profile: string;
+  pipeline: PipelineImplFor_PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction;
   target: PipelineTarget;
 }
-export interface CreateProfileRequest {
-  pipeline: PipelineDefinition;
-}
-export interface PipelineDefinition {
+export interface PipelineImplFor_PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction {
   description: string;
   name: string;
   tags: string[];
   targets: {
-    [k: string]: Selection;
+    [k: string]: SelectionFor_PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction;
   };
 }
 export interface DisplayConfig {
@@ -156,30 +237,12 @@ export interface MelonDSConfig {
   sizing_option: MelonDSSizingOption;
   swap_screens: boolean;
 }
-export interface EnabledFor_String {
-  /**
-   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
-   */
-  enabled?: boolean | null;
-  selection: string;
-}
-export interface CreateProfileResponse {
-  profile_id: string;
-}
-export interface GetPipelineActionsResponse {
-  pipeline_actions: {
-    [k: string]: PipelineActionDefinition;
-  };
-}
-export interface PipelineActionDefinition {
+export interface PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction {
   /**
    * An optional description of what the action does.
    */
   description?: string | null;
-  /**
-   * Flags whether the selection is exported for use in other actions.
-   */
-  exported: boolean;
+  id: string;
   /**
    * The name of the action
    */
@@ -187,7 +250,88 @@ export interface PipelineActionDefinition {
   /**
    * The value of the pipeline action
    */
-  selection: Selection;
+  selection: SelectionFor_Either_WrappedPipelineActionOr_ProfileAction;
+}
+export interface PipelineActionImplFor_WrappedPipelineAction {
+  /**
+   * An optional description of what the action does.
+   */
+  description?: string | null;
+  id: string;
+  /**
+   * The name of the action
+   */
+  name: string;
+  /**
+   * The value of the pipeline action
+   */
+  selection: SelectionFor_WrappedPipelineAction;
+}
+export interface EnabledFor_WrappedPipelineAction {
+  /**
+   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+   */
+  enabled?: boolean | null;
+  selection: PipelineActionImplFor_WrappedPipelineAction;
+}
+export interface ProfileAction {
+  action: string;
+  profile: string;
+}
+export interface EnabledFor_Either_WrappedPipelineActionOr_ProfileAction {
+  /**
+   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+   */
+  enabled?: boolean | null;
+  selection: PipelineActionImplFor_WrappedPipelineAction | ProfileAction;
+}
+export interface EnabledFor_PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction {
+  /**
+   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+   */
+  enabled?: boolean | null;
+  selection: PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction;
+}
+export interface CreateProfileRequest {
+  pipeline: PipelineImplFor_WrappedPipelineAction;
+}
+export interface PipelineImplFor_WrappedPipelineAction {
+  description: string;
+  name: string;
+  tags: string[];
+  targets: {
+    [k: string]: SelectionFor_WrappedPipelineAction;
+  };
+}
+export interface CreateProfileResponse {
+  profile_id: string;
+}
+export interface GetPipelineActionsResponse {
+  pipeline_actions: {
+    [k: string]: PipelineActionImplFor_String;
+  };
+}
+export interface PipelineActionImplFor_String {
+  /**
+   * An optional description of what the action does.
+   */
+  description?: string | null;
+  id: string;
+  /**
+   * The name of the action
+   */
+  name: string;
+  /**
+   * The value of the pipeline action
+   */
+  selection: SelectionFor_String;
+}
+export interface EnabledFor_String {
+  /**
+   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+   */
+  enabled?: boolean | null;
+  selection: string;
 }
 export interface GetProfileRequest {
   profile_id: string;
@@ -197,25 +341,7 @@ export interface GetProfileResponse {
 }
 export interface Profile {
   id: string;
-  overrides: Overrides;
-  pipeline: PipelineDefinition;
-}
-/**
- * Overrides for a pipeline definition.
- *
- * Json is in the format
- *
- * ```json { "guid_for_action_selection": { "overridden_field1": "value1", "overridden_field2": 2, "overridden_field3": { "nested_field": 4.5 } }, "guid_for_oneof": { "selection": "some_guid", }, } ```
- *
- * All guids are flattened top-level, so [Selection::AllOf] and [Selection::OneOf]::actions will not exist.
- */
-export interface Overrides {
-  enabled: {
-    [k: string]: boolean;
-  };
-  fields: {
-    [k: string]: unknown;
-  };
+  pipeline: PipelineImplFor_WrappedPipelineAction;
 }
 export interface GetProfilesResponse {
   profiles: Profile[];
@@ -225,7 +351,15 @@ export interface GetTemplatesResponse {
 }
 export interface Template {
   id: string;
-  pipeline: PipelineDefinition;
+  pipeline: PipelineImplFor_String;
+}
+export interface PipelineImplFor_String {
+  description: string;
+  name: string;
+  tags: string[];
+  targets: {
+    [k: string]: SelectionFor_String;
+  };
 }
 export interface SetProfileRequest {
   profile: Profile;

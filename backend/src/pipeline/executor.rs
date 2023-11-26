@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
-use std::iter;
+
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::process::Command;
@@ -9,7 +9,7 @@ use std::time::{Duration, Instant, SystemTime};
 use typemap::{Key, TypeMap};
 
 use crate::asset::AssetManager;
-use crate::pipeline::data::{PipelineAction, Selection, WrappedPipelineAction};
+use crate::pipeline::data::{Selection, WrappedPipelineAction};
 use crate::settings::AppId;
 use crate::sys::kwin::KWin;
 use crate::sys::process::AppProcess;

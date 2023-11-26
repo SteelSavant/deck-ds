@@ -81,6 +81,7 @@ where
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[enum_delegate::implement(ErasedPipelineAction)]
+#[serde(tag = "type", content = "value")]
 pub enum Action {
     DisplayConfig(DisplayConfig),
     VirtualScreen(VirtualScreen),

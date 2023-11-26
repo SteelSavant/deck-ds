@@ -10,12 +10,7 @@ use serde::Deserialize;
 use crate::{
     asset::AssetManager,
     autostart::LoadedAutoStart,
-    pipeline::{
-        data::{
-            ActionOrProfilePipeline, PipelineTarget, Selection, WrappedPipelineActionOrProfile,
-        },
-        registar::PipelineActionRegistrar,
-    },
+    pipeline::data::{ActionOrProfilePipeline, PipelineTarget},
     settings::{self, AppId, Settings},
     sys::steamos_session_select::{steamos_session_select, Session},
 };
@@ -45,17 +40,17 @@ pub fn autostart(
             Ok(args) => match args.target {
                 PipelineTarget::Desktop => {
                     let lock = settings.lock().expect("settings mutex should be lockable");
-                    let res = lock.set_autostart_cfg(&Some(settings::AutoStart {
+                    let res = lock.set_autostart_cfg(&settings::AutoStart {
                         app_id: args.app,
                         pipeline: args.pipeline,
-                    }));
+                    });
                     match res {
                         Ok(_) => match steamos_session_select(Session::Plasma) {
                             Ok(_) => ResponseOk.to_response(),
                             Err(err) => {
                                 // remove autostart config if session select fails to avoid issues
                                 // switching to desktop later
-                                _ = lock.set_autostart_cfg(&None);
+                                _ = lock.delete_autostart_cfg();
                                 ResponseErr(StatusCode::ServerError, err).to_response()
                             }
                         },

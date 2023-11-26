@@ -42,6 +42,7 @@ impl MelonDSSizingOption {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "type", content = "value")]
 pub enum MelonDSIniSource {
     Flatpak,
     Custom(PathBuf),

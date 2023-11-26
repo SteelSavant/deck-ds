@@ -6,7 +6,7 @@ use super::{
         multi_window::MultiWindow,
         virtual_screen::VirtualScreen,
     },
-    data::{PipelineActionDefinition, PipelineActionDefinitionId, PipelineTarget},
+    data::{PipelineActionDefinition, PipelineActionId, PipelineTarget},
 };
 use std::{collections::HashMap, sync::Arc};
 
@@ -14,7 +14,7 @@ use self::internal::{PipelineActionRegistarBuilder, PluginScopeBuilder};
 
 #[derive(Debug, Clone)]
 pub struct PipelineActionRegistrar {
-    actions: Arc<HashMap<PipelineActionDefinitionId, PipelineActionDefinition>>,
+    actions: Arc<HashMap<PipelineActionId, PipelineActionDefinition>>,
 }
 
 impl PipelineActionRegistrar {
@@ -24,7 +24,7 @@ impl PipelineActionRegistrar {
 
     pub fn get(
         &self,
-        id: &PipelineActionDefinitionId,
+        id: &PipelineActionId,
         target: PipelineTarget,
     ) -> Option<&PipelineActionDefinition> {
         self.actions
@@ -32,18 +32,18 @@ impl PipelineActionRegistrar {
             .or_else(|| self.actions.get(id))
     }
 
-    pub fn all(&self) -> Arc<HashMap<PipelineActionDefinitionId, PipelineActionDefinition>> {
+    pub fn all(&self) -> Arc<HashMap<PipelineActionId, PipelineActionDefinition>> {
         self.actions.clone()
     }
 }
 
-fn format_variant(id: &str, target: PipelineTarget) -> PipelineActionDefinitionId {
+fn format_variant(id: &str, target: PipelineTarget) -> PipelineActionId {
     let variant = match target {
         PipelineTarget::Desktop => "desktop",
         PipelineTarget::Gamemode => "gamemode",
     };
 
-    PipelineActionDefinitionId::new(&format!("{id}:{variant}"))
+    PipelineActionId::new(&format!("{id}:{variant}"))
 }
 
 mod internal {
@@ -140,7 +140,7 @@ impl PipelineActionRegistarBuilder {
                         group
                             .into_iter()
                             .map(move |(ref action_id, action)| {
-                                let id = PipelineActionDefinitionId::new(&format!(
+                                let id = PipelineActionId::new(&format!(
                                     "{scope_id}:{group_id}:{action_id}"
                                 ));
                                 (id.clone(), PipelineActionDefinition { id, ..action })
@@ -164,7 +164,7 @@ impl PipelineActionRegistarBuilder {
                         "display_config",
                         Some(PipelineTarget::Desktop),
                         PipelineActionDefinition {
-                            id: PipelineActionDefinitionId::new(""),
+                            id: PipelineActionId::new(""),
                             name: "Display Configuration".to_string(),
                             description: Some("Ensures the display resolution and layout are correctly configured before and after executing pipeline actions.".into()),
                             selection: DisplayConfig {
@@ -175,12 +175,12 @@ impl PipelineActionRegistarBuilder {
                     ).with_action("virtual_screen",      
                                        Some(PipelineTarget::Desktop),
                     PipelineActionDefinition {
-                        id: PipelineActionDefinitionId::new(""),
+                        id: PipelineActionId::new(""),
                         name: "Virtual Screen".to_string(),
                         description: Some("Maps the internal and external monitor to a single virtual screen, for applications that do not support multiple windows.".into()),
                         selection: VirtualScreen.into(),
                     },).with_action("multi_window",    Some(PipelineTarget::Desktop), PipelineActionDefinition {
-                        id: PipelineActionDefinitionId::new(""),
+                        id: PipelineActionId::new(""),
                         name: "Multi-Window Emulation".to_string(),
                         description: Some("Manages windows for known emulators configurations with multiple display windows.".into()),
                         selection: MultiWindow.into(),
@@ -189,7 +189,7 @@ impl PipelineActionRegistarBuilder {
                 })
                 .with_group("citra", |group| {
                     group.with_action("layout",    Some(PipelineTarget::Desktop),   PipelineActionDefinition {
-                        id: PipelineActionDefinitionId::new(""),
+                        id: PipelineActionId::new(""),
                         name: "Citra Layout".to_string(),
                         description: Some("Edits Citra ini file to desired layout settings".to_string()),
                         selection: CitraConfig {
@@ -198,7 +198,7 @@ impl PipelineActionRegistarBuilder {
                         }.into(),
                     },
                 ).with_action("layout",    Some(PipelineTarget::Gamemode),PipelineActionDefinition {
-                    id: PipelineActionDefinitionId::new(""),
+                    id: PipelineActionId::new(""),
                     name: "Citra Layout".to_string(),
                     description: Some("Edits Citra ini file to desired layout settings".to_string()),
                     selection: CitraConfig {
@@ -210,7 +210,7 @@ impl PipelineActionRegistarBuilder {
                 })
                 .with_group("cemu", |group| {
                     group.with_action("layout", Some(PipelineTarget::Desktop),     PipelineActionDefinition {
-                        id: PipelineActionDefinitionId::new(""),
+                        id: PipelineActionId::new(""),
                         name: "Cemu Layout".to_string(),
                         description: Some("Edits Cemu settings.xml file to desired settings".to_string()),
                         selection: CemuConfig {
@@ -218,7 +218,7 @@ impl PipelineActionRegistarBuilder {
                             separate_gamepad_view: true,
                         }.into(),
                     },).with_action("layout",  Some(PipelineTarget::Gamemode),    PipelineActionDefinition {
-                        id: PipelineActionDefinitionId::new(""),
+                        id: PipelineActionId::new(""),
                         name: "Cemu Layout".to_string(),
                         description: Some("Edits Cemu settings.xml file to desired settings".to_string()),
                         selection: CemuConfig {

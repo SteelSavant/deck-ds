@@ -1,6 +1,5 @@
 import { Focusable, Tabs, useParams } from "decky-frontend-lib";
 import { ReactElement, useState } from "react";
-import { Selection } from "../../backend";
 import HandleLoading from "../../components/HandleLoading";
 import usePipelineActions from "../../hooks/usePipelineActions";
 import useTemplate from "../../hooks/useTemplate";

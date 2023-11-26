@@ -1,6 +1,5 @@
 use derive_more::Display;
 use either::Either::{self, Left, Right};
-use indexmap::IndexMap;
 use std::collections::HashMap;
 
 use crate::{
@@ -18,7 +17,7 @@ use super::{action::Action, registar::PipelineActionRegistrar};
 
 newtype_strid!(
     r#"Id in the form "plugin:group:action" | "plugin:group:action:variant""#,
-    PipelineActionDefinitionId
+    PipelineActionId
 );
 newtype_uuid!(TemplateId);
 
@@ -40,7 +39,7 @@ mod internal {
     use schemars::JsonSchema;
     use serde::{Deserialize, Serialize};
 
-    use super::{PipelineActionDefinitionId, PipelineTarget, Selection};
+    use super::{PipelineActionId, PipelineTarget, Selection};
 
     #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
     pub struct PipelineImpl<T> {
@@ -52,7 +51,7 @@ mod internal {
 
     #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
     pub struct PipelineActionImpl<T> {
-        pub id: PipelineActionDefinitionId,
+        pub id: PipelineActionId,
         /// The name of the action
         pub name: String,
         /// An optional description of what the action does.
@@ -62,12 +61,12 @@ mod internal {
     }
 }
 
-pub type DefinitionPipeline = PipelineImpl<PipelineActionDefinitionId>;
+pub type DefinitionPipeline = PipelineImpl<PipelineActionId>;
 pub type ActionPipeline = PipelineImpl<WrappedPipelineAction>;
 pub type ActionOrProfilePipeline = PipelineImpl<PipelineActionOrProfile>;
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(transparent)]
+// #[serde(transparent)] causes schemars to stack overflow, so we dont' use it
 pub struct WrappedPipelineAction(pub PipelineAction);
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -77,25 +76,25 @@ pub struct WrappedPipelineActionOrProfile {
         serialize_with = "either::serde_untagged::serialize",
         deserialize_with = "either::serde_untagged::deserialize"
     )]
-    item: Either<PipelineAction, ProfileAction>,
+    item: Either<WrappedPipelineAction, ProfileAction>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct ProfileAction {
     profile: ProfileId,
-    action: PipelineActionDefinitionId,
+    action: PipelineActionId,
 }
 
-pub type PipelineActionDefinition = PipelineActionImpl<PipelineActionDefinitionId>;
+pub type PipelineActionDefinition = PipelineActionImpl<PipelineActionId>;
 pub type PipelineAction = PipelineActionImpl<WrappedPipelineAction>;
 pub type PipelineActionOrProfile = PipelineActionImpl<WrappedPipelineActionOrProfile>;
 
 impl PipelineActionDefinition {
     pub fn new(
-        id: PipelineActionDefinitionId,
+        id: PipelineActionId,
         name: String,
         description: Option<String>,
-        selection: Selection<PipelineActionDefinitionId>,
+        selection: Selection<PipelineActionId>,
     ) -> Self {
         Self {
             id,
@@ -108,7 +107,7 @@ impl PipelineActionDefinition {
 
 impl PipelineAction {
     pub fn new(
-        id: PipelineActionDefinitionId,
+        id: PipelineActionId,
         name: String,
         description: Option<String>,
         selection: Selection<WrappedPipelineAction>,
@@ -124,7 +123,7 @@ impl PipelineAction {
 
 impl PipelineActionOrProfile {
     pub fn new(
-        id: PipelineActionDefinitionId,
+        id: PipelineActionId,
         name: String,
         description: Option<String>,
         selection: Selection<WrappedPipelineActionOrProfile>,
@@ -139,10 +138,11 @@ impl PipelineActionOrProfile {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "type", content = "value")]
 pub enum Selection<T> {
     Action(Action),
     OneOf {
-        selection: PipelineActionDefinitionId,
+        selection: PipelineActionId,
         actions: Vec<T>,
     },
     AllOf(Vec<Enabled<T>>),
@@ -183,7 +183,7 @@ impl DefinitionPipeline {
         name: String,
         description: String,
         tags: Vec<String>,
-        targets: HashMap<PipelineTarget, Selection<PipelineActionDefinitionId>>,
+        targets: HashMap<PipelineTarget, Selection<PipelineActionId>>,
     ) -> Self {
         Self {
             targets,
@@ -204,7 +204,9 @@ impl From<PipelineAction> for WrappedPipelineAction {
 
 impl From<PipelineAction> for WrappedPipelineActionOrProfile {
     fn from(value: PipelineAction) -> Self {
-        WrappedPipelineActionOrProfile { item: Left(value) }
+        WrappedPipelineActionOrProfile {
+            item: Left(value.into()),
+        }
     }
 }
 
@@ -300,7 +302,7 @@ where
     }
 }
 
-impl ReifiablePipelineAction<PipelineActionRegistrar> for PipelineActionDefinitionId {
+impl ReifiablePipelineAction<PipelineActionRegistrar> for PipelineActionId {
     fn reify(
         self,
         target: PipelineTarget,
@@ -340,7 +342,7 @@ impl ReifiablePipelineAction<&[Profile]> for WrappedPipelineActionOrProfile {
 }
 
 impl Selection<WrappedPipelineAction> {
-    fn find(&self, action: &PipelineActionDefinitionId) -> Option<&WrappedPipelineAction> {
+    fn find(&self, action: &PipelineActionId) -> Option<&WrappedPipelineAction> {
         match self {
             Selection::Action(_) => None,
             Selection::OneOf { actions, .. } => {

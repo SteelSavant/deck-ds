@@ -10,7 +10,7 @@ use simplelog::{LevelFilter, WriteLogger};
 use usdpl_back::Instance;
 
 use crate::{
-    api::__Api,
+    api::Api,
     asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
@@ -153,7 +153,7 @@ fn main() -> Result<()> {
         Modes::Autostart => {
             // build the executor
             let executor = AutoStart::new(settings.clone())
-                .load()?
+                .load()
                 .map(|l| l.build_executor(asset_manager, home_dir, config_dir))
                 .transpose();
 
@@ -161,7 +161,7 @@ fn main() -> Result<()> {
             let lock = settings
                 .lock()
                 .expect("settings mutex should be able to lock");
-            lock.set_autostart_cfg(&None)?;
+            let _ = lock.delete_autostart_cfg();
 
             // run the executor
             let exec_result = executor.and_then(|executor| match executor {
@@ -231,9 +231,13 @@ fn main() -> Result<()> {
             } else {
                 create_dir_all(path)?;
 
-                let pipeline_schema = schemars::schema_for!(__Api);
+                let pipeline_schema = Api::generate();
+                let schema_path = path.join("schema.json");
+
+                println!("writing schema to {:?}", schema_path.canonicalize());
+
                 Ok(std::fs::write(
-                    path.join("schema.json"),
+                    schema_path,
                     serde_json::to_string_pretty(&pipeline_schema)?,
                 )?)
             }

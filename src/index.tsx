@@ -78,7 +78,17 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           onClick={async () => {
             await backend.autoStart({
               app: "12146987087370911744",
-              profile: "00000000-0000-0000-0000-000000000000",
+              pipeline: {
+                name: "test",
+                description: "test",
+                tags: [],
+                targets: {
+                  'Desktop': {
+                    type: "AllOf",
+                    value: []
+                  }
+                },
+              },
               target: "Desktop"
             })
           }}
@@ -90,7 +100,17 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           onClick={async () => {
             await backend.autoStart({
               app: "12146987087370911744",
-              profile: "00000000-0000-0000-0000-000000000000",
+              pipeline: {
+                name: "test",
+                description: "test",
+                tags: [],
+                targets: {
+                  'Gamemode': {
+                    type: "AllOf",
+                    value: []
+                  }
+                },
+              },
               target: "Gamemode"
             })
           }}
@@ -98,7 +118,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           Gamemode Test
         </ButtonItem>
       </PanelSectionRow>
-    </PanelSection>
+    </PanelSection >
   );
 }
 

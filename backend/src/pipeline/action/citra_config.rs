@@ -12,6 +12,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "type", content = "value")]
 pub enum CitraLayoutOption {
     Default,         // 0
     SingleScreen,    // 1
@@ -49,6 +50,7 @@ impl CitraLayoutOption {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "type", content = "value")]
 pub enum CitraIniSource {
     Flatpak,
     Custom(PathBuf),

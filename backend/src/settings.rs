@@ -11,9 +11,8 @@ use serde::{Deserialize, Serialize};
 use crate::{
     macros::{newtype_strid, newtype_uuid},
     pipeline::data::{
-        ActionOrProfilePipeline, ActionPipeline, DefinitionPipeline, Enabled,
-        PipelineActionDefinitionId, PipelineTarget, Selection, Template, TemplateId,
-        WrappedPipelineActionOrProfile,
+        ActionOrProfilePipeline, ActionPipeline, DefinitionPipeline, Enabled, PipelineActionId,
+        PipelineTarget, Selection, Template, TemplateId,
     },
     util::create_dir_all,
 };
@@ -49,12 +48,12 @@ impl Settings {
                     vec!["NDS".to_string(), "nds".to_string()],
                     HashMap::from_iter([
                         (PipelineTarget::Desktop, Selection::AllOf(vec![
-                            Enabled::force(PipelineActionDefinitionId::new("core:melonds:layout")),
-                            Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")),
-                            Enabled::force(PipelineActionDefinitionId::new("core:display:virtual_screen"))
+                            Enabled::force(PipelineActionId::new("core:melonds:layout")),
+                            Enabled::force(PipelineActionId::new("core:display:display_config")),
+                            Enabled::force(PipelineActionId::new("core:display:virtual_screen"))
                         ])),
                         (PipelineTarget::Gamemode, Selection::AllOf(vec![
-                            Enabled::force(PipelineActionDefinitionId::new("core:melonds:layout")),
+                            Enabled::force(PipelineActionId::new("core:melonds:layout")),
                         ]))
                     ]),
                 )
@@ -69,12 +68,12 @@ impl Settings {
                     vec!["3DS".to_string(),"3ds".to_string()],
                     HashMap::from_iter([
                         (PipelineTarget::Desktop, Selection::AllOf(vec![
-                            Enabled::force(PipelineActionDefinitionId::new("core:citra:layout")),
-                            Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")),
-                            Enabled::force(PipelineActionDefinitionId::new("core:display:multi_window"))
+                            Enabled::force(PipelineActionId::new("core:citra:layout")),
+                            Enabled::force(PipelineActionId::new("core:display:display_config")),
+                            Enabled::force(PipelineActionId::new("core:display:multi_window"))
                         ])),
                         (PipelineTarget::Gamemode, Selection::AllOf(vec![
-                            Enabled::force(PipelineActionDefinitionId::new("core:citra:layout")),
+                            Enabled::force(PipelineActionId::new("core:citra:layout")),
                         ]))
                     ]),
                 )
@@ -90,13 +89,13 @@ impl Settings {
                     HashMap::from_iter([
                         (PipelineTarget::Desktop,
                             Selection::AllOf(vec![
-                                Enabled::force(PipelineActionDefinitionId::new("core:cemu:layout")),
-                                Enabled::force(PipelineActionDefinitionId::new("core:display:display_config")),
-                                Enabled::force(PipelineActionDefinitionId::new("core:display:multi_window"))
+                                Enabled::force(PipelineActionId::new("core:cemu:layout")),
+                                Enabled::force(PipelineActionId::new("core:display:display_config")),
+                                Enabled::force(PipelineActionId::new("core:display:multi_window"))
                         ])),
                         (PipelineTarget::Gamemode,
                             Selection::AllOf(vec![
-                                Enabled::force(PipelineActionDefinitionId::new("core:cemu:layout"))
+                                Enabled::force(PipelineActionId::new("core:cemu:layout"))
                         ]))
                     ]),
                 )
@@ -197,13 +196,18 @@ impl Settings {
         Ok(std::fs::write(app_path, serialized)?)
     }
 
-    pub fn get_autostart(&self) -> Result<Option<AutoStart>> {
-        let autostart = std::fs::read_to_string(&self.autostart_path)?;
-
-        Ok(serde_json::from_str(&autostart)?)
+    pub fn get_autostart_cfg(&self) -> Option<AutoStart> {
+        std::fs::read_to_string(&self.autostart_path)
+            .ok()
+            .and_then(|s| serde_json::from_str(&s).ok())
     }
 
-    pub fn set_autostart_cfg(&self, autostart: &Option<AutoStart>) -> Result<()> {
+    pub fn delete_autostart_cfg(&self) -> Result<()> {
+        std::fs::remove_file(&self.autostart_path)
+            .with_context(|| "failed to remove autostart config")
+    }
+
+    pub fn set_autostart_cfg(&self, autostart: &AutoStart) -> Result<()> {
         // always set system autostart, since we (eventually) want to be able to auto-configure displays
         // whether or not an app is run
         create_dir_all(&self.system_autostart_dir)?;
@@ -316,7 +320,7 @@ Type=Application";
                     Selection::AllOf(vec![Enabled::force(
                         PipelineAction {
                             name: "test action".to_string(),
-                            id: PipelineActionDefinitionId::new("test:test:action"),
+                            id: PipelineActionId::new("test:test:action"),
                             description: None,
                             selection: VirtualScreen.into(),
                         }

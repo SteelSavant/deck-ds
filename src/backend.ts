@@ -1,4 +1,4 @@
-import { AutoStartRequest, CreateProfileRequest, CreateProfileResponse, GetPipelineActionsResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, SetProfileRequest } from "./types/backend_api";
+import { AutoStartRequest, CreateProfileRequest, CreateProfileResponse, GetPipelineActionsResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction, PipelineActionImplFor_String, PipelineActionImplFor_WrappedPipelineAction, PipelineImplFor_String, PipelineImplFor_WrappedPipelineAction, SelectionFor_Either_WrappedPipelineActionOr_ProfileAction, SelectionFor_String, SelectionFor_WrappedPipelineAction, SetProfileRequest } from "./types/backend_api";
 import { call_backend, init_embedded, init_usdpl, target_usdpl } from "./usdpl_front";
 import { Err, Ok, Result } from "./util/result";
 
@@ -12,16 +12,23 @@ export {
     GetProfilesResponse,
     GetTemplatesResponse,
     // Pipeline Types
-    Overrides,
-    PipelineAction,
-    PipelineActionDefinition,
-    PipelineDefinition,
     PipelineTarget,
     // Profile Types
-    Profile, Selection, SetProfileRequest, Template
+    Profile, SetProfileRequest, Template
 } from "./types/backend_api";
 
-export { ActionSelection, AllOfSelection, OneOfSelection, isAction, isAllOf, isOneOf } from "./types/narrowing";
+export type DefinitionPipeline = PipelineImplFor_String;
+export type ActionPipeline = PipelineImplFor_WrappedPipelineAction;
+export type ActionOrProfilePipleine = PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction;
+
+export type DefinitionSelection = SelectionFor_String;
+export type ActionSelection = SelectionFor_WrappedPipelineAction;
+export type ActionOrProfileSelection = SelectionFor_Either_WrappedPipelineActionOr_ProfileAction;
+
+export type PipelineDefinition = PipelineActionImplFor_String;
+export type PipelineAction = PipelineActionImplFor_WrappedPipelineAction;
+export type PipelineOrProfileAction = PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction;
+
 
 const USDPL_PORT: number = 44666;
 

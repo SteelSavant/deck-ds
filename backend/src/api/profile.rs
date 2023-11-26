@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     pipeline::{
-        data::{ActionPipeline, PipelineActionDefinition, PipelineActionDefinitionId, Template},
+        data::{ActionPipeline, PipelineActionDefinition, PipelineActionId, Template},
         registar::PipelineActionRegistrar,
     },
     settings::{Profile, ProfileId, Settings},
@@ -147,7 +147,7 @@ pub fn get_templates(
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetPipelineActionsResponse {
-    pipeline_actions: HashMap<PipelineActionDefinitionId, PipelineActionDefinition>,
+    pipeline_actions: HashMap<PipelineActionId, PipelineActionDefinition>,
 }
 
 pub fn get_pipeline_actions(

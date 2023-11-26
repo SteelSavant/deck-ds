@@ -3,7 +3,7 @@ pub mod general;
 pub mod profile;
 
 use anyhow::Result;
-use schemars::JsonSchema;
+use schemars::{schema::RootSchema, JsonSchema};
 use serde::de::DeserializeOwned;
 use usdpl_back::core::serdes::Primitive;
 
@@ -89,7 +89,7 @@ impl ToResponseType for ResponseOk {
 
 /// Marker type for generating API json schema types for ts
 #[derive(JsonSchema)]
-pub struct __Api {
+pub struct Api {
     // profile
     pub create_profile_request: CreateProfileRequest,
     pub create_profile_response: CreateProfileResponse,
@@ -102,6 +102,12 @@ pub struct __Api {
 
     // autostart
     pub autostart_request: AutoStartRequest,
+}
+
+impl Api {
+    pub fn generate() -> RootSchema {
+        schemars::schema_for!(Self)
+    }
 }
 
 fn log_invoke(method: &str, args: &[Primitive]) {
@@ -123,5 +129,15 @@ fn primitive_to_string(v: &Primitive) -> String {
         Primitive::I64(v) => format!("I64({v})"),
         Primitive::Bool(v) => format!("Bool({v})"),
         Primitive::Json(v) => format!("Json({v})"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Api;
+
+    #[test]
+    fn test_generate_schema() {
+        Api::generate();
     }
 }

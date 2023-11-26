@@ -1,12 +1,13 @@
 import { ReactElement } from "react";
-import { ActionSelection, AllOfSelection, OneOfSelection, PipelineActionDefinition, Selection, isAction, isAllOf, isOneOf } from "../../backend";
+import { PipelineAction } from "../../backend";
+import { SelectionFor_WrappedPipelineAction } from "../../types/backend_api";
 
-export default function Pipeline({ root, actions }: { root: Selection, actions: { [key: string]: PipelineActionDefinition } }): ReactElement {
-    return buildSelection(root, actions, isAllOf(root) ? -1 : 1)
+export default function Pipeline({ root, actions }: { root: SelectionFor_WrappedPipelineAction, actions: { [key: string]: PipelineAction } }): ReactElement {
+    return buildSelection(root, actions, root.type === "AllOf" ? -1 : 1)
 }
 
 
-function buildSelection(selection: Selection, actions: { [key: string]: PipelineActionDefinition }, depth: number): ReactElement {
+function buildSelection(selection: SelectionFor, actions: { [key: string]: PipelineAction }, depth: number): ReactElement {
     if (isAction(selection)) {
         return buildAction(selection, depth);
     } else if (isOneOf(selection)) {

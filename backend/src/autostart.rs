@@ -31,24 +31,20 @@ impl AutoStart {
         Self { settings }
     }
 
-    pub fn load(self) -> Result<Option<LoadedAutoStart>> {
+    pub fn load(self) -> Option<LoadedAutoStart> {
         let autostart = {
             let settings = self
                 .settings
                 .lock()
                 .expect("settings mutex should be lockable");
-            settings.get_autostart()?
+            settings.get_autostart_cfg()
         };
 
-        if let Some(autostart) = autostart {
-            Ok(Some(LoadedAutoStart {
-                autostart,
-                settings: self.settings,
-                target: PipelineTarget::Desktop, // autostart load only invoked from desktop; gamemode has settings in memory
-            }))
-        } else {
-            Ok(None)
-        }
+        autostart.map(|autostart| LoadedAutoStart {
+            autostart,
+            settings: self.settings,
+            target: PipelineTarget::Desktop, // autostart load only invoked from desktop; gamemode has settings in memory
+        })
     }
 }
 
