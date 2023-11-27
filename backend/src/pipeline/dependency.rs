@@ -10,6 +10,7 @@ pub enum Dependency {
     Path { path: PathBuf, is_file: bool },
     KwinScript(String),
     Installable(Box<dyn Installable>),
+    FieldNotSet(String),
 }
 
 impl Dependency {
@@ -35,6 +36,7 @@ impl Dependency {
                 Ok(false) => installable.install(ctx),
                 Err(err) => Err(err),
             },
+            Dependency::FieldNotSet(field) => Err(anyhow!("field {field} must be set")),
         }
     }
 }

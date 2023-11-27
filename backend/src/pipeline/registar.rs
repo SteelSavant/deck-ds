@@ -1,14 +1,15 @@
 use super::{
     action::{
-        cemu_config::{CemuConfig, CemuXmlSource},
-        citra_config::{CitraConfig, CitraIniSource, CitraLayoutOption},
+        cemu_layout::CemuLayout,
+        citra_layout::{CitraLayout, CitraLayoutOption},
         display_config::{DisplayConfig, RelativeLocation, TeardownExternalSettings},
         multi_window::MultiWindow,
-        virtual_screen::VirtualScreen,
+        source_file::SourceFile,
+        virtual_screen::VirtualScreen, melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
     },
-    data::{PipelineActionDefinition, PipelineActionId, PipelineTarget},
+    data::{PipelineActionDefinition, PipelineActionId, PipelineTarget, Selection, Enabled},
 };
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, path::PathBuf, str::FromStr, sync::Arc};
 
 use self::internal::{PipelineActionRegistarBuilder, PluginScopeBuilder};
 
@@ -188,47 +189,161 @@ impl PipelineActionRegistarBuilder {
                     })
                 })
                 .with_group("citra", |group| {
-                    group.with_action("layout",    Some(PipelineTarget::Desktop),   PipelineActionDefinition {
+                    group.with_action("config", None, PipelineActionDefinition {
+                        id: PipelineActionId::new(""),
+                        name: "Citra Configuration".to_string(),
+                        description: None,
+                        selection: Selection::AllOf(vec![
+                            Enabled::force(PipelineActionId::new("core:citra:source")),
+                            Enabled::default_true(PipelineActionId::new("core:citra:layout"))
+                        ]),
+                    })
+                    .with_action("source", None, PipelineActionDefinition {
+                        id: PipelineActionId::new(""),
+                        name: "Citra Settings Source".to_string(),
+                        description: Some("Source file to use when editing Citra settings.".to_string()),
+                        selection:  Selection::OneOf {selection: PipelineActionId::new("core:citra:flatpak_source"), actions: vec![
+                            PipelineActionId::new("core:citra:flatpak_source"),
+                            PipelineActionId::new("core:citra:custom_source")
+                        ]},
+                    })
+                    .with_action("flatpak_source", None, PipelineActionDefinition {
+                        id: PipelineActionId::new(""),
+                        name: "Flatpak Settings".to_string(),
+                        description: Some("Sets the settings INI file location to the default Flatpak location.".to_string()),
+                        selection: SourceFile::Known(PathBuf::from_str("$HOME/.var/app/org.citra_emu.citra/config/citra-emu/qt-config.ini").expect("path should be valid")) .into(),
+                    })
+                    .with_action("custom_source", None, PipelineActionDefinition {
+                        id: PipelineActionId::new(""),
+                        name: "Custom".to_string(),
+                        description: Some("Sets the settings INI file location to a custom location.".to_string()),
+                        selection: SourceFile::Custom(None).into(),
+                    })
+                    .with_action("layout",    Some(PipelineTarget::Desktop),   PipelineActionDefinition {
                         id: PipelineActionId::new(""),
                         name: "Citra Layout".to_string(),
-                        description: Some("Edits Citra ini file to desired layout settings".to_string()),
-                        selection: CitraConfig {
-                            ini_source: CitraIniSource::Flatpak,
+                        description: Some("Edits Citra ini file to desired layout settings.".to_string()),
+                        selection: CitraLayout {
                             layout_option: CitraLayoutOption::Default,
+                            swap_screens: false,
                         }.into(),
-                    },
-                ).with_action("layout",    Some(PipelineTarget::Gamemode),PipelineActionDefinition {
-                    id: PipelineActionId::new(""),
-                    name: "Citra Layout".to_string(),
-                    description: Some("Edits Citra ini file to desired layout settings".to_string()),
-                    selection: CitraConfig {
-                        ini_source: CitraIniSource::Flatpak,
-                        layout_option: CitraLayoutOption::HybridScreen,
-                    }.into(),
-                },
-            )
+                    }).with_action("layout",    Some(PipelineTarget::Gamemode),PipelineActionDefinition {
+                        id: PipelineActionId::new(""),
+                        name: "Citra Layout".to_string(),
+                        description: Some("Edits Citra ini file to desired layout settings.".to_string()),
+                        selection: CitraLayout {
+                            layout_option: CitraLayoutOption::HybridScreen,
+                            swap_screens: false
+                        }.into(),
+                    })
                 })
                 .with_group("cemu", |group| {
-                    group.with_action("layout", Some(PipelineTarget::Desktop),     PipelineActionDefinition {
+                    group.with_action("config", None, PipelineActionDefinition {
+                        id: PipelineActionId::new(""),
+                        name: "Cemu Configuration".to_string(),
+                        description: None,
+                        selection: Selection::AllOf(vec![
+                            Enabled::force(PipelineActionId::new("core:cemu:source")),
+                            Enabled::default_true(PipelineActionId::new("core:cemu:layout"))
+                        ]),
+                    })
+                    .with_action("source", None, PipelineActionDefinition {
+                        id: PipelineActionId::new(""),
+                        name: "Cemu Settings Source".to_string(),
+                        description: Some("Source file to use when editing Cemu settings.".to_string()),
+                        selection:  Selection::OneOf {selection: PipelineActionId::new("core:cemu:flatpak_source"), actions: vec![
+                            PipelineActionId::new("core:cemu:flatpak_source"),
+                            PipelineActionId::new("core:cemu:emudeck_proton_source"),
+                            PipelineActionId::new("core:cemu:custom_source")
+                        ]},
+                    })
+                    .with_action("flatpak_source", None, PipelineActionDefinition {
+                        id: PipelineActionId::new(""),
+                        name: "Flatpak Settings".to_string(),
+                        description: Some("Sets the settings INI file location to the default Flatpak location.".to_string()),
+                        selection: SourceFile::Known(PathBuf::from_str("$HOME/.var/app/info.cemu.Cemu/config/Cemu/settings.xml").expect("path should be valid")) .into(),
+                    })
+                    .with_action("emudeck_proton_source", None, PipelineActionDefinition {
+                        id: PipelineActionId::new(""),
+                        name: "EmuDeck (Proton) Settings".to_string(),
+                        description: Some("Sets the settings INI file location to the default EmuDeck (Proton) location.".to_string()),
+                        selection: SourceFile::Known(PathBuf::from_str("$HOME/Emulation/roms/wiiu/settings.xml").expect("path should be valid")) .into(),
+                    })
+                    .with_action("custom_source", None, PipelineActionDefinition {
+                        id: PipelineActionId::new(""),
+                        name: "Custom".to_string(),
+                        description: Some("Sets the settings INI file location to a custom location.".to_string()),
+                        selection: SourceFile::Custom(None).into(),
+                    }).with_action("layout", Some(PipelineTarget::Desktop),     PipelineActionDefinition {
                         id: PipelineActionId::new(""),
                         name: "Cemu Layout".to_string(),
-                        description: Some("Edits Cemu settings.xml file to desired settings".to_string()),
-                        selection: CemuConfig {
-                            xml_source: CemuXmlSource::Flatpak,
+                        description: Some("Edits Cemu settings.xml file to desired settings.".to_string()),
+                        selection: CemuLayout {
                             separate_gamepad_view: true,
+                            swap_screens: false,
                         }.into(),
-                    },).with_action("layout",  Some(PipelineTarget::Gamemode),    PipelineActionDefinition {
+                    }).with_action("layout",  Some(PipelineTarget::Gamemode),    PipelineActionDefinition {
                         id: PipelineActionId::new(""),
                         name: "Cemu Layout".to_string(),
-                        description: Some("Edits Cemu settings.xml file to desired settings".to_string()),
-                        selection: CemuConfig {
-                            xml_source: CemuXmlSource::Flatpak,
+                        description: Some("Edits Cemu settings.xml file to desired settings.".to_string()),
+                        selection: CemuLayout {
                             separate_gamepad_view: false,
+                            swap_screens: false
                         }.into(),
-                    },)
+                    })
                 })
                 .with_group("melonds", |group| {
-                    group
+                    group.with_action("config", None, PipelineActionDefinition {
+                        id: PipelineActionId::new(""),
+                        name: "melonDS Configuration".to_string(),
+                        description: None,
+                        selection: Selection::AllOf(vec![
+                            Enabled::force(PipelineActionId::new("core:melonds:source")),
+                            Enabled::default_true(PipelineActionId::new("core:melonds:layout"))
+                        ]),
+                    })
+                    .with_action("source", None, PipelineActionDefinition {
+                        id: PipelineActionId::new(""),
+                        name: "melonDS Settings Source".to_string(),
+                        description: Some("Source file to use when editing melonDS settings.".to_string()),
+                        selection:  Selection::OneOf {selection: PipelineActionId::new("core:melonds:flatpak_source"), actions: vec![
+                            PipelineActionId::new("core:melonds:flatpak_source"),
+                            PipelineActionId::new("core:melonds:custom_source")
+                        ]},
+                    })
+                    .with_action("flatpak_source", None, PipelineActionDefinition {
+                        id: PipelineActionId::new(""),
+                        name: "Flatpak Settings".to_string(),
+                        description: Some("Sets the settings INI file location to the default Flatpak location.".to_string()),
+                        selection: SourceFile::Known(PathBuf::from_str("$HOME/.var/app/net.kuribo64.melonDS/config/melonDS/melonDS.ini").expect("path should be valid")) .into(),
+                    })
+                    .with_action("custom_source", None, PipelineActionDefinition {
+                        id: PipelineActionId::new(""),
+                        name: "Custom".to_string(),
+                        description: Some("Sets the settings INI file location to a custom location.".to_string()),
+                        selection: SourceFile::Custom(None).into(),
+                    })
+                    .with_action("layout", Some(PipelineTarget::Desktop),     PipelineActionDefinition {
+                        id: PipelineActionId::new(""),
+                        name: "melonDS Layout".to_string(),
+                        description: Some("Edits melonDS ini file to desired layout settings.".to_string()),
+                        selection: MelonDSLayout {
+                            layout_option: MelonDSLayoutOption::Vertical,
+                            sizing_option: MelonDSSizingOption::Even,
+                            book_mode: false,  
+                            swap_screens: false,
+                        }.into(),
+                    }).with_action("layout", Some(PipelineTarget::Gamemode),    PipelineActionDefinition {
+                        id: PipelineActionId::new(""),
+                        name: "melonDS Layout".to_string(),
+                        description: Some("Edits melonDS ini file to desired settings.".to_string()),
+                        selection: MelonDSLayout {
+                            layout_option: MelonDSLayoutOption::Hybrid,
+                            sizing_option: MelonDSSizingOption::Even,
+                            book_mode: false,  
+                            swap_screens: false,
+                        }.into(),
+                    })
                 })
         })
     }

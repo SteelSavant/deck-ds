@@ -106,11 +106,11 @@
             "type": {
               "type": "string",
               "enum": [
-                "CitraConfig"
+                "CitraLayout"
               ]
             },
             "value": {
-              "$ref": "#/definitions/CitraConfig"
+              "$ref": "#/definitions/CitraLayout"
             }
           }
         },
@@ -124,11 +124,11 @@
             "type": {
               "type": "string",
               "enum": [
-                "CemuConfig"
+                "CemuLayout"
               ]
             },
             "value": {
-              "$ref": "#/definitions/CemuConfig"
+              "$ref": "#/definitions/CemuLayout"
             }
           }
         },
@@ -142,11 +142,29 @@
             "type": {
               "type": "string",
               "enum": [
-                "MelonDSConfig"
+                "MelonDSLayout"
               ]
             },
             "value": {
-              "$ref": "#/definitions/MelonDSConfig"
+              "$ref": "#/definitions/MelonDSLayout"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "SourceFile"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/SourceFile"
             }
           }
         }
@@ -195,107 +213,35 @@
         }
       }
     },
-    "CemuConfig": {
+    "CemuLayout": {
       "type": "object",
       "required": [
         "separate_gamepad_view",
-        "xml_source"
+        "swap_screens"
       ],
       "properties": {
         "separate_gamepad_view": {
           "type": "boolean"
         },
-        "xml_source": {
-          "$ref": "#/definitions/CemuXmlSource"
+        "swap_screens": {
+          "type": "boolean"
         }
       }
     },
-    "CemuXmlSource": {
-      "oneOf": [
-        {
-          "type": "object",
-          "required": [
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Flatpak"
-              ]
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Custom"
-              ]
-            },
-            "value": {
-              "type": "string"
-            }
-          }
-        }
-      ]
-    },
-    "CitraConfig": {
+    "CitraLayout": {
       "type": "object",
       "required": [
-        "ini_source",
-        "layout_option"
+        "layout_option",
+        "swap_screens"
       ],
       "properties": {
-        "ini_source": {
-          "$ref": "#/definitions/CitraIniSource"
-        },
         "layout_option": {
           "$ref": "#/definitions/CitraLayoutOption"
+        },
+        "swap_screens": {
+          "type": "boolean"
         }
       }
-    },
-    "CitraIniSource": {
-      "oneOf": [
-        {
-          "type": "object",
-          "required": [
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Flatpak"
-              ]
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Custom"
-              ]
-            },
-            "value": {
-              "type": "string"
-            }
-          }
-        }
-      ]
     },
     "CitraLayoutOption": {
       "oneOf": [
@@ -555,11 +501,10 @@
         }
       }
     },
-    "MelonDSConfig": {
+    "MelonDSLayout": {
       "type": "object",
       "required": [
         "book_mode",
-        "ini_source",
         "layout_option",
         "sizing_option",
         "swap_screens"
@@ -567,9 +512,6 @@
       "properties": {
         "book_mode": {
           "type": "boolean"
-        },
-        "ini_source": {
-          "$ref": "#/definitions/MelonDSIniSource"
         },
         "layout_option": {
           "$ref": "#/definitions/MelonDSLayoutOption"
@@ -581,42 +523,6 @@
           "type": "boolean"
         }
       }
-    },
-    "MelonDSIniSource": {
-      "oneOf": [
-        {
-          "type": "object",
-          "required": [
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Flatpak"
-              ]
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Custom"
-              ]
-            },
-            "value": {
-              "type": "string"
-            }
-          }
-        }
-      ]
     },
     "MelonDSLayoutOption": {
       "description": "melonDS layout options. Because of the \"unique\" way melonDS handles layouts, these options do not map 1:1.",
@@ -1194,6 +1100,37 @@
           "$ref": "#/definitions/Profile"
         }
       }
+    },
+    "SourceFile": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "Known"
+          ],
+          "properties": {
+            "Known": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Custom"
+          ],
+          "properties": {
+            "Custom": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
     },
     "TeardownExternalSettings": {
       "oneOf": [

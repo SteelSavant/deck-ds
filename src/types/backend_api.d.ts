@@ -35,16 +35,20 @@ export type Action =
       value: MultiWindow;
     }
   | {
-      type: "CitraConfig";
-      value: CitraConfig;
+      type: "CitraLayout";
+      value: CitraLayout;
     }
   | {
-      type: "CemuConfig";
-      value: CemuConfig;
+      type: "CemuLayout";
+      value: CemuLayout;
     }
   | {
-      type: "MelonDSConfig";
-      value: MelonDSConfig;
+      type: "MelonDSLayout";
+      value: MelonDSLayout;
+    }
+  | {
+      type: "SourceFile";
+      value: SourceFile;
     };
 export type RelativeLocation = "Above" | "Below" | "LeftOf" | "RightOf" | "SameAs";
 export type TeardownExternalSettings =
@@ -80,14 +84,6 @@ export type ModeOptionFor_Resolution =
     };
 export type VirtualScreen = null;
 export type MultiWindow = null;
-export type CitraIniSource =
-  | {
-      type: "Flatpak";
-    }
-  | {
-      type: "Custom";
-      value: string;
-    };
 export type CitraLayoutOption =
   | {
       type: "Default";
@@ -111,27 +107,18 @@ export type CitraLayoutOption =
       type: "Unknown";
       value: number;
     };
-export type CemuXmlSource =
-  | {
-      type: "Flatpak";
-    }
-  | {
-      type: "Custom";
-      value: string;
-    };
-export type MelonDSIniSource =
-  | {
-      type: "Flatpak";
-    }
-  | {
-      type: "Custom";
-      value: string;
-    };
 /**
  * melonDS layout options. Because of the "unique" way melonDS handles layouts, these options do not map 1:1.
  */
 export type MelonDSLayoutOption = "Natural" | "Vertical" | "Horizontal" | "Hybrid" | "Single";
 export type MelonDSSizingOption = "Even" | "EmphasizeTop" | "EmphasizeBottom" | "Auto";
+export type SourceFile =
+  | {
+      Known: string;
+    }
+  | {
+      Custom: string | null;
+    };
 export type SelectionFor_Either_WrappedPipelineActionOr_ProfileAction =
   | {
       type: "Action";
@@ -205,17 +192,16 @@ export interface Resolution {
   h: number;
   w: number;
 }
-export interface CitraConfig {
-  ini_source: CitraIniSource;
+export interface CitraLayout {
   layout_option: CitraLayoutOption;
+  swap_screens: boolean;
 }
-export interface CemuConfig {
+export interface CemuLayout {
   separate_gamepad_view: boolean;
-  xml_source: CemuXmlSource;
+  swap_screens: boolean;
 }
-export interface MelonDSConfig {
+export interface MelonDSLayout {
   book_mode: boolean;
-  ini_source: MelonDSIniSource;
   layout_option: MelonDSLayoutOption;
   sizing_option: MelonDSSizingOption;
   swap_screens: boolean;

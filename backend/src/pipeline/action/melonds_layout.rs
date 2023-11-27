@@ -1,12 +1,9 @@
-use std::{
-    borrow::Cow,
-    path::{Path, PathBuf},
-};
+use std::path::Path;
 
 use crate::pipeline::executor::PipelineContext;
 
-use super::ActionImpl;
-use anyhow::Result;
+use super::{source_file::SourceFile, ActionImpl};
+use anyhow::{Context, Result};
 use ini::{Ini, Properties};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -42,29 +39,7 @@ impl MelonDSSizingOption {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "type", content = "value")]
-pub enum MelonDSIniSource {
-    Flatpak,
-    Custom(PathBuf),
-    // AppImage (if one exists)
-}
-
-impl MelonDSIniSource {
-    pub fn get_path<P: AsRef<Path>>(&self, home_dir: P) -> Result<Cow<PathBuf>> {
-        Ok(match self {
-            MelonDSIniSource::Flatpak => Cow::Owned(
-                home_dir
-                    .as_ref()
-                    .join(".var/app/net.kuribo64.melonDS/config/melonDS/melonDS.ini"),
-            ),
-            MelonDSIniSource::Custom(path) => Cow::Borrowed(path),
-        })
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct MelonDSConfig {
-    pub ini_source: MelonDSIniSource,
+pub struct MelonDSLayout {
     pub layout_option: MelonDSLayoutOption,
     pub sizing_option: MelonDSSizingOption,
     pub book_mode: bool, // if in book mode, set rotation to 270,
@@ -72,7 +47,14 @@ pub struct MelonDSConfig {
 }
 
 mod internal {
-    #[derive(Debug, Copy, Clone)]
+    use std::path::PathBuf;
+
+    pub struct MelonDSLayoutState {
+        pub layout: RawMelonDSState,
+        pub ini_path: PathBuf,
+    }
+
+    #[derive(Debug, Clone)]
     pub struct RawMelonDSState {
         pub layout_option: u8,
         pub sizing_option: u8,
@@ -82,7 +64,10 @@ mod internal {
 }
 
 impl internal::RawMelonDSState {
-    fn read(section: &Properties) -> Result<Self> {
+    fn read<P: AsRef<Path>>(ini_path: P) -> Result<Self> {
+        let mut ini = Ini::load_from_file(ini_path)?;
+        let section = ini.general_section_mut();
+
         let layout = section
             .get("ScreenLayout")
             .expect("ScreenLayout should exist");
@@ -102,28 +87,32 @@ impl internal::RawMelonDSState {
         })
     }
 
-    fn write<P: AsRef<Path>>(&self, path: P, mut ini: Ini) -> Result<()> {
-        let layout_section = ini.general_section_mut();
+    fn write<P: AsRef<Path>>(&self, ini_path: P) -> Result<()> {
+        let mut ini = Ini::load_from_file(&ini_path)?;
 
-        layout_section.insert("ScreenLayout", self.layout_option.to_string());
-        layout_section.insert("ScreenSizing", self.sizing_option.to_string());
-        layout_section.insert("ScreenRotation", self.rotation.to_string());
-        layout_section.insert("ScreenSwap", self.swap_screens.to_string());
+        let section = ini.general_section_mut();
 
-        Ok(ini.write_to_file(path)?)
+        section.insert("ScreenLayout", self.layout_option.to_string());
+        section.insert("ScreenSizing", self.sizing_option.to_string());
+        section.insert("ScreenRotation", self.rotation.to_string());
+        section.insert("ScreenSwap", self.swap_screens.to_string());
+
+        Ok(ini.write_to_file(ini_path)?)
     }
 }
 
-impl ActionImpl for MelonDSConfig {
-    type State = internal::RawMelonDSState;
+impl ActionImpl for MelonDSLayout {
+    type State = internal::MelonDSLayoutState;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
-        let ini_path = self.get_ini_path(&ctx.home_dir)?;
+        let ini_path = ctx
+            .get_state::<SourceFile>()
+            .with_context(|| "No source file set for melonDS settings")?;
 
-        let mut ini = Ini::load_from_file(ini_path.as_path())?;
-        let layout_section = ini.general_section_mut();
-        let current = internal::RawMelonDSState::read(layout_section)?;
-        ctx.set_state::<Self>(current);
+        let current = internal::MelonDSLayoutState {
+            layout: internal::RawMelonDSState::read(ini_path)?,
+            ini_path: ini_path.clone(),
+        };
 
         let raw = match (
             self.layout_option,
@@ -173,31 +162,30 @@ impl ActionImpl for MelonDSConfig {
             }
         };
 
-        raw.write(ini_path.as_path(), ini)
+        raw.write(ini_path).map(|_| {
+            ctx.set_state::<Self>(current);
+        })
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {
         let state = ctx.get_state::<Self>();
 
         match state {
-            Some(state) => {
-                let ini_path = self.get_ini_path(&ctx.home_dir)?;
-                let ini = Ini::load_from_file(ini_path.as_path())?;
-
-                state.write(ini_path.as_path(), ini)
-            }
+            Some(state) => state.layout.write(&state.ini_path),
             None => Ok(()),
         }
     }
 }
 
-impl MelonDSConfig {
-    fn get_ini_path<P: AsRef<Path>>(&self, home_dir: P) -> Result<Cow<PathBuf>> {
-        let ini_path = self.ini_source.get_path(home_dir)?;
-        if ini_path.is_file() {
-            Ok(ini_path)
-        } else {
-            Err(std::io::Error::from(std::io::ErrorKind::NotFound).into())
-        }
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_read_melonds_layout() {
+        todo!()
+    }
+
+    #[test]
+    fn test_write_melonds_layout() {
+        todo!()
     }
 }

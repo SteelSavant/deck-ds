@@ -1,0 +1,879 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<content>
+    <logflag>0</logflag>
+    <advanced_ppc_logging>false</advanced_ppc_logging>
+    <mlc_path>D:/Games/Emulation/sysdata/cemu/mlc01</mlc_path>
+    <permanent_storage>true</permanent_storage>
+    <language>0</language>
+    <use_discord_presence>false</use_discord_presence>
+    <fullscreen_menubar>false</fullscreen_menubar>
+    <feral_gamemode>false</feral_gamemode>
+    <check_update>true</check_update>
+    <save_screenshot>true</save_screenshot>
+    <vk_warning>false</vk_warning>
+    <gp_download>true</gp_download>
+    <macos_disclaimer>false</macos_disclaimer>
+    <fullscreen>false</fullscreen>
+    <proxy_server></proxy_server>
+    <disable_screensaver>true</disable_screensaver>
+    <console_language>1</console_language>
+    <window_position>
+        <x>-1</x>
+        <y>-1</y>
+    </window_position>
+    <window_size>
+        <x>-1</x>
+        <y>-1</y>
+    </window_size>
+    <window_maximized>false</window_maximized>
+    <open_pad>false</open_pad>
+    <pad_position>
+        <x>-1</x>
+        <y>-1</y>
+    </pad_position>
+    <pad_size>
+        <x>-1</x>
+        <y>-1</y>
+    </pad_size>
+    <pad_maximized>false</pad_maximized>
+    <GameList>
+        <style>0</style>
+        <order>[0, 1, 2, 3, 4, 5, 6, 7]</order>
+        <name_width>161</name_width>
+        <version_width>4294967293</version_width>
+        <dlc_width>4294967293</dlc_width>
+        <game_time_width>4294967293</game_time_width>
+        <game_started_width>4294967293</game_started_width>
+        <region_width>714</region_width>
+    </GameList>
+    <RecentLaunchFiles>
+        <Entry>D:/Downloads/tmp/cemu/Legend of Zelda, The - Twilight Princess HD (USA) (En,Fr,Es) (Rev 2)/GM000500001019E500000000000500</Entry>
+        <Entry>D:/Games/Emulation/roms/wiiu/Games/Hyrule Warriors (US) (v208).wua</Entry>
+        <Entry>D:/Games/Emulation/roms/wiiu/Games/PIKMIN 3 (US) (v96).wua</Entry>
+        <Entry>D:/Games/Emulation/roms/wiiu/System/Mii Maker (US).wua</Entry>
+        <Entry>D:/Games/Emulation/archive/wiiu/Games/Breath of the Wild/Game</Entry>
+        <Entry>D:/Games/Emulation/cemu_work/Games/Affordable Space Adventures</Entry>
+        <Entry>D:/Games/Emulation/cemu_work/Games/Breath of the Wild/Game</Entry>
+        <Entry>D:/Games/Emulation/roms/cemu/Games/Affordable Space Adventures/code/Unity_full.master.rpx</Entry>
+        <Entry>D:/Games/Emulation/roms/cemu/Games/FAST Racing NEO/code/project.rpx</Entry>
+        <Entry>D:/Games/Emulation/roms/cemu/System Applications/Friend List/code/frd.rpx</Entry>
+        <Entry>D:/Games/Emulation/roms/cemu/System Applications/Mii Maker/code/ffl_app.rpx</Entry>
+        <Entry>D:/Games/Emulation/roms/cemu/System Applications/Internet Browser/code/surf.rpx</Entry>
+        <Entry>D:/Games/Emulation/roms/cemu/dumpling/Games/Kirby and the Rainbow Curse/code/seven.rpx</Entry>
+        <Entry>D:/Games/Emulation/roms/cemu/dumpling/Games/Wii Sports Club/code/RequestPatch.rpx</Entry>
+        <Entry>D:/Games/Emulation/roms/cemu/Games/Breath of the Wild/code/U-King.rpx</Entry>
+    </RecentLaunchFiles>
+    <RecentNFCFiles/>
+    <GamePaths>
+        <Entry>D:\Games\Emulation\roms\wiiu</Entry>
+        <Entry>D:\Games\Emulation\archive\wiiu\Games\Breath of the Wild\Game</Entry>
+        <Entry>D:\Downloads\tmp\cemu</Entry>
+    </GamePaths>
+    <GameCache>
+        <Entry>
+            <title_id>1407375153605376</title_id>
+            <name>Affordable Space Adventures</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>17</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Affordable Space Adventures\code\Unity_full.master.rpx</path>
+            <time_played>383</time_played>
+            <last_played>1654129177</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153505792</title_id>
+            <name>BAYONETTA 2</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>0</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\BAYONETTA 2\code\PRJ_010.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153861632</title_id>
+            <name>The Legend of Zelda - Breath of the Wild</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>208</version>
+            <dlc_version>80</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Breath of the Wild\code\U-King.rpx</path>
+            <time_played>456</time_played>
+            <last_played>1652239626</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153375744</title_id>
+            <name>Dr. Luigi</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>0</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Dr Luigi\code\rgm012.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153229824</title_id>
+            <name>FAST Racing NEO</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>65</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\FAST Racing NEO\code\project.rpx</path>
+            <time_played>0</time_played>
+            <last_played>1654129054</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153890816</title_id>
+            <name>Fatal Frame:  - Maiden of Black Water</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>0</version>
+            <dlc_version>16</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Fatal Frame - Maiden of the Black Water\code\lens5_cafe.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153740800</title_id>
+            <name>Kirby and the Rainbow Curse</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>16</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Kirby and the Rainbow Curse\code\seven.rpx</path>
+            <time_played>2</time_played>
+            <last_played>1652311859</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153337088</title_id>
+            <name>Mario vs. Donkey Kong - Tipping Stars</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>0</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Mario vs Donkey Kong Tippin\code\WiiULauncher.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153103104</title_id>
+            <name>Nano Assault Neo</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>17</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Nano Assault Neo\code\project.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153045504</title_id>
+            <name>Nintendo Land</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>32</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Nintendo Land\code\Lunch.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375409941248</title_id>
+            <name>PAPER MARIO Color Splash</name>
+            <custom_name></custom_name>
+            <region>4</region>
+            <version>0</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Paper Mario Color Splash\code\main.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153329920</title_id>
+            <name>Pokémon Rumble U</name>
+            <custom_name></custom_name>
+            <region>6</region>
+            <version>0</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Pokémon Rumble U\code\main.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153504000</title_id>
+            <name>Pushmo World</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>0</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Pushmo World\code\Cotton3.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153519360</title_id>
+            <name>Sonic Boom: - Rise of Lyric</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>16</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Sonic Boom\code\WiiULauncher.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153204992</title_id>
+            <name>SONIC LOST WORLD</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>48</version>
+            <dlc_version>32</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\SONIC LOST WORLD\code\sonic2013.rpx</path>
+            <time_played>27</time_played>
+            <last_played>1652237265</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153522944</title_id>
+            <name>Splatoon</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>272</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Splatoon\code\Gambit.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153818624</title_id>
+            <name>Star Fox Guard</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>16</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Star Fox Guard\code\PRJ_031.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153759232</title_id>
+            <name>Star Fox Zero</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>16</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Star Fox Zero\code\PRJ_030.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153319680</title_id>
+            <name>Super Smash Bros. - for Wii U</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>304</version>
+            <dlc_version>96</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Super Smash Bros\code\cross_f.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153313024</title_id>
+            <name>THE LEGEND OF ZELDA - The Wind Waker HD</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>0</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\The Wind Waker HD\code\cking.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153319168</title_id>
+            <name>Wii Sports Club</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>112</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Wii Sports Club\code\RequestPatch.rpx</path>
+            <time_played>0</time_played>
+            <last_played>1652311648</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153843456</title_id>
+            <name>Xenoblade Chronicles X</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>48</version>
+            <dlc_version>0</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Xenoblade Chronicles X\code\spaceTravel.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153581312</title_id>
+            <name>Yoshi's Woolly World</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>32</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\Yoshi's Woolly World\code\pj023.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407375153093888</title_id>
+            <name>ZombiU</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>16</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\Games\ZombiU\code\LyN-Standalone_f.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407443871777024</title_id>
+            <name>Daily Log</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>53</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\System Applications\Daily Log\code\ply.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407581310517514</title_id>
+            <name>Download Management</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>96</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\System Applications\Download Management\code\scope.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407581310505226</title_id>
+            <name>Friend List</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>121</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\System Applications\Friend List\code\frd.rpx</path>
+            <time_played>15</time_played>
+            <last_played>1654128625</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407581310484746</title_id>
+            <name>HOME Menu</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>197</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\System Applications\HOME Menu\code\hbm.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407581310492938</title_id>
+            <name>Internet Browser</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>258</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\System Applications\Internet Browser\code\surf.rpx</path>
+            <time_played>0</time_played>
+            <last_played>1654128214</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407581310513418</title_id>
+            <name>Manual</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>68</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\System Applications\Manual\code\recipe.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407443871768832</title_id>
+            <name>Mii Maker</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>50</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\System Applications\Mii Maker\code\ffl_app.rpx</path>
+            <time_played>29</time_played>
+            <last_played>1654128606</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407581310501130</title_id>
+            <name>Nintendo eShop</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>131</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\System Applications\Nintendo eShop\code\wave.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407443871760640</title_id>
+            <name>Parental Controls</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>137</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\System Applications\Parental Controls\code\pcl.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407443871756544</title_id>
+            <name>System Settings</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>197</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\System Applications\System Settings\code\set.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+        <Entry>
+            <title_id>1407581310513417</title_id>
+            <name>Wii U Electronic Manual</name>
+            <custom_name></custom_name>
+            <region>2</region>
+            <version>16</version>
+            <dlc_version>-1</dlc_version>
+            <path>D:\Games\Emulation\roms\cemu\System Applications\Wii U Electronic Manual\code\recipe.rpx</path>
+            <time_played>0</time_played>
+            <last_played>0</last_played>
+            <favorite>false</favorite>
+        </Entry>
+    </GameCache>
+    <GraphicPack>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/Bayonetta2/Graphics/rules.txt">
+            <Preset>
+                <category>Resolution</category>
+                <preset>2560x1440</preset>
+            </Preset>
+            <Preset>
+                <category>Shadow Quality</category>
+                <preset>High</preset>
+            </Preset>
+            <Preset>
+                <category>Anisotropic Filtering Quality</category>
+                <preset>16x</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/ZombiU_FOVSetting/rules.txt">
+            <Preset>
+                <preset>Slight FOV increase without breaking framing (0.925)</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/YoshisWoollyWorld_Resolution/rules.txt">
+            <Preset>
+                <preset>2560x1440</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/DrLuigi_!AntiAliasing/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/XenobladeChroniclesX/Mods/GraphicsCameraDistance/rules.txt">
+            <Preset>
+                <preset>Zoom 2</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/Bayonetta2/Mods/60FPSCutscenes/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/WindWakerHD_Resolution/rules.txt">
+            <Preset>
+                <preset>2560x1440</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/XenobladeChroniclesX/Graphics/rules.txt">
+            <Preset>
+                <category>Skell Cockpit Resolution</category>
+                <preset>Ultra (150%)</preset>
+            </Preset>
+            <Preset>
+                <category>Resolution</category>
+                <preset>2560x1440 (2k)</preset>
+            </Preset>
+            <Preset>
+                <category>Shadow Quality</category>
+                <preset>Ultra (300%)</preset>
+            </Preset>
+            <Preset>
+                <category>Post-Processing Effect Quality</category>
+                <preset>Ultra (150%)</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/YoshisWoollyWorld_60fpsMap/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/Bayonetta2/Mods/HighLOD/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/BreathOfTheWild/Workarounds/GrassWorkaround/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/Bayonetta2/Workarounds/DynamicShadows/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/Bayonetta2/Workarounds/Portal/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/NintendoLand_Shadows/rules.txt">
+            <Preset>
+                <preset>Ultra (300%)</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/SonicBoomRiseOfLyric/Mods/DisableIntroLogos/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/BreathOfTheWild/Enhancements/rules.txt">
+            <Preset>
+                <category>Depth Of Field</category>
+                <preset>Enabled</preset>
+            </Preset>
+            <Preset>
+                <category>Clarity</category>
+                <preset>Serfrost's Preset (Recommended)</preset>
+            </Preset>
+            <Preset>
+                <category>Reflections</category>
+                <preset>Enhanced Reflections</preset>
+            </Preset>
+            <Preset>
+                <category>Reflection Range</category>
+                <preset>High (16 samples)</preset>
+            </Preset>
+            <Preset>
+                <category>Anisotropic Filtering</category>
+                <preset>Extreme (16x)</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/ColorSplash_ImprovePerformance/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/SkylandersSwapForce/Workarounds/PortalStabilityFix/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/BreathOfTheWild/Graphics/rules.txt">
+            <Preset>
+                <category>Shadows</category>
+                <preset>High (200%)</preset>
+            </Preset>
+            <Preset>
+                <category>Ultrawide HUD Mode</category>
+                <preset>Edge HUD (Default)</preset>
+            </Preset>
+            <Preset>
+                <category>Aspect Ratio</category>
+                <preset>16:9 (Default)</preset>
+            </Preset>
+            <Preset>
+                <category>Resolution</category>
+                <preset>2560x1440 (2K)</preset>
+            </Preset>
+            <Preset>
+                <category>Shadow Draw Distance</category>
+                <preset>High (Default)</preset>
+            </Preset>
+            <Preset>
+                <category>Anti-Aliasing</category>
+                <preset>Normal FXAA (Default)</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/FatalFrame_60FPS/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/SonicBoomRiseOfLyric/Mods/DisableVersionString/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/WindWakerHD_Shadows/rules.txt">
+            <Preset>
+                <preset>Ultra (300%)</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/BreathOfTheWild/Mods/DrawDistance/rules.txt">
+            <Preset>
+                <category>Texture Distance Detail (LOD)</category>
+                <preset>Normal (Default)</preset>
+            </Preset>
+            <Preset>
+                <category>NPC, Enemies And Other Entities</category>
+                <preset>Medium (1x)</preset>
+            </Preset>
+            <Preset>
+                <category>Terrain, Buildings, Bushes And Other Objects</category>
+                <preset>Medium (1x)</preset>
+            </Preset>
+            <Preset>
+                <category>Trees (2D Billboards)</category>
+                <preset>Medium (Default)</preset>
+            </Preset>
+            <Preset>
+                <category>Grass Blades Density</category>
+                <preset>Medium (Default)</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/SonicLostWorld/Mods/Quickboot/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/BreathOfTheWild/Mods/ExtendedMemory/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/FatalFrameProjectZero_Resolution/rules.txt">
+            <Preset>
+                <preset>2560x1440</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/BreathOfTheWild/Mods/FPS++/rules.txt">
+            <Preset>
+                <category>Fence Type</category>
+                <preset>Performance Fence (Default)</preset>
+            </Preset>
+            <Preset>
+                <category>Mode</category>
+                <preset>Advanced Settings</preset>
+            </Preset>
+            <Preset>
+                <category>FPS Limit</category>
+                <preset>60FPS Limit (Default)</preset>
+            </Preset>
+            <Preset>
+                <category>Framerate Limit</category>
+                <preset>72FPS (ideal for 144Hz displays)</preset>
+            </Preset>
+            <Preset>
+                <category>Cutscene FPS Limit</category>
+                <preset>Automatically Limit In Few Cutscenes (Recommended)</preset>
+            </Preset>
+            <Preset>
+                <category>Debug Options</category>
+                <preset>Disabled (Default)</preset>
+            </Preset>
+            <Preset>
+                <category>Static Mode</category>
+                <preset>Disabled (Default, dynamically adjust game speed)</preset>
+            </Preset>
+            <Preset>
+                <category>Frame Average</category>
+                <preset>8 Frames Averaged (Default)</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/ColorSplash_GreenCharactersTint/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/StarFoxGuard_Resolution/rules.txt">
+            <Preset>
+                <preset>2560x1440</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/ColorSplash_InvisibleCharactersCutoutMode/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/ColorSplash_Resolution/rules.txt">
+            <Preset>
+                <preset>2560x1440</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/DrLuigi_Resolution/rules.txt">
+            <Preset>
+                <preset>2560x1440</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/YoshisWoollyWorld_Shadows/rules.txt">
+            <Preset>
+                <preset>Ultra (300%)</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/FastRacingNeo/Graphics/rules.txt">
+            <Preset>
+                <category>TV Resolution</category>
+                <preset>2560x1440</preset>
+            </Preset>
+            <Preset>
+                <category>Gamepad Resolution</category>
+                <preset>2560x1440</preset>
+            </Preset>
+            <Preset>
+                <category>Anisotropic Filtering Quality</category>
+                <preset>16x</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/SonicLostWorld/Mods/60FPSMultiplayer/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/SonicBoomRiseOfLyric/Mods/FixPauseStateReset/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/XenobladeChroniclesX/Mods/60FPS/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/FastRacingNeo/Mods/StaticFPS/rules.txt">
+            <Preset>
+                <category>FPS Limit</category>
+                <preset>72 FPS</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/XenobladeChroniclesX/Enhancements/FancyFX/rules.txt">
+            <Preset>
+                <preset>1080 -&gt; 1440</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/SuperSmashBros/Graphics/rules.txt">
+            <Preset>
+                <category>Additional Downsampling Resolutions</category>
+                <preset>Disabled</preset>
+            </Preset>
+            <Preset>
+                <category>Shadows</category>
+                <preset>Ultra (300%)</preset>
+            </Preset>
+            <Preset>
+                <category>Aspect Ratio</category>
+                <preset>16:9 (Default)</preset>
+            </Preset>
+            <Preset>
+                <category>Resolution</category>
+                <preset>2560x1440 (2K)</preset>
+            </Preset>
+            <Preset>
+                <category>Anisotropic Filtering</category>
+                <preset>16x</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/NanoAssaultNeo_Resolution/rules.txt">
+            <Preset>
+                <preset>2560x1440</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/NintendoLand_Resolution/rules.txt">
+            <Preset>
+                <preset>2560x1440</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/XenobladeChroniclesX/Mods/GraphicsNpcInfoBubblesDistance/rules.txt"/>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/SonicBoomRiseOfLyric/Graphics/rules.txt">
+            <Preset>
+                <category>TV Resolution</category>
+                <preset>2560x1440</preset>
+            </Preset>
+            <Preset>
+                <category>Gamepad Resolution</category>
+                <preset>2560x1440</preset>
+            </Preset>
+            <Preset>
+                <category>Shadow Quality</category>
+                <preset>Ultra</preset>
+            </Preset>
+            <Preset>
+                <category>Anisotropic Filtering Quality</category>
+                <preset>16x</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/SonicLostWorld/Graphics/rules.txt">
+            <Preset>
+                <category>TV Resolution</category>
+                <preset>2560x1440</preset>
+            </Preset>
+            <Preset>
+                <category>Gamepad Resolution</category>
+                <preset>2560x1440</preset>
+            </Preset>
+            <Preset>
+                <category>Anisotropic Filtering Quality</category>
+                <preset>16x</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/ZombiU_Resolution/rules.txt">
+            <Preset>
+                <preset>2560x1440</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/XenobladeChroniclesX/Enhancements/AntiAliasing/rules.txt">
+            <Preset>
+                <preset>Enable Native AA</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/XenobladeChroniclesX/Enhancements/NegativeLOD/rules.txt">
+            <Preset>
+                <preset>LOD -0.5 (Sharper)</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/StarFoxZero_Resolution/rules.txt">
+            <Preset>
+                <preset>2560x1440</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/XenobladeChroniclesX/Mods/FOVSetting/rules.txt">
+            <Preset>
+                <preset>Slight FOV increase without breaking framing (0.925)</preset>
+            </Preset>
+        </Entry>
+        <Entry filename="graphicPacks/downloadedGraphicPacks/XenobladeChroniclesX/Mods/HideOfflineLabel/rules.txt"/>
+    </GraphicPack>
+    <Graphic>
+        <api>1</api>
+        <device>00000000030000000000000000000000</device>
+        <VSync>0</VSync>
+        <GX2DrawdoneSync>true</GX2DrawdoneSync>
+        <UpscaleFilter>1</UpscaleFilter>
+        <DownscaleFilter>0</DownscaleFilter>
+        <FullscreenScaling>0</FullscreenScaling>
+        <AsyncCompile>false</AsyncCompile>
+        <vkAccurateBarriers>true</vkAccurateBarriers>
+        <Overlay>
+            <Position>0</Position>
+            <TextColor>4294967295</TextColor>
+            <TextScale>100</TextScale>
+            <FPS>false</FPS>
+            <DrawCalls>false</DrawCalls>
+            <CPUUsage>false</CPUUsage>
+            <CPUPerCoreUsage>false</CPUPerCoreUsage>
+            <RAMUsage>false</RAMUsage>
+            <VRAMUsage>false</VRAMUsage>
+            <Debug>false</Debug>
+        </Overlay>
+        <Notification>
+            <Position>1</Position>
+            <TextColor>4294967295</TextColor>
+            <TextScale>100</TextScale>
+            <ControllerProfiles>true</ControllerProfiles>
+            <ControllerBattery>false</ControllerBattery>
+            <ShaderCompiling>true</ShaderCompiling>
+            <FriendService>true</FriendService>
+        </Notification>
+    </Graphic>
+    <Audio>
+        <api>0</api>
+        <delay>2</delay>
+        <TVChannels>2</TVChannels>
+        <PadChannels>1</PadChannels>
+        <InputChannels>0</InputChannels>
+        <TVVolume>50</TVVolume>
+        <PadVolume>0</PadVolume>
+        <InputVolume>20</InputVolume>
+        <TVDevice>default</TVDevice>
+        <PadDevice></PadDevice>
+        <InputDevice></InputDevice>
+    </Audio>
+    <Account>
+        <PersistentId>2147483649</PersistentId>
+        <OnlineEnabled>true</OnlineEnabled>
+        <ActiveService>0</ActiveService>
+    </Account>
+    <Debug>
+        <CrashDumpWindows>0</CrashDumpWindows>
+        <GDBPort>1337</GDBPort>
+    </Debug>
+    <Input>
+        <DSUC host="127.0.0.1" port="26760"/>
+    </Input>
+</content>

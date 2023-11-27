@@ -48,12 +48,12 @@ impl Settings {
                     vec!["NDS".to_string(), "nds".to_string()],
                     HashMap::from_iter([
                         (PipelineTarget::Desktop, Selection::AllOf(vec![
-                            Enabled::force(PipelineActionId::new("core:melonds:layout")),
+                            Enabled::force(PipelineActionId::new("core:melonds:config")),
                             Enabled::force(PipelineActionId::new("core:display:display_config")),
                             Enabled::force(PipelineActionId::new("core:display:virtual_screen"))
                         ])),
                         (PipelineTarget::Gamemode, Selection::AllOf(vec![
-                            Enabled::force(PipelineActionId::new("core:melonds:layout")),
+                            Enabled::force(PipelineActionId::new("core:melonds:config")),
                         ]))
                     ]),
                 )
@@ -68,12 +68,12 @@ impl Settings {
                     vec!["3DS".to_string(),"3ds".to_string()],
                     HashMap::from_iter([
                         (PipelineTarget::Desktop, Selection::AllOf(vec![
-                            Enabled::force(PipelineActionId::new("core:citra:layout")),
+                            Enabled::force(PipelineActionId::new("core:citra:config")),
                             Enabled::force(PipelineActionId::new("core:display:display_config")),
                             Enabled::force(PipelineActionId::new("core:display:multi_window"))
                         ])),
                         (PipelineTarget::Gamemode, Selection::AllOf(vec![
-                            Enabled::force(PipelineActionId::new("core:citra:layout")),
+                            Enabled::force(PipelineActionId::new("core:citra:config")),
                         ]))
                     ]),
                 )
@@ -89,13 +89,13 @@ impl Settings {
                     HashMap::from_iter([
                         (PipelineTarget::Desktop,
                             Selection::AllOf(vec![
-                                Enabled::force(PipelineActionId::new("core:cemu:layout")),
+                                Enabled::force(PipelineActionId::new("core:cemu:config")),
                                 Enabled::force(PipelineActionId::new("core:display:display_config")),
                                 Enabled::force(PipelineActionId::new("core:display:multi_window"))
                         ])),
                         (PipelineTarget::Gamemode,
                             Selection::AllOf(vec![
-                                Enabled::force(PipelineActionId::new("core:cemu:layout"))
+                                Enabled::force(PipelineActionId::new("core:cemu:config"))
                         ]))
                     ]),
                 )
