@@ -3,11 +3,12 @@ use super::{
         cemu_layout::CemuLayout,
         citra_layout::{CitraLayout, CitraLayoutOption},
         display_config::{DisplayConfig, RelativeLocation, TeardownExternalSettings},
+        melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
         multi_window::MultiWindow,
         source_file::SourceFile,
-        virtual_screen::VirtualScreen, melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
+        virtual_screen::VirtualScreen,
     },
-    data::{PipelineActionDefinition, PipelineActionId, PipelineTarget, Selection, Enabled},
+    data::{Enabled, PipelineActionDefinition, PipelineActionId, PipelineTarget, Selection},
 };
 use std::{collections::HashMap, path::PathBuf, str::FromStr, sync::Arc};
 
@@ -280,7 +281,6 @@ impl PipelineActionRegistarBuilder {
                         description: Some("Edits Cemu settings.xml file to desired settings.".to_string()),
                         selection: CemuLayout {
                             separate_gamepad_view: true,
-                            swap_screens: false,
                         }.into(),
                     }).with_action("layout",  Some(PipelineTarget::Gamemode),    PipelineActionDefinition {
                         id: PipelineActionId::new(""),
@@ -288,7 +288,6 @@ impl PipelineActionRegistarBuilder {
                         description: Some("Edits Cemu settings.xml file to desired settings.".to_string()),
                         selection: CemuLayout {
                             separate_gamepad_view: false,
-                            swap_screens: false
                         }.into(),
                     })
                 })
@@ -330,7 +329,7 @@ impl PipelineActionRegistarBuilder {
                         selection: MelonDSLayout {
                             layout_option: MelonDSLayoutOption::Vertical,
                             sizing_option: MelonDSSizingOption::Even,
-                            book_mode: false,  
+                            book_mode: false,
                             swap_screens: false,
                         }.into(),
                     }).with_action("layout", Some(PipelineTarget::Gamemode),    PipelineActionDefinition {
@@ -340,7 +339,7 @@ impl PipelineActionRegistarBuilder {
                         selection: MelonDSLayout {
                             layout_option: MelonDSLayoutOption::Hybrid,
                             sizing_option: MelonDSSizingOption::Even,
-                            book_mode: false,  
+                            book_mode: false,
                             swap_screens: false,
                         }.into(),
                     })

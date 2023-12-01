@@ -3,12 +3,12 @@ use std::path::Path;
 use crate::pipeline::executor::PipelineContext;
 
 use super::{source_file::SourceFile, ActionImpl};
-use anyhow::{Context, Result};
-use ini::Ini;
+use anyhow::{anyhow, Context, Result};
+use configparser::ini::Ini;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "type", content = "value")]
 pub enum CitraLayoutOption {
     Default,         // 0
@@ -17,11 +17,11 @@ pub enum CitraLayoutOption {
     SideBySide,      // 3
     SeparateWindows, // 4
     HybridScreen,    // 5
-    Unknown(u8),
+    Unknown(u64),
 }
 
 impl CitraLayoutOption {
-    fn from_raw(raw: u8) -> Self {
+    fn from_raw(raw: u64) -> Self {
         match raw {
             0 => CitraLayoutOption::Default,
             1 => CitraLayoutOption::SingleScreen,
@@ -33,7 +33,7 @@ impl CitraLayoutOption {
         }
     }
 
-    fn raw(&self) -> u8 {
+    fn raw(&self) -> u64 {
         match self {
             CitraLayoutOption::Default => 0,
             CitraLayoutOption::SingleScreen => 1,
@@ -46,7 +46,7 @@ impl CitraLayoutOption {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
 pub struct CitraLayout {
     pub layout_option: CitraLayoutOption,
     pub swap_screens: bool,
@@ -54,36 +54,51 @@ pub struct CitraLayout {
 
 impl CitraLayout {
     fn read<P: AsRef<Path>>(ini_path: P) -> Result<Self> {
-        let mut ini = Ini::load_from_file(ini_path)?;
+        let mut ini = Ini::new();
+        ini.load(&ini_path).map_err(|err| {
+            anyhow!(
+                "failed to load ini at {}: {err}",
+                ini_path.as_ref().display()
+            )
+        })?;
 
         // TODO::the Ini lib fails to load Citra's ini properly. Handle necessary fields with regex instead
+        let layout = "Layout";
 
-        let layout_section = ini
-            .section_mut(Some("Layout"))
-            .expect("Layout section should exist");
-
-        let layout = layout_section
-            .get("layout_option")
-            .expect("layout_option should exist");
-
-        let raw = layout.parse()?;
+        let raw_layout = ini
+            .getuint(layout, "layout_option")
+            .map_err(|err| anyhow!(err))?
+            .with_context(|| "key 'layout_option' not found")?;
+        let swap_screens = ini
+            .getbool(layout, "swap_screen")
+            .map_err(|err| anyhow!(err))?
+            .with_context(|| "key 'swap_screen' not found")?;
 
         Ok(CitraLayout {
-            layout_option: CitraLayoutOption::from_raw(raw),
-            swap_screens: false, // TODO
+            layout_option: CitraLayoutOption::from_raw(raw_layout),
+            swap_screens,
         })
     }
 
     fn write<P: AsRef<Path>>(&self, ini_path: P) -> Result<()> {
-        let mut ini = Ini::load_from_file(&ini_path)?;
+        let mut ini = Ini::new();
+        ini.load(&ini_path).map_err(|err| {
+            anyhow!(
+                "failed to load ini at {}: {err}",
+                ini_path.as_ref().display()
+            )
+        })?;
 
-        let layout_section = ini
-            .section_mut(Some("Layout"))
-            .expect("Layout section should exist");
+        let layout = "Layout";
 
-        layout_section.insert("layout_option", self.layout_option.raw().to_string());
+        ini.set(
+            layout,
+            "layout_option",
+            Some(self.layout_option.raw().to_string()),
+        );
+        ini.set(layout, "swap_screen", Some(self.swap_screens.to_string()));
 
-        Ok(ini.write_to_file(ini_path)?)
+        Ok(ini.write(ini_path)?)
     }
 }
 
@@ -130,13 +145,41 @@ impl ActionImpl for CitraLayout {
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn test_read_citra_layout() {
-        todo!()
-    }
+    use std::path::PathBuf;
+
+    use crate::util::create_dir_all;
+
+    use super::*;
 
     #[test]
-    fn test_write_citra_layout() {
-        todo!()
+    fn test_read_write_citra_layout() -> Result<()> {
+        let source_path = "test/assets/citra/qt-config.ini";
+        let source = std::fs::read_to_string(source_path)?;
+        let path = PathBuf::from("test/out/citra/qt-config.ini");
+        create_dir_all(path.parent().unwrap())?;
+
+        std::fs::write(&path, source)?;
+
+        let expected = CitraLayout {
+            layout_option: CitraLayoutOption::Default,
+            swap_screens: false,
+        };
+        let actual = CitraLayout::read(&path)?;
+
+        assert_eq!(expected, actual);
+
+        let expected = CitraLayout {
+            layout_option: CitraLayoutOption::SeparateWindows,
+            swap_screens: true,
+        };
+
+        expected.write(&path)?;
+
+        let actual = CitraLayout::read(&path)?;
+
+        assert_eq!(expected, actual);
+
+        std::fs::remove_file(path)?;
+        Ok(())
     }
 }

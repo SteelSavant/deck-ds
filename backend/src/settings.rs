@@ -307,7 +307,7 @@ Type=Application";
 
     #[test]
     fn test_profile_crud() -> Result<()> {
-        let settings = Settings::new(Path::new("test/.config/deck-ds"));
+        let settings = Settings::new(Path::new("test/out/.config/deck-ds"));
 
         let mut expected = Profile {
             id: ProfileId::from_uuid(uuid::Uuid::nil()),
@@ -352,7 +352,7 @@ Type=Application";
 
     #[test]
     fn test_app_crud() -> Result<()> {
-        let settings = Settings::new(Path::new("test/.config/deck-ds"));
+        let settings = Settings::new(Path::new("test/out/.config/deck-ds"));
 
         let mut expected = App {
             id: AppId("test_app".to_string()),
