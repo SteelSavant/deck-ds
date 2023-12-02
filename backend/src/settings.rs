@@ -311,7 +311,7 @@ mod tests {
         let settings = Settings::new(
             Path::new("$HOME/homebrew/plugins")
                 .join(PACKAGE_NAME)
-                .join("/bin/backend"),
+                .join("bin/backend"),
             Path::new("$HOME/.config").join(PACKAGE_NAME),
             Path::new("$HOME/.config/autostart").to_path_buf(),
         );
@@ -319,8 +319,8 @@ mod tests {
         let actual = settings.create_desktop_contents();
         let expected = r"[Desktop Entry]
 Comment=Runs DeckDS plugin autostart script for dual screen applications.
-Exec=$HOME/homebrew/plugins/deck-ds/bin/backend autostart
-Path=$HOME/homebrew/plugins/deck-ds/bin
+Exec=$HOME/homebrew/plugins/DeckDS/bin/backend autostart
+Path=$HOME/homebrew/plugins/DeckDS/bin
 Name=DeckDS
 Type=Application";
 

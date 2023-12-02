@@ -396,9 +396,11 @@ impl Selection<WrappedPipelineAction> {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use anyhow::Ok;
 
-    use crate::pipeline::action::virtual_screen::VirtualScreen;
+    use crate::{pipeline::action::virtual_screen::VirtualScreen, settings::Settings};
 
     use super::*;
 
@@ -453,8 +455,26 @@ mod tests {
         Ok(())
     }
 
-    // let profile = ProfileAction {
-    //     profile: ProfileId::from_uuid(Uuid::nil()),
-    //     action: PipelineActionId::new("test:id:action"),
-    // };
+    #[test]
+    fn test_template_reification() {
+        let settings = Settings::new(
+            Path::new("$HOME/homebrew/plugins/deck-ds/bin/backend"),
+            Path::new("$HOME/.config/deck-ds"),
+            Path::new("$HOME/.config/autostart"),
+        );
+
+        let registrar = PipelineActionRegistrar::builder().with_core().build();
+
+        let res: Vec<_> = settings
+            .get_templates()
+            .into_iter()
+            .map(|t| t.pipeline.clone().reify(&registrar))
+            .collect();
+
+        for p in res {
+            if let Err(err) = p {
+                panic!("{err}");
+            }
+        }
+    }
 }

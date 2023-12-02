@@ -29,9 +29,8 @@ impl PipelineActionRegistrar {
         id: &PipelineActionId,
         target: PipelineTarget,
     ) -> Option<&PipelineActionDefinition> {
-        self.actions
-            .get(&id.variant(target))
-            .or_else(|| self.actions.get(id))
+        let variant = id.variant(target);
+        self.actions.get(&variant).or_else(|| self.actions.get(id))
     }
 
     pub fn all(&self) -> Arc<HashMap<PipelineActionId, PipelineActionDefinition>> {
@@ -83,7 +82,7 @@ mod internal {
 
     #[derive(Debug, Default)]
     pub struct GroupScopeBuilder {
-        actions: HashMap<String, (Option<PipelineTarget>, PipelineActionDefinition)>,
+        actions: HashMap<(String, Option<PipelineTarget>), PipelineActionDefinition>,
     }
 
     impl GroupScopeBuilder {
@@ -93,14 +92,14 @@ mod internal {
             target: Option<PipelineTarget>,
             action: PipelineActionDefinition,
         ) -> Self {
-            self.actions.insert(name.to_string(), (target, action));
+            self.actions.insert((name.to_string(), target), action);
             self
         }
 
         fn build(self) -> HashMap<String, PipelineActionDefinition> {
             self.actions
                 .into_iter()
-                .map(|(k, (t, v))| {
+                .map(|((k, t), v)| {
                     let id = match t {
                         Some(t) => PipelineActionId::new(&k).variant(t).raw().to_string(),
                         None => k,
@@ -336,5 +335,22 @@ impl PipelineActionRegistarBuilder {
                     })
                 })
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::PipelineActionRegistrar;
+
+    #[test]
+    fn test_action_count() {
+        assert_eq!(
+            PipelineActionRegistrar::builder()
+                .with_core()
+                .build()
+                .actions
+                .len(),
+            22
+        );
     }
 }
