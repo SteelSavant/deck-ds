@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "decky-frontend-lib": "^3.23.1",
+    "lodash": "^4.17.21",
     "react-icons": "^4.10.1",
     "usdpl-front": "file:src/usdpl_front"
   },

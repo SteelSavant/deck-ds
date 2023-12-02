@@ -1,26 +1,53 @@
-import { Field, Toggle } from "decky-frontend-lib";
+import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
 import { ReactElement } from "react";
 import { FaLink } from "react-icons/fa";
 import { Action, ActionEnabled, ActionSelection, OneOf, PipelineAction } from "../../backend";
 
-export default function Pipeline({ root, }: { root: ActionSelection }): ReactElement {
-    return buildSelection(root, 0)
+type ActionUpdate = (args: {
+    id: string,
+    value: Action
+}) => void;
+
+type OneOfUpdate = (args:
+    {
+        id: string,
+        selection: string
+    }) => void;
+
+interface Updates {
+    action: ActionUpdate,
+    oneOf: OneOfUpdate,
+}
+
+export default function Pipeline({ root, updateAction, updateOneOf, }: {
+    root: ActionSelection,
+    updateAction: ActionUpdate,
+    updateOneOf: OneOfUpdate
+}): ReactElement {
+    return <DialogBody>
+        <DialogControlsSection>
+            {buildSelection('root', root, {
+                action: updateAction,
+                oneOf: updateOneOf
+            }, 0)}
+        </DialogControlsSection>
+    </DialogBody>
 }
 
 const paddingIncr = 30;
 
-function buildSelection(selection: ActionSelection, depth: number): ReactElement {
+function buildSelection(id: string, selection: ActionSelection, updates: Updates, depth: number): ReactElement {
     switch (selection.type) {
         case "Action":
-            return buildAction(selection.value, depth);
+            return buildAction(id, selection.value, updates, depth);
         case "OneOf":
-            return buildOneOf(selection.value, depth);
+            return buildOneOf(id, selection.value, updates, depth);
         case "AllOf":
-            return buildAllOf(selection.value, depth);
+            return buildAllOf(selection.value, updates, depth);
     }
 }
 
-function buildAction(action: Action, depth: number): ReactElement {
+function buildAction(id: string, action: Action, updates: Updates, depth: number): ReactElement {
     return (
         <div style={{
             paddingLeft: `${depth * paddingIncr}px`
@@ -30,21 +57,19 @@ function buildAction(action: Action, depth: number): ReactElement {
     )
 }
 
-function buildOneOf(oneOf: OneOf, depth: number): ReactElement {
+function buildOneOf(id: string, oneOf: OneOf, updates: Updates, depth: number): ReactElement {
     const action = oneOf.actions.find((a) => a.id === oneOf.selection)!;
     return (
         <div style={{
             paddingLeft: `${depth * paddingIncr}px`
         }}>
-            <Field focusable={true} label={action.name} description={action.description} >
-                {displayLinked(action)}
-            </Field>
-            {buildSelection(action.selection, depth)}
+            <Field focusable={false} label={labelAction(action)} description={action.description} />
+            {buildSelection(action.id, action.selection, updates, 0)}
         </div>
     )
 }
 
-function buildAllOf(allOf: ActionEnabled[], depth: number): ReactElement {
+function buildAllOf(allOf: ActionEnabled[], updates: Updates, depth: number): ReactElement {
     return (
         <div style={{
             paddingLeft: `${depth * paddingIncr}px`
@@ -53,16 +78,34 @@ function buildAllOf(allOf: ActionEnabled[], depth: number): ReactElement {
                 allOf.map((enabled) => {
                     const action = enabled.selection;
                     const isEnabled = enabled.enabled;
+                    const selection = action.selection;
+
+                    const forcedEnabled = isEnabled === null || isEnabled === undefined;
                     return (
-                        <div>
-                            <Field focusable={true} label={action.name} description={action.description} >
-                                {displayLinked(action)}
-                                {isEnabled === null || isEnabled === undefined
-                                    ? <div />
-                                    : <Toggle value={isEnabled} />
-                                }
+                        <div style={{ flexDirection: 'row' }}>
+                            <Field focusable={forcedEnabled && selection.type !== 'OneOf'} label={labelAction(action)} description={action.description}>
+                                <div style={{ paddingRight: '10px' }}>
+                                    {
+                                        forcedEnabled ? <div />
+                                            : <Focusable>
+                                                <Toggle value={isEnabled} />
+                                            </Focusable>
+                                    }
+                                    {
+                                        selection.type === 'OneOf' ?
+                                            <Focusable >
+                                                <Dropdown selectedOption={selection.value.selection} rgOptions={selection.value.actions.map((a) => {
+                                                    return {
+                                                        label: a.name,
+                                                        data: a.id
+                                                    }
+                                                })} />
+                                            </Focusable>
+                                            : <div />
+                                    }
+                                </div>
                             </Field>
-                            {buildSelection(action.selection, depth + 1)}
+                            {buildSelection(action.id, action.selection, updates, depth + 1)}
                         </div>
                     )
                 })}
@@ -71,10 +114,13 @@ function buildAllOf(allOf: ActionEnabled[], depth: number): ReactElement {
 }
 
 
-function displayLinked(action: PipelineAction): ReactElement {
-    return action.id.split(':').length === 3 && action.selection.type !== 'AllOf' ?
+function labelAction(action: PipelineAction): ReactElement {
+    return action.id.split(':').length === 3 && action.selection.type !== 'AllOf' ? <div>
+        {action.name}
         <FaLink style={{
-            padding: '15px'
+            paddingLeft: '10px',
+            paddingRight: '10px'
         }} />
-        : <div />
+    </div>
+        : <p>{action.name}</p>
 }

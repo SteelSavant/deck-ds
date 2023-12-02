@@ -13,8 +13,6 @@ export default function TemplatePreviewRoute(): ReactElement {
 
     const template = useTemplate(templateid);
 
-
-
     return <HandleLoading
         value={template}
         onOk={
@@ -22,6 +20,8 @@ export default function TemplatePreviewRoute(): ReactElement {
                 if (template === undefined) {
                     return <div> Template {templateid} does not exist!</div>;
                 } else {
+                    const [templateView, setTemplateView] = useState(template);
+
                     interface KeyValue {
                         target: string,
                         root: ActionSelection,
@@ -30,10 +30,10 @@ export default function TemplatePreviewRoute(): ReactElement {
                     const defaultTargets: KeyValue[] = [];
                     const extraTargets: KeyValue[] = [] // no real intention of actually supporting extra targets, but...
 
-                    for (const key in template.pipeline.targets) {
+                    for (const key in templateView.pipeline.targets) {
                         const value: KeyValue = {
                             target: key,
-                            root: template.pipeline.targets[key],
+                            root: templateView.pipeline.targets[key],
                         };
 
                         if (key === 'Gamemode') {
@@ -51,19 +51,19 @@ export default function TemplatePreviewRoute(): ReactElement {
                     const tabs = [
                         {
                             title: "Info",
-                            content: <TemplateInfo template={template} />,
+                            content: <TemplateInfo template={templateView} />,
                             id: "info",
                         },
                         ...allTargets.map((kv) => {
                             return {
                                 title: kv.target,
-                                content: <Pipeline root={kv.root} />,
+                                content: <Pipeline root={kv.root} updateAction={(_) => { }} updateOneOf={(_) => { }} />,
                                 id: kv.target.toLowerCase(),
                             };
                         }),
                     ];
 
-                    console.log(`Creating ${template.pipeline.name} pipeline tags:`, tabs);
+                    console.log(`Creating ${templateView.pipeline.name} pipeline tags:`, tabs);
 
                     return <Focusable style={{ minWidth: "100%", minHeight: "100%" }}>
                         <div
