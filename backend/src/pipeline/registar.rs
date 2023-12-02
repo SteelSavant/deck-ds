@@ -5,12 +5,12 @@ use super::{
         display_config::{DisplayConfig, RelativeLocation, TeardownExternalSettings},
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
         multi_window::MultiWindow,
-        source_file::SourceFile,
+        source_file::{EmuDeckSource, FlatpakSource, SourceFile},
         virtual_screen::VirtualScreen,
     },
     data::{Enabled, PipelineActionDefinition, PipelineActionId, PipelineTarget, Selection},
 };
-use std::{collections::HashMap, path::PathBuf, str::FromStr, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
 use self::internal::{PipelineActionRegistarBuilder, PluginScopeBuilder};
 
@@ -212,7 +212,7 @@ impl PipelineActionRegistarBuilder {
                         id: PipelineActionId::new(""),
                         name: "Flatpak Settings".to_string(),
                         description: Some("Sets the settings INI file location to the default Flatpak location.".to_string()),
-                        selection: SourceFile::Known(PathBuf::from_str("$HOME/.var/app/org.citra_emu.citra/config/citra-emu/qt-config.ini").expect("path should be valid")) .into(),
+                        selection:SourceFile::Flatpak(FlatpakSource::Citra).into(),
                     })
                     .with_action("custom_source", None, PipelineActionDefinition {
                         id: PipelineActionId::new(""),
@@ -262,13 +262,13 @@ impl PipelineActionRegistarBuilder {
                         id: PipelineActionId::new(""),
                         name: "Flatpak Settings".to_string(),
                         description: Some("Sets the settings INI file location to the default Flatpak location.".to_string()),
-                        selection: SourceFile::Known(PathBuf::from_str("$HOME/.var/app/info.cemu.Cemu/config/Cemu/settings.xml").expect("path should be valid")) .into(),
+                        selection:SourceFile::Flatpak(FlatpakSource::Cemu).into(),
                     })
                     .with_action("emudeck_proton_source", None, PipelineActionDefinition {
                         id: PipelineActionId::new(""),
                         name: "EmuDeck (Proton) Settings".to_string(),
                         description: Some("Sets the settings INI file location to the default EmuDeck (Proton) location.".to_string()),
-                        selection: SourceFile::Known(PathBuf::from_str("$HOME/Emulation/roms/wiiu/settings.xml").expect("path should be valid")) .into(),
+                        selection:SourceFile::EmuDeck(EmuDeckSource::CemuProton).into(),
                     })
                     .with_action("custom_source", None, PipelineActionDefinition {
                         id: PipelineActionId::new(""),
@@ -314,7 +314,7 @@ impl PipelineActionRegistarBuilder {
                         id: PipelineActionId::new(""),
                         name: "Flatpak Settings".to_string(),
                         description: Some("Sets the settings INI file location to the default Flatpak location.".to_string()),
-                        selection: SourceFile::Known(PathBuf::from_str("$HOME/.var/app/net.kuribo64.melonDS/config/melonDS/melonDS.ini").expect("path should be valid")) .into(),
+                        selection: SourceFile::Flatpak(FlatpakSource::MelonDS).into(),
                     })
                     .with_action("custom_source", None, PipelineActionDefinition {
                         id: PipelineActionId::new(""),

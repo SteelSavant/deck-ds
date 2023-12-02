@@ -291,7 +291,7 @@ impl Action {
     fn exec(&self, ctx: &mut PipelineContext, action: ActionType) -> Result<()> {
         match action {
             ActionType::Dependencies => {
-                let deps = self.get_dependencies();
+                let deps = self.get_dependencies(ctx);
 
                 for d in deps {
                     d.verify_or_install(ctx)?;

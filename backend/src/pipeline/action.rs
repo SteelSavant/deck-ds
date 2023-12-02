@@ -34,7 +34,7 @@ pub trait ActionImpl: DeserializeOwned + Serialize {
         Ok(())
     }
 
-    fn get_dependencies(&self) -> Vec<Dependency> {
+    fn get_dependencies(&self, _ctx: &mut PipelineContext) -> Vec<Dependency> {
         // default to no dependencies
         vec![]
     }
@@ -44,7 +44,7 @@ pub trait ActionImpl: DeserializeOwned + Serialize {
 pub trait ErasedPipelineAction {
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()>;
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()>;
-    fn get_dependencies(&self) -> Vec<Dependency>;
+    fn get_dependencies(&self, ctx: &mut PipelineContext) -> Vec<Dependency>;
     fn get_schema(&self) -> RootSchema;
 }
 
@@ -60,8 +60,8 @@ where
         self.teardown(ctx)
     }
 
-    fn get_dependencies(&self) -> Vec<Dependency> {
-        self.get_dependencies()
+    fn get_dependencies(&self, ctx: &mut PipelineContext) -> Vec<Dependency> {
+        self.get_dependencies(ctx)
     }
 
     fn get_schema(&self) -> RootSchema {

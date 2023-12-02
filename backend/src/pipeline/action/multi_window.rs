@@ -33,7 +33,7 @@ impl ActionImpl for MultiWindow {
         Ok(())
     }
 
-    fn get_dependencies(&self) -> Vec<Dependency> {
+    fn get_dependencies(&self, _ctx: &mut PipelineContext) -> Vec<Dependency> {
         vec![Dependency::KwinScript(
             "emulatorwindowing-v1.0.kwinscript".to_string(),
         )]
