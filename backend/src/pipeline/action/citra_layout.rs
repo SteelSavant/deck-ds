@@ -126,10 +126,7 @@ impl ActionImpl for CitraLayout {
         };
 
         self.write(&ini_path).map(|_| {
-            ctx.set_state::<Self>(internal::CitraState {
-                ini_path: ini_path,
-                layout,
-            });
+            ctx.set_state::<Self>(internal::CitraState { ini_path, layout });
         })
     }
 

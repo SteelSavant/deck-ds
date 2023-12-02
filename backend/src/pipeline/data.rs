@@ -234,39 +234,39 @@ impl From<ProfileAction> for WrappedPipelineActionOrProfile {
 // Reification
 
 pub trait ReifiablePipeline<E> {
-    fn reify(self, external: &E) -> Result<ActionPipeline>;
+    fn reify(&self, external: &E) -> Result<ActionPipeline>;
 }
 
 pub trait ReifiableSelection<T, E> {
     fn reify(
-        self,
+        &self,
         target: PipelineTarget,
         external: &E,
     ) -> Result<Selection<WrappedPipelineAction>>;
 }
 
 pub trait ReifiablePipelineAction<E> {
-    fn reify(self, target: PipelineTarget, external: &E) -> Result<WrappedPipelineAction>;
+    fn reify(&self, target: PipelineTarget, external: &E) -> Result<WrappedPipelineAction>;
 }
 
 impl<T, E> ReifiablePipeline<E> for PipelineImpl<T>
 where
     T: ReifiablePipelineAction<E> + Clone,
 {
-    fn reify(self, external: &E) -> Result<ActionPipeline> {
+    fn reify(&self, external: &E) -> Result<ActionPipeline> {
         let targets = self
             .targets
             .iter()
-            .map(|(t, s)| s.clone().reify(*t, external).map(|s| (*t, s)))
+            .map(|(t, s)| s.reify(*t, external).map(|s| (*t, s)))
             .collect::<Result<Vec<_>>>()?
             .into_iter()
             .collect::<HashMap<_, _>>();
 
         Ok(ActionPipeline {
-            name: self.name,
-            description: self.description,
-            tags: self.tags,
-            targets: targets,
+            name: self.name.clone(),
+            description: self.description.clone(),
+            tags: self.tags.clone(),
+            targets,
         })
     }
 }
@@ -276,7 +276,7 @@ where
     T: ReifiablePipelineAction<E> + Clone,
 {
     fn reify(
-        self,
+        &self,
         target: PipelineTarget,
         external: &E,
     ) -> Result<Selection<WrappedPipelineAction>> {
@@ -286,7 +286,7 @@ where
                 selection: selection.clone(),
                 actions: actions
                     .iter()
-                    .map(|a| a.clone().reify(target, external).map(|a| a.into()))
+                    .map(|a| a.reify(target, external))
                     .collect::<Result<Vec<WrappedPipelineAction>>>()?,
             }),
             Selection::AllOf(actions) => actions
@@ -297,11 +297,11 @@ where
                         .reify(target, external)
                         .map(|selection| Enabled {
                             enabled: a.enabled,
-                            selection: selection.into(),
+                            selection,
                         })
                 })
                 .collect::<Result<_>>()
-                .map(|a| Selection::AllOf(a).into()),
+                .map(Selection::AllOf),
         }
     }
 }
@@ -310,21 +310,27 @@ impl<T, E> ReifiablePipelineAction<E> for PipelineActionImpl<T>
 where
     T: ReifiablePipelineAction<E> + Clone,
 {
-    fn reify(self, target: PipelineTarget, external: &E) -> Result<WrappedPipelineAction> {
+    fn reify(&self, target: PipelineTarget, external: &E) -> Result<WrappedPipelineAction> {
         let selection = self.selection.reify(target, external)?;
 
-        Ok(PipelineAction::new(self.id, self.name, self.description, selection).into())
+        Ok(PipelineAction::new(
+            self.id.clone(),
+            self.name.clone(),
+            self.description.clone(),
+            selection,
+        )
+        .into())
     }
 }
 
 impl ReifiablePipelineAction<PipelineActionRegistrar> for PipelineActionId {
     fn reify(
-        self,
+        &self,
         target: PipelineTarget,
         external: &PipelineActionRegistrar,
     ) -> Result<WrappedPipelineAction> {
         external
-            .get(&self, target)
+            .get(self, target)
             .ok_or(anyhow::anyhow!(
                 "Could not find action: {self:?} for target {target}"
             ))
@@ -333,9 +339,13 @@ impl ReifiablePipelineAction<PipelineActionRegistrar> for PipelineActionId {
 }
 
 impl ReifiablePipelineAction<&[Profile]> for WrappedPipelineActionOrProfile {
-    fn reify(self, target: PipelineTarget, external: &&[Profile]) -> Result<WrappedPipelineAction> {
-        match self.item {
-            Either::Left(action) => Ok(action.clone().into()),
+    fn reify(
+        &self,
+        target: PipelineTarget,
+        external: &&[Profile],
+    ) -> Result<WrappedPipelineAction> {
+        match &self.item {
+            Either::Left(action) => Ok(action.clone()),
             Either::Right(action) => external
                 .iter()
                 .find(|p| p.id == action.profile)

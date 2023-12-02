@@ -53,7 +53,7 @@ impl ActionImpl for CemuLayout {
                 .get_state::<SourceFile>()
                 .with_context(|| "No source file set for Cemu settings")?;
 
-            (xml_path, CemuLayout::read(&xml_path)?)
+            (xml_path, CemuLayout::read(xml_path)?)
         };
 
         self.write(xml_path).map(|_| {

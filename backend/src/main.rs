@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use include_dir::{include_dir, Dir};
 use std::{
     env,

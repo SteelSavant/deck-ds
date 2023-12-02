@@ -63,12 +63,12 @@ impl LoadedAutoStart {
 
     // TODO::teardown leftover
 
-    pub fn build_executor<'a>(
+    pub fn build_executor(
         self,
-        assets_manager: AssetManager<'a>,
+        assets_manager: AssetManager,
         home_dir: PathBuf,
         config_dir: PathBuf,
-    ) -> Result<PipelineExecutor<'a>> {
+    ) -> Result<PipelineExecutor> {
         let settings = self
             .settings
             .lock()

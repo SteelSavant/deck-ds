@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::Result;
 use schemars::JsonSchema;
 use serde::Deserialize;
 
@@ -38,7 +38,7 @@ pub fn autostart(
     move |args: super::ApiParameterType| {
         log::debug!(
             "autostart invoked with {:?}",
-            args.get(0).map(|p| primitive_to_string(p))
+            args.first().map(primitive_to_string)
         );
 
         let args: Result<AutoStartRequest, _> = args.parse_at(0);

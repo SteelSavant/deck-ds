@@ -77,7 +77,7 @@ impl<'a> PipelineExecutor<'a> {
     ) -> Result<Self> {
         let s = Self {
             app_id,
-            pipeline: pipeline,
+            pipeline,
             target,
             ctx: PipelineContext {
                 home_dir,
