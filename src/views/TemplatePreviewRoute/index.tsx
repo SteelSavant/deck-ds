@@ -19,8 +19,6 @@ export default function TemplatePreviewRoute(): ReactElement {
         value={template}
         onOk={
             (template) => {
-
-
                 if (template === undefined) {
                     return <div> Template {templateid} does not exist!</div>;
                 } else {
