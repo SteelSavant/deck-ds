@@ -151,6 +151,8 @@ impl Settings {
     }
 
     pub fn get_profiles(&self) -> Result<Vec<Profile>> {
+        create_dir_all(&self.profiles_dir)?;
+
         std::fs::read_dir(&self.profiles_dir)?
             .filter_map(|f| {
                 f.ok().map(|entry| {
@@ -176,6 +178,8 @@ impl Settings {
     }
 
     pub fn get_app(&self, id: &AppId) -> Result<Option<App>> {
+        create_dir_all(&self.apps_dir)?;
+
         let raw = id.raw();
 
         let app_path = self.apps_dir.join(raw).with_extension("json");
