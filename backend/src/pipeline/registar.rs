@@ -30,22 +30,13 @@ impl PipelineActionRegistrar {
         target: PipelineTarget,
     ) -> Option<&PipelineActionDefinition> {
         self.actions
-            .get(&format_variant(id.raw(), target))
+            .get(&id.variant(target))
             .or_else(|| self.actions.get(id))
     }
 
     pub fn all(&self) -> Arc<HashMap<PipelineActionId, PipelineActionDefinition>> {
         self.actions.clone()
     }
-}
-
-fn format_variant(id: &str, target: PipelineTarget) -> PipelineActionId {
-    let variant = match target {
-        PipelineTarget::Desktop => "desktop",
-        PipelineTarget::Gamemode => "gamemode",
-    };
-
-    PipelineActionId::new(&format!("{id}:{variant}"))
 }
 
 mod internal {
@@ -111,7 +102,7 @@ mod internal {
                 .into_iter()
                 .map(|(k, (t, v))| {
                     let id = match t {
-                        Some(t) => format_variant(&k, t).raw().to_string(),
+                        Some(t) => PipelineActionId::new(&k).variant(t).raw().to_string(),
                         None => k,
                     };
                     (id, v)

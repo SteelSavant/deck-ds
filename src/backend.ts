@@ -89,7 +89,7 @@ export type Response<T> = Promise<Result<T, ApiError>>
 async function call_backend_typed<T, R>(fn: string, arg: T): Response<R> {
     const args = [arg];
     const res = (await call_backend(fn, args));
-    console.log("DeckDS: api", `${fn}(${args}) ->`, res);
+    console.log("DeckDS: api", `${fn}(`, args, ') ->', res);
     const code = res[0];
 
     switch (code) {

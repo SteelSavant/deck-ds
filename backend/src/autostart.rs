@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 use crate::{
     asset::AssetManager,
@@ -77,7 +77,13 @@ impl LoadedAutoStart {
         let pipeline = self
             .autostart
             .pipeline
-            .reify(&settings.get_profiles()?.as_slice())?;
+            .reify(
+                &settings
+                    .get_profiles()
+                    .with_context(|| "failed to get profiles while building executor")?
+                    .as_slice(),
+            )
+            .with_context(|| "failed to reify pipeline while building executor")?;
 
         PipelineExecutor::new(
             self.autostart.app_id,

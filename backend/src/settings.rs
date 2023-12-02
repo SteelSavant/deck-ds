@@ -15,6 +15,7 @@ use crate::{
         PipelineTarget, Selection, Template, TemplateId,
     },
     util::create_dir_all,
+    PACKAGE_NAME,
 };
 
 pub mod patch;
@@ -206,8 +207,12 @@ impl Settings {
     }
 
     pub fn delete_autostart_cfg(&self) -> Result<()> {
-        std::fs::remove_file(&self.autostart_path)
-            .with_context(|| "failed to remove autostart config")
+        if self.autostart_path.exists() {
+            std::fs::remove_file(&self.autostart_path)
+                .with_context(|| "failed to remove autostart config")
+        } else {
+            Ok(())
+        }
     }
 
     pub fn set_autostart_cfg(&self, autostart: &AutoStart) -> Result<()> {
@@ -229,7 +234,8 @@ impl Settings {
         let autostart_cfg = serde_json::to_string_pretty(autostart)?;
 
         std::fs::write(
-            self.system_autostart_dir.join("deck-ds.desktop"),
+            self.system_autostart_dir
+                .join(format!("{PACKAGE_NAME}.desktop")),
             desktop_contents,
         )
         .with_context(|| "failed to create autostart desktop file")
@@ -303,9 +309,11 @@ mod tests {
     #[test]
     fn test_desktop_contents_correct() {
         let settings = Settings::new(
-            Path::new("$HOME/homebrew/plugins/deck-ds/bin/backend"),
-            Path::new("$HOME/.config/deck-ds"),
-            Path::new("$HOME/.config/autostart"),
+            Path::new("$HOME/homebrew/plugins")
+                .join(PACKAGE_NAME)
+                .join("/bin/backend"),
+            Path::new("$HOME/.config").join(PACKAGE_NAME),
+            Path::new("$HOME/.config/autostart").to_path_buf(),
         );
 
         let actual = settings.create_desktop_contents();

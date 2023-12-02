@@ -112,7 +112,8 @@ impl<'a> PipelineExecutor<'a> {
             let res = run
                 .last()
                 .expect("action should exist")
-                .exec(&mut self.ctx, ActionType::Setup);
+                .exec(&mut self.ctx, ActionType::Setup)
+                .with_context(|| format!("failed to execute setup for {}", action.name()));
 
             if let Err(err) = res {
                 log::error!("{}", err);
@@ -133,7 +134,10 @@ impl<'a> PipelineExecutor<'a> {
         for action in run.into_iter().rev() {
             let ctx = &mut self.ctx;
 
-            let res = action.exec(ctx, ActionType::Teardown);
+            let res = action
+                .exec(ctx, ActionType::Teardown)
+                .with_context(|| format!("failed to execute teardown for {}", action.name()));
+
             if let Err(err) = res {
                 log::error!("{}", err);
                 errors.push(err);

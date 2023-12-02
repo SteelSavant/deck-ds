@@ -3,11 +3,12 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use anyhow::Result;
+use anyhow::{anyhow, Context, Result};
 use schemars::JsonSchema;
 use serde::Deserialize;
 
 use crate::{
+    api::primitive_to_string,
     asset::AssetManager,
     autostart::LoadedAutoStart,
     pipeline::data::{ActionOrProfilePipeline, PipelineTarget},
@@ -35,6 +36,11 @@ pub fn autostart(
     let config_dir = Arc::new(config_dir);
 
     move |args: super::ApiParameterType| {
+        log::debug!(
+            "autostart invoked with {:?}",
+            args.get(0).map(|p| primitive_to_string(p))
+        );
+
         let args: Result<AutoStartRequest, _> = args.parse_at(0);
         match args {
             Ok(args) => match args.target {

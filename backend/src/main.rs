@@ -1,9 +1,11 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use include_dir::{include_dir, Dir};
 use std::{
     env,
     path::Path,
     sync::{Arc, Mutex},
+    thread::sleep,
+    time::Duration,
 };
 
 use simplelog::{LevelFilter, WriteLogger};
@@ -97,7 +99,7 @@ fn main() -> Result<()> {
         .or_else(dirs::home_dir)
         .expect("home dir must exist");
 
-    let config_dir = home_dir.join(".config/deck-ds");
+    let config_dir = home_dir.join(".config").join(PACKAGE_NAME);
     let autostart_dir = home_dir.join(".config/autostart");
 
     log::info!("Starting back-end ({} v{})", PACKAGE_NAME, PACKAGE_VERSION);
@@ -140,30 +142,46 @@ fn main() -> Result<()> {
             // build the executor
             let executor = AutoStart::new(settings.clone())
                 .load()
-                .map(|l| l.build_executor(asset_manager, home_dir, config_dir))
-                .transpose();
+                .map(|l| l.build_executor(asset_manager, home_dir, config_dir));
 
-            // remove autostart config, so we don't end up in a loop
-            let lock = settings
-                .lock()
-                .expect("settings mutex should be able to lock");
-            let _ = lock.delete_autostart_cfg();
+            let thread_settings = settings.clone();
+            std::thread::spawn(move || loop {
+                // Ensure the autostart config gets removed, to avoid launching old configs
+                {
+                    let lock = thread_settings
+                        .lock()
+                        .expect("settings mutex should be able to lock");
 
-            // run the executor
-            let exec_result = executor.and_then(|executor| match executor {
-                Some(mut executor) => executor.exec(),
-                None => Ok(()),
+                    match lock.delete_autostart_cfg() {
+                        Ok(_) => return,
+                        Err(err) => {
+                            log::error!("Failed to delete autostart config; retrying: {err}")
+                        }
+                    }
+                }
+
+                sleep(Duration::from_secs(1));
             });
 
-            // return to gamemode
-            #[cfg(not(debug_assertions))]
-            {
-                use crate::sys::steamos_session_select::{steamos_session_select, Session};
-                steamos_session_select(Session::Gamescope).and(exec_result)
-            }
-            #[cfg(debug_assertions)]
-            {
-                exec_result // avoid gamemode switch during dev
+            match executor {
+                Some(executor) => {
+                    log::info!("Found autostart pipeline; executing.");
+                    let exec_result = executor.and_then(|mut e| e.exec());
+                    // return to gamemode
+                    #[cfg(not(debug_assertions))]
+                    {
+                        use crate::sys::steamos_session_select::{steamos_session_select, Session};
+                        steamos_session_select(Session::Gamescope).and(exec_result)
+                    }
+                    #[cfg(debug_assertions)]
+                    {
+                        exec_result // avoid gamemode switch during dev
+                    }
+                }
+                None => {
+                    log::info!("No autostart pipeline found. Staying on desktop.");
+                    Ok(())
+                }
             }
         }
         Modes::Serve => {

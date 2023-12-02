@@ -87,3 +87,17 @@ impl<T: Into<Action>, R> From<T> for Selection<R> {
         Selection::Action(value.into())
     }
 }
+
+impl Action {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Action::DisplayConfig(_) => "DisplayConfig",
+            Action::VirtualScreen(_) => "VirtualScreen",
+            Action::MultiWindow(_) => "MultiWindow",
+            Action::CitraLayout(_) => "CitraLayout",
+            Action::CemuLayout(_) => "CemuLayout",
+            Action::MelonDSLayout(_) => "MelonDSLayout",
+            Action::SourceFile(_) => "SourceFile",
+        }
+    }
+}

@@ -6,6 +6,8 @@ use std::io::{Read, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
+use crate::consts::PACKAGE_NAME;
+
 pub fn unwrap_maybe_fatal<T: Sized, E: Display>(result: Result<T, E>, message: &str) -> T {
     match result {
         Ok(x) => x,
@@ -32,7 +34,8 @@ pub fn unwrap_maybe_fatal<T: Sized, E: Display>(result: Result<T, E>, message: &
 pub fn settings_dir() -> std::path::PathBuf {
     usdpl_back::api::dirs::home()
         .unwrap_or_else(|| "/tmp/".into())
-        .join(".config/deck-ds/")
+        .join(".config")
+        .join(PACKAGE_NAME)
 }
 
 pub fn chown_settings_dir() -> std::io::Result<()> {
@@ -54,7 +57,8 @@ pub fn chown_settings_dir() -> std::io::Result<()> {
         .parse()
         .unwrap_or(1000);
     log::info!(
-        "chmod/chown ~/.config/deck-ds for user `{}` ({})",
+        "chmod/chown ~/.config/{} for user `{}` ({})",
+        PACKAGE_NAME,
         deck_user,
         uid
     );

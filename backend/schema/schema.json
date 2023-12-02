@@ -170,6 +170,12 @@
         }
       ]
     },
+    "AppImageSource": {
+      "type": "string",
+      "enum": [
+        "Cemu"
+      ]
+    },
     "AspectRatioOption": {
       "oneOf": [
         {
@@ -385,6 +391,12 @@
         }
       }
     },
+    "EmuDeckSource": {
+      "type": "string",
+      "enum": [
+        "CemuProton"
+      ]
+    },
     "Enabled_for_Either_WrappedPipelineAction_or_ProfileAction": {
       "type": "object",
       "required": [
@@ -445,6 +457,14 @@
           "$ref": "#/definitions/WrappedPipelineAction"
         }
       }
+    },
+    "FlatpakSource": {
+      "type": "string",
+      "enum": [
+        "Cemu",
+        "Citra",
+        "MelonDS"
+      ]
     },
     "GetProfileRequest": {
       "type": "object",
@@ -1102,11 +1122,35 @@
         {
           "type": "object",
           "required": [
-            "Known"
+            "Flatpak"
           ],
           "properties": {
-            "Known": {
-              "type": "string"
+            "Flatpak": {
+              "$ref": "#/definitions/FlatpakSource"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "AppImage"
+          ],
+          "properties": {
+            "AppImage": {
+              "$ref": "#/definitions/AppImageSource"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "EmuDeck"
+          ],
+          "properties": {
+            "EmuDeck": {
+              "$ref": "#/definitions/EmuDeckSource"
             }
           },
           "additionalProperties": false

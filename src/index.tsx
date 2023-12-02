@@ -77,7 +77,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           layout="below"
           onClick={async () => {
             await backend.autoStart({
-              app: "12146987087370911744",
+              app: "17589260553245687808",
               pipeline: {
                 name: "test",
                 description: "test",
@@ -99,7 +99,7 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
           layout="below"
           onClick={async () => {
             await backend.autoStart({
-              app: "12146987087370911744",
+              app: "17589260553245687808",
               pipeline: {
                 name: "test",
                 description: "test",

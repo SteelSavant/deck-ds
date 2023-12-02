@@ -21,6 +21,21 @@ newtype_strid!(
 );
 newtype_uuid!(TemplateId);
 
+impl PipelineActionId {
+    pub fn variant(&self, target: PipelineTarget) -> PipelineActionId {
+        let variant = match target {
+            PipelineTarget::Desktop => "desktop",
+            PipelineTarget::Gamemode => "gamemode",
+        };
+
+        PipelineActionId::new(&format!("{}:{variant}", self.0))
+    }
+
+    pub fn eq_variant(&self, id: &PipelineActionId, target: PipelineTarget) -> bool {
+        self == id || *self == id.variant(target)
+    }
+}
+
 #[derive(Copy, Debug, Display, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, JsonSchema)]
 pub enum PipelineTarget {
     Desktop,
@@ -310,7 +325,9 @@ impl ReifiablePipelineAction<PipelineActionRegistrar> for PipelineActionId {
     ) -> Result<WrappedPipelineAction> {
         external
             .get(&self, target)
-            .ok_or(anyhow::anyhow!("Could not find action: {self:?}"))
+            .ok_or(anyhow::anyhow!(
+                "Could not find action: {self:?} for target {target}"
+            ))
             .and_then(|action| action.clone().reify(target, external))
     }
 }
@@ -333,7 +350,7 @@ impl ReifiablePipelineAction<&[Profile]> for WrappedPipelineActionOrProfile {
                         .ok_or(anyhow!("Could not find target: {target:?}"))
                 })
                 .and_then(|a| {
-                    a.find(&action.action)
+                    a.find(&action.action, target)
                         .ok_or(anyhow!("Could not find action: {:?}", action.action))
                 })
                 .cloned(),
@@ -342,21 +359,26 @@ impl ReifiablePipelineAction<&[Profile]> for WrappedPipelineActionOrProfile {
 }
 
 impl Selection<WrappedPipelineAction> {
-    fn find(&self, action: &PipelineActionId) -> Option<&WrappedPipelineAction> {
+    fn find(
+        &self,
+        action: &PipelineActionId,
+        target: PipelineTarget,
+    ) -> Option<&WrappedPipelineAction> {
         match self {
             Selection::Action(_) => None,
-            Selection::OneOf { actions, .. } => {
-                actions.iter().find(|a| a.0.id == *action).or_else(|| {
+            Selection::OneOf { actions, .. } => actions
+                .iter()
+                .find(|a| a.0.id.eq_variant(action, target))
+                .or_else(|| {
                     actions
                         .iter()
-                        .filter_map(|a| a.0.selection.find(action))
+                        .filter_map(|a| a.0.selection.find(action, target))
                         .last()
-                })
-            }
+                }),
             Selection::AllOf(actions) => actions
                 .iter()
                 .find_map(|a| {
-                    if a.selection.0.id == *action {
+                    if a.selection.0.id.eq_variant(action, target) {
                         Some(&a.selection)
                     } else {
                         None
@@ -365,9 +387,74 @@ impl Selection<WrappedPipelineAction> {
                 .or_else(|| {
                     actions
                         .iter()
-                        .filter_map(|a| a.selection.0.selection.find(action))
+                        .filter_map(|a| a.selection.0.selection.find(action, target))
                         .last()
                 }),
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use anyhow::Ok;
+
+    use crate::pipeline::action::virtual_screen::VirtualScreen;
+
+    use super::*;
+
+    #[test]
+    fn test_either_action_json_unifies_with_action() -> Result<()> {
+        let expected: WrappedPipelineAction = PipelineAction {
+            id: PipelineActionId::new("test:id:action"),
+            name: "Test".to_string(),
+            description: None,
+            selection: VirtualScreen.into(),
+        }
+        .into();
+
+        let either: WrappedPipelineActionOrProfile = WrappedPipelineActionOrProfile {
+            item: Either::Left(expected.clone().into()),
+        };
+
+        let json = serde_json::to_string_pretty(&either)?;
+
+        let actual: WrappedPipelineAction = serde_json::from_str(&json)?;
+
+        assert_eq!(expected.0.id, actual.0.id);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_action_json_unifies_with_either_action() -> Result<()> {
+        let expected: WrappedPipelineActionOrProfile = WrappedPipelineActionOrProfile {
+            item: Either::Left(
+                PipelineAction {
+                    id: PipelineActionId::new("test:id:action"),
+                    name: "Test".to_string(),
+                    description: None,
+                    selection: VirtualScreen.into(),
+                }
+                .into(),
+            ),
+        };
+
+        let action = expected.clone().item.left().unwrap();
+
+        let json = serde_json::to_string_pretty(&action)?;
+
+        let actual: WrappedPipelineActionOrProfile = serde_json::from_str(&json)?;
+
+        assert_eq!(
+            expected.item.left().unwrap().0.id,
+            actual.item.left().unwrap().0.id
+        );
+
+        Ok(())
+    }
+
+    // let profile = ProfileAction {
+    //     profile: ProfileId::from_uuid(Uuid::nil()),
+    //     action: PipelineActionId::new("test:id:action"),
+    // };
 }
