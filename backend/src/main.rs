@@ -1,6 +1,7 @@
 use anyhow::Result;
 use include_dir::{include_dir, Dir};
 use std::{
+    env,
     path::Path,
     sync::{Arc, Mutex},
 };
@@ -97,6 +98,7 @@ fn main() -> Result<()> {
         .expect("home dir must exist");
 
     let config_dir = home_dir.join(".config/deck-ds");
+    let autostart_dir = home_dir.join(".config/autostart");
 
     log::info!("Starting back-end ({} v{})", PACKAGE_NAME, PACKAGE_VERSION);
     println!("Starting back-end ({} v{})", PACKAGE_NAME, PACKAGE_VERSION);
@@ -112,7 +114,8 @@ fn main() -> Result<()> {
     log::info!("Config dir `{}`", config_dir.display());
     println!("Config dir `{}`", config_dir.display());
 
-    log::info!("home dir: {:?}", usdpl_back::api::dirs::home());
+    log::info!("home dir: {:?}", home_dir);
+    println!("home dir `{}`", config_dir.display());
 
     log::info!("Last version file: {}", crate::util::read_version_file());
     if let Err(e) = crate::util::save_version_file() {
@@ -124,24 +127,7 @@ fn main() -> Result<()> {
     let args = Cli::parse();
     let mode = args.mode.unwrap_or_default();
 
-    let settings = Settings::new(&config_dir);
-    // {
-    //     // temp test code
-    //     let template = &settings.get_templates()[2]; // Cemu Template
-
-    //     let test_profile = ProfileId::from_uuid(uuid::Uuid::nil());
-
-    //     settings.set_profile(&Profile {
-    //         id: test_profile,
-    //         pipeline: template.pipeline.clone(),
-    //         overrides: Overrides::default(),
-    //     })?;
-
-    //     settings.set_autostart_cfg(&Some(crate::settings::AutoStart {
-    //         app_id: AppId::new("12146987087370911744"), //botw
-    //         profile_id: test_profile,
-    //     }))?;
-    // }
+    let settings = Settings::new(&env::current_exe()?, &config_dir, &autostart_dir);
 
     let settings = Arc::new(Mutex::new(settings));
 

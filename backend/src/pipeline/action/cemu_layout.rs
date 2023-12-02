@@ -14,7 +14,7 @@ pub struct CemuLayout {
 }
 
 lazy_static::lazy_static! {
-    static ref PAD_RXP: Regex =  Regex::new("<open_pad>((?:true)|(?:false))</open_pad>").unwrap();
+    static ref PAD_RXP: Regex = Regex::new("<open_pad>((?:true)|(?:false))</open_pad>").unwrap();
 }
 
 impl CemuLayout {

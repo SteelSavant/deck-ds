@@ -216,14 +216,10 @@
     "CemuLayout": {
       "type": "object",
       "required": [
-        "separate_gamepad_view",
-        "swap_screens"
+        "separate_gamepad_view"
       ],
       "properties": {
         "separate_gamepad_view": {
-          "type": "boolean"
-        },
-        "swap_screens": {
           "type": "boolean"
         }
       }
@@ -344,7 +340,7 @@
             },
             "value": {
               "type": "integer",
-              "format": "uint8",
+              "format": "uint64",
               "minimum": 0.0
             }
           }

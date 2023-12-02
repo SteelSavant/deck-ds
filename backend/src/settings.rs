@@ -27,15 +27,17 @@ pub struct Settings {
     // Path vars
     profiles_dir: PathBuf,
     apps_dir: PathBuf,
-    autostart_path: PathBuf,
     system_autostart_dir: PathBuf,
+
+    autostart_path: PathBuf,
+    exe_path: PathBuf,
 
     // in-memory configurations -- consider moving
     templates: Vec<Template>,
 }
 
 impl Settings {
-    pub fn new<P: AsRef<Path>>(config_dir: P) -> Self {
+    pub fn new<P: AsRef<Path>>(exe_path: P, config_dir: P, system_autostart_dir: P) -> Self {
         let config_dir = config_dir.as_ref();
 
         let templates = vec![
@@ -106,7 +108,8 @@ impl Settings {
             profiles_dir: config_dir.join("profiles"),
             apps_dir: config_dir.join("apps"),
             autostart_path: config_dir.join("autostart.json"),
-            system_autostart_dir: config_dir.join("../autostart"), // quick hack
+            system_autostart_dir: system_autostart_dir.as_ref().to_owned(),
+            exe_path: exe_path.as_ref().to_owned(),
             templates,
         }
     }
@@ -237,11 +240,6 @@ impl Settings {
     }
 
     fn create_desktop_contents(&self) -> String {
-        let autostart_parent = self
-            .autostart_path
-            .parent()
-            .expect("autostart.json path should have parent");
-
         r"[Desktop Entry]
 Comment=Runs DeckDS plugin autostart script for dual screen applications.
 Exec=$Exec
@@ -250,9 +248,21 @@ Name=DeckDS
 Type=Application"
             .replace(
                 "$Exec",
-                "$HOME/homebrew/plugins/deck-ds/bin/backend autostart",
-            ) // hardcode for now
-            .replace("$Path", &autostart_parent.to_string_lossy())
+                &format!(
+                    "{} autostart",
+                    self.exe_path
+                        .to_str()
+                        .expect("DeckDS server path should be valid unicode")
+                ),
+            )
+            .replace(
+                "$Path",
+                self.exe_path
+                    .parent()
+                    .expect("DeckDS server path should have parent")
+                    .to_str()
+                    .expect("DeckDS server path should be valid unicode"),
+            )
     }
 
     // In-memory configuration (currently readonly, but should ideally be configurable)
@@ -292,13 +302,17 @@ mod tests {
 
     #[test]
     fn test_desktop_contents_correct() {
-        let settings = Settings::new(Path::new("$HOME/.config/deck-ds"));
+        let settings = Settings::new(
+            Path::new("$HOME/homebrew/plugins/deck-ds/bin/backend"),
+            Path::new("$HOME/.config/deck-ds"),
+            Path::new("$HOME/.config/autostart"),
+        );
 
         let actual = settings.create_desktop_contents();
         let expected = r"[Desktop Entry]
 Comment=Runs DeckDS plugin autostart script for dual screen applications.
 Exec=$HOME/homebrew/plugins/deck-ds/bin/backend autostart
-Path=$HOME/.config/deck-ds
+Path=$HOME/homebrew/plugins/deck-ds/bin
 Name=DeckDS
 Type=Application";
 
@@ -307,7 +321,11 @@ Type=Application";
 
     #[test]
     fn test_profile_crud() -> Result<()> {
-        let settings = Settings::new(Path::new("test/out/.config/deck-ds"));
+        let settings = Settings::new(
+            Path::new("$HOME/homebrew/plugins/deck-ds/bin/backend"),
+            Path::new("$HOME/.config/deck-ds"),
+            Path::new("$HOME/.config/autostart"),
+        );
 
         let mut expected = Profile {
             id: ProfileId::from_uuid(uuid::Uuid::nil()),
@@ -352,7 +370,11 @@ Type=Application";
 
     #[test]
     fn test_app_crud() -> Result<()> {
-        let settings = Settings::new(Path::new("test/out/.config/deck-ds"));
+        let settings = Settings::new(
+            Path::new("$HOME/homebrew/plugins/deck-ds/bin/backend"),
+            Path::new("$HOME/.config/deck-ds"),
+            Path::new("$HOME/.config/autostart"),
+        );
 
         let mut expected = App {
             id: AppId("test_app".to_string()),

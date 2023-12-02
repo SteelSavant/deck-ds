@@ -198,7 +198,6 @@ export interface CitraLayout {
 }
 export interface CemuLayout {
   separate_gamepad_view: boolean;
-  swap_screens: boolean;
 }
 export interface MelonDSLayout {
   book_mode: boolean;
