@@ -11,7 +11,7 @@ use self::{
     autostart::AutoStartRequest,
     profile::{
         CreateProfileRequest, CreateProfileResponse, GetProfileRequest, GetProfileResponse,
-        GetProfilesResponse, GetTemplatesResponse, SetProfileRequest,
+        GetProfilesResponse, SetProfileRequest,
     },
 };
 
@@ -97,7 +97,7 @@ pub struct Api {
     pub get_profile_response: GetProfileResponse,
     pub set_profile_request: SetProfileRequest,
     pub get_profiles_response: GetProfilesResponse,
-    pub get_templates_response: GetTemplatesResponse,
+    // pub get_templates_response: GetTemplatesResponse,
     // pub get_pipeline_actions_response: GetPipelineActionsResponse,
 
     // autostart

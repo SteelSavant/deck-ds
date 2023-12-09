@@ -7,10 +7,7 @@ use anyhow::{Context, Result};
 
 use crate::{
     asset::AssetManager,
-    pipeline::{
-        data::{PipelineTarget, ReifiablePipeline},
-        executor::PipelineExecutor,
-    },
+    pipeline::{data::PipelineTarget, executor::PipelineExecutor},
     settings::Settings,
 };
 
@@ -69,25 +66,9 @@ impl LoadedAutoStart {
         home_dir: PathBuf,
         config_dir: PathBuf,
     ) -> Result<PipelineExecutor> {
-        let settings = self
-            .settings
-            .lock()
-            .expect("settings mutex should be lockable");
-
-        let pipeline = self
-            .autostart
-            .pipeline
-            .reify(
-                &settings
-                    .get_profiles()
-                    .with_context(|| "failed to get profiles while building executor")?
-                    .as_slice(),
-            )
-            .with_context(|| "failed to reify pipeline while building executor")?;
-
         PipelineExecutor::new(
             self.autostart.app_id,
-            pipeline,
+            self.autostart.pipeline,
             self.target,
             assets_manager,
             home_dir,

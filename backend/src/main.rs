@@ -209,10 +209,10 @@ fn main() -> Result<()> {
                     "get_profiles",
                     crate::api::profile::get_profiles(settings.clone()),
                 )
-                .register(
-                    "get_templates",
-                    crate::api::profile::get_templates(settings.clone(), action_registrar.clone()),
-                )
+                // .register(
+                //     "get_templates",
+                //     crate::api::profile::get_templates(settings.clone(), action_registrar.clone()),
+                // )
                 // .register(
                 //     "get_pipeline_actions",
                 //     crate::api::profile::get_pipeline_actions(action_registrar.clone()),

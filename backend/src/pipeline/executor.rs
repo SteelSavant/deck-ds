@@ -9,20 +9,20 @@ use std::time::{Duration, Instant, SystemTime};
 use typemap::{Key, TypeMap};
 
 use crate::asset::AssetManager;
-use crate::pipeline::data::{Selection, WrappedPipelineAction};
+use crate::pipeline::data::{PipelineAction, Selection};
 use crate::settings::AppId;
 use crate::sys::kwin::KWin;
 use crate::sys::process::AppProcess;
 use crate::sys::x_display::XDisplay;
 
 use super::action::{Action, ErasedPipelineAction};
-use super::data::{ActionPipeline, PipelineTarget};
+use super::data::{Pipeline, PipelineTarget};
 
 use super::action::ActionImpl;
 
 pub struct PipelineExecutor<'a> {
     app_id: AppId,
-    pipeline: ActionPipeline,
+    pipeline: Pipeline,
     target: PipelineTarget,
     ctx: PipelineContext<'a>,
 }
@@ -69,7 +69,7 @@ impl<'a> PipelineContext<'a> {
 impl<'a> PipelineExecutor<'a> {
     pub fn new(
         app_id: AppId,
-        pipeline: ActionPipeline,
+        pipeline: Pipeline,
         target: PipelineTarget,
         assets_manager: AssetManager<'a>,
         home_dir: PathBuf,
@@ -259,18 +259,18 @@ enum ActionType {
     Teardown,
 }
 
-impl ActionPipeline {
+impl Pipeline {
     fn build_actions(&self, target: PipelineTarget) -> Vec<&Action> {
-        fn build_recursive(selection: &Selection<WrappedPipelineAction>) -> Vec<&Action> {
+        fn build_recursive(selection: &Selection<PipelineAction>) -> Vec<&Action> {
             match selection {
                 Selection::Action(action) => vec![action],
                 Selection::OneOf { selection, actions } => {
                     let action = actions
                         .iter()
-                        .find(|a| a.0.id == *selection)
+                        .find(|a| a.id == *selection)
                         .unwrap_or_else(|| panic!("Selection {selection:?} should exist"));
 
-                    build_recursive(&action.0.selection)
+                    build_recursive(&action.selection)
                 }
                 Selection::AllOf(actions) => actions
                     .iter()
@@ -278,7 +278,7 @@ impl ActionPipeline {
                         None | Some(true) => Some(&a.selection),
                         Some(false) => None,
                     })
-                    .flat_map(|a| build_recursive(&a.0.selection))
+                    .flat_map(|a| build_recursive(&a))
                     .collect(),
             }
         }

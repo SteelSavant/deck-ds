@@ -7,7 +7,7 @@ use anyhow::Result;
 
 use crate::{
     pipeline::{
-        data::{ActionPipeline, ReifiablePipeline, TemplateId},
+        data::{Pipeline, PipelineDefinition, Template, TemplateId},
         registar::PipelineActionRegistrar,
     },
     settings::{Profile, ProfileId, Settings},
@@ -19,7 +19,7 @@ use super::{log_invoke, ParsePrimitiveAt, ResponseErr, ResponseOk, StatusCode, T
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct CreateProfileRequest {
-    pipeline: ActionPipeline,
+    pipeline: PipelineDefinition,
 }
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
@@ -127,36 +127,18 @@ pub fn set_profile(
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetTemplatesResponse {
-    templates: Vec<ReifiedTemplate>,
-}
-
-#[derive(Debug, Clone, Serialize, JsonSchema)]
-struct ReifiedTemplate {
-    id: TemplateId,
-    pipeline: ActionPipeline,
+    templates: Vec<Template>,
 }
 
 pub fn get_templates(
     settings: Arc<Mutex<Settings>>,
-    action_registrar: PipelineActionRegistrar,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
         log_invoke("get_templates", &args);
         let lock = settings.lock().expect("settings mutex should be lockable");
-        let res = lock
-            .get_templates()
-            .iter()
-            .map(|t| {
-                t.pipeline
-                    .clone()
-                    .reify(&action_registrar)
-                    .map(|pipeline| ReifiedTemplate { id: t.id, pipeline })
-            })
-            .collect::<Result<_>>();
-        match res {
-            Ok(templates) => GetTemplatesResponse { templates }.to_response(),
-            Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
-        }
+        let templates = lock.get_templates().iter().map(|t| t.clone()).collect();
+
+        GetTemplatesResponse { templates }.to_response()
     }
 }
 

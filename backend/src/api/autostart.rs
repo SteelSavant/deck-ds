@@ -11,7 +11,7 @@ use crate::{
     api::primitive_to_string,
     asset::AssetManager,
     autostart::LoadedAutoStart,
-    pipeline::data::{ActionOrProfilePipeline, PipelineTarget},
+    pipeline::data::{Pipeline, PipelineTarget},
     settings::{self, AppId, Settings},
     sys::steamos_session_select::{steamos_session_select, Session},
 };
@@ -21,7 +21,7 @@ use super::{ParsePrimitiveAt, ResponseErr, ResponseOk, StatusCode, ToResponseTyp
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct AutoStartRequest {
     app: AppId,
-    pipeline: ActionOrProfilePipeline,
+    pipeline: Pipeline,
     target: PipelineTarget,
 }
 

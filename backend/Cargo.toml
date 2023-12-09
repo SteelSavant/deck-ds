@@ -14,7 +14,7 @@ readme = "../README.md"
 [dependencies]
 usdpl-back = { version = "0.10.1", features = ["blocking"] }
 regex = "1"
-serde = { version = "1", features = ["derive"] }
+serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1.0"
 async-trait = { version = "0.1" }
 
@@ -32,11 +32,7 @@ ureq = { version = "2", features = [
 clap = { version = "4.4.6", features = ["derive"] }
 derive_more = "0.99.17"
 indexmap = { version = "2.0.2", features = ["serde"] }
-schemars = { version = "0.8.15", features = [
-    "indexmap2",
-    "uuid1",
-    "either",
-] }
+schemars = { version = "0.8.15", features = ["indexmap2", "uuid1", "either"] }
 
 typemap = "0.3.3"
 anyhow = { version = "1.0.75", features = ["backtrace"] }

@@ -1,6 +1,5 @@
 use derive_more::Display;
-use either::Either::{self, Left, Right};
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 
 use crate::{
     macros::{newtype_strid, newtype_uuid},
@@ -10,8 +9,6 @@ use anyhow::{anyhow, Result};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
-use self::internal::{PipelineActionImpl, PipelineImpl};
 
 use super::{action::Action, registar::PipelineActionRegistrar};
 
@@ -45,111 +42,64 @@ pub enum PipelineTarget {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Template {
     pub id: TemplateId,
-    pub pipeline: DefinitionPipeline,
-}
-
-mod internal {
-    use std::collections::HashMap;
-
-    use schemars::JsonSchema;
-    use serde::{Deserialize, Serialize};
-
-    use super::{PipelineActionId, PipelineTarget, Selection};
-
-    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-    pub struct PipelineImpl<T> {
-        pub name: String,
-        pub tags: Vec<String>,
-        pub description: String,
-        pub targets: HashMap<PipelineTarget, Selection<T>>,
-    }
-
-    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-    pub struct PipelineActionImpl<T> {
-        pub id: PipelineActionId,
-        /// The name of the action
-        pub name: String,
-        /// An optional description of what the action does.
-        pub description: Option<String>,
-        /// The value of the pipeline action
-        pub selection: Selection<T>,
-    }
-}
-
-pub type DefinitionPipeline = PipelineImpl<PipelineActionId>;
-pub type ActionPipeline = PipelineImpl<WrappedPipelineAction>;
-pub type ActionOrProfilePipeline = PipelineImpl<PipelineActionOrProfile>;
-
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-// #[serde(transparent)] causes schemars to stack overflow, so we dont' use it
-pub struct WrappedPipelineAction(pub PipelineAction);
-
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(transparent)]
-pub struct WrappedPipelineActionOrProfile {
-    #[serde(
-        serialize_with = "either::serde_untagged::serialize",
-        deserialize_with = "either::serde_untagged::deserialize"
-    )]
-    item: Either<WrappedPipelineAction, ProfileAction>,
+    pub pipeline: PipelineDefinition,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct ProfileAction {
-    profile: ProfileId,
-    action: PipelineActionId,
+pub struct PipelineDefinition {
+    pub name: String,
+    pub tags: Vec<String>,
+    pub description: String,
+    pub targets: HashMap<PipelineTarget, Selection<PipelineActionNode>>,
+    pub actions: Cow<'static, PipelineActionRegistrar>,
 }
 
-pub type PipelineActionDefinition = PipelineActionImpl<PipelineActionId>;
-pub type PipelineAction = PipelineActionImpl<WrappedPipelineAction>;
-pub type PipelineActionOrProfile = PipelineActionImpl<WrappedPipelineActionOrProfile>;
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct Pipeline {
+    pub name: String,
+    pub tags: Vec<String>,
+    pub description: String,
+    pub targets: HashMap<PipelineTarget, Selection<PipelineAction>>,
+}
 
-impl PipelineActionDefinition {
-    pub fn new(
-        id: PipelineActionId,
-        name: String,
-        description: Option<String>,
-        selection: Selection<PipelineActionId>,
-    ) -> Self {
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct PipelineActionNode {
+    pub id: PipelineActionId,
+    /// Flags whether the selection is overridden by the setting from a different profile.
+    pub profile_override: Option<ProfileId>,
+}
+
+impl PipelineActionNode {
+    pub fn new(id: &str) -> Self {
         Self {
-            id,
-            name,
-            description,
-            selection,
+            id: PipelineActionId::new(id),
+            profile_override: None,
         }
     }
 }
 
-impl PipelineAction {
-    pub fn new(
-        id: PipelineActionId,
-        name: String,
-        description: Option<String>,
-        selection: Selection<WrappedPipelineAction>,
-    ) -> Self {
-        Self {
-            id,
-            name,
-            description,
-            selection,
-        }
-    }
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct PipelineActionDefinition {
+    pub name: String,
+    pub description: Option<String>,
+    pub id: PipelineActionId,
+    /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+    pub enabled: Option<bool>,
+    /// The value of the pipeline action
+    pub selection: Selection<PipelineActionNode>,
 }
 
-impl PipelineActionOrProfile {
-    pub fn new(
-        id: PipelineActionId,
-        name: String,
-        description: Option<String>,
-        selection: Selection<WrappedPipelineActionOrProfile>,
-    ) -> Self {
-        Self {
-            id,
-            name,
-            description,
-            selection,
-        }
-    }
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct PipelineAction {
+    pub name: String,
+    pub description: Option<String>,
+    pub id: PipelineActionId,
+    /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+    pub enabled: Option<bool>,
+    /// Flags whether the selection is overridden by the setting from a different profile.
+    pub profile_override: Option<ProfileId>,
+    /// The value of the pipeline action
+    pub selection: Selection<PipelineAction>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -160,109 +110,22 @@ pub enum Selection<T> {
         selection: PipelineActionId,
         actions: Vec<T>,
     },
-    AllOf(Vec<Enabled<T>>),
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct Enabled<T> {
-    /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
-    pub enabled: Option<bool>,
-    pub selection: T,
-}
-
-impl<T> Enabled<T> {
-    pub fn force(selection: T) -> Self {
-        Self {
-            enabled: None,
-            selection,
-        }
-    }
-
-    pub fn default_true(selection: T) -> Self {
-        Self {
-            enabled: Some(true),
-            selection,
-        }
-    }
-
-    pub fn default_false(selection: T) -> Self {
-        Self {
-            enabled: Some(false),
-            selection,
-        }
-    }
-}
-
-impl DefinitionPipeline {
-    pub fn new(
-        name: String,
-        description: String,
-        tags: Vec<String>,
-        targets: HashMap<PipelineTarget, Selection<PipelineActionId>>,
-    ) -> Self {
-        Self {
-            targets,
-            name,
-            tags,
-            description,
-        }
-    }
-}
-
-// From/Into
-
-impl From<PipelineAction> for WrappedPipelineAction {
-    fn from(value: PipelineAction) -> Self {
-        WrappedPipelineAction(value)
-    }
-}
-
-impl From<PipelineAction> for WrappedPipelineActionOrProfile {
-    fn from(value: PipelineAction) -> Self {
-        WrappedPipelineActionOrProfile {
-            item: Left(value.into()),
-        }
-    }
-}
-
-impl From<ProfileAction> for WrappedPipelineActionOrProfile {
-    fn from(value: ProfileAction) -> Self {
-        WrappedPipelineActionOrProfile { item: Right(value) }
-    }
+    AllOf(Vec<T>),
 }
 
 // Reification
 
-pub trait ReifiablePipeline<E> {
-    fn reify(&self, external: &E) -> Result<ActionPipeline>;
-}
-
-pub trait ReifiableSelection<T, E> {
-    fn reify(
-        &self,
-        target: PipelineTarget,
-        external: &E,
-    ) -> Result<Selection<WrappedPipelineAction>>;
-}
-
-pub trait ReifiablePipelineAction<E> {
-    fn reify(&self, target: PipelineTarget, external: &E) -> Result<WrappedPipelineAction>;
-}
-
-impl<T, E> ReifiablePipeline<E> for PipelineImpl<T>
-where
-    T: ReifiablePipelineAction<E> + Clone,
-{
-    fn reify(&self, external: &E) -> Result<ActionPipeline> {
+impl PipelineDefinition {
+    pub fn reify(&self, profiles: &[Profile]) -> Result<Pipeline> {
         let targets = self
             .targets
             .iter()
-            .map(|(t, s)| s.reify(*t, external).map(|s| (*t, s)))
+            .map(|(t, s)| s.reify(*t, &self, profiles).map(|s| (*t, s)))
             .collect::<Result<Vec<_>>>()?
             .into_iter()
             .collect::<HashMap<_, _>>();
 
-        Ok(ActionPipeline {
+        Ok(Pipeline {
             name: self.name.clone(),
             description: self.description.clone(),
             tags: self.tags.clone(),
@@ -271,136 +134,84 @@ where
     }
 }
 
-impl<T, E> ReifiableSelection<T, E> for Selection<T>
-where
-    T: ReifiablePipelineAction<E> + Clone,
-{
+impl Selection<PipelineActionNode> {
     fn reify(
         &self,
         target: PipelineTarget,
-        external: &E,
-    ) -> Result<Selection<WrappedPipelineAction>> {
+        pipeline: &PipelineDefinition,
+        profiles: &[Profile],
+    ) -> Result<Selection<PipelineAction>> {
         match self {
-            Selection::Action(a) => Ok(Selection::Action(a.clone())),
-            Selection::OneOf { selection, actions } => Ok(Selection::OneOf {
-                selection: selection.clone(),
-                actions: actions
+            Selection::Action(action) => Ok(Selection::Action(action.clone())),
+            Selection::OneOf { selection, actions } => {
+                let actions = actions
                     .iter()
-                    .map(|a| a.reify(target, external))
-                    .collect::<Result<Vec<WrappedPipelineAction>>>()?,
-            }),
+                    .map(|a| a.reify(target, pipeline, profiles))
+                    .collect::<Result<Vec<_>>>();
+                actions.map(|actions| Selection::OneOf {
+                    selection: selection.clone(),
+                    actions,
+                })
+            }
             Selection::AllOf(actions) => actions
                 .iter()
-                .map(|a| {
-                    a.selection
-                        .clone()
-                        .reify(target, external)
-                        .map(|selection| Enabled {
-                            enabled: a.enabled,
-                            selection,
-                        })
-                })
-                .collect::<Result<_>>()
+                .map(|a| a.reify(target, pipeline, profiles))
+                .collect::<Result<Vec<_>>>()
                 .map(Selection::AllOf),
         }
     }
 }
 
-impl<T, E> ReifiablePipelineAction<E> for PipelineActionImpl<T>
-where
-    T: ReifiablePipelineAction<E> + Clone,
-{
-    fn reify(&self, target: PipelineTarget, external: &E) -> Result<WrappedPipelineAction> {
-        let selection = self.selection.reify(target, external)?;
-
-        Ok(PipelineAction::new(
-            self.id.clone(),
-            self.name.clone(),
-            self.description.clone(),
-            selection,
-        )
-        .into())
-    }
-}
-
-impl ReifiablePipelineAction<PipelineActionRegistrar> for PipelineActionId {
+impl PipelineActionNode {
     fn reify(
         &self,
         target: PipelineTarget,
-        external: &PipelineActionRegistrar,
-    ) -> Result<WrappedPipelineAction> {
-        external
-            .get(self, target)
-            .ok_or(anyhow::anyhow!(
-                "Could not find action: {self:?} for target {target}"
-            ))
-            .and_then(|action| action.clone().reify(target, external))
+        pipeline: &PipelineDefinition,
+        profiles: &[Profile],
+    ) -> Result<PipelineAction> {
+        let target_pipeline = match self.profile_override {
+            Some(id) => profiles
+                .iter()
+                .find(|p| p.id == id)
+                .map(|p| &p.pipeline)
+                .ok_or(anyhow!("Could not find profile {id:?}"))?,
+            None => pipeline,
+        };
+
+        let action = target_pipeline
+            .actions
+            .get(&self.id, target)
+            .ok_or(anyhow!(
+                "Unable to find action {:?} for target {} of profile {:?}",
+                self.id,
+                target,
+                self.profile_override
+                    .map(|p| p.raw())
+                    .unwrap_or_else(|| "local".to_string())
+            ))?;
+
+        action.reify(self.profile_override, target, pipeline, profiles)
     }
 }
 
-impl ReifiablePipelineAction<&[Profile]> for WrappedPipelineActionOrProfile {
+impl PipelineActionDefinition {
     fn reify(
         &self,
+        profile_override: Option<ProfileId>,
         target: PipelineTarget,
-        external: &&[Profile],
-    ) -> Result<WrappedPipelineAction> {
-        match &self.item {
-            Either::Left(action) => Ok(action.clone()),
-            Either::Right(action) => external
-                .iter()
-                .find(|p| p.id == action.profile)
-                .ok_or(anyhow::anyhow!(
-                    "Could not find profile: {:?}",
-                    action.profile,
-                ))
-                .and_then(|p| {
-                    p.pipeline
-                        .targets
-                        .get(&target)
-                        .ok_or(anyhow!("Could not find target: {target:?}"))
-                })
-                .and_then(|a| {
-                    a.find(&action.action, target)
-                        .ok_or(anyhow!("Could not find action: {:?}", action.action))
-                })
-                .cloned(),
-        }
-    }
-}
+        pipeline: &PipelineDefinition,
+        profiles: &[Profile],
+    ) -> Result<PipelineAction> {
+        let selection = self.selection.reify(target, pipeline, profiles)?;
 
-impl Selection<WrappedPipelineAction> {
-    fn find(
-        &self,
-        action: &PipelineActionId,
-        target: PipelineTarget,
-    ) -> Option<&WrappedPipelineAction> {
-        match self {
-            Selection::Action(_) => None,
-            Selection::OneOf { actions, .. } => actions
-                .iter()
-                .find(|a| a.0.id.eq_variant(action, target))
-                .or_else(|| {
-                    actions
-                        .iter()
-                        .filter_map(|a| a.0.selection.find(action, target))
-                        .last()
-                }),
-            Selection::AllOf(actions) => actions
-                .iter()
-                .find_map(|a| {
-                    if a.selection.0.id.eq_variant(action, target) {
-                        Some(&a.selection)
-                    } else {
-                        None
-                    }
-                })
-                .or_else(|| {
-                    actions
-                        .iter()
-                        .filter_map(|a| a.selection.0.selection.find(action, target))
-                        .last()
-                }),
-        }
+        Ok(PipelineAction {
+            name: self.name.clone(),
+            description: self.description.clone(),
+            id: self.id.clone(),
+            enabled: self.enabled,
+            profile_override: profile_override,
+            selection: selection,
+        })
     }
 }
 
@@ -408,62 +219,7 @@ impl Selection<WrappedPipelineAction> {
 mod tests {
     use std::path::Path;
 
-    use anyhow::Ok;
-
-    use crate::{pipeline::action::virtual_screen::VirtualScreen, settings::Settings};
-
-    use super::*;
-
-    #[test]
-    fn test_either_action_json_unifies_with_action() -> Result<()> {
-        let expected: WrappedPipelineAction = PipelineAction {
-            id: PipelineActionId::new("test:id:action"),
-            name: "Test".to_string(),
-            description: None,
-            selection: VirtualScreen.into(),
-        }
-        .into();
-
-        let either: WrappedPipelineActionOrProfile = WrappedPipelineActionOrProfile {
-            item: Either::Left(expected.clone().into()),
-        };
-
-        let json = serde_json::to_string_pretty(&either)?;
-
-        let actual: WrappedPipelineAction = serde_json::from_str(&json)?;
-
-        assert_eq!(expected.0.id, actual.0.id);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_action_json_unifies_with_either_action() -> Result<()> {
-        let expected: WrappedPipelineActionOrProfile = WrappedPipelineActionOrProfile {
-            item: Either::Left(
-                PipelineAction {
-                    id: PipelineActionId::new("test:id:action"),
-                    name: "Test".to_string(),
-                    description: None,
-                    selection: VirtualScreen.into(),
-                }
-                .into(),
-            ),
-        };
-
-        let action = expected.clone().item.left().unwrap();
-
-        let json = serde_json::to_string_pretty(&action)?;
-
-        let actual: WrappedPipelineActionOrProfile = serde_json::from_str(&json)?;
-
-        assert_eq!(
-            expected.item.left().unwrap().0.id,
-            actual.item.left().unwrap().0.id
-        );
-
-        Ok(())
-    }
+    use crate::settings::Settings;
 
     #[test]
     fn test_template_reification() {
@@ -473,12 +229,10 @@ mod tests {
             Path::new("$HOME/.config/autostart"),
         );
 
-        let registrar = PipelineActionRegistrar::builder().with_core().build();
-
         let res: Vec<_> = settings
             .get_templates()
             .into_iter()
-            .map(|t| t.pipeline.clone().reify(&registrar))
+            .map(|t| t.pipeline.clone().reify(&[]))
             .collect();
 
         for p in res {
