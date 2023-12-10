@@ -17,7 +17,6 @@ use crate::{
     asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
-    pipeline::registar::PipelineActionRegistrar,
     settings::Settings,
     util::create_dir_all,
 };
@@ -135,7 +134,6 @@ fn main() -> Result<()> {
 
     let assets_dir = config_dir.join("assets"); // TODO::keep assets with decky plugin, not config
     let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
-    let action_registrar = PipelineActionRegistrar::builder().with_core().build();
 
     match mode {
         Modes::Autostart => {

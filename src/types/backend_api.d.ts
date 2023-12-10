@@ -5,7 +5,7 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-export type SelectionFor_PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction =
+export type SelectionFor_PipelineAction =
   | {
       type: "Action";
       value: Action;
@@ -13,13 +13,13 @@ export type SelectionFor_PipelineActionImplFor_Either_WrappedPipelineActionOr_Pr
   | {
       type: "OneOf";
       value: {
-        actions: PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction[];
+        actions: PipelineAction[];
         selection: string;
       };
     }
   | {
       type: "AllOf";
-      value: EnabledFor_PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction[];
+      value: PipelineAction[];
     };
 export type Action =
   | {
@@ -128,39 +128,23 @@ export type SourceFile =
 export type FlatpakSource = "Cemu" | "Citra" | "MelonDS";
 export type AppImageSource = "Cemu";
 export type EmuDeckSource = "CemuProton";
-export type SelectionFor_Either_WrappedPipelineActionOr_ProfileAction =
-  | {
-      type: "Action";
-      value: Action;
-    }
-  | {
-      type: "OneOf";
-      value: {
-        actions: (PipelineActionImplFor_WrappedPipelineAction | ProfileAction)[];
-        selection: string;
-      };
-    }
-  | {
-      type: "AllOf";
-      value: EnabledFor_Either_WrappedPipelineActionOr_ProfileAction[];
-    };
-export type SelectionFor_WrappedPipelineAction =
-  | {
-      type: "Action";
-      value: Action;
-    }
-  | {
-      type: "OneOf";
-      value: {
-        actions: PipelineActionImplFor_WrappedPipelineAction[];
-        selection: string;
-      };
-    }
-  | {
-      type: "AllOf";
-      value: EnabledFor_WrappedPipelineAction[];
-    };
 export type PipelineTarget = "Desktop" | "Gamemode";
+export type SelectionFor_String =
+  | {
+      type: "Action";
+      value: Action;
+    }
+  | {
+      type: "OneOf";
+      value: {
+        actions: string[];
+        selection: string;
+      };
+    }
+  | {
+      type: "AllOf";
+      value: string[];
+    };
 
 /**
  * Marker type for generating API json schema types for ts
@@ -173,19 +157,21 @@ export interface Api {
   get_profile_response: GetProfileResponse;
   get_profiles_response: GetProfilesResponse;
   get_templates_response: GetTemplatesResponse;
+  reify_pipeline_request: ReifyPipelineRequest;
+  reify_pipeline_response: ReifyPipelineResponse;
   set_profile_request: SetProfileRequest;
 }
 export interface AutoStartRequest {
   app: string;
-  pipeline: PipelineImplFor_PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction;
+  pipeline: Pipeline;
   target: PipelineTarget;
 }
-export interface PipelineImplFor_PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction {
+export interface Pipeline {
   description: string;
   name: string;
   tags: string[];
   targets: {
-    [k: string]: SelectionFor_PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction;
+    [k: string]: SelectionFor_PipelineAction;
   };
 }
 export interface DisplayConfig {
@@ -214,71 +200,56 @@ export interface MelonDSLayout {
   sizing_option: MelonDSSizingOption;
   swap_screens: boolean;
 }
-export interface PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction {
-  /**
-   * An optional description of what the action does.
-   */
+export interface PipelineAction {
   description?: string | null;
-  id: string;
   /**
-   * The name of the action
+   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
    */
+  enabled?: boolean | null;
+  id: string;
   name: string;
+  /**
+   * Flags whether the selection is overridden by the setting from a different profile.
+   */
+  profile_override?: string | null;
   /**
    * The value of the pipeline action
    */
-  selection: SelectionFor_Either_WrappedPipelineActionOr_ProfileAction;
-}
-export interface PipelineActionImplFor_WrappedPipelineAction {
-  /**
-   * An optional description of what the action does.
-   */
-  description?: string | null;
-  id: string;
-  /**
-   * The name of the action
-   */
-  name: string;
-  /**
-   * The value of the pipeline action
-   */
-  selection: SelectionFor_WrappedPipelineAction;
-}
-export interface EnabledFor_WrappedPipelineAction {
-  /**
-   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
-   */
-  enabled?: boolean | null;
-  selection: PipelineActionImplFor_WrappedPipelineAction;
-}
-export interface ProfileAction {
-  action: string;
-  profile: string;
-}
-export interface EnabledFor_Either_WrappedPipelineActionOr_ProfileAction {
-  /**
-   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
-   */
-  enabled?: boolean | null;
-  selection: PipelineActionImplFor_WrappedPipelineAction | ProfileAction;
-}
-export interface EnabledFor_PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction {
-  /**
-   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
-   */
-  enabled?: boolean | null;
-  selection: PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction;
+  selection: SelectionFor_PipelineAction;
 }
 export interface CreateProfileRequest {
-  pipeline: PipelineImplFor_WrappedPipelineAction;
+  pipeline: PipelineDefinition;
 }
-export interface PipelineImplFor_WrappedPipelineAction {
+export interface PipelineDefinition {
+  actions: PipelineActionRegistrar;
   description: string;
   name: string;
   tags: string[];
   targets: {
-    [k: string]: SelectionFor_WrappedPipelineAction;
+    [k: string]: SelectionFor_String;
   };
+}
+export interface PipelineActionRegistrar {
+  actions: {
+    [k: string]: PipelineActionDefinition;
+  };
+}
+export interface PipelineActionDefinition {
+  description?: string | null;
+  /**
+   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+   */
+  enabled?: boolean | null;
+  id: string;
+  name: string;
+  /**
+   * Flags whether the selection is overridden by the setting from a different profile.
+   */
+  profile_override?: string | null;
+  /**
+   * The value of the pipeline action
+   */
+  selection: SelectionFor_String;
 }
 export interface CreateProfileResponse {
   profile_id: string;
@@ -291,17 +262,23 @@ export interface GetProfileResponse {
 }
 export interface Profile {
   id: string;
-  pipeline: PipelineImplFor_WrappedPipelineAction;
+  pipeline: PipelineDefinition;
 }
 export interface GetProfilesResponse {
   profiles: Profile[];
 }
 export interface GetTemplatesResponse {
-  templates: ReifiedTemplate[];
+  templates: Template[];
 }
-export interface ReifiedTemplate {
+export interface Template {
   id: string;
-  pipeline: PipelineImplFor_WrappedPipelineAction;
+  pipeline: PipelineDefinition;
+}
+export interface ReifyPipelineRequest {
+  pipeline: PipelineDefinition;
+}
+export interface ReifyPipelineResponse {
+  pipeline: Pipeline;
 }
 export interface SetProfileRequest {
   profile: Profile;

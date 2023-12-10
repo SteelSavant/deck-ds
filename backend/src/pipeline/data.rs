@@ -5,7 +5,7 @@ use crate::{
     macros::{newtype_strid, newtype_uuid},
     settings::{Profile, ProfileId},
 };
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

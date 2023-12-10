@@ -6,14 +6,11 @@ use serde::{Deserialize, Serialize};
 use anyhow::Result;
 
 use crate::{
-    pipeline::{
-        data::{Pipeline, PipelineDefinition, Template, TemplateId},
-        registar::PipelineActionRegistrar,
-    },
+    pipeline::data::{Pipeline, PipelineDefinition, Template},
     settings::{Profile, ProfileId, Settings},
 };
 
-use super::{log_invoke, ParsePrimitiveAt, ResponseErr, ResponseOk, StatusCode, ToResponseType};
+use super::{ParsePrimitiveAt, ResponseErr, ResponseOk, StatusCode, ToResponseType};
 
 // Create Profile
 
@@ -123,6 +120,42 @@ pub fn set_profile(
     }
 }
 
+// Reify Pipeline
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+
+pub struct ReifyPipelineRequest {
+    pipeline: PipelineDefinition,
+}
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct ReifyPipelineResponse {
+    pipeline: Pipeline,
+}
+
+pub fn reify_pipeline(
+    settings: Arc<Mutex<Settings>>,
+) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+    move |args: super::ApiParameterType| {
+        let args: Result<ReifyPipelineRequest, _> = args.parse_at(0);
+        match args {
+            Ok(args) => {
+                let lock = settings.lock().expect("settings mutex should be lockable");
+                match lock.get_profiles() {
+                    Ok(profiles) => {
+                        let res = args.pipeline.reify(&profiles);
+                        match res {
+                            Ok(pipeline) => ReifyPipelineResponse { pipeline }.to_response(),
+                            Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
+                        }
+                    }
+                    Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
+                }
+            }
+            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
+        }
+    }
+}
+
 // Templates
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
@@ -133,8 +166,7 @@ pub struct GetTemplatesResponse {
 pub fn get_templates(
     settings: Arc<Mutex<Settings>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |args: super::ApiParameterType| {
-        log_invoke("get_templates", &args);
+    move |_: super::ApiParameterType| {
         let lock = settings.lock().expect("settings mutex should be lockable");
         let templates = lock.get_templates().iter().map(|t| t.clone()).collect();
 

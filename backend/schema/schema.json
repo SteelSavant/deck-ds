@@ -11,6 +11,8 @@
     "get_profile_response",
     "get_profiles_response",
     "get_templates_response",
+    "reify_pipeline_request",
+    "reify_pipeline_response",
     "set_profile_request"
   ],
   "properties": {
@@ -34,6 +36,12 @@
     },
     "get_templates_response": {
       "$ref": "#/definitions/GetTemplatesResponse"
+    },
+    "reify_pipeline_request": {
+      "$ref": "#/definitions/ReifyPipelineRequest"
+    },
+    "reify_pipeline_response": {
+      "$ref": "#/definitions/ReifyPipelineResponse"
     },
     "set_profile_request": {
       "$ref": "#/definitions/SetProfileRequest"
@@ -212,7 +220,7 @@
           "type": "string"
         },
         "pipeline": {
-          "$ref": "#/definitions/PipelineImpl_for_PipelineActionImpl_for_Either_WrappedPipelineAction_or_ProfileAction"
+          "$ref": "#/definitions/Pipeline"
         },
         "target": {
           "$ref": "#/definitions/PipelineTarget"
@@ -360,7 +368,7 @@
       ],
       "properties": {
         "pipeline": {
-          "$ref": "#/definitions/PipelineImpl_for_WrappedPipelineAction"
+          "$ref": "#/definitions/PipelineDefinition"
         }
       }
     },
@@ -396,67 +404,6 @@
       "enum": [
         "CemuProton"
       ]
-    },
-    "Enabled_for_Either_WrappedPipelineAction_or_ProfileAction": {
-      "type": "object",
-      "required": [
-        "selection"
-      ],
-      "properties": {
-        "enabled": {
-          "description": "Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.",
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
-        "selection": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/WrappedPipelineAction"
-            },
-            {
-              "$ref": "#/definitions/ProfileAction"
-            }
-          ]
-        }
-      }
-    },
-    "Enabled_for_PipelineActionImpl_for_Either_WrappedPipelineAction_or_ProfileAction": {
-      "type": "object",
-      "required": [
-        "selection"
-      ],
-      "properties": {
-        "enabled": {
-          "description": "Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.",
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
-        "selection": {
-          "$ref": "#/definitions/PipelineActionImpl_for_Either_WrappedPipelineAction_or_ProfileAction"
-        }
-      }
-    },
-    "Enabled_for_WrappedPipelineAction": {
-      "type": "object",
-      "required": [
-        "selection"
-      ],
-      "properties": {
-        "enabled": {
-          "description": "Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.",
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
-        "selection": {
-          "$ref": "#/definitions/WrappedPipelineAction"
-        }
-      }
     },
     "FlatpakSource": {
       "type": "string",
@@ -512,7 +459,7 @@
         "templates": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ReifiedTemplate"
+            "$ref": "#/definitions/Template"
           }
         }
       }
@@ -665,71 +612,7 @@
     "MultiWindow": {
       "type": "null"
     },
-    "PipelineActionImpl_for_Either_WrappedPipelineAction_or_ProfileAction": {
-      "type": "object",
-      "required": [
-        "id",
-        "name",
-        "selection"
-      ],
-      "properties": {
-        "description": {
-          "description": "An optional description of what the action does.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "description": "The name of the action",
-          "type": "string"
-        },
-        "selection": {
-          "description": "The value of the pipeline action",
-          "allOf": [
-            {
-              "$ref": "#/definitions/Selection_for_Either_WrappedPipelineAction_or_ProfileAction"
-            }
-          ]
-        }
-      }
-    },
-    "PipelineActionImpl_for_WrappedPipelineAction": {
-      "type": "object",
-      "required": [
-        "id",
-        "name",
-        "selection"
-      ],
-      "properties": {
-        "description": {
-          "description": "An optional description of what the action does.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "description": "The name of the action",
-          "type": "string"
-        },
-        "selection": {
-          "description": "The value of the pipeline action",
-          "allOf": [
-            {
-              "$ref": "#/definitions/Selection_for_WrappedPipelineAction"
-            }
-          ]
-        }
-      }
-    },
-    "PipelineImpl_for_PipelineActionImpl_for_Either_WrappedPipelineAction_or_ProfileAction": {
+    "Pipeline": {
       "type": "object",
       "required": [
         "description",
@@ -753,20 +636,128 @@
         "targets": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/Selection_for_PipelineActionImpl_for_Either_WrappedPipelineAction_or_ProfileAction"
+            "$ref": "#/definitions/Selection_for_PipelineAction"
           }
         }
       }
     },
-    "PipelineImpl_for_WrappedPipelineAction": {
+    "PipelineAction": {
       "type": "object",
       "required": [
+        "id",
+        "name",
+        "selection"
+      ],
+      "properties": {
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "enabled": {
+          "description": "Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "profile_override": {
+          "description": "Flags whether the selection is overridden by the setting from a different profile.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "selection": {
+          "description": "The value of the pipeline action",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Selection_for_PipelineAction"
+            }
+          ]
+        }
+      }
+    },
+    "PipelineActionDefinition": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "selection"
+      ],
+      "properties": {
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "enabled": {
+          "description": "Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "profile_override": {
+          "description": "Flags whether the selection is overridden by the setting from a different profile.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "selection": {
+          "description": "The value of the pipeline action",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Selection_for_String"
+            }
+          ]
+        }
+      }
+    },
+    "PipelineActionRegistrar": {
+      "type": "object",
+      "required": [
+        "actions"
+      ],
+      "properties": {
+        "actions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PipelineActionDefinition"
+          }
+        }
+      }
+    },
+    "PipelineDefinition": {
+      "type": "object",
+      "required": [
+        "actions",
         "description",
         "name",
         "tags",
         "targets"
       ],
       "properties": {
+        "actions": {
+          "$ref": "#/definitions/PipelineActionRegistrar"
+        },
         "description": {
           "type": "string"
         },
@@ -782,7 +773,7 @@
         "targets": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/Selection_for_WrappedPipelineAction"
+            "$ref": "#/definitions/Selection_for_String"
           }
         }
       }
@@ -806,39 +797,29 @@
           "format": "uuid"
         },
         "pipeline": {
-          "$ref": "#/definitions/PipelineImpl_for_WrappedPipelineAction"
+          "$ref": "#/definitions/PipelineDefinition"
         }
       }
     },
-    "ProfileAction": {
+    "ReifyPipelineRequest": {
       "type": "object",
       "required": [
-        "action",
-        "profile"
-      ],
-      "properties": {
-        "action": {
-          "type": "string"
-        },
-        "profile": {
-          "type": "string",
-          "format": "uuid"
-        }
-      }
-    },
-    "ReifiedTemplate": {
-      "type": "object",
-      "required": [
-        "id",
         "pipeline"
       ],
       "properties": {
-        "id": {
-          "type": "string",
-          "format": "uuid"
-        },
         "pipeline": {
-          "$ref": "#/definitions/PipelineImpl_for_WrappedPipelineAction"
+          "$ref": "#/definitions/PipelineDefinition"
+        }
+      }
+    },
+    "ReifyPipelineResponse": {
+      "type": "object",
+      "required": [
+        "pipeline"
+      ],
+      "properties": {
+        "pipeline": {
+          "$ref": "#/definitions/Pipeline"
         }
       }
     },
@@ -871,7 +852,7 @@
         }
       }
     },
-    "Selection_for_Either_WrappedPipelineAction_or_ProfileAction": {
+    "Selection_for_PipelineAction": {
       "oneOf": [
         {
           "type": "object",
@@ -914,14 +895,7 @@
                 "actions": {
                   "type": "array",
                   "items": {
-                    "anyOf": [
-                      {
-                        "$ref": "#/definitions/WrappedPipelineAction"
-                      },
-                      {
-                        "$ref": "#/definitions/ProfileAction"
-                      }
-                    ]
+                    "$ref": "#/definitions/PipelineAction"
                   }
                 },
                 "selection": {
@@ -947,14 +921,14 @@
             "value": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/Enabled_for_Either_WrappedPipelineAction_or_ProfileAction"
+                "$ref": "#/definitions/PipelineAction"
               }
             }
           }
         }
       ]
     },
-    "Selection_for_PipelineActionImpl_for_Either_WrappedPipelineAction_or_ProfileAction": {
+    "Selection_for_String": {
       "oneOf": [
         {
           "type": "object",
@@ -997,7 +971,7 @@
                 "actions": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/definitions/PipelineActionImpl_for_Either_WrappedPipelineAction_or_ProfileAction"
+                    "type": "string"
                   }
                 },
                 "selection": {
@@ -1023,83 +997,7 @@
             "value": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/Enabled_for_PipelineActionImpl_for_Either_WrappedPipelineAction_or_ProfileAction"
-              }
-            }
-          }
-        }
-      ]
-    },
-    "Selection_for_WrappedPipelineAction": {
-      "oneOf": [
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Action"
-              ]
-            },
-            "value": {
-              "$ref": "#/definitions/Action"
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "OneOf"
-              ]
-            },
-            "value": {
-              "type": "object",
-              "required": [
-                "actions",
-                "selection"
-              ],
-              "properties": {
-                "actions": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/WrappedPipelineAction"
-                  }
-                },
-                "selection": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "AllOf"
-              ]
-            },
-            "value": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Enabled_for_WrappedPipelineAction"
+                "type": "string"
               }
             }
           }
@@ -1203,11 +1101,24 @@
         }
       ]
     },
+    "Template": {
+      "type": "object",
+      "required": [
+        "id",
+        "pipeline"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "pipeline": {
+          "$ref": "#/definitions/PipelineDefinition"
+        }
+      }
+    },
     "VirtualScreen": {
       "type": "null"
-    },
-    "WrappedPipelineAction": {
-      "$ref": "#/definitions/PipelineActionImpl_for_WrappedPipelineAction"
     }
   }
 }

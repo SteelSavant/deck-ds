@@ -11,7 +11,8 @@ use self::{
     autostart::AutoStartRequest,
     profile::{
         CreateProfileRequest, CreateProfileResponse, GetProfileRequest, GetProfileResponse,
-        GetProfilesResponse, SetProfileRequest,
+        GetProfilesResponse, GetTemplatesResponse, ReifyPipelineRequest, ReifyPipelineResponse,
+        SetProfileRequest,
     },
 };
 
@@ -90,14 +91,16 @@ impl ToResponseType for ResponseOk {
 /// Marker type for generating API json schema types for ts
 #[derive(JsonSchema)]
 pub struct Api {
-    // profile
+    // profile/pipeline
     pub create_profile_request: CreateProfileRequest,
     pub create_profile_response: CreateProfileResponse,
     pub get_profile_request: GetProfileRequest,
     pub get_profile_response: GetProfileResponse,
     pub set_profile_request: SetProfileRequest,
     pub get_profiles_response: GetProfilesResponse,
-    // pub get_templates_response: GetTemplatesResponse,
+    pub reify_pipeline_request: ReifyPipelineRequest,
+    pub reify_pipeline_response: ReifyPipelineResponse,
+    pub get_templates_response: GetTemplatesResponse,
     // pub get_pipeline_actions_response: GetPipelineActionsResponse,
 
     // autostart
@@ -108,13 +111,6 @@ impl Api {
     pub fn generate() -> RootSchema {
         schemars::schema_for!(Self)
     }
-}
-
-fn log_invoke(method: &str, args: &[Primitive]) {
-    log::debug!(
-        "API invoked {method}({:?})",
-        args.iter().map(primitive_to_string).collect::<Vec<_>>()
-    )
 }
 
 fn primitive_to_string(v: &Primitive) -> String {
