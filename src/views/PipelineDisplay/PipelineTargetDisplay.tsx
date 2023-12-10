@@ -1,7 +1,10 @@
 import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
 import { ReactElement } from "react";
 import { FaLink } from "react-icons/fa";
-import { Action, ActionEnabled, ActionSelection, OneOf, PipelineAction } from "../../backend";
+import { Action, ActionOneOf, ActionSelection, } from "../../backend";
+import EditAction from "../../components/EditAction";
+import { useModifiablePipelineDefinition } from "../../context/modifiablePipelineContext";
+import { PipelineAction } from "../../types/backend_api";
 
 type ActionUpdate = (args: {
     id: string,
@@ -14,71 +17,76 @@ type OneOfUpdate = (args:
         selection: string
     }) => void;
 
-interface Updates {
-    action: ActionUpdate,
-    oneOf: OneOfUpdate,
-}
 
-export default function Pipeline({ root, updateAction, updateOneOf, }: {
+
+export default function PipelineTargetDisplay({ root }: {
     root: ActionSelection,
     updateAction: ActionUpdate,
     updateOneOf: OneOfUpdate
 }): ReactElement {
     return <DialogBody>
         <DialogControlsSection>
-            {buildSelection('root', root, {
-                action: updateAction,
-                oneOf: updateOneOf
-            }, 0)}
+            {buildSelection('root', root, 0)}
         </DialogControlsSection>
     </DialogBody>
 }
 
 const paddingIncr = 30;
 
-function buildSelection(id: string, selection: ActionSelection, updates: Updates, depth: number): ReactElement {
+function buildSelection(id: string, selection: ActionSelection, depth: number): ReactElement {
     switch (selection.type) {
         case "Action":
-            return buildAction(id, selection.value, updates, depth);
+            return buildAction(id, selection.value, depth);
         case "OneOf":
-            return buildOneOf(id, selection.value, updates, depth);
+            return buildOneOf(selection.value, depth);
         case "AllOf":
-            return buildAllOf(selection.value, updates, depth);
+            return buildAllOf(selection.value, depth);
     }
 }
 
-function buildAction(id: string, action: Action, updates: Updates, depth: number): ReactElement {
+function buildAction(id: string, action: Action, depth: number): ReactElement {
+    const { dispatch } = useModifiablePipelineDefinition();
+
     return (
         <div style={{
             paddingLeft: `${depth * paddingIncr}px`
         }}>
-            <p>Action: {action.type}</p>
+            <EditAction action={action} onChange={(action) => {
+                dispatch({
+                    type: 'updateAction',
+                    id: id,
+                    action: action
+                });
+            }} />
         </div>
     )
 }
 
-function buildOneOf(id: string, oneOf: OneOf, updates: Updates, depth: number): ReactElement {
+function buildOneOf(oneOf: ActionOneOf, depth: number): ReactElement {
     const action = oneOf.actions.find((a) => a.id === oneOf.selection)!;
     return (
         <div style={{
             paddingLeft: `${depth * paddingIncr}px`
         }}>
             <Field focusable={false} label={labelAction(action)} description={action.description} />
-            {buildSelection(action.id, action.selection, updates, 0)}
+            {buildSelection(action.id, action.selection, 0)}
         </div>
     )
 }
 
-function buildAllOf(allOf: ActionEnabled[], updates: Updates, depth: number): ReactElement {
+function buildAllOf(allOf: PipelineAction[], depth: number): ReactElement {
+    const { dispatch } = useModifiablePipelineDefinition();
+
     return (
         <div style={{
             paddingLeft: `${depth * paddingIncr}px`
         }}>
             {
-                allOf.map((enabled) => {
-                    const action = enabled.selection;
-                    const isEnabled = enabled.enabled;
+
+                allOf.map((action) => {
                     const selection = action.selection;
+                    const isEnabled = action.enabled;
+
 
                     const forcedEnabled = isEnabled === null || isEnabled === undefined;
                     return (
@@ -88,7 +96,13 @@ function buildAllOf(allOf: ActionEnabled[], updates: Updates, depth: number): Re
                                     {
                                         forcedEnabled ? <div />
                                             : <Focusable>
-                                                <Toggle value={isEnabled} />
+                                                <Toggle value={isEnabled} onChange={(value) =>
+                                                    dispatch({
+                                                        type: 'updateEnabled',
+                                                        id: action.id,
+                                                        isEnabled: value,
+                                                    })
+                                                } />
                                             </Focusable>
                                     }
                                     {
@@ -99,13 +113,19 @@ function buildAllOf(allOf: ActionEnabled[], updates: Updates, depth: number): Re
                                                         label: a.name,
                                                         data: a.id
                                                     }
-                                                })} />
+                                                })} onChange={(option) => {
+                                                    dispatch({
+                                                        type: 'updateOneOf',
+                                                        id: action.id,
+                                                        selection: option.data,
+                                                    })
+                                                }} />
                                             </Focusable>
                                             : <div />
                                     }
                                 </div>
                             </Field>
-                            {buildSelection(action.id, action.selection, updates, depth + 1)}
+                            {buildSelection(action.id, action.selection, depth + 1)}
                         </div>
                     )
                 })}

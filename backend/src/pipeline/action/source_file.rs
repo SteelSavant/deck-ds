@@ -9,6 +9,7 @@ use crate::pipeline::{dependency::Dependency, executor::PipelineContext};
 use super::ActionImpl;
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "type", content = "value")]
 pub enum SourceFile {
     Flatpak(FlatpakSource),
     AppImage(AppImageSource),

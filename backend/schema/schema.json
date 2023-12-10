@@ -1020,53 +1020,77 @@
         {
           "type": "object",
           "required": [
-            "Flatpak"
+            "type",
+            "value"
           ],
           "properties": {
-            "Flatpak": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Flatpak"
+              ]
+            },
+            "value": {
               "$ref": "#/definitions/FlatpakSource"
             }
-          },
-          "additionalProperties": false
+          }
         },
         {
           "type": "object",
           "required": [
-            "AppImage"
+            "type",
+            "value"
           ],
           "properties": {
-            "AppImage": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "AppImage"
+              ]
+            },
+            "value": {
               "$ref": "#/definitions/AppImageSource"
             }
-          },
-          "additionalProperties": false
+          }
         },
         {
           "type": "object",
           "required": [
-            "EmuDeck"
+            "type",
+            "value"
           ],
           "properties": {
-            "EmuDeck": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "EmuDeck"
+              ]
+            },
+            "value": {
               "$ref": "#/definitions/EmuDeckSource"
             }
-          },
-          "additionalProperties": false
+          }
         },
         {
           "type": "object",
           "required": [
-            "Custom"
+            "type",
+            "value"
           ],
           "properties": {
-            "Custom": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Custom"
+              ]
+            },
+            "value": {
               "type": [
                 "string",
                 "null"
               ]
             }
-          },
-          "additionalProperties": false
+          }
         }
       ]
     },

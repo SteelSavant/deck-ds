@@ -1,4 +1,4 @@
-import { AutoStartRequest, CreateProfileRequest, CreateProfileResponse, EnabledFor_Either_WrappedPipelineActionOr_ProfileAction, EnabledFor_WrappedPipelineAction, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction, PipelineActionImplFor_WrappedPipelineAction, PipelineImplFor_WrappedPipelineAction, ReifiedTemplate, SelectionFor_Either_WrappedPipelineActionOr_ProfileAction, SelectionFor_WrappedPipelineAction, SetProfileRequest } from "./types/backend_api";
+import { AutoStartRequest, CitraLayoutOption, CreateProfileRequest, CreateProfileResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineAction, ReifyPipelineRequest, ReifyPipelineResponse, SelectionFor_PipelineAction, SelectionFor_String, SetProfileRequest } from "./types/backend_api";
 import { call_backend, init_embedded, init_usdpl, target_usdpl } from "./usdpl_front";
 import { Err, Ok, Result } from "./util/result";
 
@@ -12,30 +12,34 @@ export {
     GetProfilesResponse,
     GetTemplatesResponse,
     PipelineTarget,
-    Profile, SetProfileRequest
+    Profile,
+    ReifyPipelineRequest,
+    ReifyPipelineResponse,
+    SetProfileRequest,
+    Template
 } from "./types/backend_api";
-
-export type Template = ReifiedTemplate;
-
-export type OneOf = {
-    actions: PipelineActionImplFor_WrappedPipelineAction[];
-    selection: string;
-}
-
-export type ActionEnabled = EnabledFor_WrappedPipelineAction;
-export type ActionOrProfileEnabled = EnabledFor_Either_WrappedPipelineActionOr_ProfileAction;
-
-export type ActionPipeline = PipelineImplFor_WrappedPipelineAction;
-export type ActionOrProfilePipleine = PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction;
-
-export type ActionSelection = SelectionFor_WrappedPipelineAction;
-export type ActionOrProfileSelection = SelectionFor_Either_WrappedPipelineActionOr_ProfileAction;
-
-export type PipelineAction = PipelineActionImplFor_WrappedPipelineAction;
-export type PipelineOrProfileAction = PipelineActionImplFor_Either_WrappedPipelineActionOr_ProfileAction;
 
 
 const USDPL_PORT: number = 44666;
+
+
+// Pipeline
+
+export type ActionOneOf = { selection: string, actions: PipelineAction[] }
+export type ActionSelection = SelectionFor_PipelineAction;
+
+export type DefinitionOneOf = { selection: string, actions: string[] }
+export type DefinitionSelection = SelectionFor_String;
+
+
+
+// Action 
+
+export const citraLayoutOptions: CitraLayoutOption[] = [{ type: "Default" }, { type: "SingleScreen" }, { type: "LargeScreen" }, { type: "SideBySide" }, { type: "SeparateWindows" }, { type: "HybridScreen" }];
+export const melonDSLayoutOptions: MelonDSLayoutOption[] = ['Natural', 'Vertical', 'Horizontal', 'Hybrid', 'Single'];
+export const melonDSSizingOptions: MelonDSSizingOption[] = ['Even', 'Auto', 'EmphasizeTop', 'EmphasizeBottom'];
+
+
 
 // Utility
 
@@ -90,7 +94,7 @@ async function call_backend_typed<T, R>(fn: string, arg: T): Response<R> {
     const args = [arg];
     const res = (await call_backend(fn, args));
     console.log("DeckDS: api", `${fn}(`, args, ') ->', res);
-    const code = res[0];
+    const code = res ? res[0] : 0;
 
     switch (code) {
         case StatusCode.Ok: {
@@ -99,7 +103,7 @@ async function call_backend_typed<T, R>(fn: string, arg: T): Response<R> {
         default: {
             return Err({
                 code: code,
-                err: res[1] // assume an error string
+                err: res ? res[1] : 'unspecified error occurred' // assume an error string
             })
         }
     }
@@ -147,6 +151,10 @@ export async function getProfiles(): Response<GetProfilesResponse> {
 
 export async function getTemplates(): Response<GetTemplatesResponse> {
     return await call_backend_typed("get_templates", null);
+}
+
+export async function reifyPipeline(request: ReifyPipelineRequest): Response<ReifyPipelineResponse> {
+    return await call_backend_typed('reify_pipeline', request);
 }
 
 

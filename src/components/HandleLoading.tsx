@@ -9,7 +9,7 @@ export default function HandleLoading<T>({ value, onOk, onErr, onLoading }: {
     onLoading?: () => ReactElement,
 }): ReactElement {
     const definiteOnLoading = onLoading ?? (() => <div />);
-    const definiteOnErr = onErr ?? ((err) => <div>Loading error! Server returned {err.code}: {err.err}</div>)
+    const definiteOnErr = onErr ?? ((err) => <div>Loading error! Server returned {err.code}: {err.err}</div>);
 
     return !value
         ? definiteOnLoading() : value.isOk

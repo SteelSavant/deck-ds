@@ -1,6 +1,6 @@
 import { Focusable } from "decky-frontend-lib";
 import { CSSProperties, ReactElement } from "react";
-import { Template } from "../../backend";
+import { Pipeline } from "../../types/backend_api";
 
 export const TemplateInfoContainer: CSSProperties = {
     margin: "20px 20px 0px 20px",
@@ -10,17 +10,17 @@ export const TemplateInfoContainer: CSSProperties = {
     display: "flex",
 }
 
-export default function TemplateInfo({ template }: { template: Template }): ReactElement {
-    console.log("Template info rendering template", template);
+export default function PipelineInfo({ pipeline }: { pipeline: Pipeline }): ReactElement {
+    console.log("PipelineInfo rendering pipeline", pipeline);
 
     return (
         <Focusable style={TemplateInfoContainer} >
             <div>
-                <h3>{template.pipeline.name} </h3>
-                <p>{template.pipeline.description}</p>
+                <h3>{pipeline.name} </h3>
+                <p>{pipeline.description}</p>
                 <h3>Default Tags
                     <ul>
-                        {template.pipeline.tags.map((t) => <li>{t}</li>)}
+                        {pipeline.tags.map((t) => <li>{t}</li>)}
                     </ul>
                 </h3>
             </div>

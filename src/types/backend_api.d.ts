@@ -114,16 +114,20 @@ export type MelonDSLayoutOption = "Natural" | "Vertical" | "Horizontal" | "Hybri
 export type MelonDSSizingOption = "Even" | "EmphasizeTop" | "EmphasizeBottom" | "Auto";
 export type SourceFile =
   | {
-      Flatpak: FlatpakSource;
+      type: "Flatpak";
+      value: FlatpakSource;
     }
   | {
-      AppImage: AppImageSource;
+      type: "AppImage";
+      value: AppImageSource;
     }
   | {
-      EmuDeck: EmuDeckSource;
+      type: "EmuDeck";
+      value: EmuDeckSource;
     }
   | {
-      Custom: string | null;
+      type: "Custom";
+      value: string | null;
     };
 export type FlatpakSource = "Cemu" | "Citra" | "MelonDS";
 export type AppImageSource = "Cemu";
