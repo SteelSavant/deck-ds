@@ -5,7 +5,7 @@ use crate::{
     macros::{newtype_strid, newtype_uuid},
     settings::{Profile, ProfileId},
 };
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -50,7 +50,7 @@ pub struct PipelineDefinition {
     pub name: String,
     pub tags: Vec<String>,
     pub description: String,
-    pub targets: HashMap<PipelineTarget, Selection<PipelineActionNode>>,
+    pub targets: HashMap<PipelineTarget, Selection<PipelineActionId>>,
     pub actions: Cow<'static, PipelineActionRegistrar>,
 }
 
@@ -63,30 +63,16 @@ pub struct Pipeline {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct PipelineActionNode {
-    pub id: PipelineActionId,
-    /// Flags whether the selection is overridden by the setting from a different profile.
-    pub profile_override: Option<ProfileId>,
-}
-
-impl PipelineActionNode {
-    pub fn new(id: &str) -> Self {
-        Self {
-            id: PipelineActionId::new(id),
-            profile_override: None,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct PipelineActionDefinition {
     pub name: String,
     pub description: Option<String>,
     pub id: PipelineActionId,
     /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
     pub enabled: Option<bool>,
+    /// Flags whether the selection is overridden by the setting from a different profile.
+    pub profile_override: Option<ProfileId>,
     /// The value of the pipeline action
-    pub selection: Selection<PipelineActionNode>,
+    pub selection: Selection<PipelineActionId>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -134,7 +120,7 @@ impl PipelineDefinition {
     }
 }
 
-impl Selection<PipelineActionNode> {
+impl Selection<PipelineActionId> {
     fn reify(
         &self,
         target: PipelineTarget,
@@ -162,35 +148,34 @@ impl Selection<PipelineActionNode> {
     }
 }
 
-impl PipelineActionNode {
+impl PipelineActionId {
     fn reify(
         &self,
         target: PipelineTarget,
         pipeline: &PipelineDefinition,
         profiles: &[Profile],
     ) -> Result<PipelineAction> {
-        let target_pipeline = match self.profile_override {
-            Some(id) => profiles
-                .iter()
-                .find(|p| p.id == id)
-                .map(|p| &p.pipeline)
-                .ok_or(anyhow!("Could not find profile {id:?}"))?,
-            None => pipeline,
-        };
+        let action = pipeline.actions.get(self, target).with_context(|| {
+            format!(
+                "Failed to get action {:?} for current pipline @ {}",
+                self, target
+            )
+        })?;
 
-        let action = target_pipeline
-            .actions
-            .get(&self.id, target)
-            .ok_or(anyhow!(
-                "Unable to find action {:?} for target {} of profile {:?}",
-                self.id,
-                target,
-                self.profile_override
-                    .map(|p| p.raw())
-                    .unwrap_or_else(|| "local".to_string())
-            ))?;
+        let resolved_action: PipelineAction = action
+            .profile_override
+            .map(|profile| {
+                profiles
+                    .iter()
+                    .find(|p| p.id == profile)
+                    .map(|p| p.pipeline.actions.get(self, target).cloned())
+                    .flatten()
+                    .map(|action| action.reify(Some(profile), target, pipeline, profiles))
+            })
+            .flatten()
+            .unwrap_or_else(|| action.reify(None, target, pipeline, profiles))?;
 
-        action.reify(self.profile_override, target, pipeline, profiles)
+        Ok(resolved_action)
     }
 }
 

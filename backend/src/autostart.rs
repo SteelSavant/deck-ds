@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 
 use crate::{
     asset::AssetManager,
@@ -19,7 +19,6 @@ pub struct AutoStart {
 #[derive(Debug)]
 pub struct LoadedAutoStart {
     autostart: crate::settings::AutoStart,
-    settings: Arc<Mutex<Settings>>,
     target: PipelineTarget,
 }
 
@@ -39,23 +38,14 @@ impl AutoStart {
 
         autostart.map(|autostart| LoadedAutoStart {
             autostart,
-            settings: self.settings,
             target: PipelineTarget::Desktop, // autostart load only invoked from desktop; gamemode has settings in memory
         })
     }
 }
 
 impl LoadedAutoStart {
-    pub fn new(
-        autostart: crate::settings::AutoStart,
-        settings: Arc<Mutex<Settings>>,
-        target: PipelineTarget,
-    ) -> Self {
-        Self {
-            autostart,
-            settings,
-            target,
-        }
+    pub fn new(autostart: crate::settings::AutoStart, target: PipelineTarget) -> Self {
+        Self { autostart, target }
     }
 
     // TODO::teardown leftover

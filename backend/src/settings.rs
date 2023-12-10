@@ -12,8 +12,8 @@ use crate::{
     macros::{newtype_strid, newtype_uuid},
     pipeline::{
         data::{
-            Pipeline, PipelineActionId, PipelineActionNode, PipelineDefinition, PipelineTarget,
-            Selection, Template, TemplateId,
+            Pipeline, PipelineActionId, PipelineDefinition, PipelineTarget, Selection, Template,
+            TemplateId,
         },
         registar::PipelineActionRegistrar,
     },
@@ -58,12 +58,12 @@ impl Settings {
                     tags:  vec!["NDS".to_string(), "nds".to_string()],
                     targets: HashMap::from_iter([
                         (PipelineTarget::Desktop, Selection::AllOf(vec![
-                            PipelineActionNode::new("core:melonds:config"),
-                            PipelineActionNode::new("core:display:display_config"),
-                            PipelineActionNode::new("core:display:virtual_screen")
+                            PipelineActionId::new("core:melonds:config"),
+                            PipelineActionId::new("core:display:display_config"),
+                            PipelineActionId::new("core:display:virtual_screen")
                         ])),
                         (PipelineTarget::Gamemode, Selection::AllOf(vec![
-                            PipelineActionNode::new("core:melonds:config"),
+                            PipelineActionId::new("core:melonds:config"),
                         ]))
                     ]),
                     actions: std::borrow::Cow::Borrowed(template_actions)
@@ -79,12 +79,12 @@ impl Settings {
                     tags: vec!["3DS".to_string(),"3ds".to_string()],
                     targets: HashMap::from_iter([
                         (PipelineTarget::Desktop, Selection::AllOf(vec![
-                            PipelineActionNode::new("core:citra:config"),
-                            PipelineActionNode::new("core:display:display_config"),
-                            PipelineActionNode::new("core:display:multi_window")
+                            PipelineActionId::new("core:citra:config"),
+                            PipelineActionId::new("core:display:display_config"),
+                            PipelineActionId::new("core:display:multi_window")
                         ])),
                         (PipelineTarget::Gamemode, Selection::AllOf(vec![
-                            PipelineActionNode::new("core:citra:config"),
+                            PipelineActionId::new("core:citra:config"),
                         ]))
                     ]),
                     actions: std::borrow::Cow::Borrowed(template_actions)
@@ -101,13 +101,13 @@ impl Settings {
                     targets: HashMap::from_iter([
                         (PipelineTarget::Desktop,
                             Selection::AllOf(vec![
-                                PipelineActionNode::new("core:cemu:config"),
-                                PipelineActionNode::new("core:display:display_config"),
-                                PipelineActionNode::new("core:display:multi_window")
+                                PipelineActionId::new("core:cemu:config"),
+                                PipelineActionId::new("core:display:display_config"),
+                                PipelineActionId::new("core:display:multi_window")
                         ])),
                         (PipelineTarget::Gamemode,
                             Selection::AllOf(vec![
-                                PipelineActionNode::new("core:cemu:config")
+                                PipelineActionId::new("core:cemu:config")
                         ]))
                     ]),
                     actions: std::borrow::Cow::Borrowed(template_actions)

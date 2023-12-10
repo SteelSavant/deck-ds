@@ -11,9 +11,7 @@ use super::{
         source_file::{EmuDeckSource, FlatpakSource, SourceFile},
         virtual_screen::VirtualScreen,
     },
-    data::{
-        PipelineActionDefinition, PipelineActionId, PipelineActionNode, PipelineTarget, Selection,
-    },
+    data::{PipelineActionDefinition, PipelineActionId, PipelineTarget, Selection},
 };
 use std::{collections::HashMap, sync::Arc};
 
@@ -165,6 +163,7 @@ impl PipelineActionRegistarBuilder {
                             name: "Display Configuration".to_string(),
                             description: Some("Ensures the display resolution and layout are correctly configured before and after executing pipeline actions.".into()),
                             enabled: None,
+                            profile_override: None,
                             selection: DisplayConfig {
                                 teardown_external_settings: TeardownExternalSettings::Previous,
                                 teardown_deck_location: RelativeLocation::Below,
@@ -177,12 +176,14 @@ impl PipelineActionRegistarBuilder {
                         name: "Virtual Screen".to_string(),
                         description: Some("Maps the internal and external monitor to a single virtual screen, for applications that do not support multiple windows.".into()),
                         enabled: None,
+                        profile_override: None,
                         selection: VirtualScreen.into(),
                     },).with_action("multi_window",    Some(PipelineTarget::Desktop), PipelineActionDefinition {
                         id: PipelineActionId::new(""),
                         name: "Multi-Window Emulation".to_string(),
                         description: Some("Manages windows for known emulators configurations with multiple display windows.".into()),
                         enabled: None,
+                        profile_override: None,
                         selection: MultiWindow.into(),
                     })
                 })
@@ -192,10 +193,11 @@ impl PipelineActionRegistarBuilder {
                         name: "Citra Configuration".to_string(),
                         description: None,
                                                 enabled: None,
+                                                profile_override: None,
 
                         selection: Selection::AllOf(vec![
-                            PipelineActionNode::new("core:citra:source"),
-                            PipelineActionNode::new("core:citra:layout")
+                            PipelineActionId::new("core:citra:source"),
+                            PipelineActionId::new("core:citra:layout")
                         ]),
                     })
                     .with_action("source", None, PipelineActionDefinition {
@@ -203,10 +205,11 @@ impl PipelineActionRegistarBuilder {
                         name: "Citra Settings Source".to_string(),
                         description: Some("Source file to use when editing Citra settings.".to_string()),
                                                 enabled: None,
+                                                profile_override: None,
 
                         selection:  Selection::OneOf {selection: PipelineActionId::new("core:citra:flatpak_source"), actions: vec![
-                            PipelineActionNode::new("core:citra:flatpak_source"),
-                            PipelineActionNode::new("core:citra:custom_source")
+                            PipelineActionId::new("core:citra:flatpak_source"),
+                            PipelineActionId::new("core:citra:custom_source")
                         ]},
                     })
                     .with_action("flatpak_source", None, PipelineActionDefinition {
@@ -214,6 +217,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Flatpak Settings".to_string(),
                         description: Some("Sets the settings INI file location to the default Flatpak location.".to_string()),
                                                 enabled: None,
+                                                profile_override: None,
 
                         selection:SourceFile::Flatpak(FlatpakSource::Citra).into(),
                     })
@@ -222,6 +226,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Custom".to_string(),
                         description: Some("Sets the settings INI file location to a custom location.".to_string()),
                                                 enabled: None,
+                                                profile_override: None,
 
                         selection: SourceFile::Custom(None).into(),
                     })
@@ -230,6 +235,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Citra Layout".to_string(),
                         description: Some("Edits Citra ini file to desired layout settings.".to_string()),
                         enabled: Some(true),
+                        profile_override: None,
                         selection: CitraLayout {
                             layout_option: CitraLayoutOption::Default,
                             swap_screens: false,
@@ -239,6 +245,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Citra Layout".to_string(),
                         description: Some("Edits Citra ini file to desired layout settings.".to_string()),
                         enabled: Some(true),
+                        profile_override: None,
                         selection: CitraLayout {
                             layout_option: CitraLayoutOption::HybridScreen,
                             swap_screens: false
@@ -251,10 +258,11 @@ impl PipelineActionRegistarBuilder {
                         name: "Cemu Configuration".to_string(),
                         description: None,
                                                 enabled: None,
+                                                profile_override: None,
 
                         selection: Selection::AllOf(vec![
-                            PipelineActionNode::new("core:cemu:source"),
-                            PipelineActionNode::new("core:cemu:layout")
+                            PipelineActionId::new("core:cemu:source"),
+                            PipelineActionId::new("core:cemu:layout")
                         ]),
                     })
                     .with_action("source", None, PipelineActionDefinition {
@@ -262,11 +270,12 @@ impl PipelineActionRegistarBuilder {
                         name: "Cemu Settings Source".to_string(),
                         description: Some("Source file to use when editing Cemu settings.".to_string()),
                                                 enabled: None,
+                                                profile_override: None,
 
                         selection:  Selection::OneOf {selection: PipelineActionId::new("core:cemu:flatpak_source"), actions: vec![
-                            PipelineActionNode::new("core:cemu:flatpak_source"),
-                            PipelineActionNode::new("core:cemu:emudeck_proton_source"),
-                            PipelineActionNode::new("core:cemu:custom_source")
+                            PipelineActionId::new("core:cemu:flatpak_source"),
+                            PipelineActionId::new("core:cemu:emudeck_proton_source"),
+                            PipelineActionId::new("core:cemu:custom_source")
                         ]},
                     })
                     .with_action("flatpak_source", None, PipelineActionDefinition {
@@ -274,6 +283,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Flatpak Settings".to_string(),
                         description: Some("Sets the settings INI file location to the default Flatpak location.".to_string()),
                                                 enabled: None,
+                                                profile_override: None,
 
                         selection:SourceFile::Flatpak(FlatpakSource::Cemu).into(),
                     })
@@ -282,6 +292,7 @@ impl PipelineActionRegistarBuilder {
                         name: "EmuDeck (Proton) Settings".to_string(),
                         description: Some("Sets the settings INI file location to the default EmuDeck (Proton) location.".to_string()),
                                                 enabled: None,
+                                                profile_override: None,
 
                         selection:SourceFile::EmuDeck(EmuDeckSource::CemuProton).into(),
                     })
@@ -290,6 +301,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Custom".to_string(),
                         description: Some("Sets the settings INI file location to a custom location.".to_string()),
                                                 enabled: None,
+                                                profile_override: None,
 
                         selection: SourceFile::Custom(None).into(),
                     }).with_action("layout", Some(PipelineTarget::Desktop),     PipelineActionDefinition {
@@ -297,6 +309,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Cemu Layout".to_string(),
                         description: Some("Edits Cemu settings.xml file to desired settings.".to_string()),
                         enabled: Some(true),
+                        profile_override: None,
                         selection: CemuLayout {
                             separate_gamepad_view: true,
                         }.into(),
@@ -305,6 +318,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Cemu Layout".to_string(),
                         description: Some("Edits Cemu settings.xml file to desired settings.".to_string()),
                         enabled: Some(true),
+                        profile_override: None,
                         selection: CemuLayout {
                             separate_gamepad_view: false,
                         }.into(),
@@ -316,10 +330,11 @@ impl PipelineActionRegistarBuilder {
                         name: "melonDS Configuration".to_string(),
                         description: None,
                                                 enabled: None,
+                                                profile_override: None,
 
                         selection: Selection::AllOf(vec![
-                            PipelineActionNode::new("core:melonds:source"),
-                            PipelineActionNode::new("core:melonds:layout")
+                            PipelineActionId::new("core:melonds:source"),
+                            PipelineActionId::new("core:melonds:layout")
                         ]),
                     })
                     .with_action("source", None, PipelineActionDefinition {
@@ -327,10 +342,11 @@ impl PipelineActionRegistarBuilder {
                         name: "melonDS Settings Source".to_string(),
                         description: Some("Source file to use when editing melonDS settings.".to_string()),
                                                 enabled: None,
+                                                profile_override: None,
 
                         selection:  Selection::OneOf {selection: PipelineActionId::new("core:melonds:flatpak_source"), actions: vec![
-                            PipelineActionNode::new("core:melonds:flatpak_source"),
-                            PipelineActionNode::new("core:melonds:custom_source")
+                            PipelineActionId::new("core:melonds:flatpak_source"),
+                            PipelineActionId::new("core:melonds:custom_source")
                         ]},
                     })
                     .with_action("flatpak_source", None, PipelineActionDefinition {
@@ -338,6 +354,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Flatpak Settings".to_string(),
                         description: Some("Sets the settings INI file location to the default Flatpak location.".to_string()),
                                                 enabled: None,
+                                                profile_override: None,
 
                         selection: SourceFile::Flatpak(FlatpakSource::MelonDS).into(),
                     })
@@ -346,6 +363,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Custom".to_string(),
                         description: Some("Sets the settings INI file location to a custom location.".to_string()),
                                                 enabled: None,
+                                                profile_override: None,
 
                         selection: SourceFile::Custom(None).into(),
                     })
@@ -354,6 +372,7 @@ impl PipelineActionRegistarBuilder {
                         name: "melonDS Layout".to_string(),
                         description: Some("Edits melonDS ini file to desired layout settings.".to_string()),
                                                 enabled: Some(true),
+                                                profile_override: None,
 
                         selection: MelonDSLayout {
                             layout_option: MelonDSLayoutOption::Vertical,
@@ -366,6 +385,7 @@ impl PipelineActionRegistarBuilder {
                         name: "melonDS Layout".to_string(),
                         description: Some("Edits melonDS ini file to desired settings.".to_string()),
                         enabled: Some(true),
+                        profile_override: None,
                         selection: MelonDSLayout {
                             layout_option: MelonDSLayoutOption::Hybrid,
                             sizing_option: MelonDSSizingOption::Even,

@@ -69,7 +69,6 @@ pub fn autostart(
                             app_id: args.app,
                             pipeline: args.pipeline,
                         },
-                        settings.clone(),
                         PipelineTarget::Gamemode,
                     )
                     .build_executor(
