@@ -90,10 +90,57 @@ export type ApiError = { code: StatusCode.BadRequest | StatusCode.ServerError, e
 
 export type Response<T> = Promise<Result<T, ApiError>>
 
+let _id = 0;
+
 async function call_backend_typed<T, R>(fn: string, arg: T): Response<R> {
-    const args = [arg];
-    const res = (await call_backend(fn, args));
-    console.log("DeckDS: api", `${fn}(`, args, ') ->', res);
+
+    // USDPL has a comparatively small content limit, so we chunk manually to bypass.
+    const stringified = JSON.stringify(arg);
+    const bytesLen = stringified.length;
+    console.log(`DeckDS: api sending ~${bytesLen} bytes.`);
+    const maxBytes = 1024;
+
+    if (bytesLen > maxBytes) {
+        _id++;
+        if (!isFinite(_id) || _id < 0 || _id >= 18446744073709551615) {
+            _id = 0;
+        }
+        const id = _id;
+
+        const windowLen = maxBytes;
+        for (let i = 0; i <= bytesLen; i += windowLen) {
+            const end = i + windowLen;
+            const slice = stringified.slice(i, end);
+            if (slice.length > 0) {
+                console.log('writing chunk', i / windowLen, 'of', bytesLen / windowLen);
+
+                let res = await call_backend("chunked_request", [id, slice]);
+                let typed = handle_backend_response<R>(res); // not really <R>, but we'll never return the OK, so its fine.
+
+                if (!typed.isOk) {
+                    console.log('error chunking request', typed.err);
+                    return typed;
+                }
+            } else {
+                console.log('chunks got empty slice from', i, 'to', end)
+            }
+        }
+
+        let res = await call_backend(fn, ["Chunked", id]);
+        console.log("DeckDS: api", `${fn}(`, arg, ') ->', res);
+
+        return handle_backend_response(res);
+
+    } else {
+        const args = ["Full", arg];
+        const res = (await call_backend(fn, args));
+        console.log("DeckDS: api", `${fn}(`, arg, ') ->', res);
+
+        return handle_backend_response(res);
+    }
+}
+
+function handle_backend_response<T>(res: any): Result<T, ApiError> {
     const code = res ? res[0] : 0;
 
     switch (code) {

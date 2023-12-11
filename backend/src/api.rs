@@ -1,10 +1,11 @@
 pub mod autostart;
 pub mod general;
 pub mod profile;
+pub mod request_handler;
 
 use anyhow::Result;
 use schemars::{schema::RootSchema, JsonSchema};
-use serde::de::DeserializeOwned;
+use serde::{de::DeserializeOwned, Deserialize};
 use usdpl_back::core::serdes::Primitive;
 
 use self::{
@@ -14,6 +15,7 @@ use self::{
         GetProfilesResponse, GetTemplatesResponse, ReifyPipelineRequest, ReifyPipelineResponse,
         SetProfileRequest,
     },
+    request_handler::RequestMode,
 };
 
 pub(super) type ApiParameterType = Vec<Primitive>;
@@ -32,25 +34,6 @@ impl From<StatusCode> for Primitive {
             StatusCode::BadRequest => 400,
             StatusCode::ServerError => 500,
         })
-    }
-}
-
-trait ParsePrimitiveAt {
-    fn parse_at<T: DeserializeOwned>(&self, index: usize) -> Result<T>;
-}
-
-impl ParsePrimitiveAt for ApiParameterType {
-    fn parse_at<T: DeserializeOwned>(&self, index: usize) -> Result<T> {
-        let value = self.get(index);
-        if let Some(&Primitive::Json(json)) = value.as_ref() {
-            Ok(serde_json::from_str(json)?)
-        } else {
-            Err(anyhow::anyhow!(
-                "Parameter {:?} could not be parsed into a value of type {}",
-                value.map(primitive_to_string),
-                std::any::type_name::<T>(),
-            ))
-        }
     }
 }
 
@@ -110,21 +93,6 @@ pub struct Api {
 impl Api {
     pub fn generate() -> RootSchema {
         schemars::schema_for!(Self)
-    }
-}
-
-fn primitive_to_string(v: &Primitive) -> String {
-    match v {
-        Primitive::Empty => "Empty".to_string(),
-        Primitive::String(s) => format!("String({s})"),
-        Primitive::F32(v) => format!("F32({v})"),
-        Primitive::F64(v) => format!("F64({v})"),
-        Primitive::U32(v) => format!("U32({v})"),
-        Primitive::U64(v) => format!("U64({v})"),
-        Primitive::I32(v) => format!("I32({v})"),
-        Primitive::I64(v) => format!("I64({v})"),
-        Primitive::Bool(v) => format!("Bool({v})"),
-        Primitive::Json(v) => format!("Json({v})"),
     }
 }
 

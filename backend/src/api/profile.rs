@@ -10,7 +10,10 @@ use crate::{
     settings::{Profile, ProfileId, Settings},
 };
 
-use super::{ParsePrimitiveAt, ResponseErr, ResponseOk, StatusCode, ToResponseType};
+use super::{
+    request_handler::{log_invoke, RequestHandler},
+    ResponseErr, ResponseOk, StatusCode, ToResponseType,
+};
 
 // Create Profile
 
@@ -25,10 +28,19 @@ pub struct CreateProfileResponse {
 }
 
 pub fn create_profile(
+    request_handler: Arc<Mutex<RequestHandler>>,
     settings: Arc<Mutex<Settings>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
-        let args: Result<CreateProfileRequest, _> = args.parse_at(0);
+        log_invoke("create_profile", &args);
+
+        let args: Result<CreateProfileRequest, _> = {
+            let mut lock = request_handler
+                .lock()
+                .expect("request handler should not be poisoned");
+
+            lock.resolve(args)
+        };
         match args {
             Ok(args) => {
                 let lock = settings.lock().expect("settings mutex should be lockable");
@@ -53,7 +65,9 @@ pub struct GetProfilesResponse {
 pub fn get_profiles(
     settings: Arc<Mutex<Settings>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |_: super::ApiParameterType| {
+    move |args: super::ApiParameterType| {
+        log_invoke("get_profiles", &args);
+
         let lock = settings.lock().expect("settings mutex should be lockable");
         let res = lock.get_profiles();
         match res {
@@ -76,10 +90,19 @@ pub struct GetProfileResponse {
 }
 
 pub fn get_profile(
+    request_handler: Arc<Mutex<RequestHandler>>,
     settings: Arc<Mutex<Settings>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
-        let args: Result<GetProfileRequest, _> = args.parse_at(0);
+        log_invoke("get_profile", &args);
+
+        let args: Result<GetProfileRequest, _> = {
+            let mut lock = request_handler
+                .lock()
+                .expect("request handler should not be poisoned");
+
+            lock.resolve(args)
+        };
         match args {
             Ok(args) => {
                 let lock = settings.lock().expect("settings mutex should be lockable");
@@ -101,10 +124,19 @@ pub struct SetProfileRequest {
 }
 
 pub fn set_profile(
+    request_handler: Arc<Mutex<RequestHandler>>,
     settings: Arc<Mutex<Settings>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
-        let args: Result<SetProfileRequest, _> = args.parse_at(0);
+        log_invoke("set_profile", &args);
+
+        let args: Result<SetProfileRequest, _> = {
+            let mut lock = request_handler
+                .lock()
+                .expect("request handler should not be poisoned");
+
+            lock.resolve(args)
+        };
         match args {
             Ok(args) => {
                 let lock = settings.lock().expect("settings mutex should be lockable");
@@ -121,8 +153,8 @@ pub fn set_profile(
 }
 
 // Reify Pipeline
-#[derive(Debug, Clone, Deserialize, JsonSchema)]
 
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct ReifyPipelineRequest {
     pipeline: PipelineDefinition,
 }
@@ -133,10 +165,19 @@ pub struct ReifyPipelineResponse {
 }
 
 pub fn reify_pipeline(
+    request_handler: Arc<Mutex<RequestHandler>>,
     settings: Arc<Mutex<Settings>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
-        let args: Result<ReifyPipelineRequest, _> = args.parse_at(0);
+        log_invoke("reify_pipeline", &args);
+
+        let args: Result<ReifyPipelineRequest, _> = {
+            let mut lock = request_handler
+                .lock()
+                .expect("request handler should not be poisoned");
+
+            lock.resolve(args)
+        };
         match args {
             Ok(args) => {
                 let lock = settings.lock().expect("settings mutex should be lockable");
@@ -166,7 +207,9 @@ pub struct GetTemplatesResponse {
 pub fn get_templates(
     settings: Arc<Mutex<Settings>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |_: super::ApiParameterType| {
+    move |args: super::ApiParameterType| {
+        log_invoke("get_templates", &args);
+
         let lock = settings.lock().expect("settings mutex should be lockable");
         let templates = lock.get_templates().iter().map(|t| t.clone()).collect();
 

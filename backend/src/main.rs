@@ -13,7 +13,10 @@ use simplelog::{LevelFilter, WriteLogger};
 use usdpl_back::Instance;
 
 use crate::{
-    api::Api,
+    api::{
+        request_handler::{self, RequestHandler},
+        Api,
+    },
     asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
@@ -85,14 +88,12 @@ fn main() -> Result<()> {
         },
         #[cfg(not(debug_assertions))]
         {
-            LevelFilter::Info
+            LevelFilter::Trace
         },
         Default::default(),
         std::fs::File::create(&log_filepath).unwrap(),
     )
     .unwrap();
-    log::debug!("Logging to: {:?}.", log_filepath);
-    println!("Logging to: {:?}", log_filepath);
 
     let home_dir = usdpl_back::api::dirs::home()
         .or_else(dirs::home_dir)
@@ -103,6 +104,11 @@ fn main() -> Result<()> {
 
     log::info!("Starting back-end ({} v{})", PACKAGE_NAME, PACKAGE_VERSION);
     println!("Starting back-end ({} v{})", PACKAGE_NAME, PACKAGE_VERSION);
+
+    log::debug!("Logging to: {:?}.", log_filepath);
+    log::info!("Log level set to {:?}", log::max_level());
+    println!("Logging to: {:?} @ {:?}", log_filepath, log::max_level());
+
     log::info!(
         "Current dir `{}`",
         std::env::current_dir().unwrap().display()
@@ -134,6 +140,7 @@ fn main() -> Result<()> {
 
     let assets_dir = config_dir.join("assets"); // TODO::keep assets with decky plugin, not config
     let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
+    let request_handler = Arc::new(Mutex::new(RequestHandler::new()));
 
     match mode {
         Modes::Autostart => {
@@ -192,16 +199,20 @@ fn main() -> Result<()> {
                     vec![log_filepath.to_string_lossy().to_string().into()]
                 })
                 .register(
+                    "chunked_request",
+                    api::request_handler::chunked_request(request_handler.clone()),
+                )
+                .register(
                     "create_profile",
-                    api::profile::create_profile(settings.clone()),
+                    api::profile::create_profile(request_handler.clone(), settings.clone()),
                 )
                 .register(
                     "get_profile",
-                    crate::api::profile::get_profile(settings.clone()),
+                    crate::api::profile::get_profile(request_handler.clone(), settings.clone()),
                 )
                 .register(
                     "set_profile",
-                    crate::api::profile::set_profile(settings.clone()),
+                    crate::api::profile::set_profile(request_handler.clone(), settings.clone()),
                 )
                 .register(
                     "get_profiles",
@@ -209,7 +220,7 @@ fn main() -> Result<()> {
                 )
                 .register(
                     "reify_pipeline",
-                    crate::api::profile::reify_pipeline(settings.clone()),
+                    crate::api::profile::reify_pipeline(request_handler.clone(), settings.clone()),
                 )
                 .register(
                     "get_templates",
@@ -222,6 +233,7 @@ fn main() -> Result<()> {
                 .register(
                     "autostart",
                     crate::api::autostart::autostart(
+                        request_handler.clone(),
                         settings.clone(),
                         asset_manager,
                         home_dir,

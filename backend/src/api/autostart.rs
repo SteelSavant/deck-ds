@@ -8,7 +8,6 @@ use schemars::JsonSchema;
 use serde::Deserialize;
 
 use crate::{
-    api::primitive_to_string,
     asset::AssetManager,
     autostart::LoadedAutoStart,
     pipeline::data::{Pipeline, PipelineTarget},
@@ -16,7 +15,10 @@ use crate::{
     sys::steamos_session_select::{steamos_session_select, Session},
 };
 
-use super::{ParsePrimitiveAt, ResponseErr, ResponseOk, StatusCode, ToResponseType};
+use super::{
+    request_handler::{log_invoke, RequestHandler},
+    ResponseErr, ResponseOk, StatusCode, ToResponseType,
+};
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct AutoStartRequest {
@@ -26,6 +28,7 @@ pub struct AutoStartRequest {
 }
 
 pub fn autostart(
+    request_handler: Arc<Mutex<RequestHandler>>,
     settings: Arc<Mutex<Settings>>,
     assets_manager: AssetManager<'static>,
     home_dir: PathBuf,
@@ -36,12 +39,15 @@ pub fn autostart(
     let config_dir = Arc::new(config_dir);
 
     move |args: super::ApiParameterType| {
-        log::debug!(
-            "autostart invoked with {:?}",
-            args.first().map(primitive_to_string)
-        );
+        log_invoke("autostart", &args);
 
-        let args: Result<AutoStartRequest, _> = args.parse_at(0);
+        let args: Result<AutoStartRequest, _> = {
+            let mut lock = request_handler
+                .lock()
+                .expect("request handler should not be poisoned");
+
+            lock.resolve(args)
+        };
         match args {
             Ok(args) => match args.target {
                 PipelineTarget::Desktop => {
