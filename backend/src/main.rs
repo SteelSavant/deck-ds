@@ -13,10 +13,7 @@ use simplelog::{LevelFilter, WriteLogger};
 use usdpl_back::Instance;
 
 use crate::{
-    api::{
-        request_handler::{self, RequestHandler},
-        Api,
-    },
+    api::{request_handler::RequestHandler, Api},
     asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},

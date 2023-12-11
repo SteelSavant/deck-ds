@@ -278,7 +278,7 @@ impl Pipeline {
                         None | Some(true) => Some(&a.selection),
                         Some(false) => None,
                     })
-                    .flat_map(|a| build_recursive(&a))
+                    .flat_map(|a| build_recursive(a))
                     .collect(),
             }
         }

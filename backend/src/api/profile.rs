@@ -211,7 +211,7 @@ pub fn get_templates(
         log_invoke("get_templates", &args);
 
         let lock = settings.lock().expect("settings mutex should be lockable");
-        let templates = lock.get_templates().iter().map(|t| t.clone()).collect();
+        let templates = lock.get_templates().to_vec();
 
         GetTemplatesResponse { templates }.to_response()
     }

@@ -150,7 +150,8 @@ function handle_backend_response<T>(res: any): Result<T, ApiError> {
         default: {
             return Err({
                 code: code,
-                err: res ? res[1] : 'unspecified error occurred' // assume an error string
+                err: res ? res[1] // assume an error string
+                    : 'unspecified error occurred'
             })
         }
     }

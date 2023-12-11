@@ -4,8 +4,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use schemars::JsonSchema;
-use serde::{de::DeserializeOwned, Deserialize};
+use serde::de::DeserializeOwned;
 use strum::EnumString;
 use usdpl_back::core::serdes::Primitive;
 

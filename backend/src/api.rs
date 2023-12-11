@@ -3,9 +3,7 @@ pub mod general;
 pub mod profile;
 pub mod request_handler;
 
-use anyhow::Result;
 use schemars::{schema::RootSchema, JsonSchema};
-use serde::{de::DeserializeOwned, Deserialize};
 use usdpl_back::core::serdes::Primitive;
 
 use self::{
@@ -15,7 +13,6 @@ use self::{
         GetProfilesResponse, GetTemplatesResponse, ReifyPipelineRequest, ReifyPipelineResponse,
         SetProfileRequest,
     },
-    request_handler::RequestMode,
 };
 
 pub(super) type ApiParameterType = Vec<Primitive>;

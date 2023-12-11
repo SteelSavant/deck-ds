@@ -106,7 +106,7 @@ impl PipelineDefinition {
         let targets = self
             .targets
             .iter()
-            .map(|(t, s)| s.reify(*t, &self, profiles).map(|s| (*t, s)))
+            .map(|(t, s)| s.reify(*t, self, profiles).map(|s| (*t, s)))
             .collect::<Result<Vec<_>>>()?
             .into_iter()
             .collect::<HashMap<_, _>>();
@@ -164,15 +164,13 @@ impl PipelineActionId {
 
         let resolved_action: PipelineAction = action
             .profile_override
-            .map(|profile| {
+            .and_then(|profile| {
                 profiles
                     .iter()
                     .find(|p| p.id == profile)
-                    .map(|p| p.pipeline.actions.get(self, target).cloned())
-                    .flatten()
+                    .and_then(|p| p.pipeline.actions.get(self, target))
                     .map(|action| action.reify(Some(profile), target, pipeline, profiles))
             })
-            .flatten()
             .unwrap_or_else(|| action.reify(None, target, pipeline, profiles))?;
 
         Ok(resolved_action)
@@ -194,8 +192,8 @@ impl PipelineActionDefinition {
             description: self.description.clone(),
             id: self.id.clone(),
             enabled: self.enabled,
-            profile_override: profile_override,
-            selection: selection,
+            profile_override,
+            selection,
         })
     }
 }
