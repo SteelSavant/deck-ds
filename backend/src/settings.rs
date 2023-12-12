@@ -178,7 +178,7 @@ impl Settings {
             .filter_map(|f| {
                 f.ok().map(|entry| {
                     log::debug!("checking entry {:?} for profile", entry.path());
-                    if entry.path().ends_with(".json") {
+                    if entry.file_name().to_string_lossy().ends_with(".json") {
                         let contents = std::fs::read_to_string(entry.path())
                             .inspect(|e| {
                                 log::warn!("failed to parse profile at {:?}: {}", entry.path(), e)
@@ -329,122 +329,130 @@ pub struct App {
     profiles: Vec<Profile>,
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use crate::pipeline::{action::virtual_screen::VirtualScreen, data::PipelineActionDefinition};
+#[cfg(test)]
+mod tests {
+    use std::borrow::Cow;
 
-//     use super::*;
-//     use pretty_assertions::assert_eq;
+    use super::*;
+    use pretty_assertions::assert_eq;
+    use uuid::Uuid;
 
-//     #[test]
-//     fn test_desktop_contents_correct() {
-//         let settings = Settings::new(
-//             Path::new("$HOME/homebrew/plugins")
-//                 .join(PACKAGE_NAME)
-//                 .join("bin/backend"),
-//             Path::new("$HOME/.config").join(PACKAGE_NAME),
-//             Path::new("$HOME/.config/autostart").to_path_buf(),
-//         );
+    #[test]
+    fn test_desktop_contents_correct() {
+        let settings = Settings::new(
+            Path::new("test/out/homebrew/plugins")
+                .join(PACKAGE_NAME)
+                .join("bin/backend"),
+            Path::new("test/out/.config").join(PACKAGE_NAME),
+            Path::new("test/out/.config/autostart").to_path_buf(),
+        );
 
-//         let actual = settings.create_desktop_contents();
-//         let expected = r"[Desktop Entry]
-// Comment=Runs DeckDS plugin autostart script for dual screen applications.
-// Exec=$HOME/homebrew/plugins/DeckDS/bin/backend autostart
-// Path=$HOME/homebrew/plugins/DeckDS/bin
-// Name=DeckDS
-// Type=Application";
+        let actual = settings.create_desktop_contents();
+        let expected = r"[Desktop Entry]
+Comment=Runs DeckDS plugin autostart script for dual screen applications.
+Exec=test/out/homebrew/plugins/DeckDS/bin/backend autostart
+Path=test/out/homebrew/plugins/DeckDS/bin
+Name=DeckDS
+Type=Application";
 
-//         assert_eq!(expected, actual);
-//     }
+        assert_eq!(expected, actual);
+    }
 
-//     #[test]
-//     fn test_profile_crud() -> Result<()> {
-//         let settings = Settings::new(
-//             Path::new("$HOME/homebrew/plugins/deck-ds/bin/backend"),
-//             Path::new("$HOME/.config/deck-ds"),
-//             Path::new("$HOME/.config/autostart"),
-//         );
+    #[test]
+    fn test_profile_crud() -> Result<()> {
+        let settings = Settings::new(
+            Path::new("test/out/homebrew/plugins/deck-ds/bin/backend"),
+            Path::new("test/out/.config/deck-ds"),
+            Path::new("test/out/.config/autostart"),
+        );
 
-//         let mut expected = Profile {
-//             id: ProfileId::from_uuid(uuid::Uuid::nil()),
-//             pipeline: Pipeline {
-//                 name: "Test Pipeline".to_string(),
-//                 tags: vec!["TEST".to_string()],
-//                 description: "Test Pipeline".to_string(),
-//                 targets: HashMap::from_iter([(
-//                     PipelineTarget::Desktop,
-//                     Selection::AllOf(vec![
-//                         PipelineActionDefinition {
-//                             name: "test action".to_string(),
-//                             id: PipelineActionId::new("test:test:action"),
-//                             description: None,
-//                             selection: VirtualScreen.into(),
-//                         }
-//                         .into(),
-//                     )]),
-//                 )]),
-//             },
-//         };
+        let mut expected: Profile = Profile {
+            id: ProfileId::from_uuid(Uuid::nil()),
+            pipeline: PipelineDefinition {
+                name: "Test Pipeline".to_string(),
+                tags: vec!["Tag".to_string()],
+                description: "Test Description".to_string(),
+                targets: HashMap::from_iter([(
+                    PipelineTarget::Desktop,
+                    Selection::AllOf(vec![PipelineActionId::new("core:citra:layout")]),
+                )]),
 
-//         settings.set_profile(&expected)?;
-//         let actual = settings.get_profile(&expected.id)?;
+                actions: Cow::Owned(PipelineActionRegistrar::builder().with_core().build()),
+            },
+        };
 
-//         assert_eq!(expected.id, actual.id);
-//         assert_eq!(expected.pipeline.name, actual.pipeline.name);
+        settings.set_profile(&expected)?;
+        let actual = settings
+            .get_profile(&expected.id)?
+            .expect("profile should exist");
 
-//         expected.pipeline.name = "Updated".to_string();
+        assert_eq!(expected.id, actual.id);
+        assert_eq!(expected.pipeline.name, actual.pipeline.name);
 
-//         settings.set_profile(&expected)?;
+        expected.pipeline.name = "Updated".to_string();
 
-//         let actual = settings.get_profile(&expected.id)?;
+        settings.set_profile(&expected)?;
 
-//         assert_eq!(expected.id, actual.id);
-//         assert_eq!(expected.pipeline.name, actual.pipeline.name);
+        let actual = settings
+            .get_profile(&expected.id)?
+            .expect("saved profile should exist");
 
-//         settings.delete_profile(&expected.id)?;
+        assert_eq!(expected.id, actual.id);
+        assert_eq!(expected.pipeline.name, actual.pipeline.name);
 
-//         Ok(())
-//     }
+        let actual = settings
+            .get_profiles()?
+            .get(0)
+            .cloned()
+            .expect("get_profiles should find 1 profile");
 
-//     #[test]
-//     fn test_app_crud() -> Result<()> {
-//         let settings = Settings::new(
-//             Path::new("$HOME/homebrew/plugins/deck-ds/bin/backend"),
-//             Path::new("$HOME/.config/deck-ds"),
-//             Path::new("$HOME/.config/autostart"),
-//         );
+        assert_eq!(expected.id, actual.id);
+        assert_eq!(expected.pipeline.name, actual.pipeline.name);
 
-//         let mut expected = App {
-//             id: AppId("test_app".to_string()),
-//             profiles: vec![ActionOrProfilePipeline {
-//                 name: "Test Pipeline".to_string(),
-//                 tags: vec!["TEST".to_string()],
-//                 description: "Test Pipeline".to_string(),
-//                 targets: HashMap::from_iter([(PipelineTarget::Desktop, Selection::AllOf(vec![]))]),
-//             }],
-//         };
+        settings.delete_profile(&expected.id)?;
 
-//         settings.set_app(&expected)?;
-//         let actual = settings
-//             .get_app(&expected.id)?
-//             .with_context(|| "app should exist")?;
+        Ok(())
+    }
 
-//         assert_eq!(expected.id, actual.id);
-//         assert_eq!(expected.profiles[0].name, actual.profiles[0].name);
+    // #[test]
+    // fn test_app_crud() -> Result<()> {
+    //     let settings = Settings::new(
+    //         Path::new("$HOME/homebrew/plugins/deck-ds/bin/backend"),
+    //         Path::new("$HOME/.config/deck-ds"),
+    //         Path::new("$HOME/.config/autostart"),
+    //     );
 
-//         expected.profiles[0].name = "Updated".to_string();
+    //     let mut expected = App {
+    //         id: AppId("test_app".to_string()),
+    //         profiles: vec![ActionOrProfilePipeline {
+    //             name: "Test Pipeline".to_string(),
+    //             tags: vec!["TEST".to_string()],
+    //             description: "Test Pipeline".to_string(),
+    //             targets: HashMap::from_iter([(PipelineTarget::Desktop, Selection::AllOf(vec![]))]),
+    //         }],
+    //     };
 
-//         settings.set_app(&expected)?;
+    //     settings.set_app(&expected)?;
+    //     let actual = settings
+    //         .get_app(&expected.id)?
+    //         .with_context(|| "app should exist")?;
 
-//         let actual = settings
-//             .get_app(&expected.id)?
-//             .with_context(|| "app should exist")?;
+    //     assert_eq!(expected.id, actual.id);
+    //     assert_eq!(expected.profiles[0].name, actual.profiles[0].name);
 
-//         assert_eq!(expected.id, actual.id);
-//         assert_eq!(expected.profiles[0].name, actual.profiles[0].name);
+    //     expected.profiles[0].name = "Updated".to_string();
 
-//         settings.delete_app(&expected.id)?;
+    //     settings.set_app(&expected)?;
 
-//         Ok(())
-//     }
-// }
+    //     let actual = settings
+    //         .get_app(&expected.id)?
+    //         .with_context(|| "app should exist")?;
+
+    //     assert_eq!(expected.id, actual.id);
+    //     assert_eq!(expected.profiles[0].name, actual.profiles[0].name);
+
+    //     settings.delete_app(&expected.id)?;
+
+    //     Ok(())
+    // }
+}
