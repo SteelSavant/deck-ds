@@ -12,6 +12,7 @@ export default function PipelineDisplay(): ReactElement {
 
 
     const { state } = useModifiablePipelineDefinition();
+    console.log('pipeline display updated with state', state.definition);
     const result = useReifiedPipeline(state.definition);
 
     return <HandleLoading
@@ -53,13 +54,11 @@ export default function PipelineDisplay(): ReactElement {
                     ...allTargets.map((kv) => {
                         return {
                             title: kv.target,
-                            content: <PipelineTargetDisplay root={kv.root} updateAction={(_) => { }} updateOneOf={(_) => { }} />,
+                            content: <PipelineTargetDisplay root={kv.root} />,
                             id: kv.target.toLowerCase(),
                         };
                     }),
                 ];
-
-                console.log(`Creating ${pipeline.name} pipeline tags:`, tabs);
 
                 return <Focusable style={{ minWidth: "100%", minHeight: "100%" }}>
                     <div

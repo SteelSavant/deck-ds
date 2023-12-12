@@ -85,7 +85,7 @@ fn main() -> Result<()> {
         },
         #[cfg(not(debug_assertions))]
         {
-            LevelFilter::Trace
+            LevelFilter::Debug
         },
         Default::default(),
         std::fs::File::create(&log_filepath).unwrap(),

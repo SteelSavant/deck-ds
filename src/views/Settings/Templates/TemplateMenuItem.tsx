@@ -20,10 +20,9 @@ export default function TemplateMenuItem({ template }: { template: Template }): 
                     onClick={() => previewTemplate(template.id)}
                     onOKButton={() => previewTemplate(template.id)}
                 >
-
-                    <div style={{ display: 'flex', minWidth: '180px', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', minWidth: '100px', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <FaEye style={{ paddingRight: '1rem' }} />
                         Preview
-                        <FaEye style={{ paddingLeft: '1rem' }} />
                     </div>
                 </DialogButton>
                 <DialogButton

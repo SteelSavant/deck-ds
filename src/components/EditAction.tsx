@@ -1,7 +1,9 @@
-import { Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
+import { DialogButton, Dropdown, Field, FileSelectionType, Focusable, Toggle } from "decky-frontend-lib";
 import _ from "lodash";
 import { ReactElement } from "react";
+import { FaFile } from "react-icons/fa";
 import { Action, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../backend";
+import { useServerApi } from "../context/serverApiContext";
 
 
 interface EditActionProps {
@@ -15,12 +17,17 @@ export default function EditAction({
 }: EditActionProps): ReactElement {
     const cloned = _.cloneDeep(action);
     const type = cloned.type;
+
+    const serverApi = useServerApi();
+
+    const notConfigurable = (<div />);
     switch (type) {
         case 'CemuLayout':
             return (
                 <div>
                     <Field focusable={false} label="Separate Gamepad View">
                         <Toggle value={cloned.value.separate_gamepad_view} onChange={(isEnabled) => {
+                            console.log("toggling separate gamepad view:", isEnabled);
                             cloned.value.separate_gamepad_view = isEnabled;
                             onChange(cloned);
                         }} />
@@ -30,45 +37,46 @@ export default function EditAction({
         case 'CitraLayout':
             return (
                 <div>
-
-                    <Focusable >
-                        <Dropdown selectedOption={cloned.value.layout_option.type} rgOptions={citraLayoutOptions.map((a) => {
-                            return {
-                                label: a.type,
-                                data: a
-                            }
-                        })} onChange={(option) => {
-                            cloned.value.layout_option = option.data;
-                            onChange(cloned);
-                        }} />
-                    </Focusable>
-                    <Focusable>
-                        <Field focusable={false} label="Swap Screens">
-                            <Focusable>
-                                <Toggle value={cloned.value.swap_screens} onChange={(isEnabled) => {
-                                    cloned.value.swap_screens = isEnabled;
-                                    onChange(cloned);
-                                }} />
-                            </Focusable>
-                        </Field>
-                    </Focusable>
+                    <Field focusable={false} label="Layout Option">
+                        <Focusable >
+                            <Dropdown selectedOption={cloned.value.layout_option.type} rgOptions={citraLayoutOptions.map((a) => {
+                                return {
+                                    label: a.type,
+                                    data: a.type
+                                }
+                            })} onChange={(option) => {
+                                cloned.value.layout_option = { type: option.data };
+                                onChange(cloned);
+                            }} />
+                        </Focusable>
+                    </Field>
+                    <Field focusable={false} label="Swap Screens">
+                        <Focusable>
+                            <Toggle value={cloned.value.swap_screens} onChange={(isEnabled) => {
+                                cloned.value.swap_screens = isEnabled;
+                                onChange(cloned);
+                            }} />
+                        </Focusable>
+                    </Field>
                 </div>
             );
         case 'MelonDSLayout':
             return (
                 <div>
-                    <Focusable >
-                        <Dropdown selectedOption={cloned.value.layout_option} rgOptions={melonDSLayoutOptions.map((a) => {
-                            return {
-                                label: a,
-                                data: a
-                            }
-                        })} onChange={(option) => {
-                            cloned.value.layout_option = option.data;
-                            onChange(cloned);
-                        }} />
-                    </Focusable>
-                    <Field focusable={false} label="Swap Screens">
+                    <Field focusable={false} label="Layout Option">
+                        <Focusable >
+                            <Dropdown selectedOption={cloned.value.layout_option} rgOptions={melonDSLayoutOptions.map((a) => {
+                                return {
+                                    label: a,
+                                    data: a
+                                }
+                            })} onChange={(option) => {
+                                cloned.value.layout_option = option.data;
+                                onChange(cloned);
+                            }} />
+                        </Focusable>
+                    </Field>
+                    <Field focusable={false} label="Sizing Option">
                         <Focusable >
                             <Dropdown selectedOption={cloned.value.sizing_option} rgOptions={melonDSSizingOptions.map((a) => {
                                 return {
@@ -105,20 +113,34 @@ export default function EditAction({
 
             switch (sourceType) {
                 case 'Custom':
-                    return <Field focusable={false} label='Custom Path'>
-                        <p> TODO </p>
+                    const file = sourceValue.value.path;
+                    const extensions = sourceValue.value.valid_ext;
+                    async function onSelectFile() {
+                        const pickedFile = await serverApi.openFilePickerV2(FileSelectionType.FILE, file ?? '/home/deck', true, true, undefined, extensions, false);
+                        cloned.value = {
+                            type: 'Custom',
+                            value: {
+                                path: pickedFile.realpath, // TODO::consider path instead of realpath
+                                valid_ext: extensions
+                            }
+                        }
+                        onChange(cloned)
+                    }
+                    return <Field focusable={false} label="File Path" description={file ?? 'Not set'}>
+                        <DialogButton style={{ display: 'flex', width: '100%', position: 'relative' }} onClick={onSelectFile} onOKButton={onSelectFile}>
+                            <div style={{ display: 'flex', minWidth: '100px', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <FaFile style={{ paddingRight: '1rem' }} />
+                                Select File
+                            </div>
+                        </DialogButton>
                     </Field>
                 default:
-                    return (
-                        <p> Not Configurable</p>
-                    );
+                    return notConfigurable;
             }
         case 'DisplayConfig': // fallthrough
         case 'MultiWindow': // fallthrough
         case 'VirtualScreen':
-            return (
-                <p> Not Configurable</p>
-            );
+            return notConfigurable;
         default:
             const typecheck: never = type;
             throw typecheck ?? 'action for edit failed to typecheck'

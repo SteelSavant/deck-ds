@@ -8,16 +8,24 @@ use crate::pipeline::{dependency::Dependency, executor::PipelineContext};
 
 use super::ActionImpl;
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
 #[serde(tag = "type", content = "value")]
 pub enum SourceFile {
     Flatpak(FlatpakSource),
     AppImage(AppImageSource),
     EmuDeck(EmuDeckSource),
-    Custom(Option<PathBuf>),
+    Custom(CustomFileOptions),
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
+pub struct CustomFileOptions {
+    /// valid file extensions for source file
+    pub valid_ext: Vec<String>,
+    /// user defined custom path
+    pub path: Option<PathBuf>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub enum FlatpakSource {
     Cemu,
     Citra,
@@ -49,7 +57,7 @@ impl SettingsSource for FlatpakSource {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub enum EmuDeckSource {
     CemuProton,
 }
@@ -62,7 +70,7 @@ impl SettingsSource for EmuDeckSource {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub enum AppImageSource {
     Cemu,
 }
@@ -95,12 +103,14 @@ impl ActionImpl for SourceFile {
 
                 Ok(())
             }
-            SourceFile::Custom(Some(file)) => {
+            SourceFile::Custom(CustomFileOptions {
+                path: Some(file), ..
+            }) => {
                 ctx.set_state::<Self>(file.clone());
 
                 Ok(())
             }
-            SourceFile::Custom(None) => {
+            SourceFile::Custom(CustomFileOptions { path: None, .. }) => {
                 None.with_context(|| "could not set source file; field not set")
             }
         }
@@ -123,12 +133,36 @@ impl ActionImpl for SourceFile {
                 path: emudeck.settings_file(ctx),
                 is_file: true,
             },
-            SourceFile::Custom(Some(file)) => Dependency::Path {
+            SourceFile::Custom(CustomFileOptions {
+                path: Some(file), ..
+            }) => Dependency::Path {
                 path: file.clone(),
                 is_file: true,
             },
-            SourceFile::Custom(None) => Dependency::FieldNotSet("Custom File".to_string()),
+            SourceFile::Custom(CustomFileOptions { path: None, .. }) => {
+                Dependency::FieldNotSet("Custom File".to_string())
+            }
         };
         vec![dep]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use anyhow::Result;
+
+    #[test]
+    fn test_custom_serde() -> Result<()> {
+        let expected = SourceFile::Custom(CustomFileOptions {
+            valid_ext: vec![".ini".to_string()],
+            path: None,
+        });
+        let json = serde_json::to_string(&expected)?;
+        let actual = serde_json::from_str(&json)?;
+        assert_eq!(expected, actual);
+
+        Ok(())
     }
 }

@@ -6,131 +6,112 @@ import EditAction from "../../components/EditAction";
 import { useModifiablePipelineDefinition } from "../../context/modifiablePipelineContext";
 import { PipelineAction } from "../../types/backend_api";
 
-type ActionUpdate = (args: {
-    id: string,
-    value: Action
-}) => void;
-
-type OneOfUpdate = (args:
-    {
-        id: string,
-        selection: string
-    }) => void;
-
-
-
 export default function PipelineTargetDisplay({ root }: {
     root: ActionSelection,
-    updateAction: ActionUpdate,
-    updateOneOf: OneOfUpdate
 }): ReactElement {
     return <DialogBody>
         <DialogControlsSection>
-            {buildSelection('root', root, 0)}
+            {buildSelection('root', root, false)}
         </DialogControlsSection>
     </DialogBody>
 }
 
-const paddingIncr = 30;
-
-function buildSelection(id: string, selection: ActionSelection, depth: number): ReactElement {
+function buildSelection(id: string, selection: ActionSelection, shouldIndent: boolean): ReactElement {
     switch (selection.type) {
         case "Action":
-            return buildAction(id, selection.value, depth);
+            return buildAction(id, selection.value);
         case "OneOf":
-            return buildOneOf(selection.value, depth);
+            return buildOneOf(selection.value, shouldIndent);
         case "AllOf":
-            return buildAllOf(selection.value, depth);
+            return buildAllOf(selection.value, shouldIndent);
     }
 }
 
-function buildAction(id: string, action: Action, depth: number): ReactElement {
+function buildAction(id: string, action: Action): ReactElement {
     const { dispatch } = useModifiablePipelineDefinition();
 
     return (
         <div style={{
-            paddingLeft: `${depth * paddingIncr}px`
+            paddingLeft: getIndent(true)
         }}>
-            <EditAction action={action} onChange={(action) => {
+            <EditAction action={action} onChange={(updatedAction) => {
+                console.log('updating action from', action, 'to', updatedAction);
                 dispatch({
                     type: 'updateAction',
                     id: id,
-                    action: action
+                    action: updatedAction,
                 });
             }} />
         </div>
     )
 }
 
-function buildOneOf(oneOf: ActionOneOf, depth: number): ReactElement {
+function buildOneOf(oneOf: ActionOneOf, shouldIndent: boolean): ReactElement {
     const action = oneOf.actions.find((a) => a.id === oneOf.selection)!;
+    return buildPipelineAction(action, shouldIndent);
+}
+
+function buildAllOf(allOf: PipelineAction[], shouldIndent: boolean): ReactElement {
     return (
         <div style={{
-            paddingLeft: `${depth * paddingIncr}px`
+            paddingLeft: getIndent(shouldIndent)
         }}>
-            <Field focusable={false} label={labelAction(action)} description={action.description} />
-            {buildSelection(action.id, action.selection, 0)}
+            {allOf.map((action) => buildPipelineAction(action, true))}
+        </div>
+    );
+}
+
+function buildPipelineAction(action: PipelineAction, shouldIndent: boolean): ReactElement {
+    const { dispatch } = useModifiablePipelineDefinition();
+
+    const selection = action.selection;
+    const isEnabled = action.enabled;
+
+    const forcedEnabled = isEnabled === null || isEnabled === undefined;
+    return (
+        <div style={{ flexDirection: 'row', paddingLeft: getIndent(shouldIndent) }}>
+            <Field focusable={forcedEnabled && selection.type !== 'OneOf'} label={labelAction(action)} description={action.description}>
+                <div style={{ paddingRight: '10px' }}>
+                    {
+                        forcedEnabled ? <div />
+                            : <Focusable>
+                                <Toggle value={isEnabled} onChange={(value) =>
+                                    dispatch({
+                                        type: 'updateEnabled',
+                                        id: action.id,
+                                        isEnabled: value,
+                                    })
+                                } />
+                            </Focusable>
+                    }
+                    {
+                        selection.type === 'OneOf' ?
+                            <Focusable >
+                                <Dropdown selectedOption={selection.value.selection} rgOptions={selection.value.actions.map((a) => {
+                                    return {
+                                        label: a.name,
+                                        data: a.id
+                                    }
+                                })} onChange={(option) => {
+                                    dispatch({
+                                        type: 'updateOneOf',
+                                        id: action.id,
+                                        selection: option.data,
+                                        actions: selection.value.actions.map((a) => a.id)
+                                    })
+                                }} />
+                            </Focusable>
+                            : <div />
+                    }
+                </div>
+            </Field>
+            {forcedEnabled || isEnabled ? buildSelection(action.id, action.selection, selection.type === 'OneOf') : <div />}
         </div>
     )
 }
 
-function buildAllOf(allOf: PipelineAction[], depth: number): ReactElement {
-    const { dispatch } = useModifiablePipelineDefinition();
-
-    return (
-        <div style={{
-            paddingLeft: `${depth * paddingIncr}px`
-        }}>
-            {
-
-                allOf.map((action) => {
-                    const selection = action.selection;
-                    const isEnabled = action.enabled;
-
-
-                    const forcedEnabled = isEnabled === null || isEnabled === undefined;
-                    return (
-                        <div style={{ flexDirection: 'row' }}>
-                            <Field focusable={forcedEnabled && selection.type !== 'OneOf'} label={labelAction(action)} description={action.description}>
-                                <div style={{ paddingRight: '10px' }}>
-                                    {
-                                        forcedEnabled ? <div />
-                                            : <Focusable>
-                                                <Toggle value={isEnabled} onChange={(value) =>
-                                                    dispatch({
-                                                        type: 'updateEnabled',
-                                                        id: action.id,
-                                                        isEnabled: value,
-                                                    })
-                                                } />
-                                            </Focusable>
-                                    }
-                                    {
-                                        selection.type === 'OneOf' ?
-                                            <Focusable >
-                                                <Dropdown selectedOption={selection.value.selection} rgOptions={selection.value.actions.map((a) => {
-                                                    return {
-                                                        label: a.name,
-                                                        data: a.id
-                                                    }
-                                                })} onChange={(option) => {
-                                                    dispatch({
-                                                        type: 'updateOneOf',
-                                                        id: action.id,
-                                                        selection: option.data,
-                                                    })
-                                                }} />
-                                            </Focusable>
-                                            : <div />
-                                    }
-                                </div>
-                            </Field>
-                            {buildSelection(action.id, action.selection, depth + 1)}
-                        </div>
-                    )
-                })}
-        </div>
-    );
+function getIndent(shouldIndent: boolean): string {
+    return shouldIndent ? '30px' : '0px';
 }
 
 

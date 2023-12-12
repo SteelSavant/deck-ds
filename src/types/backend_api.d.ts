@@ -127,7 +127,7 @@ export type SourceFile =
     }
   | {
       type: "Custom";
-      value: string | null;
+      value: CustomFileOptions;
     };
 export type FlatpakSource = "Cemu" | "Citra" | "MelonDS";
 export type AppImageSource = "Cemu";
@@ -203,6 +203,16 @@ export interface MelonDSLayout {
   layout_option: MelonDSLayoutOption;
   sizing_option: MelonDSSizingOption;
   swap_screens: boolean;
+}
+export interface CustomFileOptions {
+  /**
+   * user defined custom path
+   */
+  path?: string | null;
+  /**
+   * valid file extensions for source file
+   */
+  valid_ext: string[];
 }
 export interface PipelineAction {
   description?: string | null;

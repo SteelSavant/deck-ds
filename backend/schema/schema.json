@@ -384,6 +384,28 @@
         }
       }
     },
+    "CustomFileOptions": {
+      "type": "object",
+      "required": [
+        "valid_ext"
+      ],
+      "properties": {
+        "path": {
+          "description": "user defined custom path",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "valid_ext": {
+          "description": "valid file extensions for source file",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "DisplayConfig": {
       "type": "object",
       "required": [
@@ -1085,10 +1107,7 @@
               ]
             },
             "value": {
-              "type": [
-                "string",
-                "null"
-              ]
+              "$ref": "#/definitions/CustomFileOptions"
             }
           }
         }

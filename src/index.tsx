@@ -12,6 +12,7 @@ import { VFC } from "react";
 import { FaShip } from "react-icons/fa";
 
 import * as backend from "./backend";
+import { ServerApiProvider } from "./context/serverApiContext";
 import SettingsRouter from "./views/Settings/SettingsRouter";
 import TemplatePreviewRoute from "./views/TemplatePreviewRoute";
 
@@ -124,7 +125,9 @@ const Content: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
 
 export default definePlugin((serverApi: ServerAPI) => {
   // Template Preview Route
-  serverApi.routerHook.addRoute("/deck-ds/settings/templates/:templateid", () => <TemplatePreviewRoute />, {
+  serverApi.routerHook.addRoute("/deck-ds/settings/templates/:templateid", () => <ServerApiProvider serverApi={serverApi}>
+    <TemplatePreviewRoute />
+  </ServerApiProvider>, {
     exact: true
   });
 

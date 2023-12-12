@@ -1,6 +1,5 @@
 import _ from 'lodash';
 import * as React from 'react';
-import { DefinitionOneOf } from '../backend';
 import { Action, PipelineActionDefinition, PipelineDefinition } from "../types/backend_api";
 
 type State = {
@@ -19,6 +18,7 @@ type StateAction = {
     type: 'updateOneOf',
     id: string,
     selection: string,
+    actions: string[],
 } | {
     type: 'updateAction',
     id: string,
@@ -43,8 +43,10 @@ const ModifiablePipelineDefinitionStateContext = React.createContext<
 
 function modifiablePipelineDefinitionReducerBuilder(onUpdate?: ExternalPipelineUpdate): (state: State, action: StateAction) => State {
     function modifiablePipelineDefinitionReducer(state: State, action: StateAction): State {
+        console.log('in pipeline reducer');
         const cloneFn = (value: any): any => {
             if (value && value.id && value.id === action.id) {
+                console.log('found action with id', action.id, ": applying", action);
                 const type = action.type;
                 let cloned = _.cloneDeep(value) as PipelineActionDefinition; // TODO::consider proper type narrowing
                 switch (type) {
@@ -56,6 +58,8 @@ function modifiablePipelineDefinitionReducerBuilder(onUpdate?: ExternalPipelineU
                             type: 'Action',
                             value: action.action
                         };
+
+                        console.log('updated pipeline action to', cloned.selection);
                         break;
                     case 'updateOneOf':
                         if (cloned.selection.type != 'OneOf') {
@@ -66,7 +70,7 @@ function modifiablePipelineDefinitionReducerBuilder(onUpdate?: ExternalPipelineU
                             type: 'OneOf',
                             value: {
                                 selection: action.selection,
-                                actions: (cloned.selection as unknown as DefinitionOneOf).actions // TODO::consider proper type narrowing
+                                actions: action.actions,
                             }
                         }
                         break;
@@ -83,6 +87,8 @@ function modifiablePipelineDefinitionReducerBuilder(onUpdate?: ExternalPipelineU
             }
         };
         const newDefinition = _.cloneDeepWith(state.definition, cloneFn);
+
+        console.log('new definition from reducer:', newDefinition);
 
         if (onUpdate) {
             onUpdate(newDefinition); // perform arbitrary action, like saving, when the definition changes

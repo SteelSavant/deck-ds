@@ -43,10 +43,11 @@ where
     T: serde::Serialize + std::fmt::Debug,
 {
     fn to_response(&self) -> ApiParameterType {
-        let primitive = Primitive::Json(
-            serde_json::to_string_pretty(self)
-                .unwrap_or_else(|_| panic!("{:?} should be serializable as json", self)),
-        );
+        let json = serde_json::to_string_pretty(self)
+            .unwrap_or_else(|_| panic!("{:?} should be serializable as json", self));
+
+        log::debug!("response content: {json}");
+        let primitive = Primitive::Json(json);
         vec![StatusCode::Ok.into(), primitive]
     }
 }

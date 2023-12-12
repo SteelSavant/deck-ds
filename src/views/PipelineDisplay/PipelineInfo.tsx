@@ -11,8 +11,6 @@ export const TemplateInfoContainer: CSSProperties = {
 }
 
 export default function PipelineInfo({ pipeline }: { pipeline: Pipeline }): ReactElement {
-    console.log("PipelineInfo rendering pipeline", pipeline);
-
     return (
         <Focusable style={TemplateInfoContainer} >
             <div>
