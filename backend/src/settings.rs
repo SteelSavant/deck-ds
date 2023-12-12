@@ -128,10 +128,14 @@ impl Settings {
     // File data
 
     pub fn create_profile(&self, pipeline: PipelineDefinition) -> Result<Profile> {
-        Ok(Profile {
+        let profile = Profile {
             id: ProfileId::new(),
             pipeline,
-        })
+        };
+
+        self.set_profile(&profile)?;
+
+        Ok(profile)
     }
 
     pub fn delete_profile(&self, id: &ProfileId) -> Result<()> {
