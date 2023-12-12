@@ -6,7 +6,6 @@ import { Template } from "../../../backend";
 export default function TemplateMenuItem({ template }: { template: Template }): ReactElement {
 
     function previewTemplate(templateId: string) {
-
         const route = `/deck-ds/settings/templates/${templateId}`;
         console.log("Navigating to", route);
         Navigation.Navigate(route);

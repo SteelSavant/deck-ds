@@ -9,11 +9,13 @@ import { PipelineAction } from "../../types/backend_api";
 export default function PipelineTargetDisplay({ root }: {
     root: ActionSelection,
 }): ReactElement {
-    return <DialogBody>
-        <DialogControlsSection>
-            {buildSelection('root', root, false)}
-        </DialogControlsSection>
-    </DialogBody>
+    return (
+        <DialogBody>
+            <DialogControlsSection>
+                {buildSelection('root', root, false)}
+            </DialogControlsSection>
+        </DialogBody>
+    )
 }
 
 function buildSelection(id: string, selection: ActionSelection, shouldIndent: boolean): ReactElement {
