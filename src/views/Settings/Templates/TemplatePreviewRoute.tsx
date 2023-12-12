@@ -1,10 +1,11 @@
-import { Navigation, useParams } from "decky-frontend-lib";
+import { Field, Navigation, useParams } from "decky-frontend-lib";
 import { ReactElement, useState } from "react";
 import { createProfile } from "../../../backend";
 import HandleLoading from "../../../components/HandleLoading";
 import { ModifiablePipelineDefinitionProvider, useModifiablePipelineDefinition } from "../../../context/modifiablePipelineContext";
 import { useServerApi } from "../../../context/serverApiContext";
 import useTemplate from "../../../hooks/useTemplate";
+import { Pipeline } from "../../../types/backend_api";
 import PipelineDisplay from "../../PipelineDisplay";
 
 
@@ -37,6 +38,7 @@ function TemplatePreviewLogic(): ReactElement {
     const serverApi = useServerApi();
 
     return <PipelineDisplay
+        header={TemplateHeader}
         secondaryActionDescription="Save as New Profile"
         secondaryAction={async () => {
             if (!waiting) {
@@ -58,4 +60,11 @@ function TemplatePreviewLogic(): ReactElement {
             }
         }}
     />
+}
+
+
+function TemplateHeader(pipeline: Pipeline): ReactElement {
+    return (<Field label={<h3>{`${pipeline.name} (Template)`}</h3>}>
+        Changes made to this template will not be saved.
+    </Field>);
 }

@@ -1,4 +1,4 @@
-import { useParams } from "decky-frontend-lib";
+import { Field, useParams } from "decky-frontend-lib";
 import { ReactElement } from "react";
 import { setProfile } from "../../../backend";
 import HandleLoading from "../../../components/HandleLoading";
@@ -37,7 +37,7 @@ export default function ProfilePreviewRoute(): ReactElement {
                                 });
                             }
                         }} >
-                            <PipelineDisplay />
+                            <PipelineDisplay header={(pipeline) => <Field label={<h3>{pipeline.name}</h3>} />} />
                         </ModifiablePipelineDefinitionProvider>
                     );
                 }
@@ -45,4 +45,3 @@ export default function ProfilePreviewRoute(): ReactElement {
         }
     />;
 }
-
