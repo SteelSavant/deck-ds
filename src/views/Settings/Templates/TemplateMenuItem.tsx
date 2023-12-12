@@ -1,15 +1,38 @@
 import { DialogButton, Field, Focusable, Navigation } from "decky-frontend-lib";
-import { ReactElement } from "react";
+import { ReactElement, useState } from "react";
 import { FaEye, FaPlus } from "react-icons/fa";
-import { Template } from "../../../backend";
+import { Template, createProfile } from "../../../backend";
+import { useServerApi } from "../../../context/serverApiContext";
 
 export default function TemplateMenuItem({ template }: { template: Template }): ReactElement {
+    const serverApi = useServerApi();
+    const [waiting, setWaiting] = useState(false);
 
     function previewTemplate(templateId: string) {
         const route = `/deck-ds/settings/templates/${templateId}`;
         console.log("Navigating to", route);
         Navigation.Navigate(route);
     }
+
+    const onCreateTemplate = async () => {
+        if (!waiting) {
+            setWaiting(true);
+            const response = await createProfile({ pipeline: template.pipeline });
+
+            if (response.isOk) {
+                const route = `/deck-ds/settings/profiles/${response.data.profile_id}`;
+                console.log("Navigating to", route);
+                Navigation.Navigate(route);
+            } else {
+                serverApi.toaster.toast({
+                    title: 'Error',
+                    body: 'Failed to save profile from template.'
+                })
+            }
+
+            setWaiting(false);
+        }
+    };
 
     return (
         <Field focusable={false} label={template.pipeline.name} description={template.pipeline.description} children={
@@ -34,8 +57,8 @@ export default function TemplateMenuItem({ template }: { template: Template }): 
                         flexDirection: 'column',
                         justifyContent: 'center',
                     }}
-                    onClick={() => console.log("pressed", template.pipeline.name)}
-                    onOKButton={() => console.log("ok", template.pipeline.name)}
+                    onClick={onCreateTemplate}
+                    onOKButton={onCreateTemplate}
                 >
                     <FaPlus />
                 </DialogButton>

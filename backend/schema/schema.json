@@ -449,12 +449,16 @@
     },
     "GetProfileResponse": {
       "type": "object",
-      "required": [
-        "profile"
-      ],
       "properties": {
         "profile": {
-          "$ref": "#/definitions/Profile"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Profile"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },

@@ -1,33 +1,30 @@
-import { VFC, useEffect, useState } from "react";
-import { Profile, getProfiles } from "../../../backend";
+import { DialogBody, DialogButton, DialogControlsSection, Navigation } from "decky-frontend-lib";
+import { VFC } from "react";
+import { FaPlus } from "react-icons/fa6";
+import HandleLoading from "../../../components/HandleLoading";
+import useProfiles from "../../../hooks/useProfiles";
 
 export const ProfilesPage: VFC = () => {
-    const [loading, setLoading] = useState(false);
-    const [profiles, setProfiles] = useState(Array<Profile>);
+    const profiles = useProfiles();
 
-    useEffect(() => {
-        const loadProfiles = async () => {
-            setLoading(true);
+    const navigateToTemplates = () => Navigation.Navigate('/deck-ds/settings/templates');
 
-            const response = await getProfiles();
 
-            if (response.isOk) {
-                setProfiles(response.data.profiles)
-            } else {
-                console.log(response.err);
-                setTimeout(() => {
-                    loadProfiles();
-                }, 5000);
-            }
+    return <HandleLoading
+        value={profiles}
+        onOk={
+            (profiles) => <DialogBody>
+                <DialogControlsSection>
+                    {profiles.length > 0 ? profiles.map((p) => p.pipeline.name) : 'No profiles have been created.'}
+                    <div style={{ paddingTop: '30px', display: 'flex', minWidth: '100px', justifyContent: 'space-between', alignItems: 'center', }}>
+                        <DialogButton onClick={navigateToTemplates} onOKButton={navigateToTemplates}>
+                            <FaPlus style={{ paddingRight: '1rem' }} />
+                            Create From Template
+                        </DialogButton>
+                    </div>
+                </DialogControlsSection>
+            </DialogBody>
         }
-    });
-
-
-
-    return <div>
-        <div> Profiles</div>
-        {loading
-            ? <div> Loading...</div>
-            : <div> Got {profiles.length} Profiles!</div>}
-    </div>
+    />;
 }
+

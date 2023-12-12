@@ -272,7 +272,7 @@ export interface GetProfileRequest {
   profile_id: string;
 }
 export interface GetProfileResponse {
-  profile: Profile;
+  profile?: Profile | null;
 }
 export interface Profile {
   id: string;

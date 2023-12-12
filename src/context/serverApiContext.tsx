@@ -24,7 +24,7 @@ function ServerApiProvider({ children, serverApi: serverAPI }: ModifiablePipelin
 function useServerApi() {
     const context = React.useContext(ServerApiContext)
     if (context === undefined) {
-        throw new Error('useSettings must be used within a SettingsProvider')
+        throw new Error('useServerApi must be used within a ServerApiProvider')
     }
     return context
 }

@@ -141,7 +141,10 @@ export default definePlugin((serverApi: ServerAPI) => {
   });
 
   // Settings Route
-  serverApi.routerHook.addRoute("/deck-ds/settings/:setting", SettingsRouter, {
+  serverApi.routerHook.addRoute("/deck-ds/settings/:setting", () =>
+    <ServerApiProvider serverApi={serverApi}>
+      <SettingsRouter />
+    </ServerApiProvider>, {
     exact: true,
   });
 

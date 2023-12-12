@@ -18,8 +18,8 @@ export default function ProfilePreviewRoute(): ReactElement {
         value={profile}
         onOk={
             (profile) => {
-                if (profile === undefined) {
-                    return <div> Profile {profileid} does not exist!</div>;
+                if (!profile) {
+                    return <div> Profile {profileid} does not exist! Something has gone terribly wrong...</div>;
                 } else {
                     return (
                         <ModifiablePipelineDefinitionProvider initialDefinition={profile.pipeline} onUpdate={async (pipeline) => {

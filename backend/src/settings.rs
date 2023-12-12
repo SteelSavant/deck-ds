@@ -139,18 +139,25 @@ impl Settings {
     }
 
     pub fn delete_profile(&self, id: &ProfileId) -> Result<()> {
-        let profile_path = self.profiles_dir.join(id.raw()).with_extension("json");
+        let raw = id.raw();
+
+        let profile_path = self.profiles_dir.join(raw).with_extension("json");
         std::fs::remove_file(profile_path)
             .with_context(|| format!("failed to remove profile settings {id:?}"))
     }
 
-    pub fn get_profile(&self, id: &ProfileId) -> Result<Profile> {
+    pub fn get_profile(&self, id: &ProfileId) -> Result<Option<Profile>> {
         let raw = id.raw();
 
         let profile_path = self.profiles_dir.join(raw).with_extension("json");
-        let profile = std::fs::read_to_string(profile_path)?;
+        let profile = if !profile_path.exists() {
+            None
+        } else {
+            let profile = std::fs::read_to_string(profile_path)?;
+            Some(serde_json::from_str(&profile)?)
+        };
 
-        Ok(serde_json::from_str(&profile)?)
+        Ok(profile)
     }
 
     pub fn set_profile(&self, profile: &Profile) -> Result<()> {
@@ -170,8 +177,13 @@ impl Settings {
         std::fs::read_dir(&self.profiles_dir)?
             .filter_map(|f| {
                 f.ok().map(|entry| {
+                    log::debug!("checking entry {:?} for profile", entry.path());
                     if entry.path().ends_with(".json") {
-                        let contents = std::fs::read_to_string(entry.path()).ok();
+                        let contents = std::fs::read_to_string(entry.path())
+                            .inspect(|e| {
+                                log::warn!("failed to parse profile at {:?}: {}", entry.path(), e)
+                            })
+                            .ok();
                         contents.map(|c| Ok(serde_json::from_str(&c).ok()))
                     } else {
                         None

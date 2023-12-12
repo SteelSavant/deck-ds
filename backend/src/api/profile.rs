@@ -86,7 +86,7 @@ pub struct GetProfileRequest {
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetProfileResponse {
-    profile: Profile,
+    profile: Option<Profile>,
 }
 
 pub fn get_profile(
