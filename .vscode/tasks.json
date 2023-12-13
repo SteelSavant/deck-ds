@@ -80,7 +80,7 @@
       "type": "shell",
       "dependsOrder": "sequence",
       "dependsOn": ["setup", "settingscheck"],
-      "command": "pnpm build && cd out && mkdir -p ${config:pluginname} && cp -r ../dist ${config:pluginname} && zip ${config:pluginname}.zip ${config:pluginname}/dist/index.js && rm -r ${config:pluginname}",
+      "command": "pnpm build && cd out && mkdir -p ${config:pluginname} && cp -r ../dist ${config:pluginname} && zip ${config:pluginname}.zip ${config:pluginname}/dist/index.js && cp -r ../bin ${config:pluginname} && zip ${config:pluginname}.zip ${config:pluginname}/bin/backend && rm -r ${config:pluginname}",
       "problemMatcher": []
     },
     //DEPLOY TASKS

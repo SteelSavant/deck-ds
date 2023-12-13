@@ -7,6 +7,7 @@
     "autostart_request",
     "create_profile_request",
     "create_profile_response",
+    "delete_profile_request",
     "get_profile_request",
     "get_profile_response",
     "get_profiles_response",
@@ -24,6 +25,9 @@
     },
     "create_profile_response": {
       "$ref": "#/definitions/CreateProfileResponse"
+    },
+    "delete_profile_request": {
+      "$ref": "#/definitions/DeleteProfileRequest"
     },
     "get_profile_request": {
       "$ref": "#/definitions/GetProfileRequest"
@@ -403,6 +407,18 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "DeleteProfileRequest": {
+      "type": "object",
+      "required": [
+        "profile"
+      ],
+      "properties": {
+        "profile": {
+          "type": "string",
+          "format": "uuid"
         }
       }
     },

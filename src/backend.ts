@@ -1,4 +1,4 @@
-import { AutoStartRequest, CitraLayoutOption, CreateProfileRequest, CreateProfileResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineAction, ReifyPipelineRequest, ReifyPipelineResponse, SelectionFor_PipelineAction, SelectionFor_String, SetProfileRequest } from "./types/backend_api";
+import { AutoStartRequest, CitraLayoutOption, CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineAction, ReifyPipelineRequest, ReifyPipelineResponse, SelectionFor_PipelineAction, SelectionFor_String, SetProfileRequest } from "./types/backend_api";
 import { call_backend, init_embedded, init_usdpl, target_usdpl } from "./usdpl_front";
 import { Err, Ok, Result } from "./util/result";
 
@@ -191,6 +191,10 @@ export async function getProfile(request: GetProfileRequest): Response<GetProfil
 
 export async function setProfile(request: SetProfileRequest): Response<void> {
     return await call_backend_typed("set_profile", request)
+}
+
+export async function deleteProfile(request: DeleteProfileRequest): Response<void> {
+    return await call_backend_typed("delete_profile", request)
 }
 
 export async function getProfiles(): Response<GetProfilesResponse> {

@@ -152,6 +152,42 @@ pub fn set_profile(
     }
 }
 
+// Delete Profile
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct DeleteProfileRequest {
+    profile: ProfileId,
+}
+
+pub fn delete_profile(
+    request_handler: Arc<Mutex<RequestHandler>>,
+    settings: Arc<Mutex<Settings>>,
+) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+    move |args: super::ApiParameterType| {
+        log_invoke("delete_profile", &args);
+
+        let args: Result<DeleteProfileRequest, _> = {
+            let mut lock = request_handler
+                .lock()
+                .expect("request handler should not be poisoned");
+
+            lock.resolve(args)
+        };
+        match args {
+            Ok(args) => {
+                let lock = settings.lock().expect("settings mutex should be lockable");
+                let res = lock.delete_profile(&args.profile);
+
+                match res {
+                    Ok(()) => ResponseOk.to_response(),
+                    Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
+                }
+            }
+            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
+        }
+    }
+}
+
 // Reify Pipeline
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]

@@ -212,6 +212,10 @@ fn main() -> Result<()> {
                     crate::api::profile::set_profile(request_handler.clone(), settings.clone()),
                 )
                 .register(
+                    "delete_profile",
+                    crate::api::profile::delete_profile(request_handler.clone(), settings.clone()),
+                )
+                .register(
                     "get_profiles",
                     crate::api::profile::get_profiles(settings.clone()),
                 )

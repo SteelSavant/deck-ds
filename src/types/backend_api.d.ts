@@ -157,6 +157,7 @@ export interface Api {
   autostart_request: AutoStartRequest;
   create_profile_request: CreateProfileRequest;
   create_profile_response: CreateProfileResponse;
+  delete_profile_request: DeleteProfileRequest;
   get_profile_request: GetProfileRequest;
   get_profile_response: GetProfileResponse;
   get_profiles_response: GetProfilesResponse;
@@ -267,6 +268,9 @@ export interface PipelineActionDefinition {
 }
 export interface CreateProfileResponse {
   profile_id: string;
+}
+export interface DeleteProfileRequest {
+  profile: string;
 }
 export interface GetProfileRequest {
   profile_id: string;

@@ -6,24 +6,23 @@ import useProfiles from "../../../hooks/useProfiles";
 import ProfileMenuItem from "./ProfileMenuItem";
 
 export const ProfilesPage: VFC = () => {
-    const profiles = useProfiles();
+    const { profiles, deleteProfile } = useProfiles();
 
     const navigateToTemplates = () => Navigation.Navigate('/deck-ds/settings/templates');
-
 
     return <HandleLoading
         value={profiles}
         onOk={
             (profiles) => <DialogBody>
                 <DialogControlsSection>
-                    {profiles.length > 0 ? profiles.map((p) => <ProfileMenuItem profile={p} />) : 'No profiles have been created.'}
-                    <div style={{ paddingTop: '30px', display: 'flex', minWidth: '100px', justifyContent: 'space-between', alignItems: 'center', }}>
-                        <DialogButton onClick={navigateToTemplates} onOKButton={navigateToTemplates}>
-                            <FaPlus style={{ paddingRight: '1rem' }} />
-                            Create From Template
-                        </DialogButton>
-                    </div>
+                    {profiles.length > 0 ? profiles.map((p) => <ProfileMenuItem profile={p} deleteProfile={deleteProfile} />) : 'No profiles have been created.'}
                 </DialogControlsSection>
+                <div style={{ padding: '15px', display: 'flex', minWidth: '100px', justifyContent: 'space-between', alignItems: 'center', }}>
+                    <DialogButton onClick={navigateToTemplates} onOKButton={navigateToTemplates}>
+                        <FaPlus style={{ paddingRight: '1rem' }} />
+                        Create From Template
+                    </DialogButton>
+                </div>
             </DialogBody>
         }
     />;
