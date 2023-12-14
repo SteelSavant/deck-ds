@@ -6,6 +6,12 @@ type State = {
     definition: PipelineDefinition,
 }
 
+interface PipelineInfo {
+    description: string | undefined;
+    name: string | undefined;
+    tags: string[] | undefined;
+}
+
 type StateAction = {
     type: 'updateEnabled',
     id: string,
@@ -23,6 +29,9 @@ type StateAction = {
     type: 'updateAction',
     id: string,
     action: Action
+} | {
+    type: 'updatePipelineInfo'
+    info: PipelineInfo,
 };
 
 type Dispatch = (action: StateAction) => void
@@ -44,49 +53,76 @@ const ModifiablePipelineDefinitionStateContext = React.createContext<
 function modifiablePipelineDefinitionReducerBuilder(onUpdate?: ExternalPipelineUpdate): (state: State, action: StateAction) => State {
     function modifiablePipelineDefinitionReducer(state: State, action: StateAction): State {
         console.log('in pipeline reducer');
-        const cloneFn = (value: any): any => {
-            if (value && value.id && value.id === action.id) {
-                console.log('found action with id', action.id, ": applying", action);
-                const type = action.type;
-                let cloned = _.cloneDeep(value) as PipelineActionDefinition; // TODO::consider proper type narrowing
-                switch (type) {
-                    case 'updateEnabled':
-                        cloned.enabled = action.isEnabled;
-                        break;
-                    case 'updateAction':
-                        cloned.selection = {
-                            type: 'Action',
-                            value: action.action
-                        };
 
-                        console.log('updated pipeline action to', cloned.selection);
-                        break;
-                    case 'updateOneOf':
-                        if (cloned.selection.type != 'OneOf') {
-                            throw 'Invalid selection type for updateOneOf';
-                        }
+        const newDefinition = (() => {
+            if (action.type === 'updatePipelineInfo') {
+                const newDefinition: PipelineDefinition = {
+                    ...state.definition,
 
-                        cloned.selection = {
-                            type: 'OneOf',
-                            value: {
-                                selection: action.selection,
-                                actions: action.actions,
-                            }
-                        }
-                        break;
-                    case 'updateProfileOverride':
+                };
 
-                        cloned.profile_override = action.profileOverride
-                        break;
-                    default:
-                        const typecheck: never = type;
-                        throw typecheck ?? 'action update failed to typecheck';
+                const info = action.info;
+
+                if (info.description) {
+                    newDefinition.description = info.description
                 }
 
-                return cloned;
+                if (info.name) {
+                    newDefinition.name = info.name
+                }
+
+                if (info.tags) {
+                    newDefinition.tags = info.tags
+                }
+
+                return newDefinition;
+            } else {
+                const cloneFn = (value: any): any => {
+                    if (value && value.id && value.id === action.id) {
+                        console.log('found action with id', action.id, ": applying", action);
+                        const type = action.type;
+                        let cloned = _.cloneDeep(value) as PipelineActionDefinition; // TODO::consider proper type narrowing
+                        switch (type) {
+                            case 'updateEnabled':
+                                cloned.enabled = action.isEnabled;
+                                break;
+                            case 'updateAction':
+                                cloned.selection = {
+                                    type: 'Action',
+                                    value: action.action
+                                };
+
+                                console.log('updated pipeline action to', cloned.selection);
+                                break;
+                            case 'updateOneOf':
+                                if (cloned.selection.type != 'OneOf') {
+                                    throw 'Invalid selection type for updateOneOf';
+                                }
+
+                                cloned.selection = {
+                                    type: 'OneOf',
+                                    value: {
+                                        selection: action.selection,
+                                        actions: action.actions,
+                                    }
+                                }
+                                break;
+                            case 'updateProfileOverride':
+                                cloned.profile_override = action.profileOverride
+                                break;
+                            default:
+                                const typecheck: never = type;
+                                throw typecheck ?? 'action update failed to typecheck';
+                        }
+
+                        return cloned;
+                    }
+                }
+
+                return _.cloneDeepWith(state.definition, cloneFn) as PipelineDefinition;
             }
-        };
-        const newDefinition = _.cloneDeepWith(state.definition, cloneFn);
+        })();
+
 
         console.log('new definition from reducer:', newDefinition);
 

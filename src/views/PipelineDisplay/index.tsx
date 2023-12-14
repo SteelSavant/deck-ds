@@ -10,11 +10,12 @@ import PipelineTargetDisplay from "./PipelineTargetDisplay";
 
 interface PipelineDisplayProps {
     header: (pipeline: Pipeline) => ReactElement,
+    info: (pipeline: Pipeline) => ReactElement,
     secondaryAction?: () => void
     secondaryActionDescription?: string
 }
 
-export default function PipelineDisplay({ header, secondaryAction, secondaryActionDescription }: PipelineDisplayProps): ReactElement {
+export default function PipelineDisplay({ header, info, secondaryAction, secondaryActionDescription }: PipelineDisplayProps): ReactElement {
     const [currentTabRoute, setCurrentTabRoute] = useState<string>("info")
 
     const { state } = useModifiablePipelineDefinition();
@@ -57,13 +58,21 @@ export default function PipelineDisplay({ header, secondaryAction, secondaryActi
 
                     const allTargets = defaultTargets.concat(extraTargets);
 
-                    const tabs = allTargets.map((kv) => {
-                        return {
-                            title: kv.target,
-                            content: <PipelineTargetDisplay root={kv.root} />,
-                            id: kv.target.toLowerCase(),
-                        };
-                    });
+                    const tabs = [
+                        {
+                            title: 'Info',
+                            content: info(pipeline),
+                            id: 'info',
+                        }
+                        ,
+                        ...allTargets.map((kv) => {
+                            return {
+                                title: kv.target,
+                                content: <PipelineTargetDisplay root={kv.root} />,
+                                id: kv.target.toLowerCase(),
+                            };
+                        }),
+                    ];
 
 
                     return <Focusable

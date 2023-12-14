@@ -38,8 +38,6 @@ const useProfiles = (): Profiles => {
         return () => { active = false; };
     });
 
-
-
     return {
         profiles: result,
         // Recieving updates from the server for state changes, rather than requiring they proxy through here would be better,

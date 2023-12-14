@@ -1,11 +1,15 @@
-import { Field, useParams } from "decky-frontend-lib";
+import { DialogButton, Field, showModal, useParams } from "decky-frontend-lib";
 import { ReactElement } from "react";
+import { FaEdit } from "react-icons/fa";
 import { setProfile } from "../../../backend";
 import HandleLoading from "../../../components/HandleLoading";
-import { ModifiablePipelineDefinitionProvider } from "../../../context/modifiablePipelineContext";
+import { ModifiablePipelineDefinitionProvider, useModifiablePipelineDefinition } from "../../../context/modifiablePipelineContext";
 import { useServerApi } from "../../../context/serverApiContext";
 import useProfile from "../../../hooks/useProfile";
+import { Pipeline } from "../../../types/backend_api";
 import PipelineDisplay from "../../PipelineDisplay";
+import ProfileInfo from "./ProfileInfo";
+import EditProfileNameModal from "./modals/EditPipelineNameModal";
 
 
 export default function ProfilePreviewRoute(): ReactElement {
@@ -37,11 +41,37 @@ export default function ProfilePreviewRoute(): ReactElement {
                                 });
                             }
                         }} >
-                            <PipelineDisplay header={(pipeline) => <Field label={<h3>{pipeline.name}</h3>} />} />
+                            <PipelineDisplay header={PipelineHeader} info={ProfileInfo} />
                         </ModifiablePipelineDefinitionProvider>
                     );
                 }
             }
         }
     />;
+}
+
+function PipelineHeader(pipeline: Pipeline): ReactElement {
+    const { dispatch } = useModifiablePipelineDefinition();
+
+    function onEditTitle() {
+        showModal(
+            <EditProfileNameModal pipeline={pipeline} onSave={(name) => {
+                dispatch({
+                    type: 'updatePipelineInfo',
+                    info: {
+                        ...pipeline,
+                        name: name,
+                    }
+                })
+            }} />
+        )
+    }
+
+    return (
+        <Field label={<h3>{pipeline.name}</h3>} >
+            <DialogButton onOKButton={onEditTitle} onClick={onEditTitle}>
+                <FaEdit />
+            </DialogButton>
+        </Field>
+    )
 }
