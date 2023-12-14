@@ -13,9 +13,9 @@ const ServerApiContext = React.createContext<
 
 
 
-function ServerApiProvider({ children, serverApi: serverAPI }: ModifiablePipelineContextProviderProps) {
+function ServerApiProvider({ children, serverApi }: ModifiablePipelineContextProviderProps) {
     return (
-        <ServerApiContext.Provider value={serverAPI}>
+        <ServerApiContext.Provider value={serverApi}>
             {children}
         </ServerApiContext.Provider>
     );
