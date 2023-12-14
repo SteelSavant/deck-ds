@@ -29,9 +29,9 @@ function patchLibraryApp(
 
                     const displayName: string =
                         ret.props.children.props.overview.display_name
-
                     const appId: number =
                         ret.props.children.props.overview.appid;
+                    const gameId: string = ret.props.children.props.overview.m_gameid;
 
                     console.log('DeckDS:', displayName, '(', appId, ')');
 
@@ -58,7 +58,8 @@ function patchLibraryApp(
                                 >
                                     <AppPageLogic appDetails={{
                                         displayName,
-                                        appId
+                                        appId,
+                                        gameId
                                     }} />
                                 </ShortAppDetailsStateContextProvider>
                             )
@@ -80,6 +81,8 @@ export default patchLibraryApp;
 
 function AppPageLogic({ appDetails }: { appDetails: ShortAppDetails }): ReactElement {
     const state = useShortAppDetailsState();
+
+
     useEffect(() => {
         if (state.appDetails?.appId != appDetails?.appId) {
             state.setOnAppPage(appDetails)

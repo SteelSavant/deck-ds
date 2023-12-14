@@ -10,6 +10,7 @@ import {
 
 export type ShortAppDetails = {
     appId: number,
+    gameId: string,
     displayName: string,
 } | null;
 

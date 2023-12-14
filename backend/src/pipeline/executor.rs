@@ -11,8 +11,8 @@ use typemap::{Key, TypeMap};
 use crate::asset::AssetManager;
 use crate::pipeline::data::{PipelineAction, Selection};
 use crate::settings::AppId;
+use crate::sys::app_process::AppProcess;
 use crate::sys::kwin::KWin;
-use crate::sys::process::AppProcess;
 use crate::sys::x_display::XDisplay;
 
 use super::action::{Action, ErasedPipelineAction};

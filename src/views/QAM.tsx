@@ -8,7 +8,7 @@ import useProfiles from "../hooks/useProfiles";
 export default function QAM(): ReactElement {
     const appDetailsState = useShortAppDetailsState();
 
-    const appId = appDetailsState.appDetails?.appId;
+    const gameId = appDetailsState.appDetails?.gameId;
     // TODO::handle view in game
 
     return (
@@ -26,12 +26,12 @@ export default function QAM(): ReactElement {
                     </ButtonItem>
                 </PanelSectionRow>
             </PanelSection >
-            {appId ? <DeckDSProfilesForApp appId={appId} /> : <div />}
+            {gameId ? <DeckDSProfilesForApp gameId={gameId} /> : <div />}
         </Fragment>
     )
 }
 
-function DeckDSProfilesForApp({ appId }: { appId: number }): ReactElement {
+function DeckDSProfilesForApp({ gameId }: { gameId: string }): ReactElement {
     const { profiles } = useProfiles();
 
     return <HandleLoading value={profiles}
@@ -60,7 +60,7 @@ function DeckDSProfilesForApp({ appId }: { appId: number }): ReactElement {
 
                                 if (reified.isOk) {
                                     const res = await autoStart({
-                                        app: appId.toString(),
+                                        app: gameId,
                                         pipeline: reified.data.pipeline,
                                         target: key as PipelineTarget
                                     });
