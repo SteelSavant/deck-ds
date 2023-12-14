@@ -32,18 +32,25 @@ export default function PipelineDisplay({ header, info, secondaryAction, seconda
             value={result}
             onOk={
                 (pipeline) => {
-                    interface KeyValue {
+                    interface TargetDescriptor {
                         target: string,
                         root: ActionSelection,
+                        description: string,
                     }
 
-                    const defaultTargets: KeyValue[] = [];
-                    const extraTargets: KeyValue[] = [] // no real intention of actually supporting extra targets, but...
+                    const defaultTargets: TargetDescriptor[] = [];
+                    const extraTargets: TargetDescriptor[] = [] // no real intention of actually supporting extra targets, but...
+
+                    const descriptions: { [k: string]: string } = {
+                        ['Gamemode']: 'Actions that run when launched in Game mode.',
+                        ['Desktop']: 'Actions that run when launched in Desktop mode.'
+                    }
 
                     for (const key in pipeline.targets) {
-                        const value: KeyValue = {
+                        const value: TargetDescriptor = {
                             target: key,
                             root: pipeline.targets[key],
+                            description: descriptions[key] ?? '',
                         };
 
                         if (key === 'Gamemode') {
@@ -68,7 +75,7 @@ export default function PipelineDisplay({ header, info, secondaryAction, seconda
                         ...allTargets.map((kv) => {
                             return {
                                 title: kv.target,
-                                content: <PipelineTargetDisplay root={kv.root} />,
+                                content: <PipelineTargetDisplay root={kv.root} description={kv.description} />,
                                 id: kv.target.toLowerCase(),
                             };
                         }),

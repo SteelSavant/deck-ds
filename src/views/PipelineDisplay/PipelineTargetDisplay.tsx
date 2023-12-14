@@ -6,12 +6,14 @@ import EditAction from "../../components/EditAction";
 import { useModifiablePipelineDefinition } from "../../context/modifiablePipelineContext";
 import { PipelineAction } from "../../types/backend_api";
 
-export default function PipelineTargetDisplay({ root }: {
+export default function PipelineTargetDisplay({ root, description }: {
     root: ActionSelection,
+    description: string
 }): ReactElement {
     return (
         <DialogBody>
             <DialogControlsSection>
+                <Field focusable={false} description={description} />
                 {buildSelection('root', root, false)}
             </DialogControlsSection>
         </DialogBody>

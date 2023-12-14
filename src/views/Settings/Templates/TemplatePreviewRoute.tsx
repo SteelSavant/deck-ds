@@ -7,6 +7,7 @@ import { useServerApi } from "../../../context/serverApiContext";
 import useTemplate from "../../../hooks/useTemplate";
 import { Pipeline } from "../../../types/backend_api";
 import PipelineDisplay from "../../PipelineDisplay";
+import TemplateInfo from "./TemplateInfo";
 
 
 export default function TemplatePreviewRoute(): ReactElement {
@@ -39,6 +40,7 @@ function TemplatePreviewLogic(): ReactElement {
 
     return <PipelineDisplay
         header={TemplateHeader}
+        info={TemplateInfo}
         secondaryActionDescription="Save as New Profile"
         secondaryAction={async () => {
             if (!waiting) {
