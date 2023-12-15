@@ -12,11 +12,11 @@ export type ShortAppDetails = {
     appId: number,
     gameId: string,
     displayName: string,
-} | null;
+};
 
 interface PublicShortAppDetailsState {
     gamesRunning: number[]
-    appDetails: ShortAppDetails
+    appDetails: ShortAppDetails | null
 }
 
 // The localThemeEntry interface refers to the theme data as given by the python function, the Theme class refers to a theme after it has been formatted and the generate function has been added
@@ -31,7 +31,7 @@ interface PublicShortAppDetailsStateContext
 export class ShortAppDetailsState {
     private delayMs = 1000
     private gamesRunning: number[] = []
-    private appDetails: ShortAppDetails = null;
+    private appDetails: ShortAppDetails | null = null;
     private lastOnAppPageTime: number = 0
 
     // You can listen to this eventBus' 'stateUpdate' event and use that to trigger a useState or other function that causes a re-render
@@ -56,7 +56,7 @@ export class ShortAppDetailsState {
         )
     }
 
-    setOnAppPage(appDetails: ShortAppDetails) {
+    setOnAppPage(appDetails: ShortAppDetails | null) {
         const time = Date.now()
 
         setTimeout(
@@ -68,7 +68,7 @@ export class ShortAppDetailsState {
     }
 
 
-    private setOnAppPageInternal(appDetails: ShortAppDetails, time: number) {
+    private setOnAppPageInternal(appDetails: ShortAppDetails | null, time: number) {
         if (time < this.lastOnAppPageTime) {
             return;
         }

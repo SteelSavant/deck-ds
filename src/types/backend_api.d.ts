@@ -193,10 +193,12 @@ export interface Resolution {
   w: number;
 }
 export interface CitraLayout {
+  fullscreen: boolean;
   layout_option: CitraLayoutOption;
   swap_screens: boolean;
 }
 export interface CemuLayout {
+  fullscreen: boolean;
   separate_gamepad_view: boolean;
 }
 export interface MelonDSLayout {

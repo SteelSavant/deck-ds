@@ -2,12 +2,12 @@ import { ButtonItem, PanelSection, PanelSectionRow, Router } from "decky-fronten
 import { Fragment, ReactElement } from "react";
 import { PipelineTarget, autoStart, reifyPipeline } from "../backend";
 import HandleLoading from "../components/HandleLoading";
-import { useShortAppDetailsState } from "../context/shortAppDetailsContext";
+import { ShortAppDetails, useShortAppDetailsState } from "../context/shortAppDetailsContext";
 import useProfiles from "../hooks/useProfiles";
 
 export default function QAM(): ReactElement {
     const appDetailsState = useShortAppDetailsState();
-    const gameId = appDetailsState.appDetails?.gameId;
+    const appDetails = appDetailsState.appDetails;
 
     return (
         <Fragment>
@@ -24,27 +24,32 @@ export default function QAM(): ReactElement {
                     </ButtonItem>
                 </PanelSectionRow>
             </PanelSection >
-            {gameId ? <DeckDSProfilesForApp gameId={gameId} /> : <div />}
+            {appDetails ? <DeckDSProfilesForApp appDetails={appDetails} /> : <div />}
         </Fragment>
     )
 }
 
-function DeckDSProfilesForApp({ gameId }: { gameId: string }): ReactElement {
+function DeckDSProfilesForApp({ appDetails }: { appDetails: ShortAppDetails }): ReactElement {
     const { profiles } = useProfiles();
 
     return <HandleLoading value={profiles}
         onOk={(profiles) => {
             const validProfiles = profiles
                 .flatMap((p) =>
-                    collectionStore.userCollections.map((uc) =>
-                        p.pipeline.tags.includes(uc.id)
-                            ? p
-                            : null)
+                    collectionStore.userCollections
+                        .map((uc) => {
+                            const containsApp = uc.apps.get(appDetails.appId);
+                            const isMatch = containsApp && p.pipeline.tags.includes(uc.id);
+                            if (isMatch) {
+                                console.log('Collection', uc.displayName, 'matches profile', p.pipeline.name, 'tags', p.pipeline.tags);
+                                return p;
+                            } else {
+                                return null;
+                            }
+                        })
                         .filter((p) => p)
                         .map((p) => p!)
                 )             // not efficient, don't care right now
-
-
 
             return <Fragment >
                 {validProfiles.map((p) => {
@@ -62,7 +67,7 @@ function DeckDSProfilesForApp({ gameId }: { gameId: string }): ReactElement {
 
                                 if (reified.isOk) {
                                     const res = await autoStart({
-                                        app: gameId,
+                                        app: appDetails.gameId,
                                         pipeline: reified.data.pipeline,
                                         target: key as PipelineTarget
                                     });
