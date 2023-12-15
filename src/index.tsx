@@ -2,6 +2,8 @@ import {
   ButtonItem,
   definePlugin,
 
+  findModuleChild,
+
   PanelSection,
   ServerAPI,
   staticClasses
@@ -12,7 +14,6 @@ import { FaShip } from "react-icons/fa";
 import * as backend from "./backend";
 import { ServerApiProvider } from "./context/serverApiContext";
 import { ShortAppDetailsState, ShortAppDetailsStateContextProvider } from "./context/shortAppDetailsContext";
-import patchLibraryApp from "./lib/patchLibraryApp";
 import QAM from "./views/QAM";
 import ProfileRoute from "./views/Settings/Profiles/ProfileRoute";
 import SettingsRouter from "./views/Settings/SettingsRouter";
@@ -56,8 +57,38 @@ const Content: VFC<{ serverApi: ServerAPI }> = ({ serverApi }) => {
   );
 }
 
+const History = findModuleChild((m) => {
+  if (typeof m !== "object") return undefined;
+  for (let prop in m) {
+    if (m[prop]?.m_history) return m[prop].m_history
+  }
+});
+
+
 export default definePlugin((serverApi: ServerAPI) => {
-  const libraryPatch = patchLibraryApp(serverApi, appDetailsState);
+  let currentRoute = '/home'; // TODO::handle this better
+
+  const unlistenHistory = History.listen(async (info: any) => {
+    currentRoute = info.pathname;
+
+    const re = /^\/library\/app\/(\d+)(\/?.*)/
+
+    console.log('current route: ', currentRoute);
+
+    if (re.test(currentRoute)) {
+      const appIdStr = re.exec(currentRoute)![1]!;
+
+      const appId = Number.parseInt(appIdStr);
+      let overview = appStore.GetAppOverviewByAppID(appId);
+      appDetailsState.setOnAppPage({
+        appId,
+        gameId: overview.m_gameid,
+        displayName: overview.display_name
+      });
+    } else {
+      appDetailsState.setOnAppPage(null);
+    }
+  });
 
   // Template Preview Route
   serverApi.routerHook.addRoute("/deck-ds/settings/templates/:templateid", () =>
@@ -99,9 +130,10 @@ export default definePlugin((serverApi: ServerAPI) => {
       appDetailsState.setGamesRunning([]);
       appDetailsState.setOnAppPage(null);
 
+      unlistenHistory();
+
       serverApi.routerHook.removeRoute("/deck-ds/settings/templates/:templateid");
       serverApi.routerHook.removeRoute("/deck-ds/settings/:setting");
-      serverApi.routerHook.removePatch('/library/app/:appid', libraryPatch)
     },
   };
 });

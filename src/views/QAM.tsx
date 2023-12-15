@@ -7,9 +7,7 @@ import useProfiles from "../hooks/useProfiles";
 
 export default function QAM(): ReactElement {
     const appDetailsState = useShortAppDetailsState();
-
     const gameId = appDetailsState.appDetails?.gameId;
-    // TODO::handle view in game
 
     return (
         <Fragment>
@@ -36,12 +34,16 @@ function DeckDSProfilesForApp({ gameId }: { gameId: string }): ReactElement {
 
     return <HandleLoading value={profiles}
         onOk={(profiles) => {
-            const validProfiles = profiles.map((p) =>
-                collectionStore.userCollections.map((uc) =>
-                    p.pipeline.tags.includes(uc.id))
-                    ? p
-                    : null
-            ).filter((p) => p).map((p) => p!); // not efficient, don't care right now
+            const validProfiles = profiles
+                .flatMap((p) =>
+                    collectionStore.userCollections.map((uc) =>
+                        p.pipeline.tags.includes(uc.id)
+                            ? p
+                            : null)
+                        .filter((p) => p)
+                        .map((p) => p!)
+                )             // not efficient, don't care right now
+
 
 
             return <Fragment >
@@ -98,7 +100,6 @@ function DeckDSProfilesForApp({ gameId }: { gameId: string }): ReactElement {
                                             {t.target}
                                         </ButtonItem>
                                     </PanelSectionRow>
-
                                 )
                             })
                         }
