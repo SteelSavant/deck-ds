@@ -50,9 +50,13 @@ impl CitraLayoutOption {
 pub struct CitraLayout {
     pub layout_option: CitraLayoutOption,
     pub swap_screens: bool,
+    pub fullscreen: bool,
 }
 
 impl CitraLayout {
+    const LAYOUT_SECTION: &'static str = "Layout";
+    const UI_SECTION: &'static str = "UI";
+
     fn read<P: AsRef<Path>>(ini_path: P) -> Result<Self> {
         let mut ini = Ini::new();
         ini.load(&ini_path).map_err(|err| {
@@ -62,26 +66,32 @@ impl CitraLayout {
             )
         })?;
 
-        // TODO::the Ini lib fails to load Citra's ini properly. Handle necessary fields with regex instead
-        let layout = "Layout";
-
         let raw_layout = ini
-            .getuint(layout, "layout_option")
+            .getuint(Self::LAYOUT_SECTION, "layout_option")
             .map_err(|err| anyhow!(err))?
             .with_context(|| "key 'layout_option' not found")?;
         let swap_screens = ini
-            .getbool(layout, "swap_screen")
+            .getbool(Self::LAYOUT_SECTION, "swap_screen")
             .map_err(|err| anyhow!(err))?
             .with_context(|| "key 'swap_screen' not found")?;
+
+        let ui = Self::UI_SECTION;
+
+        let fullscreen = ini
+            .getbool(ui, "fullscreen")
+            .map_err(|err| anyhow!(err))?
+            .with_context(|| "key 'fullscreen' not found")?;
 
         Ok(CitraLayout {
             layout_option: CitraLayoutOption::from_raw(raw_layout),
             swap_screens,
+            fullscreen,
         })
     }
 
     fn write<P: AsRef<Path>>(&self, ini_path: P) -> Result<()> {
-        let mut ini = Ini::new();
+        let mut ini = Ini::new_cs();
+
         ini.load(&ini_path).map_err(|err| {
             anyhow!(
                 "failed to load ini at {}: {err}",
@@ -89,14 +99,22 @@ impl CitraLayout {
             )
         })?;
 
-        let layout = "Layout";
-
         ini.set(
-            layout,
+            Self::LAYOUT_SECTION,
             "layout_option",
             Some(self.layout_option.raw().to_string()),
         );
-        ini.set(layout, "swap_screen", Some(self.swap_screens.to_string()));
+        ini.set(
+            Self::LAYOUT_SECTION,
+            "swap_screen",
+            Some(self.swap_screens.to_string()),
+        );
+
+        ini.set(
+            Self::UI_SECTION,
+            "fullscreen",
+            Some(self.fullscreen.to_string()),
+        );
 
         Ok(ini.write(ini_path)?)
     }
@@ -147,6 +165,8 @@ mod tests {
 
     use crate::util::create_dir_all;
 
+    use pretty_assertions::assert_eq;
+
     use super::*;
 
     #[test]
@@ -161,6 +181,7 @@ mod tests {
         let expected = CitraLayout {
             layout_option: CitraLayoutOption::Default,
             swap_screens: false,
+            fullscreen: false,
         };
         let actual = CitraLayout::read(&path)?;
 
@@ -169,6 +190,7 @@ mod tests {
         let expected = CitraLayout {
             layout_option: CitraLayoutOption::SeparateWindows,
             swap_screens: true,
+            fullscreen: true,
         };
 
         expected.write(&path)?;

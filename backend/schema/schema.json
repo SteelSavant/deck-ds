@@ -234,9 +234,13 @@
     "CemuLayout": {
       "type": "object",
       "required": [
+        "fullscreen",
         "separate_gamepad_view"
       ],
       "properties": {
+        "fullscreen": {
+          "type": "boolean"
+        },
         "separate_gamepad_view": {
           "type": "boolean"
         }
@@ -245,10 +249,14 @@
     "CitraLayout": {
       "type": "object",
       "required": [
+        "fullscreen",
         "layout_option",
         "swap_screens"
       ],
       "properties": {
+        "fullscreen": {
+          "type": "boolean"
+        },
         "layout_option": {
           "$ref": "#/definitions/CitraLayoutOption"
         },

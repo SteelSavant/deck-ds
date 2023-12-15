@@ -233,8 +233,9 @@ impl PipelineActionRegistarBuilder {
                         enabled: Some(true),
                         profile_override: None,
                         selection: CitraLayout {
-                            layout_option: CitraLayoutOption::Default,
+                            layout_option: CitraLayoutOption::SeparateWindows,
                             swap_screens: false,
+                            fullscreen: true,
                         }.into(),
                     }).with_action("layout",    Some(PipelineTarget::Gamemode),PipelineActionDefinition {
                         id: PipelineActionId::new(""),
@@ -244,7 +245,8 @@ impl PipelineActionRegistarBuilder {
                         profile_override: None,
                         selection: CitraLayout {
                             layout_option: CitraLayoutOption::HybridScreen,
-                            swap_screens: false
+                            swap_screens: false,
+                            fullscreen: true,
                         }.into(),
                     })
                 })
@@ -303,6 +305,7 @@ impl PipelineActionRegistarBuilder {
                         profile_override: None,
                         selection: CemuLayout {
                             separate_gamepad_view: true,
+                            fullscreen: true,
                         }.into(),
                     }).with_action("layout",  Some(PipelineTarget::Gamemode),    PipelineActionDefinition {
                         id: PipelineActionId::new(""),
@@ -312,6 +315,7 @@ impl PipelineActionRegistarBuilder {
                         profile_override: None,
                         selection: CemuLayout {
                             separate_gamepad_view: false,
+                            fullscreen: true
                         }.into(),
                     })
                 })

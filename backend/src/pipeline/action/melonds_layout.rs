@@ -157,7 +157,7 @@ impl internal::RawMelonDSState {
     }
 
     fn write<P: AsRef<Path>>(&self, ini_path: P) -> Result<()> {
-        let mut ini = Ini::new();
+        let mut ini = Ini::new_cs();
         ini.load(&ini_path).map_err(|err| {
             anyhow!(
                 "failed to load ini at {}: {err}",
@@ -219,6 +219,8 @@ mod tests {
     use std::path::PathBuf;
 
     use crate::util::create_dir_all;
+
+    use pretty_assertions::assert_eq;
 
     use super::*;
 
