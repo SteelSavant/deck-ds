@@ -34,22 +34,23 @@ function DeckDSProfilesForApp({ appDetails }: { appDetails: ShortAppDetails }): 
 
     return <HandleLoading value={profiles}
         onOk={(profiles) => {
-            const validProfiles = profiles
-                .flatMap((p) =>
-                    collectionStore.userCollections
-                        .map((uc) => {
-                            const containsApp = uc.apps.get(appDetails.appId);
-                            const isMatch = containsApp && p.pipeline.tags.includes(uc.id);
-                            if (isMatch) {
-                                console.log('Collection', uc.displayName, 'matches profile', p.pipeline.name, 'tags', p.pipeline.tags);
-                                return p;
-                            } else {
-                                return null;
-                            }
-                        })
-                        .filter((p) => p)
-                        .map((p) => p!)
-                )             // not efficient, don't care right now
+            const includedProfiles = new Set<string>();
+            const validProfiles = collectionStore.userCollections.flatMap((uc) => {
+                const containsApp = uc.apps.get(appDetails.appId);
+
+                if (containsApp) {
+                    const matchedProfiles = profiles
+                        .filter((p) => !includedProfiles.has(p.id))
+                        .filter((p) => p.pipeline.tags.includes(uc.id));
+
+                    for (const p of matchedProfiles) {
+                        includedProfiles.add(p.id);
+                    }
+                    return matchedProfiles;
+                } else {
+                    return []
+                }
+            })
 
             return <Fragment >
                 {validProfiles.map((p) => {
