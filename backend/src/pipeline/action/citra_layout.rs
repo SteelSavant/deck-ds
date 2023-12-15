@@ -107,6 +107,7 @@ mod internal {
 
     use super::CitraLayout;
 
+    #[derive(Debug, Clone)]
     pub struct CitraState {
         pub ini_path: PathBuf,
         pub layout: CitraLayout,

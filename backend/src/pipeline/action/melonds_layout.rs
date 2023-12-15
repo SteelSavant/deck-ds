@@ -51,6 +51,7 @@ pub struct MelonDSLayout {
 mod internal {
     use std::path::PathBuf;
 
+    #[derive(Debug, Clone)]
     pub struct MelonDSLayoutState {
         pub layout: RawMelonDSState,
         pub ini_path: PathBuf,

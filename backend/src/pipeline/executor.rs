@@ -94,7 +94,7 @@ impl<'a> PipelineExecutor<'a> {
 
     pub fn exec(&mut self) -> Result<()> {
         // Set up pipeline
-        let mut run = vec![];
+        let mut has_run = vec![];
         let mut errors = vec![];
 
         let pipeline = self.pipeline.build_actions(self.target);
@@ -108,8 +108,8 @@ impl<'a> PipelineExecutor<'a> {
 
         // Setup
         for action in pipeline {
-            run.push(action);
-            let res = run
+            has_run.push(action);
+            let res = has_run
                 .last()
                 .expect("action should exist")
                 .exec(&mut self.ctx, ActionType::Setup)
@@ -131,7 +131,7 @@ impl<'a> PipelineExecutor<'a> {
         }
 
         // Teardown
-        for action in run.into_iter().rev() {
+        for action in has_run.into_iter().rev() {
             let ctx = &mut self.ctx;
 
             let res = action

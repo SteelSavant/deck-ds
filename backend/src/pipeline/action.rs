@@ -22,7 +22,7 @@ pub mod virtual_screen;
 
 pub trait ActionImpl: DeserializeOwned + Serialize {
     /// Type of runtime state of the action
-    type State: 'static;
+    type State: 'static + Debug;
 
     fn setup(&self, _ctx: &mut PipelineContext) -> Result<()> {
         // default to no setup
@@ -50,13 +50,21 @@ pub trait ErasedPipelineAction {
 
 impl<T> ErasedPipelineAction for T
 where
-    T: ActionImpl + JsonSchema + Serialize + DeserializeOwned + Debug + Clone,
+    T: ActionImpl + JsonSchema + Serialize + DeserializeOwned + Debug + Clone + 'static,
 {
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
+        log::info!("Setting up {}: {:?}", std::any::type_name::<T>(), self);
         self.setup(ctx)
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {
+        log::info!(
+            "Tearing down {}: {:?} -- State({:?})",
+            std::any::type_name::<T>(),
+            &self,
+            ctx.get_state::<T>()
+        );
+
         self.teardown(ctx)
     }
 
