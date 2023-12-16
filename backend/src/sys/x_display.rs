@@ -185,9 +185,10 @@ impl XDisplay {
         let native_ar = Self::get_native_ar(&modes);
 
         let mode = Self::get_preferred_mode(native_ar, &modes, pref)?;
+        log::debug!("Got preferred mode {mode:?}");
         let mode = match mode {
             Some(mode) => screen.mode(mode)?,
-            None => self.create_preferred_mode(native_ar, &modes, pref)?,
+            None => self.create_preferred_mode(output, native_ar, &modes, pref)?,
         };
 
         self.set_output_mode(output, &mode)
@@ -334,10 +335,13 @@ impl XDisplay {
     /// Creates a new xrandr output mode based on the preference specification.
     fn create_preferred_mode(
         &mut self,
+        output: &Output,
         native_ar: f32,
         modes: &[(Mode, bool)],
         pref: &ModePreference,
     ) -> Result<Mode> {
+        log::debug!("Creating preferred mode for preference {pref:?}");
+
         let nearest_pref = ModePreference {
             aspect_ratio: AspectRatioOption::Any,
             resolution: match pref.resolution {
@@ -392,14 +396,59 @@ impl XDisplay {
             ModeOption::AtMost(rr) => rr,
         };
 
+        // let rate = 30.;
+
         let timings = self.get_timings(width, height, rate)?;
-        Command::new("xrandr").args(&timings.1);
+        let mut cmd = Command::new("xrandr");
+
+        let args = [
+            vec!["--newmode".to_string(), timings.0.clone()],
+            timings.1.clone(),
+        ]
+        .concat();
+
+        log::debug!("creating new mode");
+
+        let status = cmd.args(&args).status();
+
+        if status.is_err() || !status.unwrap().success() {
+            log::debug!("mode exists? removing and retrying");
+            let mut del_cmd = Command::new("xrandr");
+            del_cmd
+                .args(["--delmode", &output.name, &timings.0])
+                .status()?;
+
+            let mut rm_cmd = Command::new("xrandr");
+
+            let rm_status = rm_cmd.args(["--rmmode", &timings.0]).status();
+
+            if !rm_status.is_err() && rm_status.unwrap().success() {
+                log::debug!("removed old mode; creating new one");
+
+                let mut cmd = Command::new("xrandr");
+
+                let status = cmd.args(&args).status()?;
+                if !status.success() {
+                    return Err(anyhow::anyhow!(
+                        "failed to create new mode from `xrandr {:?}`",
+                        args
+                    ));
+                }
+            } else {
+                return Err(anyhow::anyhow!("failed to remove old mode {}", &timings.0));
+            }
+        }
+
+        let mut add_cmd = Command::new("xrandr");
+        add_cmd
+            .args(["--addmode", &output.name, &timings.0])
+            .status()?;
 
         let resources = ScreenResources::new(&mut self.xhandle)?;
         let mode = resources
             .modes
             .iter()
-            .find(|m| timings.0.contains(&m.name))
+            .find(|m| timings.0 == m.name)
             .ok_or(anyhow::anyhow!("newly create mode {} not found", timings.0))?;
         Ok(resources.mode(mode.xid)?)
     }
@@ -436,7 +485,8 @@ impl XDisplay {
             }
 
             Ok((
-                get(&captures, "name")?,
+                get::<String>(&captures, "name")
+                    .map(|name| format!("DeckDS-{}", name[1..name.len() - 1].to_string()))?,
                 captures
                     .get(0)
                     .expect("should have capture from cvt")
@@ -445,6 +495,7 @@ impl XDisplay {
                     .expect("cvt out should have modeline prefix")
                     .split_ascii_whitespace()
                     .map(|v| v.to_string())
+                    .skip(1)
                     .collect(),
             ))
 
@@ -537,7 +588,7 @@ impl XDisplay {
 mod tests {
     use super::*;
 
-    fn create_mode(xid: u64, width: u32, height: u32, rate: f64, pref: bool) -> (Mode, bool) {
+    fn create_test_mode(xid: u64, width: u32, height: u32, rate: f64, pref: bool) -> (Mode, bool) {
         (
             Mode {
                 xid,
@@ -565,8 +616,8 @@ mod tests {
     #[test]
     fn test_get_preferred_mode_prf() -> Result<()> {
         let modes = vec![
-            create_mode(1, 1280, 720, 60., true),
-            create_mode(2, 1280, 720, 60., false),
+            create_test_mode(1, 1280, 720, 60., true),
+            create_test_mode(2, 1280, 720, 60., false),
         ];
 
         let mode = XDisplay::get_preferred_mode(
@@ -586,9 +637,9 @@ mod tests {
     #[test]
     fn test_get_preferred_mode_exact_rate() -> Result<()> {
         let modes = vec![
-            create_mode(1, 1280, 720, 60., false),
-            create_mode(2, 1280, 720, 61., false),
-            create_mode(3, 1280, 720, 59., false),
+            create_test_mode(1, 1280, 720, 60., false),
+            create_test_mode(2, 1280, 720, 61., false),
+            create_test_mode(3, 1280, 720, 59., false),
         ];
 
         let mode = XDisplay::get_preferred_mode(
@@ -608,9 +659,9 @@ mod tests {
     #[test]
     fn test_get_preferred_mode_min_rate() -> Result<()> {
         let modes = vec![
-            create_mode(1, 1280, 720, 15., false),
-            create_mode(2, 1280, 720, 60., false),
-            create_mode(3, 1280, 720, 30., false),
+            create_test_mode(1, 1280, 720, 15., false),
+            create_test_mode(2, 1280, 720, 60., false),
+            create_test_mode(3, 1280, 720, 30., false),
         ];
 
         let mode = XDisplay::get_preferred_mode(
@@ -629,9 +680,9 @@ mod tests {
     #[test]
     fn test_get_preferred_mode_max_rate() -> Result<()> {
         let modes = vec![
-            create_mode(1, 1280, 720, 15., false),
-            create_mode(2, 1280, 720, 60., false),
-            create_mode(3, 1280, 720, 30., false),
+            create_test_mode(1, 1280, 720, 15., false),
+            create_test_mode(2, 1280, 720, 60., false),
+            create_test_mode(3, 1280, 720, 30., false),
         ];
 
         let mode = XDisplay::get_preferred_mode(
@@ -650,9 +701,9 @@ mod tests {
     #[test]
     fn test_get_preferred_mode_exact_res_exact_ar() -> Result<()> {
         let modes = vec![
-            create_mode(1, 1920, 1080, 60., false),
-            create_mode(2, 1280, 720, 60., false),
-            create_mode(3, 2560, 1440, 60., false),
+            create_test_mode(1, 1920, 1080, 60., false),
+            create_test_mode(2, 1280, 720, 60., false),
+            create_test_mode(3, 2560, 1440, 60., false),
         ];
 
         let mode = XDisplay::get_preferred_mode(
@@ -671,9 +722,9 @@ mod tests {
     #[test]
     fn test_get_preferred_mode_min_res_exact_ar() -> Result<()> {
         let modes = vec![
-            create_mode(1, 1920, 1080, 60., false),
-            create_mode(2, 1280, 720, 60., false),
-            create_mode(3, 2560, 1440, 60., false),
+            create_test_mode(1, 1920, 1080, 60., false),
+            create_test_mode(2, 1280, 720, 60., false),
+            create_test_mode(3, 2560, 1440, 60., false),
         ];
 
         let mode = XDisplay::get_preferred_mode(
@@ -692,9 +743,9 @@ mod tests {
     #[test]
     fn test_get_preferred_mode_max_res_exact_ar() -> Result<()> {
         let modes = vec![
-            create_mode(1, 1920, 1080, 60., false),
-            create_mode(2, 1280, 720, 60., false),
-            create_mode(3, 2560, 1440, 60., false),
+            create_test_mode(1, 1920, 1080, 60., false),
+            create_test_mode(2, 1280, 720, 60., false),
+            create_test_mode(3, 2560, 1440, 60., false),
         ];
 
         let mode = XDisplay::get_preferred_mode(
@@ -713,10 +764,10 @@ mod tests {
     #[test]
     fn test_get_preferred_mode_exact_res_native_ar() -> Result<()> {
         let modes = vec![
-            create_mode(1, 1920, 1080, 60., false),
-            create_mode(2, 1280, 720, 60., false),
-            create_mode(3, 1280, 800, 60., false),
-            create_mode(4, 2560, 1440, 60., false),
+            create_test_mode(1, 1920, 1080, 60., false),
+            create_test_mode(2, 1280, 720, 60., false),
+            create_test_mode(3, 1280, 800, 60., false),
+            create_test_mode(4, 2560, 1440, 60., false),
         ];
 
         let mode = XDisplay::get_preferred_mode(
@@ -735,10 +786,10 @@ mod tests {
     #[test]
     fn test_get_preferred_mode_min_res_native_ar() -> Result<()> {
         let modes = vec![
-            create_mode(1, 1920, 1200, 60., false),
-            create_mode(2, 1280, 720, 60., false),
-            create_mode(3, 1280, 800, 60., false),
-            create_mode(4, 2560, 1440, 60., false),
+            create_test_mode(1, 1920, 1200, 60., false),
+            create_test_mode(2, 1280, 720, 60., false),
+            create_test_mode(3, 1280, 800, 60., false),
+            create_test_mode(4, 2560, 1440, 60., false),
         ];
 
         let mode = XDisplay::get_preferred_mode(
@@ -757,10 +808,10 @@ mod tests {
     #[test]
     fn test_get_preferred_mode_max_res_native_ar() -> Result<()> {
         let modes = vec![
-            create_mode(1, 1920, 1200, 60., false),
-            create_mode(2, 1280, 720, 60., false),
-            create_mode(3, 1280, 800, 60., false),
-            create_mode(4, 2560, 1440, 60., false),
+            create_test_mode(1, 1920, 1200, 60., false),
+            create_test_mode(2, 1280, 720, 60., false),
+            create_test_mode(3, 1280, 800, 60., false),
+            create_test_mode(4, 2560, 1440, 60., false),
         ];
 
         let mode = XDisplay::get_preferred_mode(
@@ -779,10 +830,10 @@ mod tests {
     #[test]
     fn test_get_native_ar() {
         let modes = vec![
-            create_mode(1, 1920, 1200, 60., false),
-            create_mode(2, 1280, 720, 60., false),
-            create_mode(3, 1280, 800, 60., false),
-            create_mode(4, 2560, 1440, 60., false),
+            create_test_mode(1, 1920, 1200, 60., false),
+            create_test_mode(2, 1280, 720, 60., false),
+            create_test_mode(3, 1280, 800, 60., false),
+            create_test_mode(4, 2560, 1440, 60., false),
         ];
 
         let actual = XDisplay::get_native_ar(&modes);

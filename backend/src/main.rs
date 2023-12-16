@@ -2,11 +2,12 @@ use anyhow::Result;
 use include_dir::{include_dir, Dir};
 use std::{
     env,
-    path::Path,
+    path::{Path, PathBuf},
     sync::{Arc, Mutex},
     thread::sleep,
     time::Duration,
 };
+use typemap::TypeMap;
 
 use simplelog::{LevelFilter, WriteLogger};
 
@@ -17,7 +18,12 @@ use crate::{
     asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
+    pipeline::{
+        action::{virtual_screen::VirtualScreen, ErasedPipelineAction},
+        executor::PipelineContext,
+    },
     settings::Settings,
+    sys::{kwin::KWin, x_display::XDisplay},
     util::create_dir_all,
 };
 use clap::{Parser, Subcommand};
@@ -127,6 +133,24 @@ fn main() -> Result<()> {
     } else {
         log::info!("Updated version file succesfully");
     }
+
+    ///////////////////
+
+    let action: pipeline::action::Action = VirtualScreen.into();
+    let asset_manager = AssetManager::new(&ASSETS_DIR, PathBuf::new());
+
+    let mut ctx = PipelineContext {
+        home_dir: PathBuf::new(),
+        config_dir: PathBuf::new(),
+        kwin: KWin::new(asset_manager),
+        display: XDisplay::new()?,
+        state: TypeMap::new(),
+    };
+    action.setup(&mut ctx)?;
+
+    return Ok(());
+
+    ///////////////
 
     let args = Cli::parse();
     let mode = args.mode.unwrap_or_default();

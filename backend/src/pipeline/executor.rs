@@ -37,7 +37,7 @@ pub struct PipelineContext<'a> {
     /// Display handler,
     pub display: XDisplay,
     /// pipeline state
-    state: TypeMap,
+    pub state: TypeMap, // TODO::pub for testing only
 }
 
 // state impl
