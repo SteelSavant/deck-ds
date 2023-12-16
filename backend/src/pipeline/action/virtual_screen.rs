@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use xrandr::Relation;
@@ -18,18 +18,20 @@ impl ActionImpl for VirtualScreen {
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         ctx.kwin.set_script_enabled("truevideowall", true)?;
-        let external = ctx
+        let display = ctx
             .display
+            .as_mut()
+            .with_context(|| "VirtualScreen requires x11 to be running")?;
+
+        let external = display
             .get_preferred_external_output()?
             .ok_or(anyhow::anyhow!("Failed to find external display"))?;
 
-        let deck = ctx
-            .display
+        let deck = display
             .get_embedded_output()?
             .ok_or(anyhow::anyhow!("Failed to find embedded display"))?;
 
-        let deck_mode = ctx
-            .display
+        let deck_mode = display
             .get_current_mode(&deck)?
             .expect("Deck screen should have active mode");
         let res = if deck_mode.width < deck_mode.height {
@@ -44,7 +46,7 @@ impl ActionImpl for VirtualScreen {
             }
         };
 
-        ctx.display.set_or_create_preferred_mode(
+        display.set_or_create_preferred_mode(
             &external,
             &ModePreference {
                 resolution: ModeOption::Exact(res),
@@ -53,8 +55,7 @@ impl ActionImpl for VirtualScreen {
             },
         )?;
 
-        ctx.display
-            .set_output_position(&deck, &Relation::Below, &external)
+        display.set_output_position(&deck, &Relation::Below, &external)
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {

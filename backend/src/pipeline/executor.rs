@@ -35,7 +35,7 @@ pub struct PipelineContext<'a> {
     /// KWin script handler
     pub kwin: KWin<'a>,
     /// Display handler,
-    pub display: XDisplay,
+    pub display: Option<XDisplay>,
     /// pipeline state
     state: TypeMap,
 }
@@ -84,7 +84,7 @@ impl<'a> PipelineExecutor<'a> {
                 config_dir,
 
                 kwin: KWin::new(assets_manager),
-                display: XDisplay::new()?,
+                display: XDisplay::new().ok(),
                 state: TypeMap::new(),
             },
         };

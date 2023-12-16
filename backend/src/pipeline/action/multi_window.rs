@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use xrandr::Relation;
@@ -15,17 +15,18 @@ impl ActionImpl for MultiWindow {
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         ctx.kwin.set_script_enabled("emulatorwindowing", true)?;
-        let external = ctx
+        let display = ctx
             .display
+            .as_mut()
+            .with_context(|| "MultiWindow requires x11 to be running")?;
+        let external = display
             .get_preferred_external_output()?
             .ok_or(anyhow::anyhow!("Failed to find external display"))?;
-        let deck = ctx
-            .display
+        let deck = display
             .get_embedded_output()?
             .ok_or(anyhow::anyhow!("Failed to find embedded display"))?;
 
-        ctx.display
-            .set_output_position(&deck, &Relation::Below, &external)
+        display.set_output_position(&deck, &Relation::Below, &external)
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {

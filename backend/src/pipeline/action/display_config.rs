@@ -1,4 +1,4 @@
-use anyhow::{Ok, Result};
+use anyhow::{Context, Ok, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use xrandr::{Relation, XId};
@@ -56,7 +56,12 @@ impl ActionImpl for DisplayConfig {
     type State = DisplayState;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
-        let preferred = ctx.display.get_preferred_external_output()?;
+        let preferred = ctx
+            .display
+            .as_mut()
+            .with_context(|| "DisplayConfig requires x11 to be running")?
+            .get_preferred_external_output()?;
+
         match preferred {
             Some(output) => {
                 ctx.set_state::<Self>(DisplayState {
@@ -72,9 +77,13 @@ impl ActionImpl for DisplayConfig {
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {
-        let current_output = ctx.display.get_preferred_external_output()?;
+        let mut display = ctx
+            .display
+            .take()
+            .with_context(|| "DisplayConfig requires x11 to be running")?;
+        let current_output = display.get_preferred_external_output()?;
 
-        match ctx.get_state::<Self>() {
+        let res = match ctx.get_state::<Self>() {
             Some(state) => {
                 let output = state.previous_output_id;
 
@@ -95,8 +104,8 @@ impl ActionImpl for DisplayConfig {
                 match self.teardown_external_settings {
                     TeardownExternalSettings::Previous => match state.previous_output_mode {
                         Some(mode) => {
-                            let mode = ctx.display.get_mode(mode)?;
-                            ctx.display.set_output_mode(&current_output, &mode)
+                            let mode = display.get_mode(mode)?;
+                            display.set_output_mode(&current_output, &mode)
                         }
                         None => DisplayConfig {
                             teardown_external_settings: TeardownExternalSettings::Native,
@@ -108,7 +117,7 @@ impl ActionImpl for DisplayConfig {
                         let mode = current_output
                             .preferred_modes
                             .iter()
-                            .map(|mode| ctx.display.get_mode(*mode))
+                            .map(|mode| display.get_mode(*mode))
                             .collect::<Result<Vec<_>, _>>()?;
                         let native_mode = mode.iter().reduce(|acc, e| {
                             match (acc.width * acc.height).cmp(&(e.width * e.height)) {
@@ -124,18 +133,18 @@ impl ActionImpl for DisplayConfig {
                             }
                         });
                         if let Some(mode) = native_mode {
-                            ctx.display.set_output_mode(&current_output, mode)
+                            display.set_output_mode(&current_output, mode)
                         } else {
                             Ok(())
                         }
                     }
-                    TeardownExternalSettings::Preference(preference) => ctx
-                        .display
-                        .set_or_create_preferred_mode(&current_output, &preference),
+                    TeardownExternalSettings::Preference(preference) => {
+                        display.set_or_create_preferred_mode(&current_output, &preference)
+                    }
                 }?;
 
-                let deck = ctx.display.get_embedded_output()?.unwrap();
-                ctx.display.set_output_position(
+                let deck = display.get_embedded_output()?.unwrap();
+                display.set_output_position(
                     &deck,
                     &self.teardown_deck_location.into(),
                     &current_output,
@@ -143,7 +152,11 @@ impl ActionImpl for DisplayConfig {
             }
             // No state, nothing to tear down
             None => Ok(()),
-        }
+        };
+
+        ctx.display = Some(display);
+
+        res
     }
 }
 
