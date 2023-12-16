@@ -2,12 +2,11 @@ use anyhow::Result;
 use include_dir::{include_dir, Dir};
 use std::{
     env,
-    path::{Path, PathBuf},
+    path::Path,
     sync::{Arc, Mutex},
     thread::sleep,
     time::Duration,
 };
-use typemap::TypeMap;
 
 use simplelog::{LevelFilter, WriteLogger};
 
@@ -18,12 +17,7 @@ use crate::{
     asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
-    pipeline::{
-        action::{virtual_screen::VirtualScreen, ErasedPipelineAction},
-        executor::PipelineContext,
-    },
     settings::Settings,
-    sys::{kwin::KWin, x_display::XDisplay},
     util::create_dir_all,
 };
 use clap::{Parser, Subcommand};
