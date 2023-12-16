@@ -1,9 +1,10 @@
-use std::{cmp::Ordering, process::Command, str::FromStr};
+use std::{cmp::Ordering, process::Command, str::FromStr, time::Duration};
 
 use float_cmp::approx_eq;
 use regex::Regex;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::thread::sleep;
 use xrandr::{Mode, Output, Relation, ScreenResources, XHandle, XId};
 
 use anyhow::{Ok, Result};
@@ -69,6 +70,37 @@ impl XDisplay {
     // TODO::allow user to select target output.
     /// Gets the preferred output, ignoring the steam decks embedded display. Chooses primary enabled output if available, otherwise largest.
     pub fn get_preferred_external_output(&mut self) -> Result<Option<Output>> {
+        let external = {
+            let mut maybe_external = self.get_preferred_external_output_maybe_disconnected()?;
+
+            let mut fail_count = 0;
+            while let Some(external) = maybe_external {
+                if external.connected {
+                    log::debug!("Returning connected external output");
+
+                    return Ok(Some(external));
+                } else {
+                    fail_count += 1;
+                    sleep(Duration::from_secs(1));
+
+                    if fail_count > 15 {
+                        log::debug!("Returning disconnected external output");
+
+                        return Ok(Some(external));
+                    }
+                    maybe_external = self.get_preferred_external_output_maybe_disconnected()?;
+                }
+            }
+
+            log::debug!("Returning bad external output");
+
+            maybe_external
+        };
+
+        Ok(external)
+    }
+
+    fn get_preferred_external_output_maybe_disconnected(&mut self) -> Result<Option<Output>> {
         let mut outputs: Vec<Output> = self.xhandle.all_outputs()?;
 
         outputs.sort_by(|a, b| {

@@ -29,7 +29,7 @@ impl CemuLayout {
             .get(1)
             .with_context(|| "open_pad rxp should have one capture")?;
 
-        let current_fullscreen = PAD_RXP
+        let current_fullscreen = FULLSCREEN_RXP
             .captures(&xml)
             .expect("settings.xml should have fullscreen setting")
             .get(1)
@@ -46,6 +46,8 @@ impl CemuLayout {
 
         let out = format!("<open_pad>{}</open_pad>", self.separate_gamepad_view);
         let replaced_pad = PAD_RXP.replace(&xml, &out);
+
+        let out = format!("<fullscreen>{}</fullscreen>", self.fullscreen);
         let replaced_fullscreen = FULLSCREEN_RXP.replace(&replaced_pad, &out);
 
         Ok(std::fs::write(xml_path, replaced_fullscreen.as_ref())?)
@@ -102,7 +104,7 @@ mod tests {
         let path = PathBuf::from("test/out/cemu/settings.xml");
         create_dir_all(path.parent().unwrap())?;
 
-        std::fs::write(&path, source)?;
+        std::fs::write(&path, &source)?;
 
         let expected = CemuLayout {
             separate_gamepad_view: false,
@@ -111,6 +113,10 @@ mod tests {
         let actual = CemuLayout::read(&path)?;
 
         assert_eq!(expected, actual);
+
+        expected.write(&path)?;
+        let actual_str = std::fs::read_to_string(&path)?;
+        assert_eq!(source, actual_str);
 
         let expected = CemuLayout {
             separate_gamepad_view: true,

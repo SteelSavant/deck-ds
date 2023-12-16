@@ -31,7 +31,7 @@ ureq = { version = "2", features = [
 ], default-features = false, optional = true }
 clap = { version = "4.4.6", features = ["derive"] }
 derive_more = "0.99.17"
-indexmap = { version = "2.0.2", features = ["serde"] }
+indexmap = { version = "^2.1.0", features = ["serde"] }
 schemars = { version = "0.8.15", features = ["indexmap2", "uuid1", "either"] }
 
 typemap = "0.3.3"
@@ -52,7 +52,7 @@ lazy_static = "1.4.0"
 dirs = "5.0.1"
 which = "5.0.0"
 either = { version = "1.9.0", features = ["serde"] }
-configparser = "3.0.3"
+configparser = { version = "3.0.3", features = ["indexmap"] }
 strum = { version = "0.25.0", features = ["std", "derive"] }
 
 [features]

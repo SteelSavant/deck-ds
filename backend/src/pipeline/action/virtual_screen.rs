@@ -22,6 +22,7 @@ impl ActionImpl for VirtualScreen {
             .display
             .get_preferred_external_output()?
             .ok_or(anyhow::anyhow!("Failed to find external display"))?;
+
         let deck = ctx
             .display
             .get_embedded_output()?

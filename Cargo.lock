@@ -313,6 +313,9 @@ name = "configparser"
 version = "3.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0e56e414a2a52ab2a104f85cd40933c2fbc278b83637facf646ecf451b49237"
+dependencies = [
+ "indexmap 2.1.0",
+]
 
 [[package]]
 name = "convert_case"
@@ -395,7 +398,7 @@ dependencies = [
  "float-cmp",
  "gilrs",
  "include_dir",
- "indexmap 2.0.2",
+ "indexmap 2.1.0",
  "lazy_static",
  "log",
  "nix 0.27.1",
@@ -940,9 +943,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.0.2"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8adf3ddd720272c6ea8bf59463c04e0f93d0bbf7c5439b691bca2987e0270897"
+checksum = "d530e1a18b1cb4c484e6e34556a0d948706958449fca0cab753d649f2bce3d1f"
 dependencies = [
  "equivalent",
  "hashbrown 0.14.1",
@@ -1419,7 +1422,7 @@ checksum = "1f7b0ce13155372a76ee2e1c5ffba1fe61ede73fbea5630d61eee6fac4929c0c"
 dependencies = [
  "dyn-clone",
  "either",
- "indexmap 2.0.2",
+ "indexmap 2.1.0",
  "schemars_derive",
  "serde",
  "serde_json",

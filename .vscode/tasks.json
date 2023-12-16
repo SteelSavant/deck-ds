@@ -74,13 +74,13 @@
     },
     //Frontend build task
     {
-      "label": "frontend-build",
+      "label": "quickbuild",
       "group": "build",
       "detail": "Build DeckDS frontend",
       "type": "shell",
       "dependsOrder": "sequence",
       "dependsOn": ["setup", "settingscheck"],
-      "command": "pnpm build && cd out && mkdir -p ${config:pluginname} && cp -r ../dist ${config:pluginname} && zip ${config:pluginname}.zip ${config:pluginname}/dist/index.js && cp -r ../bin ${config:pluginname} && zip ${config:pluginname}.zip ${config:pluginname}/bin/backend && rm -r ${config:pluginname}",
+      "command": "pnpm build_all && cd out && mkdir -p ${config:pluginname} && cp -r ../dist ${config:pluginname} && zip ${config:pluginname}.zip ${config:pluginname}/dist/index.js && cp -r ../bin ${config:pluginname} && zip ${config:pluginname}.zip ${config:pluginname}/bin/backend && rm -r ${config:pluginname}",
       "problemMatcher": []
     },
     //DEPLOY TASKS
@@ -121,11 +121,11 @@
       "problemMatcher": []
     },
     {
-      "label": "frontend-builddeploy",
+      "label": "quickbuilddeploy",
       "detail": "Builds frontend and deploys to deck. Requires at least one cli-build to have run previously.",
       "dependsOrder": "sequence",
       "group": "none",
-      "dependsOn": ["frontend-build", "deploy"],
+      "dependsOn": ["quickbuild", "deploy"],
       "problemMatcher": []
     },
     //GENERAL TASKS

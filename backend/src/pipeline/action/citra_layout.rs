@@ -4,7 +4,7 @@ use crate::pipeline::executor::PipelineContext;
 
 use super::{source_file::SourceFile, ActionImpl};
 use anyhow::{anyhow, Context, Result};
-use configparser::ini::Ini;
+use configparser::ini::{Ini, IniDefault};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -50,7 +50,7 @@ impl CitraLayoutOption {
 pub struct CitraLayout {
     pub layout_option: CitraLayoutOption,
     pub swap_screens: bool,
-    pub fullscreen: bool,
+    pub fullscreen: bool, // Setting this doesn't work for some reason...
 }
 
 impl CitraLayout {
@@ -90,7 +90,12 @@ impl CitraLayout {
     }
 
     fn write<P: AsRef<Path>>(&self, ini_path: P) -> Result<()> {
-        let mut ini = Ini::new_cs();
+        let mut defaults = IniDefault::default();
+        defaults.case_sensitive = true;
+        defaults.comment_symbols = vec![];
+        defaults.delimiters = vec!['='];
+
+        let mut ini = Ini::new_from_defaults(defaults);
 
         ini.load(&ini_path).map_err(|err| {
             anyhow!(
@@ -116,7 +121,10 @@ impl CitraLayout {
             Some(self.fullscreen.to_string()),
         );
 
-        Ok(ini.write(ini_path)?)
+        // really dumb hack becuase regex.replace_all didn't work for some reason
+        let fixed = ini.writes().replace("[", "\n[");
+
+        Ok(std::fs::write(ini_path.as_ref(), &fixed[1..].as_bytes())?)
     }
 }
 
@@ -176,7 +184,7 @@ mod tests {
         let path = PathBuf::from("test/out/citra/qt-config.ini");
         create_dir_all(path.parent().unwrap())?;
 
-        std::fs::write(&path, source)?;
+        std::fs::write(&path, &source)?;
 
         let expected = CitraLayout {
             layout_option: CitraLayoutOption::Default,
@@ -186,6 +194,10 @@ mod tests {
         let actual = CitraLayout::read(&path)?;
 
         assert_eq!(expected, actual);
+
+        expected.write(&path)?;
+        let actual_str = std::fs::read_to_string(&path)?;
+        assert_eq!(source, actual_str);
 
         let expected = CitraLayout {
             layout_option: CitraLayoutOption::SeparateWindows,

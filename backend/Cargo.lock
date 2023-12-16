@@ -313,6 +313,9 @@ name = "configparser"
 version = "3.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0e56e414a2a52ab2a104f85cd40933c2fbc278b83637facf646ecf451b49237"
+dependencies = [
+ "indexmap 2.1.0",
+]
 
 [[package]]
 name = "convert_case"

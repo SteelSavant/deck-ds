@@ -231,7 +231,7 @@ mod tests {
         let path = PathBuf::from("test/out/melonds/melonDS.ini");
         create_dir_all(path.parent().unwrap())?;
 
-        std::fs::write(&path, source)?;
+        std::fs::write(&path, &source)?;
 
         let initial = internal::RawMelonDSState {
             layout_option: 2,
@@ -244,6 +244,10 @@ mod tests {
         let actual = internal::RawMelonDSState::read(&path)?;
 
         assert_eq!(expected, actual);
+
+        expected.write(&path)?;
+        let actual_str = std::fs::read_to_string(&path)?;
+        assert_eq!(source, actual_str);
 
         let expected: internal::RawMelonDSState = MelonDSLayout {
             layout_option: MelonDSLayoutOption::Hybrid,
