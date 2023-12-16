@@ -134,24 +134,6 @@ fn main() -> Result<()> {
         log::info!("Updated version file succesfully");
     }
 
-    ///////////////////
-
-    let action: pipeline::action::Action = VirtualScreen.into();
-    let asset_manager = AssetManager::new(&ASSETS_DIR, PathBuf::new());
-
-    let mut ctx = PipelineContext {
-        home_dir: PathBuf::new(),
-        config_dir: PathBuf::new(),
-        kwin: KWin::new(asset_manager),
-        display: XDisplay::new()?,
-        state: TypeMap::new(),
-    };
-    action.setup(&mut ctx)?;
-
-    return Ok(());
-
-    ///////////////
-
     let args = Cli::parse();
     let mode = args.mode.unwrap_or_default();
 
