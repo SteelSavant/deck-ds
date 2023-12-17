@@ -79,8 +79,6 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number): React
                                         id: action.id,
                                         isEnabled: value,
                                     })
-
-
                                 } />
                             </Focusable>
                     }

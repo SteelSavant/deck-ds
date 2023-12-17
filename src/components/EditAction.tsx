@@ -23,90 +23,83 @@ export default function EditAction({
     const serverApi = useServerApi();
 
     const notConfigurable = (<div />);
+
     switch (type) {
         case 'CemuLayout':
             return (
                 <div>
-                    <Field indentLevel={indentLevel} focusable={false} label="Separate Gamepad View">
+                    <ActionChild indentLevel={indentLevel} label="Separate Gamepad View">
                         <Toggle value={cloned.value.separate_gamepad_view} onChange={(isEnabled) => {
                             console.log("toggling separate gamepad view:", isEnabled);
                             cloned.value.separate_gamepad_view = isEnabled;
                             onChange(cloned);
                         }} />
-                    </Field>
+                    </ActionChild>
                 </div>
             );
         case 'CitraLayout':
             return (
                 <div>
-                    <Field indentLevel={indentLevel} focusable={false} label="Layout Option">
-                        <Focusable >
-                            <Dropdown selectedOption={cloned.value.layout_option.type} rgOptions={citraLayoutOptions.map((a) => {
-                                return {
-                                    label: a.type,
-                                    data: a.type
-                                }
-                            })} onChange={(option) => {
-                                cloned.value.layout_option = { type: option.data };
-                                onChange(cloned);
-                            }} />
-                        </Focusable>
-                    </Field>
-                    <Field indentLevel={indentLevel} focusable={false} label="Swap Screens">
-                        <Focusable>
-                            <Toggle value={cloned.value.swap_screens} onChange={(isEnabled) => {
-                                cloned.value.swap_screens = isEnabled;
-                                onChange(cloned);
-                            }} />
-                        </Focusable>
-                    </Field>
+                    <ActionChild indentLevel={indentLevel} label="Layout Option">
+
+                        <Dropdown selectedOption={cloned.value.layout_option.type} rgOptions={citraLayoutOptions.map((a) => {
+                            return {
+                                label: a.type,
+                                data: a.type
+                            }
+                        })} onChange={(option) => {
+                            cloned.value.layout_option = { type: option.data };
+                            onChange(cloned);
+                        }} />
+                    </ActionChild>
+                    <ActionChild indentLevel={indentLevel} label="Swap Screens">
+                        <Toggle value={cloned.value.swap_screens} onChange={(isEnabled) => {
+                            cloned.value.swap_screens = isEnabled;
+                            onChange(cloned);
+                        }} />
+                    </ActionChild>
                 </div>
             );
         case 'MelonDSLayout':
             return (
                 <div>
-                    <Field indentLevel={indentLevel} focusable={false} label="Layout Option">
-                        <Focusable >
-                            <Dropdown selectedOption={cloned.value.layout_option} rgOptions={melonDSLayoutOptions.map((a) => {
-                                return {
-                                    label: a,
-                                    data: a
-                                }
-                            })} onChange={(option) => {
-                                cloned.value.layout_option = option.data;
-                                onChange(cloned);
-                            }} />
-                        </Focusable>
-                    </Field>
-                    <Field indentLevel={indentLevel} focusable={false} label="Sizing Option">
-                        <Focusable >
-                            <Dropdown selectedOption={cloned.value.sizing_option} rgOptions={melonDSSizingOptions.map((a) => {
-                                return {
-                                    label: a,
-                                    data: a
-                                }
-                            })} onChange={(option) => {
-                                cloned.value.sizing_option = option.data;
-                                onChange(cloned);
-                            }} />
-                        </Focusable>
-                    </Field>
-                    <Field indentLevel={indentLevel} focusable={false} label="Swap Screens">
-                        <Focusable>
-                            <Toggle value={cloned.value.swap_screens} onChange={(isEnabled) => {
-                                cloned.value.swap_screens = isEnabled;
-                                onChange(cloned);
-                            }} />
-                        </Focusable>
-                    </Field>
-                    <Field indentLevel={indentLevel} focusable={false} label="Book Mode (Rotate Screens)">
-                        <Focusable>
-                            <Toggle value={cloned.value.book_mode} onChange={(isEnabled) => {
-                                cloned.value.book_mode = isEnabled;
-                                onChange(cloned);
-                            }} />
-                        </Focusable>
-                    </Field>
+                    <ActionChild indentLevel={indentLevel} label="Layout Option">
+                        <Dropdown selectedOption={cloned.value.layout_option} rgOptions={melonDSLayoutOptions.map((a) => {
+                            return {
+                                label: a,
+                                data: a
+                            }
+                        })} onChange={(option) => {
+                            cloned.value.layout_option = option.data;
+                            onChange(cloned);
+                        }} />
+                    </ActionChild>
+                    <ActionChild indentLevel={indentLevel} label="Sizing Option">
+
+                        <Dropdown selectedOption={cloned.value.sizing_option} rgOptions={melonDSSizingOptions.map((a) => {
+                            return {
+                                label: a,
+                                data: a
+                            }
+                        })} onChange={(option) => {
+                            cloned.value.sizing_option = option.data;
+                            onChange(cloned);
+                        }} />
+                    </ActionChild>
+                    <ActionChild indentLevel={indentLevel} label="Swap Screens">
+
+                        <Toggle value={cloned.value.swap_screens} onChange={(isEnabled) => {
+                            cloned.value.swap_screens = isEnabled;
+                            onChange(cloned);
+                        }} />
+                    </ActionChild>
+                    <ActionChild indentLevel={indentLevel} label="Book Mode (Rotate Screens)">
+                        <Toggle value={cloned.value.book_mode} onChange={(isEnabled) => {
+                            cloned.value.book_mode = isEnabled;
+                            onChange(cloned);
+                        }} />
+
+                    </ActionChild>
                 </div >
             );
         case 'SourceFile':
@@ -128,14 +121,14 @@ export default function EditAction({
                         }
                         onChange(cloned)
                     }
-                    return <Field indentLevel={indentLevel} focusable={false} label="File Path" description={file ?? 'Not set'}>
+                    return <ActionChild indentLevel={indentLevel} label="File Path" description={file ?? 'Not set'}>
                         <DialogButton style={{ display: 'flex', width: '100%', position: 'relative' }} onClick={onSelectFile} onOKButton={onSelectFile}>
                             <div style={{ display: 'flex', minWidth: '100px', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <FaFile style={{ paddingRight: '1rem' }} />
                                 Select File
                             </div>
                         </DialogButton>
-                    </Field>
+                    </ActionChild>
                 default:
                     return notConfigurable;
             }
@@ -147,4 +140,16 @@ export default function EditAction({
             const typecheck: never = type;
             throw typecheck ?? 'action for edit failed to typecheck'
     }
+}
+
+function ActionChild({ children, label, description, indentLevel }: { children: ReactElement, label: string, description?: string | undefined, indentLevel: number }): ReactElement {
+    return (
+        <Field label={label} focusable={false} description={description} indentLevel={indentLevel} >
+            <div style={{ paddingRight: '10px' }}>
+                <Focusable >
+                    {children}
+                </Focusable>
+            </div>
+        </Field>
+    );
 }

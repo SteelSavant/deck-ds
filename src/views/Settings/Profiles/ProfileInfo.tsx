@@ -36,7 +36,6 @@ export default function ProfileInfo(pipeline: Pipeline): ReactElement {
     }
 
     // TODO::make description editable
-    // TODO::tags list should be reorderable, to determine order on QAM
     // TODO::dependencies section
     return (
         <div>
@@ -67,8 +66,7 @@ export default function ProfileInfo(pipeline: Pipeline): ReactElement {
 }
 
 function ProfileTag({ tag, removeTag }: { tag: string, removeTag: (tag: string) => void }): ReactElement {
-    const display = collectionStore.userCollections.find((uc) => uc.id === tag)?.displayName; // TODO::Wildly inefficient, don't care right now
-    // TODO::significantly better rendering of these items
+    const display = collectionStore.userCollections.find((uc) => uc.id === tag)?.displayName;
     return display ? (
         <div style={{ marginRight: '10px' }}>
             <DialogButton style={{ margin: '5px', display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }} onClick={() => removeTag(tag)} onOKButton={() => removeTag(tag)} onOKActionDescription='Remove Collection'>

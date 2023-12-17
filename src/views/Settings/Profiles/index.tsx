@@ -10,6 +10,7 @@ export const ProfilesPage: VFC = () => {
 
     const navigateToTemplates = () => Navigation.Navigate('/deck-ds/settings/templates');
 
+    // TODO:: make profiles reorderable
     return <HandleLoading
         value={profiles}
         onOk={
