@@ -68,7 +68,7 @@ function PipelineHeader(pipeline: Pipeline): ReactElement {
     }
 
     return (
-        <Field focusable={false} label={<h3>{pipeline.name}</h3>} >
+        <Field focusable={false} label={<h3>{pipeline.name}</h3>} bottomSeparator="thick" >
             <DialogButton onOKButton={onEditTitle} onClick={onEditTitle}>
                 <FaEdit />
             </DialogButton>

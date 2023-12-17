@@ -86,7 +86,6 @@ export default function PipelineDisplay({ header, info, secondaryAction, seconda
                         style={{ minWidth: "100%", minHeight: "100%" }}
                         onSecondaryActionDescription={secondaryActionDescription}
                         onSecondaryButton={secondaryAction}
-                        onClick={secondaryAction}
                     >
                         <div style={{
                             marginTop: "40px",

@@ -66,7 +66,7 @@ function TemplatePreviewLogic(): ReactElement {
 
 
 function TemplateHeader(pipeline: Pipeline): ReactElement {
-    return (<Field label={<h3>{`${pipeline.name} (Template)`}</h3>}>
+    return (<Field label={<h3>{`${pipeline.name} (Template)`}</h3>} bottomSeparator="thick">
         Changes made to this template will not be saved.
     </Field>);
 }

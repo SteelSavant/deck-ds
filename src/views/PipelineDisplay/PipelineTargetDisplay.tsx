@@ -1,5 +1,5 @@
 import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
-import { ReactElement } from "react";
+import { Fragment, ReactElement } from "react";
 import { FaLink } from "react-icons/fa";
 import { Action, ActionOneOf, ActionSelection, } from "../../backend";
 import EditAction from "../../components/EditAction";
@@ -14,58 +14,52 @@ export default function PipelineTargetDisplay({ root, description }: {
         <DialogBody>
             <DialogControlsSection>
                 <Field focusable={false} description={description} />
-                {buildSelection('root', root, false)}
+                {buildSelection('root', root, root.type === 'AllOf' ? -1 : 0)}
             </DialogControlsSection>
         </DialogBody>
     )
 }
 
-function buildSelection(id: string, selection: ActionSelection, shouldIndent: boolean): ReactElement {
+function buildSelection(id: string, selection: ActionSelection, indentLevel: number): ReactElement {
     switch (selection.type) {
         case "Action":
-            return buildAction(id, selection.value);
+            return buildAction(id, selection.value, indentLevel);
         case "OneOf":
-            return buildOneOf(selection.value, shouldIndent);
+            return buildOneOf(selection.value, indentLevel);
         case "AllOf":
-            return buildAllOf(selection.value, shouldIndent);
+            return buildAllOf(selection.value, indentLevel);
     }
 }
 
-function buildAction(id: string, action: Action): ReactElement {
+function buildAction(id: string, action: Action, indentLevel: number): ReactElement {
     const { dispatch } = useModifiablePipelineDefinition();
 
     return (
-        <div style={{
-            paddingLeft: getIndent(true)
-        }}>
-            <EditAction action={action} onChange={(updatedAction) => {
-                console.log('updating action from', action, 'to', updatedAction);
-                dispatch({
-                    type: 'updateAction',
-                    id: id,
-                    action: updatedAction,
-                });
-            }} />
-        </div>
+        <EditAction action={action} indentLevel={indentLevel + 1} onChange={(updatedAction) => {
+            console.log('updating action from', action, 'to', updatedAction);
+            dispatch({
+                type: 'updateAction',
+                id: id,
+                action: updatedAction,
+            });
+        }} />
     )
 }
 
-function buildOneOf(oneOf: ActionOneOf, shouldIndent: boolean): ReactElement {
+function buildOneOf(oneOf: ActionOneOf, indentLevel: number): ReactElement {
     const action = oneOf.actions.find((a) => a.id === oneOf.selection)!;
-    return buildPipelineAction(action, shouldIndent);
+    return buildPipelineAction(action, indentLevel + 1);
 }
 
-function buildAllOf(allOf: PipelineAction[], shouldIndent: boolean): ReactElement {
+function buildAllOf(allOf: PipelineAction[], indentLevel: number): ReactElement {
     return (
-        <div style={{
-            paddingLeft: getIndent(shouldIndent)
-        }}>
-            {allOf.map((action) => buildPipelineAction(action, true))}
-        </div>
+        <Fragment>
+            {allOf.map((action) => buildPipelineAction(action, indentLevel + 1))}
+        </Fragment>
     );
 }
 
-function buildPipelineAction(action: PipelineAction, shouldIndent: boolean): ReactElement {
+function buildPipelineAction(action: PipelineAction, indentLevel: number): ReactElement {
     const { dispatch } = useModifiablePipelineDefinition();
 
     const selection = action.selection;
@@ -73,8 +67,8 @@ function buildPipelineAction(action: PipelineAction, shouldIndent: boolean): Rea
 
     const forcedEnabled = isEnabled === null || isEnabled === undefined;
     return (
-        <div style={{ flexDirection: 'row', paddingLeft: getIndent(shouldIndent) }}>
-            <Field focusable={forcedEnabled && selection.type !== 'OneOf'} label={labelAction(action)} description={action.description}>
+        <div style={{ flexDirection: 'row' }}>
+            <Field indentLevel={indentLevel} focusable={forcedEnabled && selection.type !== 'OneOf'} label={labelAction(action)} description={action.description}>
                 <div style={{ paddingRight: '10px' }}>
                     {
                         forcedEnabled ? <div />
@@ -85,6 +79,8 @@ function buildPipelineAction(action: PipelineAction, shouldIndent: boolean): Rea
                                         id: action.id,
                                         isEnabled: value,
                                     })
+
+
                                 } />
                             </Focusable>
                     }
@@ -109,13 +105,9 @@ function buildPipelineAction(action: PipelineAction, shouldIndent: boolean): Rea
                     }
                 </div>
             </Field>
-            {forcedEnabled || isEnabled ? buildSelection(action.id, action.selection, selection.type === 'OneOf') : <div />}
+            {forcedEnabled || isEnabled ? buildSelection(action.id, action.selection, selection.type === 'OneOf' ? indentLevel = + 1 : indentLevel) : <div />}
         </div>
     )
-}
-
-function getIndent(shouldIndent: boolean): string {
-    return shouldIndent ? '30px' : '0px';
 }
 
 
