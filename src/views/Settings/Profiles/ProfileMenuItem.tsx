@@ -35,8 +35,13 @@ export default function ProfileMenuItem({ profile, deleteProfile }: { profile: P
     }
 
     return (
-        <Field focusable={false} label={profile.pipeline.name} description={profile.pipeline.description}>
+        <Field
+            focusable={false}
+            label={profile.pipeline.name}
+            description={profile.pipeline.description}
+        >
             <div style={{ display: 'flex', width: '100%', position: 'relative' }}>
+
                 <Focusable >
                     <DialogButton
                         style={{ height: '40px', minWidth: '40px', marginRight: '10px' }}
@@ -50,7 +55,17 @@ export default function ProfileMenuItem({ profile, deleteProfile }: { profile: P
                     </DialogButton>
                 </ Focusable>
                 <Focusable>
-                    <DialogButton style={{ backgroundColor: 'red', marginLeft: '10px' }}
+                    <DialogButton style={{
+                        backgroundColor: 'red',
+                        height: '40px',
+                        width: '40px',
+                        padding: '10px 12px',
+                        minWidth: '40px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        marginLeft: '10px'
+                    }}
                         onOKButton={deleteProfileWithConfirmation}
                         onClick={deleteProfileWithConfirmation}
                     >

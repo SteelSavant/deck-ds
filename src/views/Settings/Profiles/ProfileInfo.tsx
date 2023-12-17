@@ -22,10 +22,12 @@ export default function ProfileInfo(pipeline: Pipeline): ReactElement {
 
     function addTag() {
         showModal(<AddProfileTagModal onSave={(tag) => {
+            const unique = new Set(pipeline.tags);
+            unique.delete(tag);
             dispatch({
                 type: 'updatePipelineInfo',
                 info: {
-                    tags: [...new Set([...pipeline.tags, tag])], // set unique tags; no duplicates
+                    tags: [...unique, tag], // set unique tags; no duplicates. If tag exists in 
                     description: undefined,
                     name: undefined
                 }
@@ -44,20 +46,22 @@ export default function ProfileInfo(pipeline: Pipeline): ReactElement {
                 label='Collections'
                 description='Steam collections for which this profile should be available.'
                 bottomSeparator="none"
-            />
-            {
-                pipeline.tags.map((t) =>
-                    <Focusable>
-                        <ProfileTag tag={t} removeTag={removeTag} />
-                    </Focusable>
-                )
-            }
-            <Focusable>
+            >
                 <DialogButton onOKButton={addTag} onClick={addTag} onOKActionDescription='Add Collection'>
                     <FaPlus />
                     Add Collection
                 </DialogButton>
-            </Focusable>
+            </Field>
+            <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
+                {
+                    pipeline.tags.map((t) =>
+                        <Focusable>
+                            <ProfileTag tag={t} removeTag={removeTag} />
+                        </Focusable>
+                    )
+                }
+            </div>
+            <Field focusable={false} />
         </div>
     );
 }
@@ -66,9 +70,11 @@ function ProfileTag({ tag, removeTag }: { tag: string, removeTag: (tag: string) 
     const display = collectionStore.userCollections.find((uc) => uc.id === tag)?.displayName; // TODO::Wildly inefficient, don't care right now
     // TODO::significantly better rendering of these items
     return display ? (
-        <DialogButton style={{ margin: '5px' }} onClick={() => removeTag(tag)} onOKButton={() => removeTag(tag)} onOKActionDescription='Remove Collection'>
-            {display}
-            <FaX />
-        </DialogButton>
+        <div style={{ marginRight: '10px' }}>
+            <DialogButton style={{ margin: '5px', display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }} onClick={() => removeTag(tag)} onOKButton={() => removeTag(tag)} onOKActionDescription='Remove Collection'>
+                {display}
+                <FaX />
+            </DialogButton>
+        </div>
     ) : <div />
 }
