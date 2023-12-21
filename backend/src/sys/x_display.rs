@@ -74,20 +74,21 @@ impl XDisplay {
             let mut maybe_external = self.get_preferred_external_output_maybe_disconnected()?;
 
             let mut fail_count = 0;
-            while let Some(external) = maybe_external {
-                if external.connected {
-                    log::debug!("Returning connected external output");
+            const MAX_FAIL_COUNT: u8 = 15;
+            while fail_count <= MAX_FAIL_COUNT {
+                if let Some(external) = maybe_external {
+                    if external.connected {
+                        log::debug!("Returning connected external output");
 
-                    return Ok(Some(external));
-                } else {
-                    fail_count += 1;
-                    sleep(Duration::from_secs(1));
-
-                    if fail_count > 15 {
+                        return Ok(Some(external));
+                    } else if fail_count == MAX_FAIL_COUNT {
                         log::debug!("Returning disconnected external output");
 
                         return Ok(Some(external));
                     }
+
+                    fail_count += 1;
+                    sleep(Duration::from_secs(1));
                     maybe_external = self.get_preferred_external_output_maybe_disconnected()?;
                 }
             }
