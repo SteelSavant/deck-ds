@@ -5,7 +5,7 @@ use super::{
     action::{
         cemu_layout::CemuLayout,
         citra_layout::{CitraLayout, CitraLayoutOption},
-        display_config::{DisplayConfig, RelativeLocation, TeardownExternalSettings},
+        display_restoration::{DisplayRestoration, RelativeLocation, TeardownExternalSettings},
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
         multi_window::MultiWindow,
         source_file::{CustomFileOptions, EmuDeckSource, FlatpakSource, SourceFile},
@@ -160,11 +160,11 @@ impl PipelineActionRegistarBuilder {
                         Some(PipelineTarget::Desktop),
                         PipelineActionDefinition {
                             id: PipelineActionId::new(""),
-                            name: "Display Configuration".to_string(),
+                            name: "Display Restoration".to_string(),
                             description: Some("Ensures the display resolution and layout are correctly configured before and after executing pipeline actions.".into()),
                             enabled: None,
                             profile_override: None,
-                            selection: DisplayConfig {
+                            selection: DisplayRestoration {
                                 teardown_external_settings: TeardownExternalSettings::Previous,
                                 teardown_deck_location: RelativeLocation::Below,
                             } .into(),

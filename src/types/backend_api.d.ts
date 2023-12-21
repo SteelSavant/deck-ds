@@ -23,8 +23,8 @@ export type SelectionFor_PipelineAction =
     };
 export type Action =
   | {
-      type: "DisplayConfig";
-      value: DisplayConfig;
+      type: "DisplayRestoration";
+      value: DisplayRestoration;
     }
   | {
       type: "VirtualScreen";
@@ -52,10 +52,15 @@ export type Action =
     };
 export type RelativeLocation = "Above" | "Below" | "LeftOf" | "RightOf" | "SameAs";
 export type TeardownExternalSettings =
-  | "Previous"
-  | "Native"
   | {
-      Preference: ModePreference;
+      type: "Previous";
+    }
+  | {
+      type: "Native";
+    }
+  | {
+      type: "Preference";
+      value: ModePreference;
     };
 export type AspectRatioOption =
   | ("Any" | "Native")
@@ -179,7 +184,7 @@ export interface Pipeline {
     [k: string]: SelectionFor_PipelineAction;
   };
 }
-export interface DisplayConfig {
+export interface DisplayRestoration {
   teardown_deck_location: RelativeLocation;
   teardown_external_settings: TeardownExternalSettings;
 }

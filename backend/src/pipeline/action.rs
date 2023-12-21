@@ -4,7 +4,7 @@ use schemars::{schema::RootSchema, schema_for, JsonSchema};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use self::{
-    cemu_layout::CemuLayout, citra_layout::CitraLayout, display_config::DisplayConfig,
+    cemu_layout::CemuLayout, citra_layout::CitraLayout, display_restoration::DisplayRestoration,
     melonds_layout::MelonDSLayout, multi_window::MultiWindow, source_file::SourceFile,
     virtual_screen::VirtualScreen,
 };
@@ -14,7 +14,7 @@ use anyhow::Result;
 
 pub mod cemu_layout;
 pub mod citra_layout;
-pub mod display_config;
+pub mod display_restoration;
 pub mod melonds_layout;
 pub mod multi_window;
 pub mod source_file;
@@ -81,7 +81,7 @@ where
 #[enum_delegate::implement(ErasedPipelineAction)]
 #[serde(tag = "type", content = "value")]
 pub enum Action {
-    DisplayConfig(DisplayConfig),
+    DisplayRestoration(DisplayRestoration),
     VirtualScreen(VirtualScreen),
     MultiWindow(MultiWindow),
     CitraLayout(CitraLayout),
@@ -99,7 +99,7 @@ impl<T: Into<Action>, R> From<T> for Selection<R> {
 impl Action {
     pub fn name(&self) -> &'static str {
         match self {
-            Action::DisplayConfig(_) => "DisplayConfig",
+            Action::DisplayRestoration(_) => "DisplayRestoration",
             Action::VirtualScreen(_) => "VirtualScreen",
             Action::MultiWindow(_) => "MultiWindow",
             Action::CitraLayout(_) => "CitraLayout",

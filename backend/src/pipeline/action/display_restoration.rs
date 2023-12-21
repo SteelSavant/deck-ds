@@ -8,7 +8,7 @@ use crate::{pipeline::executor::PipelineContext, sys::x_display::ModePreference}
 use super::ActionImpl;
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct DisplayConfig {
+pub struct DisplayRestoration {
     pub teardown_external_settings: TeardownExternalSettings,
     pub teardown_deck_location: RelativeLocation,
 }
@@ -42,6 +42,7 @@ impl From<RelativeLocation> for Relation {
 }
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "type", content = "value")]
 pub enum TeardownExternalSettings {
     /// Previous resolution, before setup
     #[default]
@@ -52,7 +53,7 @@ pub enum TeardownExternalSettings {
     Preference(ModePreference),
 }
 
-impl ActionImpl for DisplayConfig {
+impl ActionImpl for DisplayRestoration {
     type State = DisplayState;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
@@ -107,7 +108,7 @@ impl ActionImpl for DisplayConfig {
                             let mode = display.get_mode(mode)?;
                             display.set_output_mode(&current_output, &mode)
                         }
-                        None => DisplayConfig {
+                        None => DisplayRestoration {
                             teardown_external_settings: TeardownExternalSettings::Native,
                             ..*self
                         }

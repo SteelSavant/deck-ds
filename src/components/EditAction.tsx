@@ -4,6 +4,7 @@ import { ReactElement } from "react";
 import { FaFile } from "react-icons/fa";
 import { Action, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../backend";
 import { useServerApi } from "../context/serverApiContext";
+import { RelativeLocation, TeardownExternalSettings } from "../types/backend_api";
 
 
 interface EditActionProps {
@@ -25,6 +26,40 @@ export default function EditAction({
     const notConfigurable = (<div />);
 
     switch (type) {
+        case 'DisplayRestoration':
+            const display = cloned.value;
+            const locations: RelativeLocation[] = ['Above', 'Below', 'LeftOf', 'RightOf']; // SameAs excluded because it doesn't really make sense
+            const externalSettings: TeardownExternalSettings[] = [{ type: 'Previous' }, { type: 'Native' }] // Preference excluded because its a pain to configure, and I'm pretty sure doesn't work
+            return (
+                <div>
+                    <ActionChild indentLevel={indentLevel} label="External Display Settings" description="External display settings after executing pipeline.">
+                        <Dropdown selectedOption={display.teardown_external_settings.type} rgOptions={externalSettings.map((setting) => {
+                            return {
+                                label: setting.type,
+                                data: setting.type
+                            };
+                        })}
+                            onChange={(settings) => {
+                                cloned.value.teardown_external_settings.type = settings.data;
+                                onChange(cloned)
+                            }}
+                        />
+                    </ActionChild>
+                    <ActionChild indentLevel={indentLevel} label="Deck Screen Location" description="Location of the Deck screen on the desktop after executing pipeline.">
+                        <Dropdown selectedOption={display.teardown_deck_location} rgOptions={locations.map((location) => {
+                            return {
+                                label: location,
+                                data: location,
+                            }
+                        })}
+                            onChange={(settings) => {
+                                cloned.value.teardown_deck_location = settings.data;
+                                onChange(cloned)
+                            }}
+                        />
+                    </ActionChild>
+                </div>
+            );
         case 'CemuLayout':
             return (
                 <div>
@@ -41,7 +76,6 @@ export default function EditAction({
             return (
                 <div>
                     <ActionChild indentLevel={indentLevel} label="Layout Option">
-
                         <Dropdown selectedOption={cloned.value.layout_option.type} rgOptions={citraLayoutOptions.map((a) => {
                             return {
                                 label: a.type,
@@ -75,7 +109,6 @@ export default function EditAction({
                         }} />
                     </ActionChild>
                     <ActionChild indentLevel={indentLevel} label="Sizing Option">
-
                         <Dropdown selectedOption={cloned.value.sizing_option} rgOptions={melonDSSizingOptions.map((a) => {
                             return {
                                 label: a,
@@ -132,7 +165,6 @@ export default function EditAction({
                 default:
                     return notConfigurable;
             }
-        case 'DisplayConfig': // fallthrough
         case 'MultiWindow': // fallthrough
         case 'VirtualScreen':
             return notConfigurable;

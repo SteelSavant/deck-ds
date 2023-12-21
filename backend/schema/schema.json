@@ -64,11 +64,11 @@
             "type": {
               "type": "string",
               "enum": [
-                "DisplayConfig"
+                "DisplayRestoration"
               ]
             },
             "value": {
-              "$ref": "#/definitions/DisplayConfig"
+              "$ref": "#/definitions/DisplayRestoration"
             }
           }
         },
@@ -430,7 +430,7 @@
         }
       }
     },
-    "DisplayConfig": {
+    "DisplayRestoration": {
       "type": "object",
       "required": [
         "teardown_deck_location",
@@ -1145,30 +1145,52 @@
       "oneOf": [
         {
           "description": "Previous resolution, before setup",
-          "type": "string",
-          "enum": [
-            "Previous"
-          ]
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Previous"
+              ]
+            }
+          }
         },
         {
           "description": "Native resolution",
-          "type": "string",
-          "enum": [
-            "Native"
-          ]
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Native"
+              ]
+            }
+          }
         },
         {
           "description": "Resolution based on specific settings",
           "type": "object",
           "required": [
-            "Preference"
+            "type",
+            "value"
           ],
           "properties": {
-            "Preference": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Preference"
+              ]
+            },
+            "value": {
               "$ref": "#/definitions/ModePreference"
             }
-          },
-          "additionalProperties": false
+          }
         }
       ]
     },
