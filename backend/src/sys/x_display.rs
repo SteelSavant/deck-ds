@@ -57,7 +57,7 @@ impl XDisplay {
     pub fn new() -> Result<Self> {
         Ok(Self {
             xhandle: xrandr::XHandle::open()?,
-            timing_fallback: TimingFallbackMethod::CvtR, // TODO::make this configurable
+            timing_fallback: TimingFallbackMethod::Cvt, // TODO::make this configurable
         })
     }
 
@@ -468,9 +468,9 @@ impl XDisplay {
             let regex = Regex::new(r#"(?m)Modeline (?<name>"[\w|\.]+")\s+(?<dotclock>[\d|.]+)\s+(?<width>\d+)\s+(?<hsyncstart>\d+)\s+(?<hsyncend>\d+)\s+(?<htotal>\d+)\s+(?<height>\d+)\s+(?<vsyncstart>\d+)\s+(?<vsyncend>\d+)\s+(?<vtotal>\d+)\s+(?<flags>.*)"#).unwrap();
             let output = String::from_utf8_lossy(&out.stdout);
 
-            let captures = regex
-                .captures(&output)
-                .ok_or(anyhow::anyhow!("could not get captures from timing output"))?;
+            let captures = regex.captures(&output).ok_or(anyhow::anyhow!(
+                "could not get captures from timing output: `{output}`"
+            ))?;
 
             fn get<T>(captures: &regex::Captures, name: &str) -> Result<T>
             where

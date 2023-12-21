@@ -150,10 +150,10 @@ impl<'a> PipelineExecutor<'a> {
         if errors.is_empty() {
             Ok(())
         } else {
-            Err(anyhow::anyhow!(
-                "Encountered errors executing pipeline: {:?}",
-                errors
-            ))
+            let err = anyhow::anyhow!("Encountered errors executing pipeline: {:?}", errors);
+
+            log::error!("{err}");
+            Err(err)
         }
     }
 
