@@ -67,8 +67,8 @@ impl Settings {
                     tags:  vec!["NDS".to_string(), "nds".to_string()],
                     targets: HashMap::from_iter([
                         (PipelineTarget::Desktop, Selection::AllOf(vec![
-                            PipelineActionId::new("core:display:virtual_screen"),
                             PipelineActionId::new("core:melonds:config"),
+                            PipelineActionId::new("core:display:virtual_screen"),
                         ])),
                         (PipelineTarget::Gamemode, Selection::AllOf(vec![
                             PipelineActionId::new("core:melonds:config"),
@@ -87,8 +87,8 @@ impl Settings {
                     tags: vec!["3DS".to_string(),"3ds".to_string()],
                     targets: HashMap::from_iter([
                         (PipelineTarget::Desktop, Selection::AllOf(vec![
-                            PipelineActionId::new("core:display:multi_window"),
                             PipelineActionId::new("core:citra:config"),
+                            PipelineActionId::new("core:display:multi_window"),
                         ])),
                         (PipelineTarget::Gamemode, Selection::AllOf(vec![
                             PipelineActionId::new("core:citra:config"),
@@ -108,8 +108,8 @@ impl Settings {
                     targets: HashMap::from_iter([
                         (PipelineTarget::Desktop,
                             Selection::AllOf(vec![
-                                PipelineActionId::new("core:display:multi_window"),
                                 PipelineActionId::new("core:cemu:config"),
+                                PipelineActionId::new("core:display:multi_window"),
                         ])),
                         (PipelineTarget::Gamemode,
                             Selection::AllOf(vec![

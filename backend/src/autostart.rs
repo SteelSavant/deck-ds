@@ -11,7 +11,7 @@ use crate::{
         data::{PipelineAction, PipelineActionId, PipelineTarget, Selection},
         executor::PipelineExecutor,
     },
-    settings::{self, Settings},
+    settings::Settings,
 };
 
 #[derive(Debug)]

@@ -5,6 +5,7 @@ use crate::pipeline::executor::PipelineContext;
 use super::{source_file::SourceFile, ActionImpl};
 use anyhow::{anyhow, Context, Result};
 use configparser::ini::{Ini, IniDefault};
+use regex::Regex;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -121,10 +122,16 @@ impl CitraLayout {
             Some(self.fullscreen.to_string()),
         );
 
-        // really dumb hack becuase regex.replace_all didn't work for some reason
-        let fixed = ini.writes().replace("[", "\n[");
+        let section_regex = Regex::new(r#"^\[(.*)\]\s*$"#).expect("regex should be valid");
 
-        Ok(std::fs::write(ini_path.as_ref(), &fixed[1..].as_bytes())?)
+        let fixed = ini
+            .writes()
+            .split_terminator('\n')
+            .map(|line| section_regex.replace(line, "\n[$1]"))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        Ok(std::fs::write(ini_path.as_ref(), fixed.trim().as_bytes())?)
     }
 }
 

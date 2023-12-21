@@ -422,7 +422,7 @@ impl XDisplay {
 
             let rm_status = rm_cmd.args(["--rmmode", &timings.0]).status();
 
-            if !rm_status.is_err() && rm_status.unwrap().success() {
+            if rm_status.is_ok_and(|status| status.success()) {
                 log::debug!("removed old mode; creating new one");
 
                 let mut cmd = Command::new("xrandr");
@@ -486,7 +486,7 @@ impl XDisplay {
 
             Ok((
                 get::<String>(&captures, "name")
-                    .map(|name| format!("DeckDS-{}", name[1..name.len() - 1].to_string()))?,
+                    .map(|name| format!("DeckDS-{}", &name[1..name.len() - 1].to_string()))?,
                 captures
                     .get(0)
                     .expect("should have capture from cvt")
