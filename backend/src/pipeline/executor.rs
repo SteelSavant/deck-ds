@@ -53,6 +53,16 @@ where
 }
 
 impl<'a> PipelineContext<'a> {
+    pub fn new(assets_manager: AssetManager<'a>, home_dir: PathBuf, config_dir: PathBuf) -> Self {
+        PipelineContext {
+            home_dir,
+            config_dir,
+            kwin: KWin::new(assets_manager),
+            display: XDisplay::new().ok(),
+            state: TypeMap::new(),
+        }
+    }
+
     pub fn get_state<P: ActionImpl + 'static>(&self) -> Option<&P::State> {
         self.state.get::<StateKey<P, P::State>>()
     }
@@ -79,14 +89,7 @@ impl<'a> PipelineExecutor<'a> {
             app_id,
             pipeline,
             target,
-            ctx: PipelineContext {
-                home_dir,
-                config_dir,
-
-                kwin: KWin::new(assets_manager),
-                display: XDisplay::new().ok(),
-                state: TypeMap::new(),
-            },
+            ctx: PipelineContext::new(assets_manager, home_dir, config_dir),
         };
 
         Ok(s)

@@ -60,7 +60,7 @@ impl ActionImpl for DisplayRestoration {
         let preferred = ctx
             .display
             .as_mut()
-            .with_context(|| "DisplayConfig requires x11 to be running")?
+            .with_context(|| "DisplayRestoration requires x11 to be running")?
             .get_preferred_external_output()?;
 
         match preferred {
@@ -81,7 +81,7 @@ impl ActionImpl for DisplayRestoration {
         let mut display = ctx
             .display
             .take()
-            .with_context(|| "DisplayConfig requires x11 to be running")?;
+            .with_context(|| "DisplayRestoration requires x11 to be running")?;
         let current_output = display.get_preferred_external_output()?;
 
         let res = match ctx.get_state::<Self>() {

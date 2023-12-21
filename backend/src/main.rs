@@ -17,6 +17,7 @@ use crate::{
     asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
+    pipeline::{action::ActionImpl, executor::PipelineContext},
     settings::Settings,
     util::create_dir_all,
 };
@@ -136,7 +137,7 @@ fn main() -> Result<()> {
     let settings = Arc::new(Mutex::new(settings));
 
     let assets_dir = config_dir.join("assets"); // TODO::keep assets with decky plugin, not config
-    let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
+    let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir.clone());
     let request_handler = Arc::new(Mutex::new(RequestHandler::new()));
 
     match mode {
@@ -144,7 +145,7 @@ fn main() -> Result<()> {
             // build the executor
             let executor = AutoStart::new(settings.clone())
                 .load()
-                .map(|l| l.build_executor(asset_manager, home_dir, config_dir));
+                .map(|l| l.build_executor(asset_manager, home_dir.clone(), config_dir.clone()));
 
             let thread_settings = settings.clone();
             std::thread::spawn(move || loop {
@@ -185,6 +186,20 @@ fn main() -> Result<()> {
                 }
                 None => {
                     log::info!("No autostart pipeline found. Staying on desktop.");
+                    let lock = settings
+                        .lock()
+                        .expect("settings mutex should not be poisoned");
+
+                    let config = lock.get_global_cfg();
+                    if config.restore_displays_if_not_executing_pipeline {
+                        let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
+                        let ctx = &mut PipelineContext::new(asset_manager, home_dir, config_dir);
+                        let res = config.display_restoration.setup(ctx);
+                        if let Err(err) = res {
+                            log::error!("{err}");
+                        }
+                    }
+
                     Ok(())
                 }
             }

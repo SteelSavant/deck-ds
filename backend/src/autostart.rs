@@ -7,8 +7,11 @@ use anyhow::Result;
 
 use crate::{
     asset::AssetManager,
-    pipeline::{data::PipelineTarget, executor::PipelineExecutor},
-    settings::Settings,
+    pipeline::{
+        data::{PipelineAction, PipelineActionId, PipelineTarget, Selection},
+        executor::PipelineExecutor,
+    },
+    settings::{self, Settings},
 };
 
 #[derive(Debug)]
@@ -33,7 +36,36 @@ impl AutoStart {
                 .settings
                 .lock()
                 .expect("settings mutex should be lockable");
-            settings.get_autostart_cfg()
+            let config = settings.get_global_cfg();
+            let autostart = settings.get_autostart_cfg();
+            autostart.map(|mut a| {
+                // Add global pipeline actions
+                let desktop = a.pipeline.targets.remove(&PipelineTarget::Desktop);
+                if let Some(desktop) = desktop {
+                    a.pipeline.targets.insert(
+                        PipelineTarget::Desktop,
+                        Selection::AllOf(
+                            vec![config.display_restoration.into(), desktop]
+                                .into_iter()
+                                .enumerate()
+                                .map(|(index, action)| {
+                                    let id = format!("internal:{index}");
+                                    PipelineAction {
+                                        id: PipelineActionId::new(&id),
+                                        name: id,
+                                        description: None,
+                                        enabled: None,
+                                        profile_override: None,
+                                        selection: action,
+                                    }
+                                })
+                                .collect(),
+                        ),
+                    );
+                }
+
+                a
+            })
         };
 
         autostart.map(|autostart| LoadedAutoStart {

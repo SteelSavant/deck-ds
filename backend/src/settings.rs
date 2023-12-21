@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     macros::{newtype_strid, newtype_uuid},
     pipeline::{
+        action::display_restoration::DisplayRestoration,
         data::{
             Pipeline, PipelineActionId, PipelineDefinition, PipelineTarget, Selection, Template,
             TemplateId,
@@ -33,11 +34,19 @@ pub struct Settings {
     apps_dir: PathBuf,
     system_autostart_dir: PathBuf,
 
+    global_config_path: PathBuf,
     autostart_path: PathBuf,
     exe_path: PathBuf,
 
-    // in-memory configurations -- consider moving
+    // in-memory templates -- consider moving
     templates: Vec<Template>,
+}
+
+#[derive(Debug, Default, Clone, Deserialize, Serialize, JsonSchema)]
+pub struct GlobalConfig {
+    pub display_restoration: DisplayRestoration,
+    pub restore_displays_if_not_executing_pipeline: bool,
+    // other global settings as needed
 }
 
 impl Settings {
@@ -58,7 +67,6 @@ impl Settings {
                     tags:  vec!["NDS".to_string(), "nds".to_string()],
                     targets: HashMap::from_iter([
                         (PipelineTarget::Desktop, Selection::AllOf(vec![
-                            PipelineActionId::new("core:display:display_config"),
                             PipelineActionId::new("core:display:virtual_screen"),
                             PipelineActionId::new("core:melonds:config"),
                         ])),
@@ -79,7 +87,6 @@ impl Settings {
                     tags: vec!["3DS".to_string(),"3ds".to_string()],
                     targets: HashMap::from_iter([
                         (PipelineTarget::Desktop, Selection::AllOf(vec![
-                            PipelineActionId::new("core:display:display_config"),
                             PipelineActionId::new("core:display:multi_window"),
                             PipelineActionId::new("core:citra:config"),
                         ])),
@@ -101,7 +108,6 @@ impl Settings {
                     targets: HashMap::from_iter([
                         (PipelineTarget::Desktop,
                             Selection::AllOf(vec![
-                                PipelineActionId::new("core:display:display_config"),
                                 PipelineActionId::new("core:display:multi_window"),
                                 PipelineActionId::new("core:cemu:config"),
                         ])),
@@ -119,6 +125,7 @@ impl Settings {
             profiles_dir: config_dir.join("profiles"),
             apps_dir: config_dir.join("apps"),
             autostart_path: config_dir.join("autostart.json"),
+            global_config_path: config_dir.join("config.json"),
             system_autostart_dir: system_autostart_dir.as_ref().to_owned(),
             exe_path: exe_path.as_ref().to_owned(),
             templates,
@@ -273,6 +280,38 @@ impl Settings {
             std::fs::write(&self.autostart_path, autostart_cfg)
                 .with_context(|| "failed to create autostart config file")
         })
+    }
+
+    pub fn get_global_cfg(&self) -> GlobalConfig {
+        std::fs::read_to_string(&self.global_config_path)
+            .ok()
+            .and_then(|s| serde_json::from_str(&s).ok())
+            .unwrap_or_default()
+    }
+
+    pub fn delete_global_cfg(&self) -> Result<()> {
+        if self.global_config_path.exists() {
+            std::fs::remove_file(&self.global_config_path)
+                .with_context(|| "failed to remove global config")
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn set_global_cfg(&self, global: &GlobalConfig) -> Result<()> {
+        let global_parent = self
+            .global_config_path
+            .parent()
+            .expect("config.json path should have parent");
+
+        // set global config
+
+        create_dir_all(global_parent)?;
+
+        let global_cfg = serde_json::to_string_pretty(global)?;
+
+        std::fs::write(&self.global_config_path, global_cfg)
+            .with_context(|| "failed to create autostart config file")
     }
 
     fn create_desktop_contents(&self) -> String {
