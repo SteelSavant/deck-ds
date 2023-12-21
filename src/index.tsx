@@ -90,6 +90,8 @@ export default definePlugin((serverApi: ServerAPI) => {
     }
   });
 
+  // const libraryPatch = patchLibraryApp(serverApi);
+
   // Template Preview Route
   serverApi.routerHook.addRoute("/deck-ds/settings/templates/:templateid", () =>
     <ShortAppDetailsStateContextProvider ShortAppDetailsStateClass={appDetailsState} >
@@ -124,13 +126,14 @@ export default definePlugin((serverApi: ServerAPI) => {
     content: <Content serverApi={serverApi} />,
     icon: <FaShip />,
     onDismount() {
+      unlistenHistory();
+
+      // serverApi.routerHook.removePatch('/library/app/:appid', libraryPatch);
 
       backend.log(backend.LogLevel.Debug, "DeckDS shutting down");
 
       appDetailsState.setGamesRunning([]);
       appDetailsState.setOnAppPage(null);
-
-      unlistenHistory();
 
       serverApi.routerHook.removeRoute("/deck-ds/settings/templates/:templateid");
       serverApi.routerHook.removeRoute("/deck-ds/settings/:setting");
