@@ -70,6 +70,7 @@ impl Settings {
     pub fn create_profile(&self, pipeline: PipelineDefinition) -> Result<Profile> {
         let profile = Profile {
             id: ProfileId::new(),
+            tags: vec![],
             pipeline,
         };
 
@@ -313,85 +314,73 @@ fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
 
     impl TemplateBuilder {
         fn build(self, registrar: &PipelineActionRegistrar)-> Template {
-            
-
-         
-
+        
+            let actions = registrar.make_lookup(&self.targets);
             Template {
                 id: self.id,
                 pipeline: PipelineDefinition {
                     name: self.name,
                     description: self.description,
                     targets: self.targets,
-                    actions: todo!(),
+                    actions,
                 },
             }
         }
     }
 
     let templates = vec![
-            // melonDS
-            Template {
-                id: TemplateId::parse("c6430131-50e0-435e-a917-5ae3cfa46e3c"),
-                pipeline: PipelineDefinition {
-                    name: "melonDS".to_string(),
-                    description: "Maps the internal and external monitor to a single virtual screen, as melonDS does not currently support multiple windows. Allows optional melonDS layout configuration.".to_string(),
-                    tags:  vec!["NDS".to_string(), "nds".to_string()],
-                    targets: HashMap::from_iter([
-                        (PipelineTarget::Desktop, Selection::AllOf(vec![
-                            PipelineActionId::new("core:melonds:config"),
-                            PipelineActionId::new("core:display:virtual_screen"),
-                        ])),
-                        (PipelineTarget::Gamemode, Selection::AllOf(vec![
-                            PipelineActionId::new("core:melonds:config"),
-                        ]))
-                    ]),
-                    actions: std::borrow::Cow::Borrowed(template_actions)
-                }
-            },
+        // melonDS
+        TemplateBuilder {
+            id: TemplateId::parse("c6430131-50e0-435e-a917-5ae3cfa46e3c"),
+            name: "melonDS".to_string(),
+            description: "Maps the internal and external monitor to a single virtual screen, as melonDS does not currently support multiple windows. Allows optional melonDS layout configuration.".to_string(),
+            targets: HashMap::from_iter([
+                (PipelineTarget::Desktop, Selection::AllOf(vec![
+                    PipelineActionId::new("core:melonds:config"),
+                    PipelineActionId::new("core:display:virtual_screen"),
+                ])),
+                (PipelineTarget::Gamemode, Selection::AllOf(vec![
+                    PipelineActionId::new("core:melonds:config"),
+                ]))
+            ]),  
+        },
 
-            // Citra
-            Template {
-                id: TemplateId::parse("fe82be74-22b9-4135-b7a0-cb6d8f51aecd"),
-                pipeline: PipelineDefinition {
-                    name: "Citra".to_string(),
-                    description: "Maps primary and secondary windows to different screens for Citra. Allows optional Citra layout configuration".to_string(),
-                    tags: vec!["3DS".to_string(),"3ds".to_string()],
-                    targets: HashMap::from_iter([
-                        (PipelineTarget::Desktop, Selection::AllOf(vec![
-                            PipelineActionId::new("core:citra:config"),
-                            PipelineActionId::new("core:display:multi_window"),
-                        ])),
-                        (PipelineTarget::Gamemode, Selection::AllOf(vec![
-                            PipelineActionId::new("core:citra:config"),
-                        ]))
-                    ]),
-                    actions: std::borrow::Cow::Borrowed(template_actions)
-                        }
-            },
+        // Citra
+        TemplateBuilder {
+            id: TemplateId::parse("fe82be74-22b9-4135-b7a0-cb6d8f51aecd"),
+            name: "Citra".to_string(),
+            description: "Maps primary and secondary windows to different screens for Citra. Allows optional Citra layout configuration".to_string(),
+            targets: HashMap::from_iter([
+                (PipelineTarget::Desktop, Selection::AllOf(vec![
+                    PipelineActionId::new("core:citra:config"),
+                    PipelineActionId::new("core:display:multi_window"),
+                ])),
+                (PipelineTarget::Gamemode, Selection::AllOf(vec![
+                    PipelineActionId::new("core:citra:config"),
+                ]))
+            ]),   
+        },
 
-            // Cemu
-            Template {
-                id: TemplateId::parse("33c863e5-2739-4bc3-b9bc-4798bac8682d"),
-                pipeline: PipelineDefinition {
-                    name: "Cemu".to_string(),
-                    description: "Maps primary and secondary windows to different screens for Cemu.".to_string(),
-                    tags: vec!["WIIU".to_string(), "WiiU".to_string()],
-                    targets: HashMap::from_iter([
-                        (PipelineTarget::Desktop,
-                            Selection::AllOf(vec![
-                                PipelineActionId::new("core:cemu:config"),
-                                PipelineActionId::new("core:display:multi_window"),
-                        ])),
-                        (PipelineTarget::Gamemode,
-                            Selection::AllOf(vec![
-                                PipelineActionId::new("core:cemu:config")
-                        ]))
-                    ]),
-                    actions: std::borrow::Cow::Borrowed(template_actions)
-                }
-            }
-        ]
+        // Cemu
+        TemplateBuilder {
+            id: TemplateId::parse("33c863e5-2739-4bc3-b9bc-4798bac8682d"),
+            name: "Cemu".to_string(),
+            description: "Maps primary and secondary windows to different screens for Cemu.".to_string(),
+            targets: HashMap::from_iter([
+                (PipelineTarget::Desktop,
+                    Selection::AllOf(vec![
+                        PipelineActionId::new("core:cemu:config"),
+                        PipelineActionId::new("core:display:multi_window"),
+                ])),
+                (PipelineTarget::Gamemode,
+                    Selection::AllOf(vec![
+                        PipelineActionId::new("core:cemu:config")
+                ]))
+            ]),  
+        }
+    ];
+
+    templates.into_iter().map(|t| t.build(&registrar)).collect()
 }
 
 #[cfg(test)]
@@ -425,25 +414,29 @@ Type=Application";
 
     #[test]
     fn test_profile_crud() -> Result<()> {
+        let registrar = PipelineActionRegistrar::builder().with_core().build();
         let settings = Settings::new(
             Path::new("test/out/homebrew/plugins/deck-ds/bin/backend"),
             Path::new("test/out/.config/deck-ds"),
             Path::new("test/out/.config/autostart"),
-            PipelineActionRegistrar::builder().with_core().build(),
+            registrar.clone(),
         );
+
+        let targets = HashMap::from_iter([(
+                    PipelineTarget::Desktop,
+                    Selection::AllOf(vec![PipelineActionId::new("core:citra:layout")]),
+                )]);
+
+                let actions = registrar.make_lookup(&targets);
 
         let mut expected: Profile = Profile {
             id: ProfileId::from_uuid(Uuid::nil()),
+            tags: vec!["Test".to_string()],
             pipeline: PipelineDefinition {
                 name: "Test Pipeline".to_string(),
-                tags: vec!["Tag".to_string()],
                 description: "Test Description".to_string(),
-                targets: HashMap::from_iter([(
-                    PipelineTarget::Desktop,
-                    Selection::AllOf(vec![PipelineActionId::new("core:citra:layout")]),
-                )]),
-
-                actions: 
+                targets,
+                actions,
             },
         };
 

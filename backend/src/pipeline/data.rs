@@ -11,7 +11,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use super::{
-    action::Action, action_lookup::PipelineActionLookup, action_registar::PipelineActionRegistrar,
+    action::Action,
+    action_registar::{PipelineActionLookup, PipelineActionRegistrar},
 };
 
 newtype_strid!(
@@ -58,7 +59,6 @@ pub struct PipelineDefinition {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Pipeline {
     pub name: String,
-    pub tags: Vec<String>,
     pub description: String,
     pub targets: HashMap<PipelineTarget, Selection<PipelineAction>>,
 }
@@ -124,7 +124,6 @@ impl PipelineDefinition {
         Ok(Pipeline {
             name: self.name.clone(),
             description: self.description.clone(),
-            tags: self.tags.clone(),
             targets,
         })
     }

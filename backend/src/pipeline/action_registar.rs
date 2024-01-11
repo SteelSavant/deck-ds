@@ -1,3 +1,4 @@
+use anyhow::Context;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -15,14 +16,43 @@ use super::{
     },
     data::{PipelineActionDefinition, PipelineActionId, PipelineTarget, Selection, PipelineActionSettings},
 };
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::{HashMap, HashSet}, sync::Arc};
 
 use self::internal::{PipelineActionRegistarBuilder, PluginScopeBuilder};
+
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+pub struct PipelineActionLookup {
+    actions: Arc<HashMap<PipelineActionId, PipelineActionSettings>>,
+}
+
+impl PipelineActionLookup {
+    pub fn get(
+        &self,
+        id: &PipelineActionId,
+        target: PipelineTarget,
+        registrar: &PipelineActionRegistrar,
+    ) -> Option<PipelineActionDefinition> {
+        let variant = id.variant(target);
+
+        registrar.get(id, target).map(|def| {
+            let settings = self
+                .actions
+                .get(&variant)
+                .or_else(|| self.actions.get(id))
+                .cloned();
+            PipelineActionDefinition {
+                settings: settings.unwrap_or_else(|| def.settings.clone()),
+                ..def.clone()
+            }
+        })
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct PipelineActionRegistrar {
     actions: Arc<HashMap<PipelineActionId, PipelineActionDefinition>>,
 }
+
 
 impl PipelineActionRegistrar {
     pub fn builder() -> internal::PipelineActionRegistarBuilder {
@@ -42,8 +72,44 @@ impl PipelineActionRegistrar {
         self.actions.clone()
     }
 
-    pub fn make_lookup(&self, targets: HashMap<PipelineTarget, Selection<PipelineActionId>>) {
+    pub fn make_lookup(&self, targets: &HashMap<PipelineTarget, Selection<PipelineActionId>>) -> PipelineActionLookup {
+        fn get_ids(registrar: &PipelineActionRegistrar, selection: &Selection<PipelineActionId>, target: PipelineTarget) -> HashSet<(PipelineActionId, PipelineTarget)> {
+            match selection {
+                Selection::Action(action) => HashSet::new(),
+                Selection::OneOf { actions, .. } | Selection::AllOf(actions) => {
+              
+                    let mut ids: HashSet<_> =actions.iter().map(|id| {
+                        registrar.get(id, target).with_context(|| format!("action {id:?} should exist")).unwrap()
+                    }). flat_map(|def| {
+                         get_ids(registrar, &def.settings.selection, target)
+                    }  ).collect();
+
+                    for a in actions {
+                        ids.insert((a.clone(), target));
+                    }
+
+                    ids
+                }
+
+            }
+        }
         
+        let set: HashSet<_> = targets.iter().flat_map(|(t,s)| {
+             get_ids(self, s, *t)
+        }).collect();
+
+        let mut actions= HashMap::new();
+
+        for (id, target) in set {
+            if let Some(action) = self.get(&id, target) {
+                actions.insert(id, action.settings.clone());
+            }
+        }
+
+        PipelineActionLookup {
+            actions: Arc::new(actions),
+        }
+
     }
 }
 
@@ -113,7 +179,8 @@ mod internal {
                         Some(t) => PipelineActionId::new(&k).variant(t).raw().to_string(),
                         None => k,
                     };
-                    (id, v.build(PipelineActionId::new(&id)))
+                    let action = v.build(PipelineActionId::new(&id));
+                    (id, action)
                 })
                 .collect()
         }
@@ -375,7 +442,7 @@ impl PipelineActionRegistarBuilder {
 
 
 #[derive(Debug)]
-struct PipelineActionDefinitionBuilder {
+pub struct PipelineActionDefinitionBuilder {
     pub name: String,
     pub description: Option<String>,
         /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
