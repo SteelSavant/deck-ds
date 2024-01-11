@@ -1,5 +1,5 @@
 use derive_more::Display;
-use std::{borrow::Cow, collections::HashMap};
+use std::collections::HashMap;
 
 use crate::{
     macros::{newtype_strid, newtype_uuid},
@@ -10,7 +10,9 @@ use anyhow::{Context, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use super::{action::Action, registar::PipelineActionRegistrar};
+use super::{
+    action::Action, action_lookup::PipelineActionLookup, action_registar::PipelineActionRegistrar,
+};
 
 newtype_strid!(
     r#"Id in the form "plugin:group:action" | "plugin:group:action:variant""#,
@@ -48,10 +50,9 @@ pub struct Template {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct PipelineDefinition {
     pub name: String,
-    pub tags: Vec<String>,
     pub description: String,
     pub targets: HashMap<PipelineTarget, Selection<PipelineActionId>>,
-    pub actions: Cow<'static, PipelineActionRegistrar>,
+    pub actions: PipelineActionLookup,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -67,6 +68,11 @@ pub struct PipelineActionDefinition {
     pub name: String,
     pub description: Option<String>,
     pub id: PipelineActionId,
+    pub settings: PipelineActionSettings,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct PipelineActionSettings {
     /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
     pub enabled: Option<bool>,
     /// Flags whether the selection is overridden by the setting from a different profile.
@@ -102,11 +108,15 @@ pub enum Selection<T> {
 // Reification
 
 impl PipelineDefinition {
-    pub fn reify(&self, profiles: &[Profile]) -> Result<Pipeline> {
+    pub fn reify(
+        &self,
+        profiles: &[Profile],
+        registrar: &PipelineActionRegistrar,
+    ) -> Result<Pipeline> {
         let targets = self
             .targets
             .iter()
-            .map(|(t, s)| s.reify(*t, self, profiles).map(|s| (*t, s)))
+            .map(|(t, s)| s.reify(*t, self, profiles, registrar).map(|s| (*t, s)))
             .collect::<Result<Vec<_>>>()?
             .into_iter()
             .collect::<HashMap<_, _>>();
@@ -126,13 +136,14 @@ impl Selection<PipelineActionId> {
         target: PipelineTarget,
         pipeline: &PipelineDefinition,
         profiles: &[Profile],
+        registrar: &PipelineActionRegistrar,
     ) -> Result<Selection<PipelineAction>> {
         match self {
             Selection::Action(action) => Ok(Selection::Action(action.clone())),
             Selection::OneOf { selection, actions } => {
                 let actions = actions
                     .iter()
-                    .map(|a| a.reify(target, pipeline, profiles))
+                    .map(|a| a.reify(target, pipeline, profiles, registrar))
                     .collect::<Result<Vec<_>>>();
                 actions.map(|actions| Selection::OneOf {
                     selection: selection.clone(),
@@ -141,7 +152,7 @@ impl Selection<PipelineActionId> {
             }
             Selection::AllOf(actions) => actions
                 .iter()
-                .map(|a| a.reify(target, pipeline, profiles))
+                .map(|a| a.reify(target, pipeline, profiles, registrar))
                 .collect::<Result<Vec<_>>>()
                 .map(Selection::AllOf),
         }
@@ -154,24 +165,31 @@ impl PipelineActionId {
         target: PipelineTarget,
         pipeline: &PipelineDefinition,
         profiles: &[Profile],
+        registrar: &PipelineActionRegistrar,
     ) -> Result<PipelineAction> {
-        let action = pipeline.actions.get(self, target).with_context(|| {
-            format!(
-                "Failed to get action {:?} for current pipline @ {}",
-                self, target
-            )
-        })?;
+        let action = pipeline
+            .actions
+            .get(self, target, registrar)
+            .with_context(|| {
+                format!(
+                    "Failed to get action {:?} for current pipline @ {}",
+                    self, target
+                )
+            })?;
 
         let resolved_action: PipelineAction = action
+            .settings
             .profile_override
             .and_then(|profile| {
                 profiles
                     .iter()
                     .find(|p| p.id == profile)
-                    .and_then(|p| p.pipeline.actions.get(self, target))
-                    .map(|action| action.reify(Some(profile), target, pipeline, profiles))
+                    .and_then(|p| p.pipeline.actions.get(self, target, registrar))
+                    .map(|action| {
+                        action.reify(Some(profile), target, pipeline, profiles, registrar)
+                    })
             })
-            .unwrap_or_else(|| action.reify(None, target, pipeline, profiles))?;
+            .unwrap_or_else(|| action.reify(None, target, pipeline, profiles, registrar))?;
 
         Ok(resolved_action)
     }
@@ -184,14 +202,18 @@ impl PipelineActionDefinition {
         target: PipelineTarget,
         pipeline: &PipelineDefinition,
         profiles: &[Profile],
+        registrar: &PipelineActionRegistrar,
     ) -> Result<PipelineAction> {
-        let selection = self.selection.reify(target, pipeline, profiles)?;
+        let selection = self
+            .settings
+            .selection
+            .reify(target, pipeline, profiles, registrar)?;
 
         Ok(PipelineAction {
             name: self.name.clone(),
             description: self.description.clone(),
             id: self.id.clone(),
-            enabled: self.enabled,
+            enabled: self.settings.enabled,
             profile_override,
             selection,
         })
@@ -202,7 +224,7 @@ impl PipelineActionDefinition {
 mod tests {
     use std::path::Path;
 
-    use crate::settings::Settings;
+    use crate::{pipeline::action_registar::PipelineActionRegistrar, settings::Settings};
 
     #[test]
     fn test_template_reification() {
@@ -210,12 +232,15 @@ mod tests {
             Path::new("$HOME/homebrew/plugins/deck-ds/bin/backend"),
             Path::new("$HOME/.config/deck-ds"),
             Path::new("$HOME/.config/autostart"),
+            PipelineActionRegistrar::builder().with_core().build(),
         );
+
+        let registrar = PipelineActionRegistrar::builder().with_core().build();
 
         let res: Vec<_> = settings
             .get_templates()
             .into_iter()
-            .map(|t| t.pipeline.clone().reify(&[]))
+            .map(|t| t.pipeline.clone().reify(&[], &registrar))
             .collect();
 
         for p in res {

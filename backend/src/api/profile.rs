@@ -6,7 +6,10 @@ use serde::{Deserialize, Serialize};
 use anyhow::Result;
 
 use crate::{
-    pipeline::data::{Pipeline, PipelineDefinition, Template},
+    pipeline::{
+        action_registar::PipelineActionRegistrar,
+        data::{Pipeline, PipelineDefinition, Template},
+    },
     settings::{Profile, ProfileId, Settings},
 };
 
@@ -203,6 +206,7 @@ pub struct ReifyPipelineResponse {
 pub fn reify_pipeline(
     request_handler: Arc<Mutex<RequestHandler>>,
     settings: Arc<Mutex<Settings>>,
+    registrar: PipelineActionRegistrar,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
         log_invoke("reify_pipeline", &args);
@@ -219,7 +223,7 @@ pub fn reify_pipeline(
                 let lock = settings.lock().expect("settings mutex should be lockable");
                 match lock.get_profiles() {
                     Ok(profiles) => {
-                        let res = args.pipeline.reify(&profiles);
+                        let res = args.pipeline.reify(&profiles, &registrar);
                         match res {
                             Ok(pipeline) => ReifyPipelineResponse { pipeline }.to_response(),
                             Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),

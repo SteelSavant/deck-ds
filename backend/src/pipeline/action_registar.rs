@@ -1,6 +1,8 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use crate::settings::ProfileId;
+
 use super::{
     action::{
         cemu_layout::CemuLayout,
@@ -11,13 +13,13 @@ use super::{
         source_file::{CustomFileOptions, EmuDeckSource, FlatpakSource, SourceFile},
         virtual_screen::VirtualScreen,
     },
-    data::{PipelineActionDefinition, PipelineActionId, PipelineTarget, Selection},
+    data::{PipelineActionDefinition, PipelineActionId, PipelineTarget, Selection, PipelineActionSettings},
 };
 use std::{collections::HashMap, sync::Arc};
 
 use self::internal::{PipelineActionRegistarBuilder, PluginScopeBuilder};
 
-#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+#[derive(Debug, Clone)]
 pub struct PipelineActionRegistrar {
     actions: Arc<HashMap<PipelineActionId, PipelineActionDefinition>>,
 }
@@ -38,6 +40,10 @@ impl PipelineActionRegistrar {
 
     pub fn all(&self) -> Arc<HashMap<PipelineActionId, PipelineActionDefinition>> {
         self.actions.clone()
+    }
+
+    pub fn make_lookup(&self, targets: HashMap<PipelineTarget, Selection<PipelineActionId>>) {
+        
     }
 }
 
@@ -85,7 +91,7 @@ mod internal {
 
     #[derive(Debug, Default)]
     pub struct GroupScopeBuilder {
-        actions: HashMap<(String, Option<PipelineTarget>), PipelineActionDefinition>,
+        actions: HashMap<(String, Option<PipelineTarget>), PipelineActionDefinitionBuilder>,
     }
 
     impl GroupScopeBuilder {
@@ -93,7 +99,7 @@ mod internal {
             mut self,
             name: &str,
             target: Option<PipelineTarget>,
-            action: PipelineActionDefinition,
+            action: PipelineActionDefinitionBuilder,
         ) -> Self {
             self.actions.insert((name.to_string(), target), action);
             self
@@ -107,7 +113,7 @@ mod internal {
                         Some(t) => PipelineActionId::new(&k).variant(t).raw().to_string(),
                         None => k,
                     };
-                    (id, v)
+                    (id, v.build(PipelineActionId::new(&id)))
                 })
                 .collect()
         }
@@ -158,8 +164,8 @@ impl PipelineActionRegistarBuilder {
                     group.with_action(
                         "display_config",
                         Some(PipelineTarget::Desktop),
-                        PipelineActionDefinition {
-                            id: PipelineActionId::new(""),
+                        PipelineActionDefinitionBuilder {
+
                             name: "Display Restoration".to_string(),
                             description: Some("Ensures the display resolution and layout are correctly configured before and after executing pipeline actions.".into()),
                             enabled: None,
@@ -171,15 +177,13 @@ impl PipelineActionRegistarBuilder {
                         },
                     ).with_action("virtual_screen",      
                     Some(PipelineTarget::Desktop),
-                    PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    PipelineActionDefinitionBuilder {
                         name: "Virtual Screen".to_string(),
                         description: Some("Maps the internal and external monitor to a single virtual screen, for applications that do not support multiple windows.".into()),
                         enabled: None,
                         profile_override: None,
                         selection: VirtualScreen.into(),
-                    },).with_action("multi_window",    Some(PipelineTarget::Desktop), PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    },).with_action("multi_window",    Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
                         name: "Multi-Window Emulation".to_string(),
                         description: Some("Manages windows for known emulators configurations with multiple display windows.".into()),
                         enabled: None,
@@ -188,8 +192,7 @@ impl PipelineActionRegistarBuilder {
                     })
                 })
                 .with_group("citra", |group| {
-                    group.with_action("config", None, PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    group.with_action("config", None, PipelineActionDefinitionBuilder {
                         name: "Citra Configuration".to_string(),
                         description: None,
                         enabled: None,
@@ -199,8 +202,7 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:citra:layout")
                         ]),
                     })
-                    .with_action("source", None, PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    .with_action("source", None, PipelineActionDefinitionBuilder {
                         name: "Citra Settings Source".to_string(),
                         description: Some("Source file to use when editing Citra settings.".to_string()),
                         enabled: None,
@@ -210,24 +212,21 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:citra:custom_source")
                         ]},
                     })
-                    .with_action("flatpak_source", None, PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    .with_action("flatpak_source", None, PipelineActionDefinitionBuilder {
                         name: "Flatpak".to_string(),
                         description: Some("Sets the settings INI file location to the default Flatpak location.".to_string()),
                         enabled: None,
                         profile_override: None,
                         selection:SourceFile::Flatpak(FlatpakSource::Citra).into(),
                     })
-                    .with_action("custom_source", None, PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    .with_action("custom_source", None, PipelineActionDefinitionBuilder {
                         name: "Custom".to_string(),
                         description: Some("Sets the settings INI file location to a custom location.".to_string()),
                         enabled: None,
                         profile_override: None,                        
                         selection: SourceFile::Custom(CustomFileOptions {path: None, valid_ext: vec!["ini".to_string()]}).into(),
                     })
-                    .with_action("layout",    Some(PipelineTarget::Desktop),   PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    .with_action("layout",    Some(PipelineTarget::Desktop),   PipelineActionDefinitionBuilder {
                         name: "Citra Layout".to_string(),
                         description: Some("Edits Citra ini file to desired layout settings.".to_string()),
                         enabled: Some(true),
@@ -237,8 +236,7 @@ impl PipelineActionRegistarBuilder {
                             swap_screens: false,
                             fullscreen: true,
                         }.into(),
-                    }).with_action("layout",    Some(PipelineTarget::Gamemode),PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    }).with_action("layout",    Some(PipelineTarget::Gamemode),PipelineActionDefinitionBuilder {
                         name: "Citra Layout".to_string(),
                         description: Some("Edits Citra ini file to desired layout settings.".to_string()),
                         enabled: Some(true),
@@ -251,8 +249,7 @@ impl PipelineActionRegistarBuilder {
                     })
                 })
                 .with_group("cemu", |group| {
-                    group.with_action("config", None, PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    group.with_action("config", None, PipelineActionDefinitionBuilder {
                         name: "Cemu Configuration".to_string(),
                         description: None,
                         enabled: None,
@@ -262,8 +259,7 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:cemu:layout")
                         ]),
                     })
-                    .with_action("source", None, PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    .with_action("source", None, PipelineActionDefinitionBuilder {
                         name: "Cemu Settings Source".to_string(),
                         description: Some("Source file to use when editing Cemu settings.".to_string()),
                         enabled: None,
@@ -274,31 +270,27 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:cemu:custom_source")
                         ]},
                     })
-                    .with_action("flatpak_source", None, PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    .with_action("flatpak_source", None, PipelineActionDefinitionBuilder {
                         name: "Flatpak".to_string(),
                         description: Some("Sets the settings INI file location to the default Flatpak location.".to_string()),
                         enabled: None,
                         profile_override: None,
                         selection:SourceFile::Flatpak(FlatpakSource::Cemu).into(),
                     })
-                    .with_action("emudeck_proton_source", None, PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    .with_action("emudeck_proton_source", None, PipelineActionDefinitionBuilder {
                         name: "EmuDeck (Proton)".to_string(),
                         description: Some("Sets the settings INI file location to the default EmuDeck (Proton) location.".to_string()),
                         enabled: None,
                         profile_override: None,
                         selection:SourceFile::EmuDeck(EmuDeckSource::CemuProton).into(),
                     })
-                    .with_action("custom_source", None, PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    .with_action("custom_source", None, PipelineActionDefinitionBuilder {
                         name: "Custom".to_string(),
                         description: Some("Sets the settings XML file location to a custom location.".to_string()),
                         enabled: None,
                         profile_override: None,
                         selection: SourceFile::Custom(CustomFileOptions {path: None, valid_ext: vec!["xml".to_string()]}).into(),
-                    }).with_action("layout", Some(PipelineTarget::Desktop),     PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    }).with_action("layout", Some(PipelineTarget::Desktop),     PipelineActionDefinitionBuilder {
                         name: "Cemu Layout".to_string(),
                         description: Some("Edits Cemu settings.xml file to desired settings.".to_string()),
                         enabled: Some(true),
@@ -307,8 +299,7 @@ impl PipelineActionRegistarBuilder {
                             separate_gamepad_view: true,
                             fullscreen: true,
                         }.into(),
-                    }).with_action("layout",  Some(PipelineTarget::Gamemode),    PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    }).with_action("layout",  Some(PipelineTarget::Gamemode),    PipelineActionDefinitionBuilder {
                         name: "Cemu Layout".to_string(),
                         description: Some("Edits Cemu settings.xml file to desired settings.".to_string()),
                         enabled: Some(true),
@@ -320,8 +311,7 @@ impl PipelineActionRegistarBuilder {
                     })
                 })
                 .with_group("melonds", |group| {
-                    group.with_action("config", None, PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    group.with_action("config", None, PipelineActionDefinitionBuilder {
                         name: "melonDS Configuration".to_string(),
                         description: None,
                         enabled: None,
@@ -331,8 +321,7 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:melonds:layout")
                         ]),
                     })
-                    .with_action("source", None, PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    .with_action("source", None, PipelineActionDefinitionBuilder {
                         name: "melonDS Settings Source".to_string(),
                         description: Some("Source file to use when editing melonDS settings.".to_string()),
                         enabled: None,
@@ -342,24 +331,21 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:melonds:custom_source")
                         ]},
                     })
-                    .with_action("flatpak_source", None, PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    .with_action("flatpak_source", None, PipelineActionDefinitionBuilder {
                         name: "Flatpak".to_string(),
                         description: Some("Sets the settings INI file location to the default Flatpak location.".to_string()),
                         enabled: None,
                         profile_override: None,
                         selection: SourceFile::Flatpak(FlatpakSource::MelonDS).into(),
                     })
-                    .with_action("custom_source", None, PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    .with_action("custom_source", None, PipelineActionDefinitionBuilder {
                         name: "Custom".to_string(),
                         description: Some("Sets the settings INI file location to a custom location.".to_string()),
                         enabled: None,
                         profile_override: None,
                         selection: SourceFile::Custom(CustomFileOptions {path: None, valid_ext: vec!["ini".to_string()]}).into(),
                     })
-                    .with_action("layout", Some(PipelineTarget::Desktop),     PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    .with_action("layout", Some(PipelineTarget::Desktop),     PipelineActionDefinitionBuilder {
                         name: "melonDS Layout".to_string(),
                         description: Some("Edits melonDS ini file to desired layout settings.".to_string()),
                         enabled: Some(true),
@@ -370,8 +356,7 @@ impl PipelineActionRegistarBuilder {
                             book_mode: false,
                             swap_screens: false,
                         }.into(),
-                    }).with_action("layout", Some(PipelineTarget::Gamemode),    PipelineActionDefinition {
-                        id: PipelineActionId::new(""),
+                    }).with_action("layout", Some(PipelineTarget::Gamemode),    PipelineActionDefinitionBuilder {
                         name: "melonDS Layout".to_string(),
                         description: Some("Edits melonDS ini file to desired settings.".to_string()),
                         enabled: Some(true),
@@ -385,6 +370,34 @@ impl PipelineActionRegistarBuilder {
                     })
                 })
         })
+    }
+}
+
+
+#[derive(Debug)]
+struct PipelineActionDefinitionBuilder {
+    pub name: String,
+    pub description: Option<String>,
+        /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+    pub enabled: Option<bool>,
+    /// Flags whether the selection is overridden by the setting from a different profile.
+    pub profile_override: Option<ProfileId>,
+    /// The value of the pipeline action
+    pub selection: Selection<PipelineActionId>,
+}
+
+impl PipelineActionDefinitionBuilder {
+    pub fn build(self, id: PipelineActionId) -> PipelineActionDefinition {
+        PipelineActionDefinition {
+            name: self.name,
+            description: self.description,
+            id,
+            settings: PipelineActionSettings {
+                enabled: self.enabled,
+                profile_override: self.profile_override,
+                selection: self.selection,
+            },
+        }
     }
 }
 

@@ -17,7 +17,9 @@ use crate::{
     asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
-    pipeline::{action::ActionImpl, executor::PipelineContext},
+    pipeline::{
+        action::ActionImpl, action_registar::PipelineActionRegistrar, executor::PipelineContext,
+    },
     settings::Settings,
     util::create_dir_all,
 };
@@ -132,7 +134,14 @@ fn main() -> Result<()> {
     let args = Cli::parse();
     let mode = args.mode.unwrap_or_default();
 
-    let settings = Settings::new(&env::current_exe()?, &config_dir, &autostart_dir);
+    let registrar = PipelineActionRegistrar::builder().with_core().build();
+
+    let settings = Settings::new(
+        &env::current_exe()?,
+        &config_dir,
+        &autostart_dir,
+        registrar.clone(),
+    );
 
     let settings = Arc::new(Mutex::new(settings));
 
@@ -236,7 +245,11 @@ fn main() -> Result<()> {
                 )
                 .register(
                     "reify_pipeline",
-                    crate::api::profile::reify_pipeline(request_handler.clone(), settings.clone()),
+                    crate::api::profile::reify_pipeline(
+                        request_handler.clone(),
+                        settings.clone(),
+                        registrar.clone(),
+                    ),
                 )
                 .register(
                     "get_templates",
