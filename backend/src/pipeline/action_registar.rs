@@ -75,9 +75,8 @@ impl PipelineActionRegistrar {
     pub fn make_lookup(&self, targets: &HashMap<PipelineTarget, Selection<PipelineActionId>>) -> PipelineActionLookup {
         fn get_ids(registrar: &PipelineActionRegistrar, selection: &Selection<PipelineActionId>, target: PipelineTarget) -> HashSet<(PipelineActionId, PipelineTarget)> {
             match selection {
-                Selection::Action(action) => HashSet::new(),
+                Selection::Action(_) => HashSet::new(),
                 Selection::OneOf { actions, .. } | Selection::AllOf(actions) => {
-              
                     let mut ids: HashSet<_> =actions.iter().map(|id| {
                         registrar.get(id, target).with_context(|| format!("action {id:?} should exist")).unwrap()
                     }). flat_map(|def| {
