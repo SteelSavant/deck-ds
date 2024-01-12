@@ -1,12 +1,17 @@
 use std::{
     collections::HashMap,
     fmt::Debug,
-    path::{Path, PathBuf},
+    path::{Path, PathBuf}, sync::{Arc, Mutex},
 };
+
+use once_cell::sync::Lazy;
 
 use anyhow::{Context, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+
+use native_db::*;
+use native_model::{native_model, Model};
 
 use crate::{
     macros::{newtype_strid, newtype_uuid},
@@ -22,19 +27,22 @@ use crate::{
     PACKAGE_NAME,
 };
 
+
 newtype_uuid!(ProfileId);
 newtype_strid!("", AppId);
 
-#[derive(Debug, Clone)]
+
 pub struct Settings {
     // Path vars
-    profiles_dir: PathBuf,
-    apps_dir: PathBuf,
+
     system_autostart_dir: PathBuf,
 
     global_config_path: PathBuf,
     autostart_path: PathBuf,
     exe_path: PathBuf,
+
+    // Database
+    db: Database<'static>,
 
     // in-memory templates -- consider moving
     templates: Vec<Template>,
@@ -47,6 +55,16 @@ pub struct GlobalConfig {
     // other global settings as needed
 }
 
+
+static DATABASE_BUILDER: Lazy<native_db::DatabaseBuilder> = Lazy::new(|| {
+    let mut builder = DatabaseBuilder::new();
+
+    builder.define::<CategoryProfile>().expect("failed to define CategoryProfile v1");
+    builder.define::<AppProfile>().expect("failed to define AppProfile v1");
+
+    builder
+});
+
 impl Settings {
     pub fn new<P: AsRef<Path>>(exe_path: P, config_dir: P, system_autostart_dir: P, registrar: PipelineActionRegistrar) -> Self {
         let config_dir = config_dir.as_ref();
@@ -54,11 +72,17 @@ impl Settings {
 
         let templates = build_templates(registrar);
 
+        if !config_dir.exists() {
+            create_dir_all(config_dir).unwrap();
+        }
+
+        let db_path = config_dir.join("profiles.db");
+        let db = DATABASE_BUILDER.create(db_path).expect("database should be instantiable");
+
         Self {
-            profiles_dir: config_dir.join("profiles"),
-            apps_dir: config_dir.join("apps"),
             autostart_path: config_dir.join("autostart.json"),
             global_config_path: config_dir.join("config.json"),
+            db,
             system_autostart_dir: system_autostart_dir.as_ref().to_owned(),
             exe_path: exe_path.as_ref().to_owned(),
             templates,
@@ -67,109 +91,87 @@ impl Settings {
 
     // File data
 
-    pub fn create_profile(&self, pipeline: PipelineDefinition) -> Result<Profile> {
-        let profile = Profile {
-            id: ProfileId::new(),
+    pub fn create_profile(&self, pipeline: PipelineDefinition) -> Result<CategoryProfile> {
+        let id =  ProfileId::new();
+        let profile = CategoryProfile {
+            id: id.clone(),
             tags: vec![],
             pipeline,
         };
 
-        self.set_profile(&profile)?;
+        let rw = self.db.rw_transaction().expect("failed to create rw_transaction");
+        rw.insert(profile)?;
+
+        let profile = rw.get().primary(id)?.expect("inserted profile should exist");
+        rw.commit()?;
 
         Ok(profile)
     }
 
     pub fn delete_profile(&self, id: &ProfileId) -> Result<()> {
-        let raw = id.raw();
+        let rw = self.db.rw_transaction().expect("failed to create rw_transaction");
+        let profile = rw.get().primary(*id)?;
+        profile.map(|p: CategoryProfile | {
+            rw.remove(p).and_then(|_| {
+                rw.commit()
+            })
+        });
 
-        let profile_path = self.profiles_dir.join(raw).with_extension("json");
-        std::fs::remove_file(profile_path)
-            .with_context(|| format!("failed to remove profile settings {id:?}"))
+        Ok(())
     }
 
-    pub fn get_profile(&self, id: &ProfileId) -> Result<Option<Profile>> {
-        let raw = id.raw();
-
-        let profile_path = self.profiles_dir.join(raw).with_extension("json");
-        let profile = if !profile_path.exists() {
-            None
-        } else {
-            let profile = std::fs::read_to_string(profile_path)?;
-            Some(serde_json::from_str(&profile)?)
-        };
+    pub fn get_profile(&self, id: &ProfileId) -> Result<Option<CategoryProfile>> {
+        let ro = self.db.r_transaction().expect("failed to create ro_transaction");
+        let profile = ro.get().primary(*id)?;
 
         Ok(profile)
     }
 
-    pub fn set_profile(&self, profile: &Profile) -> Result<()> {
-        create_dir_all(&self.profiles_dir)?;
-
-        let raw = profile.id.raw();
-
-        let serialized = serde_json::to_string_pretty(profile)?;
-        let profile_path = self.profiles_dir.join(raw).with_extension("json");
-
-        Ok(std::fs::write(profile_path, serialized)?)
+    pub fn set_profile(&self, profile: CategoryProfile) -> Result<()> {
+        let rw = self.db.rw_transaction().expect("failed to create rw_transaction");
+        rw.insert(profile)?;
+        Ok(rw.commit()?)
     }
 
-    pub fn get_profiles(&self) -> Result<Vec<Profile>> {
-        create_dir_all(&self.profiles_dir)?;
-
-        std::fs::read_dir(&self.profiles_dir)?
-            .filter_map(|f| {
-                f.ok().map(|entry| {
-                    log::debug!("checking entry {:?} for profile", entry.path());
-                    if entry.file_name().to_string_lossy().ends_with(".json") {
-                        let contents = std::fs::read_to_string(entry.path())
-                            .inspect(|e| {
-                                log::warn!("failed to parse profile at {:?}: {}", entry.path(), e)
-                            })
-                            .ok();
-                        contents.map(|c| Ok(serde_json::from_str(&c).ok()))
-                    } else {
-                        None
-                    }
-                })
-            })
-            .flatten()
-            .filter_map(|f| f.transpose())
-            .collect::<Result<_>>()
+    pub fn get_profiles(&self) -> Result<Vec<CategoryProfile>> {
+        let ro = self.db.r_transaction().expect("failed to create ro_transaction");
+        let profiles: Vec<CategoryProfile>  = ro.scan().primary().expect("failed to scan category profiles").all().collect();
+        Ok(profiles)
     }
 
-    pub fn delete_app(&self, id: &AppId) -> Result<()> {
-        let raw = id.raw();
+    // pub fn delete_app(&self, id: &AppId) -> Result<()> {
+    //      let rw = self.db.rw_transaction().expect("failed to create rw_transaction");
 
-        let app_path = self.apps_dir.join(raw).with_extension("json");
-        std::fs::remove_file(app_path)
-            .with_context(|| format!("failed to remove app settings for {id:?}"))
-    }
+    //      rw.remove(item)
 
-    pub fn get_app(&self, id: &AppId) -> Result<Option<App>> {
-        create_dir_all(&self.apps_dir)?;
+    // }
 
-        let raw = id.raw();
+    // pub fn get_app(&self, id: &AppId) -> Result<Option<AppProfile>> {
+    //     create_dir_all(&self.apps_dir)?;
 
-        let app_path = self.apps_dir.join(raw).with_extension("json");
+    //     let raw = id.raw();
 
-        if app_path.exists() {
-            let app = std::fs::read_to_string(app_path)?;
+    //     let app_path = self.apps_dir.join(raw).with_extension("json");
 
-            Ok(serde_json::from_str(&app)?)
-        } else {
-            Ok(None)
-        }
-    }
+    //     if app_path.exists() {
+    //         let app = std::fs::read_to_string(app_path)?;
 
-    pub fn set_app(&self, app: &App) -> Result<()> {
-        create_dir_all(&self.apps_dir)?;
+    //         Ok(serde_json::from_str(&app)?)
+    //     } else {
+    //         Ok(None)
+    //     }
+    // }
 
-        let raw = app.id.raw();
+    // pub fn set_app(&self, app: &AppProfile) -> Result<()> {
+    //     create_dir_all(&self.apps_dir)?;
 
-        let serialized = serde_json::to_string_pretty(app)?;
-        let app_path = self.apps_dir.join(raw).with_extension("json");
+    //     let raw = app.id.raw();
 
-        Ok(std::fs::write(app_path, serialized)?)
-    }
+    //     let serialized = serde_json::to_string_pretty(app)?;
+    //     let app_path = self.apps_dir.join(raw).with_extension("json");
+
+    //     Ok(std::fs::write(app_path, serialized)?)
+    // }
 
     pub fn get_autostart_cfg(&self) -> Option<AutoStart> {
         std::fs::read_to_string(&self.autostart_path)
@@ -290,17 +292,32 @@ pub struct AutoStart {
     pub pipeline: Pipeline,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
-pub struct Profile {
-    pub id: ProfileId,
-    pub tags: Vec<String>,
-    pub pipeline: PipelineDefinition,
-}
+pub type CategoryProfile = v1::CategoryProfile;
+pub type AppProfile = v1::AppProfile;
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct App {
-    id: AppId,
-    profiles: Vec<Profile>,
+pub mod v1 {
+    use crate::native_model_serde_json::NativeModelJSON;
+
+    use super::*;
+
+    #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+    #[native_model(id = 1, version = 1, with = NativeModelJSON)]
+    #[native_db]
+    pub struct CategoryProfile {
+        #[primary_key]
+        pub id: ProfileId,
+        pub tags: Vec<String>,
+        pub pipeline: v1::PipelineDefinition,
+    }
+
+    #[derive(Debug, Deserialize, Serialize)]
+    #[native_model(id = 2, version = 1, with = NativeModelJSON)]
+    #[native_db]
+    pub struct AppProfile {
+        #[primary_key]
+        pub id: AppId,
+        pub profiles: HashMap<ProfileId, v1::PipelineDefinition>
+    }
 }
 
 fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
@@ -429,7 +446,7 @@ Type=Application";
 
                 let actions = registrar.make_lookup(&targets);
 
-        let mut expected: Profile = Profile {
+        let mut expected: CategoryProfile = CategoryProfile {
             id: ProfileId::from_uuid(Uuid::nil()),
             tags: vec!["Test".to_string()],
             pipeline: PipelineDefinition {
@@ -440,7 +457,7 @@ Type=Application";
             },
         };
 
-        settings.set_profile(&expected)?;
+        settings.set_profile(expected.clone())?;
         let actual = settings
             .get_profile(&expected.id)?
             .expect("profile should exist");
@@ -450,7 +467,7 @@ Type=Application";
 
         expected.pipeline.name = "Updated".to_string();
 
-        settings.set_profile(&expected)?;
+        settings.set_profile(expected.clone())?;
 
         let actual = settings
             .get_profile(&expected.id)?

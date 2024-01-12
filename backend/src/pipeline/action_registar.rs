@@ -89,7 +89,6 @@ impl PipelineActionRegistrar {
 
                     ids
                 }
-
             }
         }
         

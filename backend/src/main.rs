@@ -30,6 +30,7 @@ pub mod api;
 pub mod asset;
 pub mod consts;
 mod macros;
+mod native_model_serde_json;
 pub mod pipeline;
 pub mod sys;
 pub mod util;

@@ -3,17 +3,14 @@ use std::collections::HashMap;
 
 use crate::{
     macros::{newtype_strid, newtype_uuid},
-    settings::{Profile, ProfileId},
+    settings::{CategoryProfile, ProfileId},
 };
 use anyhow::{Context, Result};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use super::{
-    action::Action,
-    action_registar::{PipelineActionLookup, PipelineActionRegistrar},
-};
+use super::action_registar::{PipelineActionLookup, PipelineActionRegistrar};
 
 newtype_strid!(
     r#"Id in the form "plugin:group:action" | "plugin:group:action:variant""#,
@@ -48,61 +45,85 @@ pub struct Template {
     pub pipeline: PipelineDefinition,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct PipelineDefinition {
-    pub name: String,
-    pub description: String,
-    pub targets: HashMap<PipelineTarget, Selection<PipelineActionId>>,
-    pub actions: PipelineActionLookup,
+pub type PipelineDefinition = v1::PipelineDefinition;
+pub type Pipeline = v1::Pipeline;
+pub type PipelineActionDefinition = v1::PipelineActionDefinition;
+pub type PipelineAction = v1::PipelineAction;
+pub type PipelineActionSettings = v1::PipelineActionSettings;
+pub type Selection<T> = v1::Selection<T>;
+
+pub mod v1 {
+    use crate::pipeline::action::v1;
+
+    use super::versioned;
+
+    pub type PipelineDefinition = versioned::PipelineDefinition<v1::Action>;
+    pub type Pipeline = versioned::Pipeline<v1::Action>;
+    pub type PipelineActionDefinition = versioned::PipelineActionDefinition<v1::Action>;
+    pub type PipelineAction = versioned::PipelineAction<v1::Action>;
+    pub type PipelineActionSettings = versioned::PipelineActionSettings<v1::Action>;
+    pub type Selection<T> = versioned::Selection<v1::Action, T>;
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct Pipeline {
-    pub name: String,
-    pub description: String,
-    pub targets: HashMap<PipelineTarget, Selection<PipelineAction>>,
-}
+mod versioned {
+    use super::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct PipelineActionDefinition {
-    pub name: String,
-    pub description: Option<String>,
-    pub id: PipelineActionId,
-    pub settings: PipelineActionSettings,
-}
+    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+    pub struct PipelineDefinition<A> {
+        pub name: String,
+        pub description: String,
+        pub targets: HashMap<PipelineTarget, Selection<A, PipelineActionId>>,
+        pub actions: PipelineActionLookup,
+    }
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct PipelineActionSettings {
-    /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
-    pub enabled: Option<bool>,
-    /// Flags whether the selection is overridden by the setting from a different profile.
-    pub profile_override: Option<ProfileId>,
-    /// The value of the pipeline action
-    pub selection: Selection<PipelineActionId>,
-}
+    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+    pub struct Pipeline<A> {
+        pub name: String,
+        pub description: String,
+        pub targets: HashMap<PipelineTarget, Selection<A, PipelineAction<A>>>,
+    }
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct PipelineAction {
-    pub name: String,
-    pub description: Option<String>,
-    pub id: PipelineActionId,
-    /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
-    pub enabled: Option<bool>,
-    /// Flags whether the selection is overridden by the setting from a different profile.
-    pub profile_override: Option<ProfileId>,
-    /// The value of the pipeline action
-    pub selection: Selection<PipelineAction>,
-}
+    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+    pub struct PipelineActionDefinition<A> {
+        pub name: String,
+        pub description: Option<String>,
+        pub id: PipelineActionId,
+        pub settings: PipelineActionSettings<A>,
+    }
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "type", content = "value")]
-pub enum Selection<T> {
-    Action(Action),
-    OneOf {
-        selection: PipelineActionId,
-        actions: Vec<T>,
-    },
-    AllOf(Vec<T>),
+    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+    pub struct PipelineAction<A> {
+        pub name: String,
+        pub description: Option<String>,
+        pub id: PipelineActionId,
+        /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+        pub enabled: Option<bool>,
+        /// Flags whether the selection is overridden by the setting from a different profile.
+        pub profile_override: Option<ProfileId>,
+        /// The value of the pipeline action
+        pub selection: Selection<A, PipelineAction<A>>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+    pub struct PipelineActionSettings<A> {
+        /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+        pub enabled: Option<bool>,
+        /// Flags whether the selection is overridden by the setting from a different profile.
+        pub profile_override: Option<ProfileId>,
+        /// The value of the pipeline action
+        pub selection: Selection<A, PipelineActionId>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+    #[serde(tag = "type", content = "value")]
+    pub enum Selection<A, T> {
+        Action(A),
+        OneOf {
+            selection: PipelineActionId,
+            actions: Vec<T>,
+        },
+        AllOf(Vec<T>),
+    }
 }
 
 // Reification
@@ -110,7 +131,7 @@ pub enum Selection<T> {
 impl PipelineDefinition {
     pub fn reify(
         &self,
-        profiles: &[Profile],
+        profiles: &[CategoryProfile],
         registrar: &PipelineActionRegistrar,
     ) -> Result<Pipeline> {
         let targets = self
@@ -134,7 +155,7 @@ impl Selection<PipelineActionId> {
         &self,
         target: PipelineTarget,
         pipeline: &PipelineDefinition,
-        profiles: &[Profile],
+        profiles: &[CategoryProfile],
         registrar: &PipelineActionRegistrar,
     ) -> Result<Selection<PipelineAction>> {
         match self {
@@ -163,7 +184,7 @@ impl PipelineActionId {
         &self,
         target: PipelineTarget,
         pipeline: &PipelineDefinition,
-        profiles: &[Profile],
+        profiles: &[CategoryProfile],
         registrar: &PipelineActionRegistrar,
     ) -> Result<PipelineAction> {
         let action = pipeline
@@ -200,7 +221,7 @@ impl PipelineActionDefinition {
         profile_override: Option<ProfileId>,
         target: PipelineTarget,
         pipeline: &PipelineDefinition,
-        profiles: &[Profile],
+        profiles: &[CategoryProfile],
         registrar: &PipelineActionRegistrar,
     ) -> Result<PipelineAction> {
         let selection = self

@@ -77,35 +77,41 @@ where
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[enum_delegate::implement(ErasedPipelineAction)]
-#[serde(tag = "type", content = "value")]
-pub enum Action {
-    DisplayRestoration(DisplayRestoration),
-    VirtualScreen(VirtualScreen),
-    MultiWindow(MultiWindow),
-    CitraLayout(CitraLayout),
-    CemuLayout(CemuLayout),
-    MelonDSLayout(MelonDSLayout),
-    SourceFile(SourceFile),
-}
+pub type Action = v1::Action;
 
-impl<T: Into<Action>, R> From<T> for Selection<R> {
-    fn from(value: T) -> Self {
-        Selection::Action(value.into())
+pub mod v1 {
+    use super::*;
+
+    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+    #[enum_delegate::implement(ErasedPipelineAction)]
+    #[serde(tag = "type", content = "value")]
+    pub enum Action {
+        DisplayRestoration(DisplayRestoration),
+        VirtualScreen(VirtualScreen),
+        MultiWindow(MultiWindow),
+        CitraLayout(CitraLayout),
+        CemuLayout(CemuLayout),
+        MelonDSLayout(MelonDSLayout),
+        SourceFile(SourceFile),
     }
-}
 
-impl Action {
-    pub fn name(&self) -> &'static str {
-        match self {
-            Action::DisplayRestoration(_) => "DisplayRestoration",
-            Action::VirtualScreen(_) => "VirtualScreen",
-            Action::MultiWindow(_) => "MultiWindow",
-            Action::CitraLayout(_) => "CitraLayout",
-            Action::CemuLayout(_) => "CemuLayout",
-            Action::MelonDSLayout(_) => "MelonDSLayout",
-            Action::SourceFile(_) => "SourceFile",
+    impl<T: Into<Action>, R> From<T> for Selection<R> {
+        fn from(value: T) -> Self {
+            Selection::Action(value.into())
+        }
+    }
+
+    impl Action {
+        pub fn name(&self) -> &'static str {
+            match self {
+                Action::DisplayRestoration(_) => "DisplayRestoration",
+                Action::VirtualScreen(_) => "VirtualScreen",
+                Action::MultiWindow(_) => "MultiWindow",
+                Action::CitraLayout(_) => "CitraLayout",
+                Action::CemuLayout(_) => "CemuLayout",
+                Action::MelonDSLayout(_) => "MelonDSLayout",
+                Action::SourceFile(_) => "SourceFile",
+            }
         }
     }
 }

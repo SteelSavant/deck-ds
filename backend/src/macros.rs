@@ -41,6 +41,12 @@ macro_rules! newtype_uuid {
                 Self::new()
             }
         }
+
+        impl native_db::InnerKeyValue for $id {
+            fn database_inner_key_value(&self) -> native_db::db_type::DatabaseInnerKeyValue {
+                self.0.database_inner_key_value()
+            }
+        }
     };
 }
 
@@ -67,6 +73,12 @@ macro_rules! newtype_strid {
 
             pub fn raw(&self) -> &str {
                 &self.0
+            }
+        }
+
+        impl native_db::InnerKeyValue for $id {
+            fn database_inner_key_value(&self) -> native_db::db_type::DatabaseInnerKeyValue {
+                self.0.database_inner_key_value()
             }
         }
     };

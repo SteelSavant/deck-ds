@@ -10,7 +10,7 @@ use crate::{
         action_registar::PipelineActionRegistrar,
         data::{Pipeline, PipelineDefinition, Template},
     },
-    settings::{Profile, ProfileId, Settings},
+    settings::{CategoryProfile, ProfileId, Settings},
 };
 
 use super::{
@@ -62,7 +62,7 @@ pub fn create_profile(
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetProfilesResponse {
-    profiles: Vec<Profile>,
+    profiles: Vec<CategoryProfile>,
 }
 
 pub fn get_profiles(
@@ -89,7 +89,7 @@ pub struct GetProfileRequest {
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetProfileResponse {
-    profile: Option<Profile>,
+    profile: Option<CategoryProfile>,
 }
 
 pub fn get_profile(
@@ -123,7 +123,7 @@ pub fn get_profile(
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct SetProfileRequest {
-    profile: Profile,
+    profile: CategoryProfile,
 }
 
 pub fn set_profile(
@@ -143,7 +143,7 @@ pub fn set_profile(
         match args {
             Ok(args) => {
                 let lock = settings.lock().expect("settings mutex should be lockable");
-                let res = lock.set_profile(&args.profile);
+                let res = lock.set_profile(args.profile);
 
                 match res {
                     Ok(()) => ResponseOk.to_response(),
