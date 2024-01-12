@@ -444,7 +444,7 @@ Type=Application";
                     Selection::AllOf(vec![PipelineActionId::new("core:citra:layout")]),
                 )]);
 
-                let actions = registrar.make_lookup(&targets);
+        let actions = registrar.make_lookup(&targets);
 
         let mut expected: CategoryProfile = CategoryProfile {
             id: ProfileId::from_uuid(Uuid::nil()),

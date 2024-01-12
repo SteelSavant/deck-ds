@@ -250,7 +250,7 @@ mod tests {
     fn test_template_reification() {
         let settings = Settings::new(
             Path::new("$HOME/homebrew/plugins/deck-ds/bin/backend"),
-            Path::new("$HOME/.config/deck-ds"),
+            Path::new("test/out/.config/deck-ds2"),
             Path::new("$HOME/.config/autostart"),
             PipelineActionRegistrar::builder().with_core().build(),
         );

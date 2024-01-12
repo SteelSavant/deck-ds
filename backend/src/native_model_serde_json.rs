@@ -27,7 +27,7 @@ use native_model::native_model;
 struct DotV1(u32, u32);
 
 #[test]
-fn test_bincode_serde_serialize_deserialize() {
+fn test_serde_json_serialize_deserialize() {
     // Application 1
     let dot = DotV1(1, 2);
     let bytes = native_model::encode(&dot).unwrap();
