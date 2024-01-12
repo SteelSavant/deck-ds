@@ -10,7 +10,10 @@ use anyhow::{Context, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use super::action_registar::{PipelineActionLookup, PipelineActionRegistrar};
+use super::{
+    action::Action,
+    action_registar::{PipelineActionLookup, PipelineActionRegistrar},
+};
 
 newtype_strid!(
     r#"Id in the form "plugin:group:action" | "plugin:group:action:variant""#,
@@ -45,27 +48,14 @@ pub struct Template {
     pub pipeline: PipelineDefinition,
 }
 
-pub type PipelineDefinition = v1::PipelineDefinition;
-pub type Pipeline = v1::Pipeline;
-pub type PipelineActionDefinition = v1::PipelineActionDefinition;
-pub type PipelineAction = v1::PipelineAction;
-pub type PipelineActionSettings = v1::PipelineActionSettings;
-pub type Selection<T> = v1::Selection<T>;
+pub type PipelineDefinition = generic::PipelineDefinition<Action>;
+pub type Pipeline = generic::Pipeline<Action>;
+pub type PipelineActionDefinition = generic::PipelineActionDefinition<Action>;
+pub type PipelineAction = generic::PipelineAction<Action>;
+pub type PipelineActionSettings = generic::PipelineActionSettings<Action>;
+pub type Selection<T> = generic::Selection<Action, T>;
 
-pub mod v1 {
-    use crate::pipeline::action::v1;
-
-    use super::versioned;
-
-    pub type PipelineDefinition = versioned::PipelineDefinition<v1::Action>;
-    pub type Pipeline = versioned::Pipeline<v1::Action>;
-    pub type PipelineActionDefinition = versioned::PipelineActionDefinition<v1::Action>;
-    pub type PipelineAction = versioned::PipelineAction<v1::Action>;
-    pub type PipelineActionSettings = versioned::PipelineActionSettings<v1::Action>;
-    pub type Selection<T> = versioned::Selection<v1::Action, T>;
-}
-
-mod versioned {
+pub mod generic {
     use super::*;
 
     #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]

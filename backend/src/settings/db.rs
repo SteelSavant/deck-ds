@@ -1,0 +1,183 @@
+use std::path::PathBuf;
+
+use native_db::{Database, DatabaseBuilder};
+use once_cell::sync::Lazy;
+
+use crate::pipeline::data::PipelineDefinition;
+
+use self::{migrate::Migrate, model::DbCategoryProfile};
+
+use super::CategoryProfile;
+
+use crate::settings::ProfileId;
+use anyhow::Result;
+
+mod migrate;
+mod model;
+mod transform;
+
+use model::v1;
+
+static DATABASE_BUILDER: Lazy<native_db::DatabaseBuilder> = Lazy::new(|| {
+    let mut builder = DatabaseBuilder::new();
+
+    builder
+        .define::<v1::DbCategoryProfile>()
+        .expect("failed to define CategoryProfile v1");
+    builder
+        .define::<v1::DbAppProfile>()
+        .expect("failed to define AppProfile v1");
+
+    builder
+});
+
+pub struct SettingsDb {
+    db: Database<'static>,
+}
+
+impl SettingsDb {
+    pub fn new(db_path: PathBuf) -> Self {
+        let db = DATABASE_BUILDER
+            .create(db_path)
+            .expect("database should be instantiable");
+
+        db.migrate().expect("db migrations should succeed");
+        SettingsDb { db }
+    }
+
+    pub fn create_profile(&self, pipeline: PipelineDefinition) -> Result<CategoryProfile> {
+        let id = ProfileId::new();
+        let profile = CategoryProfile {
+            id: id.clone(),
+            tags: vec![],
+            pipeline,
+        };
+
+        let rw = self
+            .db
+            .rw_transaction()
+            .expect("failed to create rw_transaction");
+        profile.save_all(&rw);
+
+        rw.commit()?;
+
+        Ok(profile)
+    }
+
+    pub fn delete_profile(&self, id: &ProfileId) -> Result<()> {
+        let rw = self
+            .db
+            .rw_transaction()
+            .expect("failed to create rw_transaction");
+        let profile = rw.get().primary::<DbCategoryProfile>(*id)?;
+        profile.map(|p| {
+            let res = rw.remove(p).and_then(|_| rw.commit());
+            todo!("remove affected actions")
+        });
+
+        Ok(())
+    }
+
+    pub fn get_profile(&self, id: &ProfileId) -> Result<Option<CategoryProfile>> {
+        let ro = self
+            .db
+            .r_transaction()
+            .expect("failed to create ro_transaction");
+        let profile = ro.get().primary::<DbCategoryProfile>(*id)?;
+
+        Ok(profile.map(|p| p.reconstruct(&ro)).transpose()?)
+    }
+
+    pub fn set_profile(&self, profile: CategoryProfile) -> Result<()> {
+        let rw = self
+            .db
+            .rw_transaction()
+            .expect("failed to create rw_transaction");
+        profile.save_all(&rw);
+        Ok(rw.commit()?)
+    }
+
+    pub fn get_profiles(&self) -> Result<Vec<CategoryProfile>> {
+        let ro = self
+            .db
+            .r_transaction()
+            .expect("failed to create ro_transaction");
+        let profiles = ro
+            .scan()
+            .primary::<DbCategoryProfile>()
+            .expect("failed to scan category profiles")
+            .all()
+            .map(|p| p.reconstruct(&ro))
+            .collect::<Result<_>>()?;
+        Ok(profiles)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use uuid::Uuid;
+
+    use crate::pipeline::{
+        action_registar::PipelineActionRegistrar,
+        data::{PipelineActionId, PipelineTarget, Selection},
+    };
+
+    use super::*;
+
+    #[test]
+    fn test_profile_crud() -> Result<()> {
+        let registrar = PipelineActionRegistrar::builder().with_core().build();
+
+        let db = SettingsDb::new("/test/out/deck-ds/profile.db".into());
+
+        let targets = HashMap::from_iter([(
+            PipelineTarget::Desktop,
+            Selection::AllOf(vec![PipelineActionId::new("core:citra:layout")]),
+        )]);
+
+        let actions = registrar.make_lookup(&targets);
+
+        let mut expected: CategoryProfile = CategoryProfile {
+            id: ProfileId::from_uuid(Uuid::nil()),
+            tags: vec!["Test".to_string()],
+            pipeline: PipelineDefinition {
+                name: "Test Pipeline".to_string(),
+                description: "Test Description".to_string(),
+                targets,
+                actions,
+            },
+        };
+
+        db.set_profile(expected.clone())?;
+        let actual = db.get_profile(&expected.id)?.expect("profile should exist");
+
+        assert_eq!(expected.id, actual.id);
+        assert_eq!(expected.pipeline.name, actual.pipeline.name);
+
+        expected.pipeline.name = "Updated".to_string();
+
+        db.set_profile(expected.clone())?;
+
+        let actual = db
+            .get_profile(&expected.id)?
+            .expect("saved profile should exist");
+
+        assert_eq!(expected.id, actual.id);
+        assert_eq!(expected.pipeline.name, actual.pipeline.name);
+
+        let actual = db
+            .get_profiles()?
+            .get(0)
+            .cloned()
+            .expect("get_profiles should find 1 profile");
+
+        assert_eq!(expected.id, actual.id);
+        assert_eq!(expected.pipeline.name, actual.pipeline.name);
+
+        db.delete_profile(&expected.id)?;
+
+        Ok(())
+    }
+}

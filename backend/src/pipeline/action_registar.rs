@@ -12,7 +12,7 @@ use super::{
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
         multi_window::MultiWindow,
         source_file::{CustomFileOptions, EmuDeckSource, FlatpakSource, SourceFile},
-        virtual_screen::VirtualScreen,
+        virtual_screen::VirtualScreen, ActionId,
     },
     data::{PipelineActionDefinition, PipelineActionId, PipelineTarget, Selection, PipelineActionSettings},
 };
@@ -79,9 +79,9 @@ impl PipelineActionRegistrar {
                 Selection::OneOf { actions, .. } | Selection::AllOf(actions) => {
                     let mut ids: HashSet<_> =actions.iter().map(|id| {
                         registrar.get(id, target).with_context(|| format!("action {id:?} should exist")).unwrap()
-                    }). flat_map(|def| {
+                    }).flat_map(|def| {
                          get_ids(registrar, &def.settings.selection, target)
-                    }  ).collect();
+                    }).collect();
 
                     for a in actions {
                         ids.insert((a.clone(), target));
@@ -247,7 +247,9 @@ impl PipelineActionRegistarBuilder {
                         description: Some("Maps the internal and external monitor to a single virtual screen, for applications that do not support multiple windows.".into()),
                         enabled: None,
                         profile_override: None,
-                        selection: VirtualScreen.into(),
+                        selection: VirtualScreen {
+                            id: ActionId::new(),
+                        }.into(),
                     },).with_action("multi_window",    Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
                         name: "Multi-Window Emulation".to_string(),
                         description: Some("Manages windows for known emulators configurations with multiple display windows.".into()),

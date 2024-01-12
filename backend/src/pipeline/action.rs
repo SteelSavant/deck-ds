@@ -1,7 +1,9 @@
 use std::fmt::Debug;
 
-use schemars::{schema::RootSchema, schema_for, JsonSchema};
+use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+
+use crate::macros::newtype_uuid;
 
 use self::{
     cemu_layout::CemuLayout, citra_layout::CitraLayout, display_restoration::DisplayRestoration,
@@ -45,7 +47,6 @@ pub trait ErasedPipelineAction {
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()>;
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()>;
     fn get_dependencies(&self, ctx: &mut PipelineContext) -> Vec<Dependency>;
-    fn get_schema(&self) -> RootSchema;
 }
 
 impl<T> ErasedPipelineAction for T
@@ -71,12 +72,9 @@ where
     fn get_dependencies(&self, ctx: &mut PipelineContext) -> Vec<Dependency> {
         self.get_dependencies(ctx)
     }
-
-    fn get_schema(&self) -> RootSchema {
-        schema_for!(Self)
-    }
 }
 
+newtype_uuid!(ActionId);
 pub type Action = v1::Action;
 
 pub mod v1 {
@@ -94,24 +92,24 @@ pub mod v1 {
         MelonDSLayout(MelonDSLayout),
         SourceFile(SourceFile),
     }
+}
 
-    impl<T: Into<Action>, R> From<T> for Selection<R> {
-        fn from(value: T) -> Self {
-            Selection::Action(value.into())
-        }
+impl<T: Into<Action>, R> From<T> for Selection<R> {
+    fn from(value: T) -> Self {
+        Selection::Action(value.into())
     }
+}
 
-    impl Action {
-        pub fn name(&self) -> &'static str {
-            match self {
-                Action::DisplayRestoration(_) => "DisplayRestoration",
-                Action::VirtualScreen(_) => "VirtualScreen",
-                Action::MultiWindow(_) => "MultiWindow",
-                Action::CitraLayout(_) => "CitraLayout",
-                Action::CemuLayout(_) => "CemuLayout",
-                Action::MelonDSLayout(_) => "MelonDSLayout",
-                Action::SourceFile(_) => "SourceFile",
-            }
+impl Action {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Action::DisplayRestoration(_) => "DisplayRestoration",
+            Action::VirtualScreen(_) => "VirtualScreen",
+            Action::MultiWindow(_) => "MultiWindow",
+            Action::CitraLayout(_) => "CitraLayout",
+            Action::CemuLayout(_) => "CemuLayout",
+            Action::MelonDSLayout(_) => "MelonDSLayout",
+            Action::SourceFile(_) => "SourceFile",
         }
     }
 }
