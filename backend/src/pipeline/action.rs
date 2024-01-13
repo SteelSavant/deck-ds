@@ -1,7 +1,9 @@
 use std::fmt::Debug;
 
-use schemars::{schema::RootSchema, schema_for, JsonSchema};
+use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+
+use crate::macros::newtype_uuid;
 
 use self::{
     cemu_layout::CemuLayout, citra_layout::CitraLayout, display_restoration::DisplayRestoration,
@@ -38,6 +40,8 @@ pub trait ActionImpl: DeserializeOwned + Serialize {
         // default to no dependencies
         vec![]
     }
+
+    fn get_id(&self) -> ActionId;
 }
 
 #[enum_delegate::register]
@@ -45,7 +49,7 @@ pub trait ErasedPipelineAction {
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()>;
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()>;
     fn get_dependencies(&self, ctx: &mut PipelineContext) -> Vec<Dependency>;
-    fn get_schema(&self) -> RootSchema;
+    fn get_id(&self) -> ActionId;
 }
 
 impl<T> ErasedPipelineAction for T
@@ -72,10 +76,12 @@ where
         self.get_dependencies(ctx)
     }
 
-    fn get_schema(&self) -> RootSchema {
-        schema_for!(Self)
+    fn get_id(&self) -> ActionId {
+        self.get_id()
     }
 }
+
+newtype_uuid!(ActionId);
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[enum_delegate::implement(ErasedPipelineAction)]
@@ -106,6 +112,20 @@ impl Action {
             Action::CemuLayout(_) => "CemuLayout",
             Action::MelonDSLayout(_) => "MelonDSLayout",
             Action::SourceFile(_) => "SourceFile",
+        }
+    }
+
+    pub fn cloned_with_id(&self, id: ActionId) -> Self {
+        match self {
+            Action::DisplayRestoration(a) => {
+                Action::DisplayRestoration(DisplayRestoration { id, ..*a })
+            }
+            Action::VirtualScreen(_) => Action::VirtualScreen(VirtualScreen { id }),
+            Action::MultiWindow(_) => Action::MultiWindow(MultiWindow { id }),
+            Action::CitraLayout(a) => Action::CitraLayout(CitraLayout { id, ..*a }),
+            Action::CemuLayout(a) => Action::CemuLayout(CemuLayout { id, ..*a }),
+            Action::MelonDSLayout(a) => Action::MelonDSLayout(MelonDSLayout { id, ..*a }),
+            Action::SourceFile(a) => Action::SourceFile(SourceFile { id, ..a.clone() }),
         }
     }
 }

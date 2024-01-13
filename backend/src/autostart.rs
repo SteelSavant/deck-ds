@@ -14,7 +14,6 @@ use crate::{
     settings::Settings,
 };
 
-#[derive(Debug)]
 pub struct AutoStart {
     settings: Arc<Mutex<Settings>>,
 }

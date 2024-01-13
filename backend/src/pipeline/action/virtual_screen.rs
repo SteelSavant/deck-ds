@@ -8,10 +8,12 @@ use crate::{
     sys::x_display::{AspectRatioOption, ModeOption, ModePreference, Resolution},
 };
 
-use super::ActionImpl;
+use super::{ActionId, ActionImpl};
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct VirtualScreen;
+pub struct VirtualScreen {
+    pub id: ActionId,
+}
 
 impl ActionImpl for VirtualScreen {
     type State = ();
@@ -67,5 +69,9 @@ impl ActionImpl for VirtualScreen {
         vec![Dependency::KwinScript(
             "truevideowall-v1.0.kwinscript".to_string(),
         )]
+    }
+
+    fn get_id(&self) -> ActionId {
+        self.id
     }
 }

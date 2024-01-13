@@ -1,10 +1,9 @@
 import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
 import { Fragment, ReactElement } from "react";
 import { FaLink } from "react-icons/fa";
-import { Action, ActionOneOf, ActionSelection, } from "../../backend";
+import { Action, ActionOneOf, ActionSelection, PipelineAction, } from "../../backend";
 import EditAction from "../../components/EditAction";
-import { useModifiablePipelineDefinition } from "../../context/modifiablePipelineContext";
-import { PipelineAction } from "../../types/backend_api";
+import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
 
 export default function PipelineTargetDisplay({ root, description }: {
     root: ActionSelection,
@@ -32,7 +31,7 @@ function buildSelection(id: string, selection: ActionSelection, indentLevel: num
 }
 
 function buildAction(id: string, action: Action, indentLevel: number): ReactElement {
-    const { dispatch } = useModifiablePipelineDefinition();
+    const { dispatch } = useModifiablePipelineContainer();
 
     return (
         <EditAction action={action} indentLevel={indentLevel + 1} onChange={(updatedAction) => {
@@ -60,7 +59,7 @@ function buildAllOf(allOf: PipelineAction[], indentLevel: number): ReactElement 
 }
 
 function buildPipelineAction(action: PipelineAction, indentLevel: number): ReactElement {
-    const { dispatch } = useModifiablePipelineDefinition();
+    const { dispatch } = useModifiablePipelineContainer();
 
     const selection = action.selection;
     const isEnabled = action.enabled;

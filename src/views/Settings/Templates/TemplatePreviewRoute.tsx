@@ -1,11 +1,10 @@
 import { Field, Navigation, useParams } from "decky-frontend-lib";
 import { ReactElement, useState } from "react";
-import { createProfile } from "../../../backend";
+import { PipelineContainer, createProfile } from "../../../backend";
 import HandleLoading from "../../../components/HandleLoading";
-import { ModifiablePipelineDefinitionProvider, useModifiablePipelineDefinition } from "../../../context/modifiablePipelineContext";
+import { ModifiablePipelineContainerProvider, useModifiablePipelineContainer } from "../../../context/modifiablePipelineContext";
 import { useServerApi } from "../../../context/serverApiContext";
 import useTemplate from "../../../hooks/useTemplate";
-import { Pipeline } from "../../../types/backend_api";
 import PipelineDisplay from "../../PipelineDisplay";
 import TemplateInfo from "./TemplateInfo";
 
@@ -22,9 +21,9 @@ export default function TemplatePreviewRoute(): ReactElement {
                     return <div> Template {templateid} does not exist!</div>;
                 } else {
                     return (
-                        <ModifiablePipelineDefinitionProvider initialDefinition={template.pipeline} >
+                        <ModifiablePipelineContainerProvider initialContainer={template} >
                             <TemplatePreviewLogic />
-                        </ModifiablePipelineDefinitionProvider>
+                        </ModifiablePipelineContainerProvider>
                     );
                 }
             }
@@ -34,7 +33,7 @@ export default function TemplatePreviewRoute(): ReactElement {
 
 
 function TemplatePreviewLogic(): ReactElement {
-    const { state } = useModifiablePipelineDefinition();
+    const { state } = useModifiablePipelineContainer();
     const [waiting, setWaiting] = useState(false);
     const serverApi = useServerApi();
 
@@ -45,7 +44,7 @@ function TemplatePreviewLogic(): ReactElement {
         secondaryAction={async () => {
             if (!waiting) {
                 setWaiting(true);
-                const response = await createProfile({ pipeline: state.definition });
+                const response = await createProfile({ pipeline: state.container.pipeline });
 
                 if (response.isOk) {
                     const route = `/deck-ds/settings/profiles/${response.data.profile_id}`;
@@ -65,8 +64,8 @@ function TemplatePreviewLogic(): ReactElement {
 }
 
 
-function TemplateHeader(pipeline: Pipeline): ReactElement {
-    return (<Field label={<h3>{`${pipeline.name} (Template)`}</h3>} bottomSeparator="thick">
+function TemplateHeader(container: PipelineContainer): ReactElement {
+    return (<Field label={<h3>{`${container.pipeline.name} (Template)`}</h3>} bottomSeparator="thick">
         Changes made to this template will not be saved.
     </Field>);
 }

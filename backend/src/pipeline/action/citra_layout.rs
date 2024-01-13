@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::pipeline::executor::PipelineContext;
 
-use super::{source_file::SourceFile, ActionImpl};
+use super::{source_file::SourceFile, ActionId, ActionImpl};
 use anyhow::{anyhow, Context, Result};
 use configparser::ini::{Ini, IniDefault};
 use regex::Regex;
@@ -49,12 +49,18 @@ impl CitraLayoutOption {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
 pub struct CitraLayout {
+    pub id: ActionId,
+    pub layout: CitraLayoutState,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
+pub struct CitraLayoutState {
     pub layout_option: CitraLayoutOption,
     pub swap_screens: bool,
     pub fullscreen: bool, // Setting this doesn't work for some reason...
 }
 
-impl CitraLayout {
+impl CitraLayoutState {
     const LAYOUT_SECTION: &'static str = "Layout";
     const UI_SECTION: &'static str = "UI";
 
@@ -83,7 +89,7 @@ impl CitraLayout {
             .map_err(|err| anyhow!(err))?
             .with_context(|| "key 'fullscreen' not found")?;
 
-        Ok(CitraLayout {
+        Ok(CitraLayoutState {
             layout_option: CitraLayoutOption::from_raw(raw_layout),
             swap_screens,
             fullscreen,
@@ -138,12 +144,12 @@ impl CitraLayout {
 mod internal {
     use std::path::PathBuf;
 
-    use super::CitraLayout;
+    use super::CitraLayoutState;
 
     #[derive(Debug, Clone)]
     pub struct CitraState {
         pub ini_path: PathBuf,
-        pub layout: CitraLayout,
+        pub layout: CitraLayoutState,
     }
 }
 
@@ -156,10 +162,10 @@ impl ActionImpl for CitraLayout {
                 .get_state::<SourceFile>()
                 .with_context(|| "No source file set for Citra settings")?;
 
-            (ini_path.clone(), CitraLayout::read(ini_path)?)
+            (ini_path.clone(), CitraLayoutState::read(ini_path)?)
         };
 
-        self.write(&ini_path).map(|_| {
+        self.layout.write(&ini_path).map(|_| {
             ctx.set_state::<Self>(internal::CitraState { ini_path, layout });
         })
     }
@@ -171,6 +177,10 @@ impl ActionImpl for CitraLayout {
             Some(state) => state.layout.write(&state.ini_path),
             None => Ok(()),
         }
+    }
+
+    fn get_id(&self) -> ActionId {
+        self.id
     }
 }
 
@@ -193,12 +203,12 @@ mod tests {
 
         std::fs::write(&path, &source)?;
 
-        let expected = CitraLayout {
+        let expected = CitraLayoutState {
             layout_option: CitraLayoutOption::Default,
             swap_screens: false,
             fullscreen: false,
         };
-        let actual = CitraLayout::read(&path)?;
+        let actual = CitraLayoutState::read(&path)?;
 
         assert_eq!(expected, actual);
 
@@ -206,7 +216,7 @@ mod tests {
         let actual_str = std::fs::read_to_string(&path)?;
         assert_eq!(source, actual_str);
 
-        let expected = CitraLayout {
+        let expected = CitraLayoutState {
             layout_option: CitraLayoutOption::SeparateWindows,
             swap_screens: true,
             fullscreen: true,
@@ -214,7 +224,7 @@ mod tests {
 
         expected.write(&path)?;
 
-        let actual = CitraLayout::read(&path)?;
+        let actual = CitraLayoutState::read(&path)?;
 
         assert_eq!(expected, actual);
 

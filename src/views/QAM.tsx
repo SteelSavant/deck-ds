@@ -41,7 +41,7 @@ function DeckDSProfilesForApp({ appDetails }: { appDetails: ShortAppDetails }): 
                 if (containsApp) {
                     const matchedProfiles = profiles
                         .filter((p) => !includedProfiles.has(p.id))
-                        .filter((p) => p.pipeline.tags.includes(uc.id));
+                        .filter((p) => p.tags.includes(uc.id));
 
                     for (const p of matchedProfiles) {
                         includedProfiles.add(p.id);

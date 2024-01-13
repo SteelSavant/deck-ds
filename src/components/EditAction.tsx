@@ -2,9 +2,8 @@ import { DialogButton, Dropdown, Field, FileSelectionType, Focusable, Toggle } f
 import _ from "lodash";
 import { ReactElement } from "react";
 import { FaFile } from "react-icons/fa";
-import { Action, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../backend";
+import { Action, RelativeLocation, TeardownExternalSettings, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../backend";
 import { useServerApi } from "../context/serverApiContext";
-import { RelativeLocation, TeardownExternalSettings } from "../types/backend_api";
 
 
 interface EditActionProps {
@@ -64,9 +63,9 @@ export default function EditAction({
             return (
                 <div>
                     <ActionChild indentLevel={indentLevel} label="Separate Gamepad View">
-                        <Toggle value={cloned.value.separate_gamepad_view} onChange={(isEnabled) => {
+                        <Toggle value={cloned.value.layout.separate_gamepad_view} onChange={(isEnabled) => {
                             console.log("toggling separate gamepad view:", isEnabled);
-                            cloned.value.separate_gamepad_view = isEnabled;
+                            cloned.value.layout.separate_gamepad_view = isEnabled;
                             onChange(cloned);
                         }} />
                     </ActionChild>
@@ -76,19 +75,19 @@ export default function EditAction({
             return (
                 <div>
                     <ActionChild indentLevel={indentLevel} label="Layout Option">
-                        <Dropdown selectedOption={cloned.value.layout_option.type} rgOptions={citraLayoutOptions.map((a) => {
+                        <Dropdown selectedOption={cloned.value.layout.layout_option.type} rgOptions={citraLayoutOptions.map((a) => {
                             return {
                                 label: a.type,
                                 data: a.type
                             }
                         })} onChange={(option) => {
-                            cloned.value.layout_option = { type: option.data };
+                            cloned.value.layout.layout_option = { type: option.data };
                             onChange(cloned);
                         }} />
                     </ActionChild>
                     <ActionChild indentLevel={indentLevel} label="Swap Screens">
-                        <Toggle value={cloned.value.swap_screens} onChange={(isEnabled) => {
-                            cloned.value.swap_screens = isEnabled;
+                        <Toggle value={cloned.value.layout.swap_screens} onChange={(isEnabled) => {
+                            cloned.value.layout.swap_screens = isEnabled;
                             onChange(cloned);
                         }} />
                     </ActionChild>
@@ -137,19 +136,22 @@ export default function EditAction({
             );
         case 'SourceFile':
             const sourceValue = cloned.value;
-            const sourceType = sourceValue.type;
+            const sourceType = sourceValue.source.type;
 
             switch (sourceType) {
                 case 'Custom':
-                    const file = sourceValue.value.path;
-                    const extensions = sourceValue.value.valid_ext;
+                    const file = sourceValue.source.value.path;
+                    const extensions = sourceValue.source.value.valid_ext;
                     async function onSelectFile() {
                         const pickedFile = await serverApi.openFilePickerV2(FileSelectionType.FILE, file ?? '/home/deck', true, true, undefined, extensions, false);
                         cloned.value = {
-                            type: 'Custom',
-                            value: {
-                                path: pickedFile.realpath, // TODO::consider path instead of realpath
-                                valid_ext: extensions
+                            id: sourceValue.id,
+                            source: {
+                                type: 'Custom',
+                                value: {
+                                    path: pickedFile.realpath, // TODO::consider path instead of realpath
+                                    valid_ext: extensions
+                                }
                             }
                         }
                         onChange(cloned)

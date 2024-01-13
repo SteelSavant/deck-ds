@@ -19,26 +19,28 @@ macro_rules! newtype_uuid {
                 Self(uuid::Uuid::new_v4())
             }
 
+            pub fn nil() -> Self {
+                Self(uuid::Uuid::nil())
+            }
+
             pub fn from_uuid(uuid: uuid::Uuid) -> Self {
                 Self(uuid)
             }
 
-            pub fn try_parse(string: &str) -> Result<Self> {
-                Ok(Self(uuid::Uuid::parse_str(string)?))
-            }
-
             pub fn parse(string: &str) -> Self {
                 Self(uuid::Uuid::parse_str(string).expect("uuid should be valid"))
-            }
-
-            pub fn raw(&self) -> String {
-                self.0.to_string()
             }
         }
 
         impl Default for $id {
             fn default() -> Self {
                 Self::new()
+            }
+        }
+
+        impl native_db::InnerKeyValue for $id {
+            fn database_inner_key_value(&self) -> native_db::db_type::DatabaseInnerKeyValue {
+                self.0.database_inner_key_value()
             }
         }
     };
@@ -67,6 +69,12 @@ macro_rules! newtype_strid {
 
             pub fn raw(&self) -> &str {
                 &self.0
+            }
+        }
+
+        impl native_db::InnerKeyValue for $id {
+            fn database_inner_key_value(&self) -> native_db::db_type::DatabaseInnerKeyValue {
+                self.0.database_inner_key_value()
             }
         }
     };

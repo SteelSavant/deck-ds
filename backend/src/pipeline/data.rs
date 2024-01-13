@@ -1,16 +1,16 @@
 use derive_more::Display;
-use std::{borrow::Cow, collections::HashMap};
+use std::collections::HashMap;
 
 use crate::{
     macros::{newtype_strid, newtype_uuid},
-    settings::{Profile, ProfileId},
+    settings::{CategoryProfile, ProfileId},
 };
 use anyhow::{Context, Result};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use super::{action::Action, registar::PipelineActionRegistrar};
+use super::{action::Action, action_registar::PipelineActionRegistrar};
 
 newtype_strid!(
     r#"Id in the form "plugin:group:action" | "plugin:group:action:variant""#,
@@ -45,68 +45,116 @@ pub struct Template {
     pub pipeline: PipelineDefinition,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct PipelineDefinition {
-    pub name: String,
-    pub tags: Vec<String>,
-    pub description: String,
-    pub targets: HashMap<PipelineTarget, Selection<PipelineActionId>>,
-    pub actions: Cow<'static, PipelineActionRegistrar>,
-}
+pub type PipelineDefinition = generic::PipelineDefinition<Action>;
+pub type Pipeline = generic::Pipeline<Action>;
+pub type PipelineActionDefinition = generic::PipelineActionDefinition<Action>;
+pub type PipelineAction = generic::PipelineAction<Action>;
+pub type PipelineActionSettings = generic::PipelineActionSettings<Action>;
+pub type Selection<T> = generic::Selection<Action, T>;
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct Pipeline {
-    pub name: String,
-    pub tags: Vec<String>,
-    pub description: String,
-    pub targets: HashMap<PipelineTarget, Selection<PipelineAction>>,
-}
+pub type PipelineActionLookup = generic::PipelineActionLookup<Action>;
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct PipelineActionDefinition {
-    pub name: String,
-    pub description: Option<String>,
-    pub id: PipelineActionId,
-    /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
-    pub enabled: Option<bool>,
-    /// Flags whether the selection is overridden by the setting from a different profile.
-    pub profile_override: Option<ProfileId>,
-    /// The value of the pipeline action
-    pub selection: Selection<PipelineActionId>,
-}
+pub mod generic {
+    use super::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct PipelineAction {
-    pub name: String,
-    pub description: Option<String>,
-    pub id: PipelineActionId,
-    /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
-    pub enabled: Option<bool>,
-    /// Flags whether the selection is overridden by the setting from a different profile.
-    pub profile_override: Option<ProfileId>,
-    /// The value of the pipeline action
-    pub selection: Selection<PipelineAction>,
-}
+    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+    pub struct PipelineDefinition<A> {
+        pub name: String,
+        pub description: String,
+        pub targets: HashMap<PipelineTarget, Selection<A, PipelineActionId>>,
+        pub actions: PipelineActionLookup<A>,
+    }
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "type", content = "value")]
-pub enum Selection<T> {
-    Action(Action),
-    OneOf {
-        selection: PipelineActionId,
-        actions: Vec<T>,
-    },
-    AllOf(Vec<T>),
+    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+    pub struct Pipeline<A> {
+        pub name: String,
+        pub description: String,
+        pub targets: HashMap<PipelineTarget, Selection<A, PipelineAction<A>>>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+    pub struct PipelineActionDefinition<A> {
+        pub name: String,
+        pub description: Option<String>,
+        pub id: PipelineActionId,
+        pub settings: PipelineActionSettings<A>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+    pub struct PipelineAction<A> {
+        pub name: String,
+        pub description: Option<String>,
+        pub id: PipelineActionId,
+        /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+        pub enabled: Option<bool>,
+        /// Flags whether the selection is overridden by the setting from a different profile.
+        pub profile_override: Option<ProfileId>,
+        /// The value of the pipeline action
+        pub selection: Selection<A, PipelineAction<A>>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+    pub struct PipelineActionSettings<A> {
+        /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+        pub enabled: Option<bool>,
+        /// Flags whether the selection is overridden by the setting from a different profile.
+        pub profile_override: Option<ProfileId>,
+        /// The value of the pipeline action
+        pub selection: Selection<A, PipelineActionId>,
+    }
+
+    #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+    pub struct PipelineActionLookup<A> {
+        pub actions: HashMap<PipelineActionId, generic::PipelineActionSettings<A>>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+    #[serde(tag = "type", content = "value")]
+    pub enum Selection<A, T> {
+        Action(A),
+        OneOf {
+            selection: PipelineActionId,
+            actions: Vec<T>,
+        },
+        AllOf(Vec<T>),
+    }
 }
 
 // Reification
 
+impl PipelineActionLookup {
+    pub fn get(
+        &self,
+        id: &PipelineActionId,
+        target: PipelineTarget,
+        registrar: &PipelineActionRegistrar,
+    ) -> Option<PipelineActionDefinition> {
+        let variant = id.variant(target);
+
+        registrar.get(id, target).map(|def| {
+            let settings = self
+                .actions
+                .get(&variant)
+                .or_else(|| self.actions.get(id))
+                .cloned();
+            PipelineActionDefinition {
+                settings: settings.unwrap_or_else(|| def.settings.clone()),
+                ..def.clone()
+            }
+        })
+    }
+}
+
 impl PipelineDefinition {
-    pub fn reify(&self, profiles: &[Profile]) -> Result<Pipeline> {
+    pub fn reify(
+        &self,
+        profiles: &[CategoryProfile],
+        registrar: &PipelineActionRegistrar,
+    ) -> Result<Pipeline> {
         let targets = self
             .targets
             .iter()
-            .map(|(t, s)| s.reify(*t, self, profiles).map(|s| (*t, s)))
+            .map(|(t, s)| s.reify(*t, self, profiles, registrar).map(|s| (*t, s)))
             .collect::<Result<Vec<_>>>()?
             .into_iter()
             .collect::<HashMap<_, _>>();
@@ -114,7 +162,6 @@ impl PipelineDefinition {
         Ok(Pipeline {
             name: self.name.clone(),
             description: self.description.clone(),
-            tags: self.tags.clone(),
             targets,
         })
     }
@@ -125,14 +172,15 @@ impl Selection<PipelineActionId> {
         &self,
         target: PipelineTarget,
         pipeline: &PipelineDefinition,
-        profiles: &[Profile],
+        profiles: &[CategoryProfile],
+        registrar: &PipelineActionRegistrar,
     ) -> Result<Selection<PipelineAction>> {
         match self {
             Selection::Action(action) => Ok(Selection::Action(action.clone())),
             Selection::OneOf { selection, actions } => {
                 let actions = actions
                     .iter()
-                    .map(|a| a.reify(target, pipeline, profiles))
+                    .map(|a| a.reify(target, pipeline, profiles, registrar))
                     .collect::<Result<Vec<_>>>();
                 actions.map(|actions| Selection::OneOf {
                     selection: selection.clone(),
@@ -141,7 +189,7 @@ impl Selection<PipelineActionId> {
             }
             Selection::AllOf(actions) => actions
                 .iter()
-                .map(|a| a.reify(target, pipeline, profiles))
+                .map(|a| a.reify(target, pipeline, profiles, registrar))
                 .collect::<Result<Vec<_>>>()
                 .map(Selection::AllOf),
         }
@@ -153,25 +201,32 @@ impl PipelineActionId {
         &self,
         target: PipelineTarget,
         pipeline: &PipelineDefinition,
-        profiles: &[Profile],
+        profiles: &[CategoryProfile],
+        registrar: &PipelineActionRegistrar,
     ) -> Result<PipelineAction> {
-        let action = pipeline.actions.get(self, target).with_context(|| {
-            format!(
-                "Failed to get action {:?} for current pipline @ {}",
-                self, target
-            )
-        })?;
+        let action = pipeline
+            .actions
+            .get(self, target, registrar)
+            .with_context(|| {
+                format!(
+                    "Failed to get action {:?} for current pipline @ {}",
+                    self, target
+                )
+            })?;
 
         let resolved_action: PipelineAction = action
+            .settings
             .profile_override
             .and_then(|profile| {
                 profiles
                     .iter()
                     .find(|p| p.id == profile)
-                    .and_then(|p| p.pipeline.actions.get(self, target))
-                    .map(|action| action.reify(Some(profile), target, pipeline, profiles))
+                    .and_then(|p| p.pipeline.actions.get(self, target, registrar))
+                    .map(|action| {
+                        action.reify(Some(profile), target, pipeline, profiles, registrar)
+                    })
             })
-            .unwrap_or_else(|| action.reify(None, target, pipeline, profiles))?;
+            .unwrap_or_else(|| action.reify(None, target, pipeline, profiles, registrar))?;
 
         Ok(resolved_action)
     }
@@ -183,15 +238,19 @@ impl PipelineActionDefinition {
         profile_override: Option<ProfileId>,
         target: PipelineTarget,
         pipeline: &PipelineDefinition,
-        profiles: &[Profile],
+        profiles: &[CategoryProfile],
+        registrar: &PipelineActionRegistrar,
     ) -> Result<PipelineAction> {
-        let selection = self.selection.reify(target, pipeline, profiles)?;
+        let selection = self
+            .settings
+            .selection
+            .reify(target, pipeline, profiles, registrar)?;
 
         Ok(PipelineAction {
             name: self.name.clone(),
             description: self.description.clone(),
             id: self.id.clone(),
-            enabled: self.enabled,
+            enabled: self.settings.enabled,
             profile_override,
             selection,
         })
@@ -200,22 +259,23 @@ impl PipelineActionDefinition {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
 
-    use crate::settings::Settings;
+    use crate::{db::ProfileDb, pipeline::action_registar::PipelineActionRegistrar};
 
     #[test]
     fn test_template_reification() {
-        let settings = Settings::new(
-            Path::new("$HOME/homebrew/plugins/deck-ds/bin/backend"),
-            Path::new("$HOME/.config/deck-ds"),
-            Path::new("$HOME/.config/autostart"),
+        let registrar = PipelineActionRegistrar::builder().with_core().build();
+        let profiles = ProfileDb::new(
+            "test/out/.config/DeckDS/template_reification.db".into(),
+            registrar,
         );
 
-        let res: Vec<_> = settings
+        let registrar = PipelineActionRegistrar::builder().with_core().build();
+
+        let res: Vec<_> = profiles
             .get_templates()
             .into_iter()
-            .map(|t| t.pipeline.clone().reify(&[]))
+            .map(|t| t.pipeline.clone().reify(&[], &registrar))
             .collect();
 
         for p in res {

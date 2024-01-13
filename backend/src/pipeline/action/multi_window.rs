@@ -5,10 +5,12 @@ use xrandr::Relation;
 
 use crate::pipeline::{dependency::Dependency, executor::PipelineContext};
 
-use super::ActionImpl;
+use super::{ActionId, ActionImpl};
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct MultiWindow;
+pub struct MultiWindow {
+    pub id: ActionId,
+}
 
 impl ActionImpl for MultiWindow {
     type State = ();
@@ -38,5 +40,9 @@ impl ActionImpl for MultiWindow {
         vec![Dependency::KwinScript(
             "emulatorwindowing-v1.0.kwinscript".to_string(),
         )]
+    }
+
+    fn get_id(&self) -> ActionId {
+        self.id
     }
 }

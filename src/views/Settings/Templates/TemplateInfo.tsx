@@ -1,8 +1,8 @@
 import { Field } from "decky-frontend-lib";
 import { ReactElement } from "react";
-import { Pipeline } from "../../../types/backend_api";
+import { PipelineContainer } from "../../../backend";
 
-export default function ProfileInfo(pipeline: Pipeline): ReactElement {
+export default function ProfileInfo(container: PipelineContainer): ReactElement {
 
     // TODO::make description editable
     // TODO::dependencies section
@@ -10,7 +10,7 @@ export default function ProfileInfo(pipeline: Pipeline): ReactElement {
     // TODO::maybe have some info/instructions in the blank space? Definitely if not showing dependencies
     return (
         <div>
-            <Field focusable={false} description={pipeline.description} />
+            <Field focusable={false} description={container.pipeline.description} />
         </div>
     );
 }

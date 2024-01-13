@@ -1,36 +1,34 @@
 import { DialogButton, Field, Focusable, showModal } from "decky-frontend-lib";
 import { ReactElement } from "react";
 import { FaPlus, FaX } from "react-icons/fa6";
-import { useModifiablePipelineDefinition } from "../../../context/modifiablePipelineContext";
-import { Pipeline } from "../../../types/backend_api";
+import { CategoryProfile, PipelineContainer, isCategoryProfile } from "../../../backend";
+import { useModifiablePipelineContainer } from "../../../context/modifiablePipelineContext";
 import AddProfileTagModal from "./modals/AddProfileTagModal";
 
-export default function ProfileInfo(pipeline: Pipeline): ReactElement {
-    const { dispatch } = useModifiablePipelineDefinition();
+export default function ProfileInfo(container: PipelineContainer): ReactElement {
+    if (!isCategoryProfile(container)) {
+        throw 'PipelineContainer should be CategoryProfile';
+    }
+
+    const profile: CategoryProfile = container;
+
+    const { dispatch } = useModifiablePipelineContainer();
 
     function removeTag(tag: string) {
         dispatch({
-            type: 'updatePipelineInfo',
-            info: {
-                tags: pipeline.tags.filter((t) => t !== tag),
-                description: undefined,
-                name: undefined
-            }
+            type: 'updateTags',
+            tags: profile.tags.filter((t) => t !== tag),
         })
     }
 
 
     function addTag() {
         showModal(<AddProfileTagModal onSave={(tag) => {
-            const unique = new Set(pipeline.tags);
+            const unique = new Set(profile.tags);
             unique.delete(tag);
             dispatch({
-                type: 'updatePipelineInfo',
-                info: {
-                    tags: [...unique, tag], // set unique tags; no duplicates. If tag exists in 
-                    description: undefined,
-                    name: undefined
-                }
+                type: 'updateTags',
+                tags: [...unique, tag], // set unique tags; no duplicates. If tag exists in 
             })
         }} />)
     }
@@ -39,7 +37,7 @@ export default function ProfileInfo(pipeline: Pipeline): ReactElement {
     // TODO::dependencies section
     return (
         <div>
-            <Field focusable={false} description={pipeline.description} />
+            <Field focusable={false} description={profile.pipeline.description} />
             <Field
                 focusable={false}
                 label='Collections'
@@ -53,7 +51,7 @@ export default function ProfileInfo(pipeline: Pipeline): ReactElement {
             </Field>
             <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
                 {
-                    pipeline.tags.map((t) =>
+                    profile.tags.map((t) =>
                         <Focusable>
                             <ProfileTag tag={t} removeTag={removeTag} />
                         </Focusable>
