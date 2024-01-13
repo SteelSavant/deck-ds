@@ -11,12 +11,19 @@ use super::{
         display_restoration::{DisplayRestoration, RelativeLocation, TeardownExternalSettings},
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
         multi_window::MultiWindow,
-        source_file::{CustomFileOptions, EmuDeckSource, FlatpakSource, SourceFile, FileSource},
-        virtual_screen::VirtualScreen, ActionId, Action,
+        source_file::{CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile},
+        virtual_screen::VirtualScreen,
+        Action, ActionId,
     },
-    data::{PipelineActionDefinition, PipelineActionId, PipelineTarget, Selection, PipelineActionSettings, PipelineActionLookup},
+    data::{
+        PipelineActionDefinition, PipelineActionId, PipelineActionLookup, PipelineActionSettings,
+        PipelineTarget, Selection,
+    },
 };
-use std::{collections::{HashMap, HashSet}, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 use self::internal::{PipelineActionRegistarBuilder, PluginScopeBuilder};
 
@@ -43,16 +50,28 @@ impl PipelineActionRegistrar {
         self.actions.clone()
     }
 
-    pub fn make_lookup(&self, targets: &HashMap<PipelineTarget, Selection<PipelineActionId>>) -> PipelineActionLookup {
-        fn get_ids(registrar: &PipelineActionRegistrar, selection: &Selection<PipelineActionId>, target: PipelineTarget) -> HashSet<(PipelineActionId, PipelineTarget)> {
+    pub fn make_lookup(
+        &self,
+        targets: &HashMap<PipelineTarget, Selection<PipelineActionId>>,
+    ) -> PipelineActionLookup {
+        fn get_ids(
+            registrar: &PipelineActionRegistrar,
+            selection: &Selection<PipelineActionId>,
+            target: PipelineTarget,
+        ) -> HashSet<(PipelineActionId, PipelineTarget)> {
             match selection {
                 Selection::Action(_) => HashSet::new(),
                 Selection::OneOf { actions, .. } | Selection::AllOf(actions) => {
-                    let mut ids: HashSet<_> =actions.iter().map(|id| {
-                        registrar.get(id, target).with_context(|| format!("action {id:?} should exist")).unwrap()
-                    }).flat_map(|def| {
-                         get_ids(registrar, &def.settings.selection, target)
-                    }).collect();
+                    let mut ids: HashSet<_> = actions
+                        .iter()
+                        .map(|id| {
+                            registrar
+                                .get(id, target)
+                                .with_context(|| format!("action {id:?} should exist"))
+                                .unwrap()
+                        })
+                        .flat_map(|def| get_ids(registrar, &def.settings.selection, target))
+                        .collect();
 
                     for a in actions {
                         ids.insert((a.clone(), target));
@@ -62,12 +81,13 @@ impl PipelineActionRegistrar {
                 }
             }
         }
-        
-        let set: HashSet<_> = targets.iter().flat_map(|(t,s)| {
-             get_ids(self, s, *t)
-        }).collect();
 
-        let mut actions= HashMap::new();
+        let set: HashSet<_> = targets
+            .iter()
+            .flat_map(|(t, s)| get_ids(self, s, *t))
+            .collect();
+
+        let mut actions = HashMap::new();
 
         for (id, target) in set {
             if let Some(action) = self.get(&id, target) {
@@ -75,10 +95,7 @@ impl PipelineActionRegistrar {
             }
         }
 
-        PipelineActionLookup {
-            actions ,
-        }
-
+        PipelineActionLookup { actions }
     }
 }
 
@@ -267,12 +284,11 @@ impl PipelineActionRegistarBuilder {
                         name: "Custom".to_string(),
                         description: Some("Sets the settings INI file location to a custom location.".to_string()),
                         enabled: None,
-                        profile_override: None,                        
+                        profile_override: None,
                         selection: SourceFile {
                             id: ActionId::nil(),
                             source: FileSource::Custom(CustomFileOptions {path: None, valid_ext: vec!["ini".to_string()]})
                         }.into(),
-                        
                     })
                     .with_action("layout",    Some(PipelineTarget::Desktop),   PipelineActionDefinitionBuilder {
                         name: "Citra Layout".to_string(),
@@ -280,8 +296,8 @@ impl PipelineActionRegistarBuilder {
                         enabled: Some(true),
                         profile_override: None,
                         selection: CitraLayout {
-                            id: ActionId::nil(), 
-                            layout: CitraLayoutState { 
+                            id: ActionId::nil(),
+                            layout: CitraLayoutState {
                             layout_option: CitraLayoutOption::SeparateWindows,
                             swap_screens: false,
                             fullscreen: true,
@@ -332,7 +348,7 @@ impl PipelineActionRegistarBuilder {
                         selection:SourceFile {
                             id: ActionId::nil(),
                             source: FileSource::Flatpak(FlatpakSource::Cemu)
-                        }.into(),  
+                        }.into(),
                     })
                     .with_action("emudeck_proton_source", None, PipelineActionDefinitionBuilder {
                         name: "EmuDeck (Proton)".to_string(),
@@ -409,7 +425,6 @@ impl PipelineActionRegistarBuilder {
                             id: ActionId::nil(),
                             source: FileSource::Flatpak(FlatpakSource::MelonDS)
                         }.into(),
-                        
                     })
                     .with_action("custom_source", None, PipelineActionDefinitionBuilder {
                         name: "Custom".to_string(),
@@ -451,12 +466,11 @@ impl PipelineActionRegistarBuilder {
     }
 }
 
-
 #[derive(Debug)]
 pub struct PipelineActionDefinitionBuilder {
     pub name: String,
     pub description: Option<String>,
-        /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+    /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
     pub enabled: Option<bool>,
     /// Flags whether the selection is overridden by the setting from a different profile.
     pub profile_override: Option<ProfileId>,
@@ -481,7 +495,9 @@ impl PipelineActionDefinitionBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::PipelineActionRegistrar;
+    use std::hash::RandomState;
+
+    use super::*;
 
     #[test]
     fn test_action_count() {
@@ -493,5 +509,57 @@ mod tests {
                 .len(),
             22
         );
+    }
+
+    #[test]
+    fn test_make_cemu_lookup() {
+        let registrar = PipelineActionRegistrar::builder().with_core().build();
+
+        let targets = HashMap::from_iter([
+            (
+                PipelineTarget::Desktop,
+                Selection::AllOf(vec![
+                    PipelineActionId::new("core:cemu:config"),
+                    PipelineActionId::new("core:display:multi_window"),
+                ]),
+            ),
+            (
+                PipelineTarget::Gamemode,
+                Selection::AllOf(vec![PipelineActionId::new("core:cemu:config")]),
+            ),
+        ]);
+
+        let lookup = registrar.make_lookup(&targets);
+        let expected_keys: HashSet<PipelineActionId, RandomState> = HashSet::from_iter(
+            [
+                "core:display:multi_window:desktop",
+                "core:cemu:config",
+                "core:cemu:source",
+                "core:cemu:flatpak_source",
+                "core:cemu:emudeck_proton_source",
+                "core:cemu:custom_source",
+                "core:cemu:layout:desktop",
+                "core:cemu:layout:gamemode",
+            ]
+            .map(|v| PipelineActionId::new(v)),
+        );
+        let actual_keys = lookup
+            .actions
+            .into_keys()
+            .collect::<HashSet<PipelineActionId>>();
+
+        let intersection = expected_keys
+            .intersection(&actual_keys)
+            .into_iter()
+            .map(|a| a.clone())
+            .collect::<HashSet<_>>();
+        let difference = expected_keys
+            .difference(&actual_keys)
+            .into_iter()
+            .map(|a| a.clone())
+            .collect::<HashSet<_>>();
+
+        assert_eq!(difference.len(), 0);
+        assert_eq!(intersection.len(), expected_keys.len());
     }
 }

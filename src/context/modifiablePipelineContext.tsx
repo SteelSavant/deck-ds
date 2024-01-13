@@ -87,10 +87,7 @@ function modifiablePipelineContainerReducerBuilder(onUpdate?: ExternalPipelineUp
                 let updatedActions: { [k: string]: PipelineActionSettings } = {};
                 let currentActions = pipeline.actions.actions;
                 for (let key in currentActions) {
-                    console.log('checking key', key, 'against', action.id);
                     if (key === action.id) {
-                        console.log('updating action', action.id)
-
                         let cloned = _.cloneDeep(currentActions[key]);
                         const type = action.type;
 
@@ -103,8 +100,6 @@ function modifiablePipelineContainerReducerBuilder(onUpdate?: ExternalPipelineUp
                                     type: 'Action',
                                     value: action.action
                                 };
-
-                                console.log('updated pipeline action to', cloned.selection);
                                 break;
                             case 'updateOneOf':
                                 if (cloned.selection.type != 'OneOf') {
@@ -126,6 +121,8 @@ function modifiablePipelineContainerReducerBuilder(onUpdate?: ExternalPipelineUp
                                 const typecheck: never = type;
                                 throw typecheck ?? 'action update failed to typecheck';
                         }
+
+                        updatedActions[key] = cloned;
                     } else {
                         updatedActions[key] = currentActions[key];
                     }
