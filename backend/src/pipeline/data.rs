@@ -259,22 +259,20 @@ impl PipelineActionDefinition {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
 
-    use crate::{pipeline::action_registar::PipelineActionRegistrar, settings::Settings};
+    use crate::{db::ProfileDb, pipeline::action_registar::PipelineActionRegistrar};
 
     #[test]
     fn test_template_reification() {
-        let settings = Settings::new(
-            Path::new("$HOME/homebrew/plugins/deck-ds/bin/backend"),
-            Path::new("test/out/.config/deck-ds2"),
-            Path::new("$HOME/.config/autostart"),
-            PipelineActionRegistrar::builder().with_core().build(),
+        let registrar = PipelineActionRegistrar::builder().with_core().build();
+        let profiles = ProfileDb::new(
+            "test/out/.config/DeckDS/template_reification.db".into(),
+            registrar,
         );
 
         let registrar = PipelineActionRegistrar::builder().with_core().build();
 
-        let res: Vec<_> = settings
+        let res: Vec<_> = profiles
             .get_templates()
             .into_iter()
             .map(|t| t.pipeline.clone().reify(&[], &registrar))

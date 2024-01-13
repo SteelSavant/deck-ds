@@ -22,11 +22,6 @@ use crate::{
     PACKAGE_NAME,
 };
 
-use self::{db::SettingsDb, templates::build_templates};
-
-mod db;
-mod templates;
-
 pub struct Settings {
     // Path vars
     system_autostart_dir: PathBuf,
@@ -34,12 +29,6 @@ pub struct Settings {
     global_config_path: PathBuf,
     autostart_path: PathBuf,
     exe_path: PathBuf,
-
-    // db
-    db: SettingsDb,
-
-    // in-memory templates -- consider moving
-    templates: Vec<Template>,
 }
 
 #[derive(Debug, Default, Clone, Deserialize, Serialize, JsonSchema)]
@@ -58,22 +47,16 @@ impl Settings {
     ) -> Self {
         let config_dir = config_dir.as_ref();
 
-        let templates = build_templates(registrar);
-
         if !config_dir.exists() {
             create_dir_all(config_dir).unwrap();
         }
 
-        let db_path = config_dir.join("profiles.db");
-        let db = SettingsDb::new(db_path);
-
         Self {
             autostart_path: config_dir.join("autostart.json"),
             global_config_path: config_dir.join("config.json"),
-            db,
+
             system_autostart_dir: system_autostart_dir.as_ref().to_owned(),
             exe_path: exe_path.as_ref().to_owned(),
-            templates,
         }
     }
 
@@ -181,36 +164,6 @@ Type=Application"
                     .expect("DeckDS server path should be valid unicode"),
             )
     }
-
-    // Db wrapper
-    pub fn create_profile(&self, pipeline: PipelineDefinition) -> Result<CategoryProfile> {
-        self.db.create_profile(pipeline)
-    }
-
-    pub fn delete_profile(&self, id: &ProfileId) -> Result<()> {
-        self.db.delete_profile(id)
-    }
-
-    pub fn set_profile(&self, profile: CategoryProfile) -> Result<()> {
-        self.db.set_profile(profile)
-    }
-
-    pub fn get_profile(&self, id: &ProfileId) -> Result<Option<CategoryProfile>> {
-        self.db.get_profile(id)
-    }
-
-    pub fn get_profiles(&self) -> Result<Vec<CategoryProfile>> {
-        self.db.get_profiles()
-    }
-
-    // In-memory configuration (currently readonly, but should ideally be configurable)
-    pub fn get_template(&self, id: &TemplateId) -> Option<&Template> {
-        self.templates.iter().find(|t| t.id == *id)
-    }
-
-    pub fn get_templates(&self) -> &[Template] {
-        &self.templates
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -231,4 +184,37 @@ pub struct CategoryProfile {
 pub struct AppProfile {
     pub id: AppId,
     pub profiles: HashMap<ProfileId, PipelineDefinition>,
+}
+
+#[cfg(test)]
+mod tests {
+
+    use std::path::Path;
+
+    use crate::{consts::PACKAGE_NAME, settings::Settings};
+
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn test_desktop_contents_correct() {
+        let settings = Settings::new(
+            Path::new("test/out/homebrew/plugins")
+                .join(PACKAGE_NAME)
+                .join("bin/backend"),
+            Path::new("test/out/.config").join(PACKAGE_NAME),
+            Path::new("test/out/.config/autostart").to_path_buf(),
+            PipelineActionRegistrar::builder().with_core().build(),
+        );
+
+        let actual = settings.create_desktop_contents();
+        let expected = r"[Desktop Entry]
+Comment=Runs DeckDS plugin autostart script for dual screen applications.
+Exec=test/out/homebrew/plugins/DeckDS/bin/backend autostart
+Path=test/out/homebrew/plugins/DeckDS/bin
+Name=DeckDS
+Type=Application";
+
+        assert_eq!(expected, actual);
+    }
 }

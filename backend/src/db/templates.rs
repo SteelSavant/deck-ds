@@ -90,36 +90,3 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
 
     templates.into_iter().map(|t| t.build(&registrar)).collect()
 }
-
-#[cfg(test)]
-mod tests {
-
-    use std::path::Path;
-
-    use crate::{consts::PACKAGE_NAME, settings::Settings};
-
-    use super::*;
-    use pretty_assertions::assert_eq;
-
-    #[test]
-    fn test_desktop_contents_correct() {
-        let settings = Settings::new(
-            Path::new("test/out/homebrew/plugins")
-                .join(PACKAGE_NAME)
-                .join("bin/backend"),
-            Path::new("test/out/.config").join(PACKAGE_NAME),
-            Path::new("test/out/.config/autostart").to_path_buf(),
-            PipelineActionRegistrar::builder().with_core().build(),
-        );
-
-        let actual = settings.create_desktop_contents();
-        let expected = r"[Desktop Entry]
-Comment=Runs DeckDS plugin autostart script for dual screen applications.
-Exec=test/out/homebrew/plugins/DeckDS/bin/backend autostart
-Path=test/out/homebrew/plugins/DeckDS/bin
-Name=DeckDS
-Type=Application";
-
-        assert_eq!(expected, actual);
-    }
-}

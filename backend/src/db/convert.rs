@@ -5,6 +5,11 @@ use std::collections::HashMap;
 use native_db::transaction::{RTransaction, RwTransaction};
 
 use crate::{
+    db::model::{
+        DbAction, DbCategoryProfile, DbCemuLayout, DbCitraLayout, DbMelonDSLayout, DbMultiWindow,
+        DbPipelineActionLookup, DbPipelineActionSettings, DbPipelineDefinition, DbSelection,
+        DbSourceFile, DbVirtualScreen,
+    },
     pipeline::{
         action::{Action, ActionId, ErasedPipelineAction},
         data::{
@@ -12,14 +17,7 @@ use crate::{
             Selection,
         },
     },
-    settings::{
-        db::model::{
-            DbAction, DbCategoryProfile, DbCemuLayout, DbCitraLayout, DbMelonDSLayout,
-            DbMultiWindow, DbPipelineActionLookup, DbPipelineActionSettings, DbPipelineDefinition,
-            DbSelection, DbSourceFile, DbVirtualScreen,
-        },
-        CategoryProfile,
-    },
+    settings::CategoryProfile,
 };
 use anyhow::{Context, Result};
 

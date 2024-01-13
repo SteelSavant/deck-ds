@@ -17,6 +17,7 @@ use crate::{
     asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
+    db::ProfileDb,
     pipeline::{
         action::ActionImpl, action_registar::PipelineActionRegistrar, executor::PipelineContext,
     },
@@ -29,6 +30,7 @@ use derive_more::Display;
 pub mod api;
 pub mod asset;
 pub mod consts;
+pub mod db;
 mod macros;
 mod native_model_serde_json;
 pub mod pipeline;
@@ -215,6 +217,9 @@ fn main() -> Result<()> {
             }
         }
         Modes::Serve => {
+            let db_path = config_dir.join("profiles.db");
+            let profiles_db = Arc::new(Mutex::new(ProfileDb::new(db_path, registrar.clone())));
+
             let instance = Instance::new(PORT)
                 .register("LOG", crate::api::general::log_it())
                 .register("LOGPATH", move |_| {
@@ -226,35 +231,38 @@ fn main() -> Result<()> {
                 )
                 .register(
                     "create_profile",
-                    api::profile::create_profile(request_handler.clone(), settings.clone()),
+                    api::profile::create_profile(request_handler.clone(), profiles_db.clone()),
                 )
                 .register(
                     "get_profile",
-                    crate::api::profile::get_profile(request_handler.clone(), settings.clone()),
+                    crate::api::profile::get_profile(request_handler.clone(), profiles_db.clone()),
                 )
                 .register(
                     "set_profile",
-                    crate::api::profile::set_profile(request_handler.clone(), settings.clone()),
+                    crate::api::profile::set_profile(request_handler.clone(), profiles_db.clone()),
                 )
                 .register(
                     "delete_profile",
-                    crate::api::profile::delete_profile(request_handler.clone(), settings.clone()),
+                    crate::api::profile::delete_profile(
+                        request_handler.clone(),
+                        profiles_db.clone(),
+                    ),
                 )
                 .register(
                     "get_profiles",
-                    crate::api::profile::get_profiles(settings.clone()),
+                    crate::api::profile::get_profiles(profiles_db.clone()),
                 )
                 .register(
                     "reify_pipeline",
                     crate::api::profile::reify_pipeline(
                         request_handler.clone(),
-                        settings.clone(),
+                        profiles_db.clone(),
                         registrar.clone(),
                     ),
                 )
                 .register(
                     "get_templates",
-                    crate::api::profile::get_templates(settings.clone()),
+                    crate::api::profile::get_templates(profiles_db.clone()),
                 )
                 // .register(
                 //     "get_pipeline_actions",

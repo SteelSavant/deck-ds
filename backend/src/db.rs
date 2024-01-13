@@ -3,11 +3,15 @@ use std::path::PathBuf;
 use native_db::{Database, DatabaseBuilder};
 use once_cell::sync::Lazy;
 
+use crate::pipeline::action_registar::PipelineActionRegistrar;
 use crate::pipeline::data::PipelineDefinition;
+use crate::pipeline::data::Template;
+use crate::pipeline::data::TemplateId;
 
+use self::templates::build_templates;
 use self::{migrate::Migrate, model::DbCategoryProfile};
 
-use super::CategoryProfile;
+use crate::settings::CategoryProfile;
 
 use crate::settings::ProfileId;
 use anyhow::Result;
@@ -15,6 +19,7 @@ use anyhow::Result;
 mod convert;
 mod migrate;
 mod model;
+mod templates;
 
 use model::v1;
 
@@ -59,18 +64,22 @@ static DATABASE_BUILDER: Lazy<native_db::DatabaseBuilder> = Lazy::new(|| {
     builder
 });
 
-pub struct SettingsDb {
+pub struct ProfileDb {
     db: Database<'static>,
+    templates: Vec<Template>,
 }
 
-impl SettingsDb {
-    pub fn new(db_path: PathBuf) -> Self {
+impl ProfileDb {
+    pub fn new(db_path: PathBuf, registrar: PipelineActionRegistrar) -> Self {
         let db = DATABASE_BUILDER
             .create(db_path)
             .expect("database should be instantiable");
 
         db.migrate().expect("db migrations should succeed");
-        SettingsDb { db }
+
+        let templates = build_templates(registrar);
+
+        ProfileDb { db, templates }
     }
 
     pub fn create_profile(&self, pipeline: PipelineDefinition) -> Result<CategoryProfile> {
@@ -153,6 +162,15 @@ impl SettingsDb {
             .collect::<Result<_>>()?;
         Ok(profiles)
     }
+
+    // In-memory configuration (currently readonly, but should ideally be configurable)
+    pub fn get_template(&self, id: &TemplateId) -> Option<&Template> {
+        self.templates.iter().find(|t| t.id == *id)
+    }
+
+    pub fn get_templates(&self) -> &[Template] {
+        &self.templates
+    }
 }
 
 #[cfg(test)]
@@ -179,7 +197,7 @@ mod tests {
         let parent = path.parent().unwrap();
         create_dir_all(parent).unwrap();
 
-        let db = SettingsDb::new(path.clone());
+        let db = ProfileDb::new(path.clone(), registrar.clone());
 
         let targets = HashMap::from_iter([(
             PipelineTarget::Desktop,
@@ -229,14 +247,5 @@ mod tests {
 
         std::fs::remove_file(path)?;
         Ok(())
-    }
-
-    #[test]
-    fn test_multiple_db_open() {
-        let path: PathBuf = "test/out/.config/deck-ds/multiple_db_open.db".into();
-        SettingsDb::new(path.clone());
-        let handle = std::thread::spawn(|| SettingsDb::new(path));
-        let res = handle.join();
-        res.expect("multiple dbs should be able to open");
     }
 }

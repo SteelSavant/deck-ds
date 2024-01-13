@@ -6,11 +6,12 @@ use serde::{Deserialize, Serialize};
 use anyhow::Result;
 
 use crate::{
+    db::ProfileDb,
     pipeline::{
         action_registar::PipelineActionRegistrar,
         data::{Pipeline, PipelineDefinition, Template},
     },
-    settings::{CategoryProfile, ProfileId, Settings},
+    settings::{CategoryProfile, ProfileId},
 };
 
 use super::{
@@ -32,7 +33,7 @@ pub struct CreateProfileResponse {
 
 pub fn create_profile(
     request_handler: Arc<Mutex<RequestHandler>>,
-    settings: Arc<Mutex<Settings>>,
+    profiles: Arc<Mutex<ProfileDb>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
         log_invoke("create_profile", &args);
@@ -46,7 +47,7 @@ pub fn create_profile(
         };
         match args {
             Ok(args) => {
-                let lock = settings.lock().expect("settings mutex should be lockable");
+                let lock = profiles.lock().expect("profiles mutex should be lockable");
                 let res = lock.create_profile(args.pipeline);
                 match res {
                     Ok(res) => CreateProfileResponse { profile_id: res.id }.to_response(),
@@ -66,12 +67,12 @@ pub struct GetProfilesResponse {
 }
 
 pub fn get_profiles(
-    settings: Arc<Mutex<Settings>>,
+    profiles: Arc<Mutex<ProfileDb>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
         log_invoke("get_profiles", &args);
 
-        let lock = settings.lock().expect("settings mutex should be lockable");
+        let lock = profiles.lock().expect("profiles mutex should be lockable");
         let res = lock.get_profiles();
         match res {
             Ok(profiles) => GetProfilesResponse { profiles }.to_response(),
@@ -94,7 +95,7 @@ pub struct GetProfileResponse {
 
 pub fn get_profile(
     request_handler: Arc<Mutex<RequestHandler>>,
-    settings: Arc<Mutex<Settings>>,
+    profiles: Arc<Mutex<ProfileDb>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
         log_invoke("get_profile", &args);
@@ -108,7 +109,7 @@ pub fn get_profile(
         };
         match args {
             Ok(args) => {
-                let lock = settings.lock().expect("settings mutex should be lockable");
+                let lock = profiles.lock().expect("profiles mutex should be lockable");
                 match lock.get_profile(&args.profile_id) {
                     Ok(profile) => GetProfileResponse { profile }.to_response(),
                     Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
@@ -128,7 +129,7 @@ pub struct SetProfileRequest {
 
 pub fn set_profile(
     request_handler: Arc<Mutex<RequestHandler>>,
-    settings: Arc<Mutex<Settings>>,
+    profiles: Arc<Mutex<ProfileDb>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
         log_invoke("set_profile", &args);
@@ -142,7 +143,7 @@ pub fn set_profile(
         };
         match args {
             Ok(args) => {
-                let lock = settings.lock().expect("settings mutex should be lockable");
+                let lock = profiles.lock().expect("profiles mutex should be lockable");
                 let res = lock.set_profile(args.profile);
 
                 match res {
@@ -164,7 +165,7 @@ pub struct DeleteProfileRequest {
 
 pub fn delete_profile(
     request_handler: Arc<Mutex<RequestHandler>>,
-    settings: Arc<Mutex<Settings>>,
+    profiles: Arc<Mutex<ProfileDb>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
         log_invoke("delete_profile", &args);
@@ -178,7 +179,7 @@ pub fn delete_profile(
         };
         match args {
             Ok(args) => {
-                let lock = settings.lock().expect("settings mutex should be lockable");
+                let lock = profiles.lock().expect("profiles mutex should be lockable");
                 let res = lock.delete_profile(&args.profile);
 
                 match res {
@@ -205,7 +206,7 @@ pub struct ReifyPipelineResponse {
 
 pub fn reify_pipeline(
     request_handler: Arc<Mutex<RequestHandler>>,
-    settings: Arc<Mutex<Settings>>,
+    profiles: Arc<Mutex<ProfileDb>>,
     registrar: PipelineActionRegistrar,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
@@ -220,7 +221,7 @@ pub fn reify_pipeline(
         };
         match args {
             Ok(args) => {
-                let lock = settings.lock().expect("settings mutex should be lockable");
+                let lock = profiles.lock().expect("profiles mutex should be lockable");
                 match lock.get_profiles() {
                     Ok(profiles) => {
                         let res = args.pipeline.reify(&profiles, &registrar);
@@ -245,12 +246,12 @@ pub struct GetTemplatesResponse {
 }
 
 pub fn get_templates(
-    settings: Arc<Mutex<Settings>>,
+    profiles: Arc<Mutex<ProfileDb>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
         log_invoke("get_templates", &args);
 
-        let lock = settings.lock().expect("settings mutex should be lockable");
+        let lock = profiles.lock().expect("profiles mutex should be lockable");
         let templates = lock.get_templates().to_vec();
 
         GetTemplatesResponse { templates }.to_response()
