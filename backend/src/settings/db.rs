@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use native_db::{Database, DatabaseBuilder};
+use native_db::{transaction::RwTransaction, Database, DatabaseBuilder};
 use once_cell::sync::Lazy;
 
 use crate::pipeline::data::PipelineDefinition;
@@ -113,10 +113,9 @@ impl SettingsDb {
             .rw_transaction()
             .expect("failed to create rw_transaction");
         let profile = rw.get().primary::<DbCategoryProfile>(*id)?;
-        profile.map(|p| {
-            let res = rw.remove(p).and_then(|_| rw.commit());
-            todo!("remove affected actions")
-        });
+        profile
+            .map(|p| p.remove_all(&rw).and_then(|_| Ok(rw.commit()?)))
+            .transpose()?;
 
         Ok(())
     }
@@ -136,7 +135,7 @@ impl SettingsDb {
             .db
             .rw_transaction()
             .expect("failed to create rw_transaction");
-        profile.save_all(&rw);
+        profile.save_all(&rw)?;
         Ok(rw.commit()?)
     }
 
@@ -176,11 +175,11 @@ mod tests {
     fn test_profile_crud() -> Result<()> {
         let registrar = PipelineActionRegistrar::builder().with_core().build();
 
-        let path: PathBuf = "/test/out/deck-ds/profile.db".into();
+        let path: PathBuf = "test/out/.config/deck-ds/profile_crud.db".into();
         let parent = path.parent().unwrap();
         create_dir_all(parent).unwrap();
 
-        let db = SettingsDb::new(path);
+        let db = SettingsDb::new(path.clone());
 
         let targets = HashMap::from_iter([(
             PipelineTarget::Desktop,
@@ -228,6 +227,7 @@ mod tests {
 
         db.delete_profile(&expected.id)?;
 
+        std::fs::remove_file(path)?;
         Ok(())
     }
 }

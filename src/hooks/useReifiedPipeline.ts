@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { reifyPipeline } from "../backend";
-import { Pipeline, PipelineDefinition } from "../types/backend_api";
+import { Pipeline, PipelineDefinition, reifyPipeline } from "../backend";
 import { Loading } from "../util/loading";
 
 

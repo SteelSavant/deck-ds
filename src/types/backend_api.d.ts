@@ -5,7 +5,7 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-export type SelectionFor_PipelineAction =
+export type SelectionFor_ActionAnd_PipelineActionFor_Action =
   | {
       type: "Action";
       value: Action;
@@ -13,13 +13,13 @@ export type SelectionFor_PipelineAction =
   | {
       type: "OneOf";
       value: {
-        actions: PipelineAction[];
+        actions: PipelineActionFor_Action[];
         selection: string;
       };
     }
   | {
       type: "AllOf";
-      value: PipelineAction[];
+      value: PipelineActionFor_Action[];
     };
 export type Action =
   | {
@@ -87,8 +87,6 @@ export type ModeOptionFor_Resolution =
   | {
       AtMost: Resolution;
     };
-export type VirtualScreen = null;
-export type MultiWindow = null;
 export type CitraLayoutOption =
   | {
       type: "Default";
@@ -117,7 +115,7 @@ export type CitraLayoutOption =
  */
 export type MelonDSLayoutOption = "Natural" | "Vertical" | "Horizontal" | "Hybrid" | "Single";
 export type MelonDSSizingOption = "Even" | "EmphasizeTop" | "EmphasizeBottom" | "Auto";
-export type SourceFile =
+export type FileSource =
   | {
       type: "Flatpak";
       value: FlatpakSource;
@@ -138,7 +136,7 @@ export type FlatpakSource = "Cemu" | "Citra" | "MelonDS";
 export type AppImageSource = "Cemu";
 export type EmuDeckSource = "CemuProton";
 export type PipelineTarget = "Desktop" | "Gamemode";
-export type SelectionFor_String =
+export type SelectionFor_ActionAnd_String =
   | {
       type: "Action";
       value: Action;
@@ -173,18 +171,18 @@ export interface Api {
 }
 export interface AutoStartRequest {
   app: string;
-  pipeline: Pipeline;
+  pipeline: PipelineFor_Action;
   target: PipelineTarget;
 }
-export interface Pipeline {
+export interface PipelineFor_Action {
   description: string;
   name: string;
-  tags: string[];
   targets: {
-    [k: string]: SelectionFor_PipelineAction;
+    [k: string]: SelectionFor_ActionAnd_PipelineActionFor_Action;
   };
 }
 export interface DisplayRestoration {
+  id: string;
   teardown_deck_location: RelativeLocation;
   teardown_external_settings: TeardownExternalSettings;
 }
@@ -197,20 +195,39 @@ export interface Resolution {
   h: number;
   w: number;
 }
+export interface VirtualScreen {
+  id: string;
+}
+export interface MultiWindow {
+  id: string;
+}
 export interface CitraLayout {
+  id: string;
+  layout: CitraLayoutState;
+}
+export interface CitraLayoutState {
   fullscreen: boolean;
   layout_option: CitraLayoutOption;
   swap_screens: boolean;
 }
 export interface CemuLayout {
+  id: string;
+  layout: CemuLayoutState;
+}
+export interface CemuLayoutState {
   fullscreen: boolean;
   separate_gamepad_view: boolean;
 }
 export interface MelonDSLayout {
   book_mode: boolean;
+  id: string;
   layout_option: MelonDSLayoutOption;
   sizing_option: MelonDSSizingOption;
   swap_screens: boolean;
+}
+export interface SourceFile {
+  id: string;
+  source: FileSource;
 }
 export interface CustomFileOptions {
   /**
@@ -222,7 +239,7 @@ export interface CustomFileOptions {
    */
   valid_ext: string[];
 }
-export interface PipelineAction {
+export interface PipelineActionFor_Action {
   description?: string | null;
   /**
    * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
@@ -237,33 +254,29 @@ export interface PipelineAction {
   /**
    * The value of the pipeline action
    */
-  selection: SelectionFor_PipelineAction;
+  selection: SelectionFor_ActionAnd_PipelineActionFor_Action;
 }
 export interface CreateProfileRequest {
-  pipeline: PipelineDefinition;
+  pipeline: PipelineDefinitionFor_Action;
 }
-export interface PipelineDefinition {
-  actions: PipelineActionRegistrar;
+export interface PipelineDefinitionFor_Action {
+  actions: PipelineActionLookupFor_Action;
   description: string;
   name: string;
-  tags: string[];
   targets: {
-    [k: string]: SelectionFor_String;
+    [k: string]: SelectionFor_ActionAnd_String;
   };
 }
-export interface PipelineActionRegistrar {
+export interface PipelineActionLookupFor_Action {
   actions: {
-    [k: string]: PipelineActionDefinition;
+    [k: string]: PipelineActionSettingsFor_Action;
   };
 }
-export interface PipelineActionDefinition {
-  description?: string | null;
+export interface PipelineActionSettingsFor_Action {
   /**
    * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
    */
   enabled?: boolean | null;
-  id: string;
-  name: string;
   /**
    * Flags whether the selection is overridden by the setting from a different profile.
    */
@@ -271,7 +284,7 @@ export interface PipelineActionDefinition {
   /**
    * The value of the pipeline action
    */
-  selection: SelectionFor_String;
+  selection: SelectionFor_ActionAnd_String;
 }
 export interface CreateProfileResponse {
   profile_id: string;
@@ -283,28 +296,29 @@ export interface GetProfileRequest {
   profile_id: string;
 }
 export interface GetProfileResponse {
-  profile?: Profile | null;
+  profile?: CategoryProfile | null;
 }
-export interface Profile {
+export interface CategoryProfile {
   id: string;
-  pipeline: PipelineDefinition;
+  pipeline: PipelineDefinitionFor_Action;
+  tags: string[];
 }
 export interface GetProfilesResponse {
-  profiles: Profile[];
+  profiles: CategoryProfile[];
 }
 export interface GetTemplatesResponse {
   templates: Template[];
 }
 export interface Template {
   id: string;
-  pipeline: PipelineDefinition;
+  pipeline: PipelineDefinitionFor_Action;
 }
 export interface ReifyPipelineRequest {
-  pipeline: PipelineDefinition;
+  pipeline: PipelineDefinitionFor_Action;
 }
 export interface ReifyPipelineResponse {
-  pipeline: Pipeline;
+  pipeline: PipelineFor_Action;
 }
 export interface SetProfileRequest {
-  profile: Profile;
+  profile: CategoryProfile;
 }

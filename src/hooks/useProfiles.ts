@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
-import { CreateProfileRequest, Profile, Response, SetProfileRequest, createProfile, deleteProfile, getProfile, getProfiles, setProfile, } from "../backend";
+import { CategoryProfile, CreateProfileRequest, Response, SetProfileRequest, createProfile, deleteProfile, getProfile, getProfiles, setProfile, } from "../backend";
 import { CreateProfileResponse, DeleteProfileRequest } from "../types/backend_api";
 import { Loading } from "../util/loading";
 
 interface Profiles {
-    profiles: Loading<Array<Profile>>,
+    profiles: Loading<Array<CategoryProfile>>,
     createProfile: (request: CreateProfileRequest) => Response<CreateProfileResponse>,
     updateProfile: (request: SetProfileRequest) => Response<void>
     deleteProfile: (request: DeleteProfileRequest) => Response<void>
 }
 
 const useProfiles = (): Profiles => {
-    const [result, setResult] = useState<Loading<Array<Profile>>>(null);
+    const [result, setResult] = useState<Loading<Array<CategoryProfile>>>(null);
 
     useEffect(() => {
         let active = true;
@@ -59,7 +59,7 @@ const useProfiles = (): Profiles => {
         updateProfile: async (request) => {
             const res = await setProfile(request);
             if (res.isOk) {
-                setResult(result?.map((v: Profile[]) => v.map((e) => e.id == request.profile.id ? request.profile : e)))
+                setResult(result?.map((v: CategoryProfile[]) => v.map((e) => e.id == request.profile.id ? request.profile : e)))
             }
 
             return res;
@@ -67,7 +67,7 @@ const useProfiles = (): Profiles => {
         deleteProfile: async (request) => {
             const res = await deleteProfile(request);
             if (res.isOk) {
-                setResult(result?.map((v: Profile[]) => v.filter((e) => e.id !== request.profile)))
+                setResult(result?.map((v: CategoryProfile[]) => v.filter((e) => e.id !== request.profile)))
             }
 
             return res;

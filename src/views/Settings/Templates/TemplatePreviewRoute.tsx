@@ -1,11 +1,10 @@
 import { Field, Navigation, useParams } from "decky-frontend-lib";
 import { ReactElement, useState } from "react";
-import { createProfile } from "../../../backend";
+import { Pipeline, createProfile } from "../../../backend";
 import HandleLoading from "../../../components/HandleLoading";
 import { ModifiablePipelineDefinitionProvider, useModifiablePipelineDefinition } from "../../../context/modifiablePipelineContext";
 import { useServerApi } from "../../../context/serverApiContext";
 import useTemplate from "../../../hooks/useTemplate";
-import { Pipeline } from "../../../types/backend_api";
 import PipelineDisplay from "../../PipelineDisplay";
 import TemplateInfo from "./TemplateInfo";
 

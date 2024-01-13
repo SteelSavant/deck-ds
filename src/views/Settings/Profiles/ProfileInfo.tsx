@@ -1,18 +1,18 @@
 import { DialogButton, Field, Focusable, showModal } from "decky-frontend-lib";
 import { ReactElement } from "react";
 import { FaPlus, FaX } from "react-icons/fa6";
+import { CategoryProfile } from "../../../backend";
 import { useModifiablePipelineDefinition } from "../../../context/modifiablePipelineContext";
-import { Pipeline } from "../../../types/backend_api";
 import AddProfileTagModal from "./modals/AddProfileTagModal";
 
-export default function ProfileInfo(pipeline: Pipeline): ReactElement {
+export default function ProfileInfo(profile: CategoryProfile): ReactElement {
     const { dispatch } = useModifiablePipelineDefinition();
 
     function removeTag(tag: string) {
         dispatch({
             type: 'updatePipelineInfo',
             info: {
-                tags: pipeline.tags.filter((t) => t !== tag),
+                tags: profile.tags.filter((t) => t !== tag),
                 description: undefined,
                 name: undefined
             }
@@ -22,7 +22,7 @@ export default function ProfileInfo(pipeline: Pipeline): ReactElement {
 
     function addTag() {
         showModal(<AddProfileTagModal onSave={(tag) => {
-            const unique = new Set(pipeline.tags);
+            const unique = new Set(profile.tags);
             unique.delete(tag);
             dispatch({
                 type: 'updatePipelineInfo',
@@ -39,7 +39,7 @@ export default function ProfileInfo(pipeline: Pipeline): ReactElement {
     // TODO::dependencies section
     return (
         <div>
-            <Field focusable={false} description={pipeline.description} />
+            <Field focusable={false} description={profile.pipeline.description} />
             <Field
                 focusable={false}
                 label='Collections'
@@ -53,7 +53,7 @@ export default function ProfileInfo(pipeline: Pipeline): ReactElement {
             </Field>
             <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
                 {
-                    pipeline.tags.map((t) =>
+                    profile.tags.map((t) =>
                         <Focusable>
                             <ProfileTag tag={t} removeTag={removeTag} />
                         </Focusable>

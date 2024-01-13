@@ -1,10 +1,9 @@
 import { Focusable, Tabs } from "decky-frontend-lib";
 import { ReactElement, useEffect, useRef, useState } from "react";
-import { ActionSelection } from "../../backend";
+import { ActionSelection, Pipeline } from "../../backend";
 import HandleLoading from "../../components/HandleLoading";
 import { useModifiablePipelineDefinition } from "../../context/modifiablePipelineContext";
 import useReifiedPipeline from "../../hooks/useReifiedPipeline";
-import { Pipeline } from "../../types/backend_api";
 import PipelineHeader from "./PipelineHeader";
 import PipelineTargetDisplay from "./PipelineTargetDisplay";
 

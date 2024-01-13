@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import * as React from 'react';
-import { Action, PipelineActionDefinition, PipelineDefinition } from "../types/backend_api";
+import { Action, PipelineActionSettings, PipelineDefinition } from '../backend';
 
 type State = {
     definition: PipelineDefinition,
@@ -54,11 +54,10 @@ function modifiablePipelineDefinitionReducerBuilder(onUpdate?: ExternalPipelineU
     function modifiablePipelineDefinitionReducer(state: State, action: StateAction): State {
         console.log('in pipeline reducer');
 
-        const newDefinition = (() => {
+        const newDefinition: PipelineDefinition = (() => {
             if (action.type === 'updatePipelineInfo') {
                 const newDefinition: PipelineDefinition = {
                     ...state.definition,
-
                 };
 
                 const info = action.info;
@@ -71,17 +70,25 @@ function modifiablePipelineDefinitionReducerBuilder(onUpdate?: ExternalPipelineU
                     newDefinition.name = info.name
                 }
 
-                if (info.tags) {
-                    newDefinition.tags = info.tags
-                }
 
                 return newDefinition;
             } else {
-                const cloneFn = (value: any): any => {
-                    if (value && value.id && value.id === action.id) {
-                        console.log('found action with id', action.id, ": applying", action);
+                let target = state.definition.targets["thing"];
+                switch (target.type) {
+                    case 'Action': target.value.type;
+                        break;
+                    case 'AllOf': target.value[0];
+                        break;
+                    case 'OneOf': target.value.actions
+                }
+
+                let updatedActions: { [k: string]: PipelineActionSettings } = {};
+                let currentActions = state.definition.actions.actions;
+                for (let key in currentActions) {
+                    if (key === action.id) {
+                        let cloned = _.cloneDeep(currentActions[key]);
                         const type = action.type;
-                        let cloned = _.cloneDeep(value) as PipelineActionDefinition; // TODO::consider proper type narrowing
+
                         switch (type) {
                             case 'updateEnabled':
                                 cloned.enabled = action.isEnabled;
@@ -114,12 +121,21 @@ function modifiablePipelineDefinitionReducerBuilder(onUpdate?: ExternalPipelineU
                                 const typecheck: never = type;
                                 throw typecheck ?? 'action update failed to typecheck';
                         }
-
-                        return cloned;
+                    } else {
+                        updatedActions[key] = currentActions[key];
                     }
+
                 }
 
-                return _.cloneDeepWith(state.definition, cloneFn) as PipelineDefinition;
+                return {
+                    ...state.definition,
+                    definition: {
+                        ...state.definition,
+                        actions: {
+                            actions: updatedActions
+                        }
+                    },
+                }
             }
         })();
 

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Profile, getProfile, } from "../backend";
+import { CategoryProfile, getProfile, } from "../backend";
 import { Loading } from "../util/loading";
 
-const useProfile = (profileId: string): Loading<Profile | null | undefined> => {
-    const [result, setResult] = useState<Loading<Profile | null | undefined>>(null);
+const useProfile = (profileId: string): Loading<CategoryProfile | null | undefined> => {
+    const [result, setResult] = useState<Loading<CategoryProfile | null | undefined>>(null);
 
     useEffect(() => {
         let active = true;

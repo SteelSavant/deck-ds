@@ -1,10 +1,9 @@
 import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
 import { Fragment, ReactElement } from "react";
 import { FaLink } from "react-icons/fa";
-import { Action, ActionOneOf, ActionSelection, } from "../../backend";
+import { Action, ActionOneOf, ActionSelection, PipelineAction, } from "../../backend";
 import EditAction from "../../components/EditAction";
 import { useModifiablePipelineDefinition } from "../../context/modifiablePipelineContext";
-import { PipelineAction } from "../../types/backend_api";
 
 export default function PipelineTargetDisplay({ root, description }: {
     root: ActionSelection,

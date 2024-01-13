@@ -256,4 +256,82 @@ impl DbCategoryProfile {
 
         Ok(profile)
     }
+
+    pub fn remove_all(self, rw: &RwTransaction) -> Result<()> {
+        let pipeline = &self.pipeline;
+
+        impl DbAction {
+            fn remove(&self, rw: &RwTransaction) -> Result<()> {
+                let id = self.get_id();
+
+                let transformed = match *self {
+                    DbAction::DisplayRestoration(id) => {
+                        let action = rw.get().primary::<DbDisplayRestoration>(id)?;
+                        action.map(|a| rw.remove(a))
+                    }
+                    DbAction::VirtualScreen(id) => {
+                        let action = rw.get().primary::<DbVirtualScreen>(id)?;
+                        action.map(|a| rw.remove(a))
+                    }
+                    DbAction::MultiWindow(id) => {
+                        let action = rw.get().primary::<DbMultiWindow>(id)?;
+                        action.map(|a| rw.remove(a))
+                    }
+                    DbAction::CitraLayout(id) => {
+                        let action = rw.get().primary::<DbCitraLayout>(id)?;
+                        action.map(|a| rw.remove(a))
+                    }
+                    DbAction::CemuLayout(id) => {
+                        let action = rw.get().primary::<DbCemuLayout>(id)?;
+                        action.map(|a| rw.remove(a))
+                    }
+                    DbAction::MelonDSLayout(id) => {
+                        let action = rw.get().primary::<DbMelonDSLayout>(id)?;
+                        action.map(|a| rw.remove(a))
+                    }
+                    DbAction::SourceFile(id) => {
+                        let action = rw.get().primary::<DbSourceFile>(id)?;
+                        action.map(|a| rw.remove(a))
+                    }
+                }
+                .transpose()?;
+
+                transformed.with_context(|| format!("failed to recover action {id:?}"))
+            }
+        }
+
+        impl DbSelection<PipelineActionId> {
+            fn remove(&self, rw: &RwTransaction) -> Result<()> {
+                let selection = match self {
+                    DbSelection::Action(action) => action.remove(rw)?,
+                    DbSelection::OneOf { .. } => (),
+                    DbSelection::AllOf(_) => (),
+                };
+
+                Ok(selection)
+            }
+        }
+
+        pipeline
+            .targets
+            .iter()
+            .map(|(k, v)| -> Result<_> {
+                let def = v.remove(rw)?;
+                Ok((*k, def))
+            })
+            .collect::<Result<HashMap<_, _>>>()?;
+
+        impl DbPipelineActionLookup {
+            fn remove(&self, rw: &RwTransaction) -> Result<()> {
+                self.actions
+                    .iter()
+                    .map(|(_, v)| v.selection.remove(rw))
+                    .collect::<Result<Vec<_>>>()?;
+
+                Ok(())
+            }
+        }
+
+        Ok(pipeline.actions.remove(rw)?)
+    }
 }

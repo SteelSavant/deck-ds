@@ -1,11 +1,10 @@
 import { ConfirmModal, DialogButton, Field, Focusable, Navigation, showModal } from "decky-frontend-lib";
 import { ReactElement } from "react";
 import { FaGear, FaTrash } from "react-icons/fa6";
-import { Profile, Response, } from "../../../backend";
+import { CategoryProfile, DeleteProfileRequest, Response, } from "../../../backend";
 import { useServerApi } from "../../../context/serverApiContext";
-import { DeleteProfileRequest } from "../../../types/backend_api";
 
-export default function ProfileMenuItem({ profile, deleteProfile }: { profile: Profile, deleteProfile: (request: DeleteProfileRequest) => Response<void> }): ReactElement {
+export default function ProfileMenuItem({ profile, deleteProfile }: { profile: CategoryProfile, deleteProfile: (request: DeleteProfileRequest) => Response<void> }): ReactElement {
     const serverApi = useServerApi();
 
     function viewProfile() {

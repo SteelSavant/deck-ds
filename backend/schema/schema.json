@@ -224,14 +224,53 @@
           "type": "string"
         },
         "pipeline": {
-          "$ref": "#/definitions/Pipeline"
+          "$ref": "#/definitions/Pipeline_for_Action"
         },
         "target": {
           "$ref": "#/definitions/PipelineTarget"
         }
       }
     },
+    "CategoryProfile": {
+      "type": "object",
+      "required": [
+        "id",
+        "pipeline",
+        "tags"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "pipeline": {
+          "$ref": "#/definitions/PipelineDefinition_for_Action"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "CemuLayout": {
+      "type": "object",
+      "required": [
+        "id",
+        "layout"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "layout": {
+          "$ref": "#/definitions/CemuLayoutState"
+        }
+      }
+    },
+    "CemuLayoutState": {
       "type": "object",
       "required": [
         "fullscreen",
@@ -249,19 +288,16 @@
     "CitraLayout": {
       "type": "object",
       "required": [
-        "fullscreen",
-        "layout_option",
-        "swap_screens"
+        "id",
+        "layout"
       ],
       "properties": {
-        "fullscreen": {
-          "type": "boolean"
+        "id": {
+          "type": "string",
+          "format": "uuid"
         },
-        "layout_option": {
-          "$ref": "#/definitions/CitraLayoutOption"
-        },
-        "swap_screens": {
-          "type": "boolean"
+        "layout": {
+          "$ref": "#/definitions/CitraLayoutState"
         }
       }
     },
@@ -373,6 +409,25 @@
         }
       ]
     },
+    "CitraLayoutState": {
+      "type": "object",
+      "required": [
+        "fullscreen",
+        "layout_option",
+        "swap_screens"
+      ],
+      "properties": {
+        "fullscreen": {
+          "type": "boolean"
+        },
+        "layout_option": {
+          "$ref": "#/definitions/CitraLayoutOption"
+        },
+        "swap_screens": {
+          "type": "boolean"
+        }
+      }
+    },
     "CreateProfileRequest": {
       "type": "object",
       "required": [
@@ -380,7 +435,7 @@
       ],
       "properties": {
         "pipeline": {
-          "$ref": "#/definitions/PipelineDefinition"
+          "$ref": "#/definitions/PipelineDefinition_for_Action"
         }
       }
     },
@@ -433,10 +488,15 @@
     "DisplayRestoration": {
       "type": "object",
       "required": [
+        "id",
         "teardown_deck_location",
         "teardown_external_settings"
       ],
       "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
         "teardown_deck_location": {
           "$ref": "#/definitions/RelativeLocation"
         },
@@ -449,6 +509,82 @@
       "type": "string",
       "enum": [
         "CemuProton"
+      ]
+    },
+    "FileSource": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Flatpak"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/FlatpakSource"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "AppImage"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/AppImageSource"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "EmuDeck"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/EmuDeckSource"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Custom"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/CustomFileOptions"
+            }
+          }
+        }
       ]
     },
     "FlatpakSource": {
@@ -477,7 +613,7 @@
         "profile": {
           "anyOf": [
             {
-              "$ref": "#/definitions/Profile"
+              "$ref": "#/definitions/CategoryProfile"
             },
             {
               "type": "null"
@@ -495,7 +631,7 @@
         "profiles": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/Profile"
+            "$ref": "#/definitions/CategoryProfile"
           }
         }
       }
@@ -518,6 +654,7 @@
       "type": "object",
       "required": [
         "book_mode",
+        "id",
         "layout_option",
         "sizing_option",
         "swap_screens"
@@ -525,6 +662,10 @@
       "properties": {
         "book_mode": {
           "type": "boolean"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
         },
         "layout_option": {
           "$ref": "#/definitions/MelonDSLayoutOption"
@@ -660,128 +801,18 @@
       }
     },
     "MultiWindow": {
-      "type": "null"
-    },
-    "Pipeline": {
       "type": "object",
       "required": [
-        "description",
-        "name",
-        "tags",
-        "targets"
+        "id"
       ],
       "properties": {
-        "description": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "tags": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "targets": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/Selection_for_PipelineAction"
-          }
-        }
-      }
-    },
-    "PipelineAction": {
-      "type": "object",
-      "required": [
-        "id",
-        "name",
-        "selection"
-      ],
-      "properties": {
-        "description": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "enabled": {
-          "description": "Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.",
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
         "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "profile_override": {
-          "description": "Flags whether the selection is overridden by the setting from a different profile.",
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": "string",
           "format": "uuid"
-        },
-        "selection": {
-          "description": "The value of the pipeline action",
-          "allOf": [
-            {
-              "$ref": "#/definitions/Selection_for_PipelineAction"
-            }
-          ]
         }
       }
     },
-    "PipelineActionDefinition": {
-      "type": "object",
-      "required": [
-        "id",
-        "name",
-        "selection"
-      ],
-      "properties": {
-        "description": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "enabled": {
-          "description": "Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.",
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "profile_override": {
-          "description": "Flags whether the selection is overridden by the setting from a different profile.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "format": "uuid"
-        },
-        "selection": {
-          "description": "The value of the pipeline action",
-          "allOf": [
-            {
-              "$ref": "#/definitions/Selection_for_String"
-            }
-          ]
-        }
-      }
-    },
-    "PipelineActionRegistrar": {
+    "PipelineActionLookup_for_Action": {
       "type": "object",
       "required": [
         "actions"
@@ -790,23 +821,98 @@
         "actions": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/PipelineActionDefinition"
+            "$ref": "#/definitions/PipelineActionSettings_for_Action"
           }
         }
       }
     },
-    "PipelineDefinition": {
+    "PipelineActionSettings_for_Action": {
+      "type": "object",
+      "required": [
+        "selection"
+      ],
+      "properties": {
+        "enabled": {
+          "description": "Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "profile_override": {
+          "description": "Flags whether the selection is overridden by the setting from a different profile.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "selection": {
+          "description": "The value of the pipeline action",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Selection_for_Action_and_String"
+            }
+          ]
+        }
+      }
+    },
+    "PipelineAction_for_Action": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "selection"
+      ],
+      "properties": {
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "enabled": {
+          "description": "Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "profile_override": {
+          "description": "Flags whether the selection is overridden by the setting from a different profile.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "selection": {
+          "description": "The value of the pipeline action",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Selection_for_Action_and_PipelineAction_for_Action"
+            }
+          ]
+        }
+      }
+    },
+    "PipelineDefinition_for_Action": {
       "type": "object",
       "required": [
         "actions",
         "description",
         "name",
-        "tags",
         "targets"
       ],
       "properties": {
         "actions": {
-          "$ref": "#/definitions/PipelineActionRegistrar"
+          "$ref": "#/definitions/PipelineActionLookup_for_Action"
         },
         "description": {
           "type": "string"
@@ -814,16 +920,10 @@
         "name": {
           "type": "string"
         },
-        "tags": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
         "targets": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/Selection_for_String"
+            "$ref": "#/definitions/Selection_for_Action_and_String"
           }
         }
       }
@@ -835,19 +935,25 @@
         "Gamemode"
       ]
     },
-    "Profile": {
+    "Pipeline_for_Action": {
       "type": "object",
       "required": [
-        "id",
-        "pipeline"
+        "description",
+        "name",
+        "targets"
       ],
       "properties": {
-        "id": {
-          "type": "string",
-          "format": "uuid"
+        "description": {
+          "type": "string"
         },
-        "pipeline": {
-          "$ref": "#/definitions/PipelineDefinition"
+        "name": {
+          "type": "string"
+        },
+        "targets": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Selection_for_Action_and_PipelineAction_for_Action"
+          }
         }
       }
     },
@@ -858,7 +964,7 @@
       ],
       "properties": {
         "pipeline": {
-          "$ref": "#/definitions/PipelineDefinition"
+          "$ref": "#/definitions/PipelineDefinition_for_Action"
         }
       }
     },
@@ -869,7 +975,7 @@
       ],
       "properties": {
         "pipeline": {
-          "$ref": "#/definitions/Pipeline"
+          "$ref": "#/definitions/Pipeline_for_Action"
         }
       }
     },
@@ -902,7 +1008,7 @@
         }
       }
     },
-    "Selection_for_PipelineAction": {
+    "Selection_for_Action_and_PipelineAction_for_Action": {
       "oneOf": [
         {
           "type": "object",
@@ -945,7 +1051,7 @@
                 "actions": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/definitions/PipelineAction"
+                    "$ref": "#/definitions/PipelineAction_for_Action"
                   }
                 },
                 "selection": {
@@ -971,14 +1077,14 @@
             "value": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/PipelineAction"
+                "$ref": "#/definitions/PipelineAction_for_Action"
               }
             }
           }
         }
       ]
     },
-    "Selection_for_String": {
+    "Selection_for_Action_and_String": {
       "oneOf": [
         {
           "type": "object",
@@ -1061,85 +1167,25 @@
       ],
       "properties": {
         "profile": {
-          "$ref": "#/definitions/Profile"
+          "$ref": "#/definitions/CategoryProfile"
         }
       }
     },
     "SourceFile": {
-      "oneOf": [
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Flatpak"
-              ]
-            },
-            "value": {
-              "$ref": "#/definitions/FlatpakSource"
-            }
-          }
+      "type": "object",
+      "required": [
+        "id",
+        "source"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
         },
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "AppImage"
-              ]
-            },
-            "value": {
-              "$ref": "#/definitions/AppImageSource"
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "EmuDeck"
-              ]
-            },
-            "value": {
-              "$ref": "#/definitions/EmuDeckSource"
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Custom"
-              ]
-            },
-            "value": {
-              "$ref": "#/definitions/CustomFileOptions"
-            }
-          }
+        "source": {
+          "$ref": "#/definitions/FileSource"
         }
-      ]
+      }
     },
     "TeardownExternalSettings": {
       "oneOf": [
@@ -1206,12 +1252,21 @@
           "format": "uuid"
         },
         "pipeline": {
-          "$ref": "#/definitions/PipelineDefinition"
+          "$ref": "#/definitions/PipelineDefinition_for_Action"
         }
       }
     },
     "VirtualScreen": {
-      "type": "null"
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
     }
   }
 }

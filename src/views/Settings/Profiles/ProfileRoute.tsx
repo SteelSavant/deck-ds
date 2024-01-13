@@ -1,12 +1,11 @@
 import { DialogButton, Field, showModal, useParams } from "decky-frontend-lib";
 import { ReactElement } from "react";
 import { FaEdit } from "react-icons/fa";
-import { setProfile } from "../../../backend";
+import { Pipeline, setProfile } from "../../../backend";
 import HandleLoading from "../../../components/HandleLoading";
 import { ModifiablePipelineDefinitionProvider, useModifiablePipelineDefinition } from "../../../context/modifiablePipelineContext";
 import { useServerApi } from "../../../context/serverApiContext";
 import useProfile from "../../../hooks/useProfile";
-import { Pipeline } from "../../../types/backend_api";
 import PipelineDisplay from "../../PipelineDisplay";
 import ProfileInfo from "./ProfileInfo";
 import EditProfileNameModal from "./modals/EditPipelineNameModal";
@@ -30,6 +29,7 @@ export default function ProfilePreviewRoute(): ReactElement {
                             const res = await setProfile({
                                 profile: {
                                     id: profileid,
+                                    tags: profile.tags,
                                     pipeline: pipeline
                                 }
                             });
