@@ -1,4 +1,4 @@
-import { AutoStartRequest, CitraLayoutOption, CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineActionFor_Action, PipelineActionSettingsFor_Action, PipelineDefinitionFor_Action, PipelineFor_Action, ReifyPipelineRequest, ReifyPipelineResponse, SelectionFor_ActionAnd_PipelineActionFor_Action, SelectionFor_ActionAnd_String, SetProfileRequest } from "./types/backend_api";
+import { AutoStartRequest, CategoryProfile, CitraLayoutOption, CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineActionFor_Action, PipelineActionSettingsFor_Action, PipelineDefinitionFor_Action, PipelineFor_Action, ReifyPipelineRequest, ReifyPipelineResponse, SelectionFor_ActionAnd_PipelineActionFor_Action, SelectionFor_ActionAnd_String, SetProfileRequest, Template } from "./types/backend_api";
 import { call_backend, init_embedded, init_usdpl, target_usdpl } from "./usdpl_front";
 import { Err, Ok, Result } from "./util/result";
 
@@ -28,10 +28,10 @@ export type ActionSelection = SelectionFor_ActionAnd_PipelineActionFor_Action;
 export type DefinitionOneOf = { selection: string, actions: string[] }
 export type DefinitionSelection = SelectionFor_ActionAnd_String;
 
-export interface HasPipeline {
-    id: string;
-    pipeline: PipelineDefinitionFor_Action;
-    tags?: string[]
+export type PipelineContainer = CategoryProfile | Template;
+
+export function isCategoryProfile(container: PipelineContainer): container is CategoryProfile {
+    return (container as any).tags !== undefined;
 }
 
 

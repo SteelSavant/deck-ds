@@ -1,15 +1,14 @@
 import _ from 'lodash';
 import * as React from 'react';
-import { Action, PipelineActionSettings, PipelineDefinition } from '../backend';
+import { Action, PipelineActionSettings, PipelineContainer, PipelineDefinition } from '../backend';
 
 type State = {
-    definition: PipelineDefinition,
+    container: PipelineContainer,
 }
 
 interface PipelineInfo {
     description: string | undefined;
     name: string | undefined;
-    tags: string[] | undefined;
 }
 
 type StateAction = {
@@ -30,34 +29,38 @@ type StateAction = {
     id: string,
     action: Action
 } | {
-    type: 'updatePipelineInfo'
+    type: 'updatePipelineInfo',
     info: PipelineInfo,
+} | {
+    type: 'updateTags',
+    tags: string[]
 };
 
 type Dispatch = (action: StateAction) => void
 
-type ExternalPipelineUpdate = (pipelineSettings: PipelineDefinition) => void;
+type ExternalPipelineUpdate = (pipelineSettings: PipelineContainer) => void;
 
 type ModifiablePipelineContextProviderProps = {
     children: React.ReactNode,
-    initialDefinition: PipelineDefinition,
+    initialContainer: PipelineContainer,
     onUpdate?: ExternalPipelineUpdate
 }
 
-const ModifiablePipelineDefinitionStateContext = React.createContext<
+const ModifiablePipelineContainerStateContext = React.createContext<
     { state: State; dispatch: Dispatch } | undefined
 >(undefined)
 
 
 
-function modifiablePipelineDefinitionReducerBuilder(onUpdate?: ExternalPipelineUpdate): (state: State, action: StateAction) => State {
-    function modifiablePipelineDefinitionReducer(state: State, action: StateAction): State {
-        console.log('in pipeline reducer');
+function modifiablePipelineContainerReducerBuilder(onUpdate?: ExternalPipelineUpdate): (state: State, action: StateAction) => State {
+    function modifiablePipelineContainerReducer(state: State, action: StateAction): State {
+        console.log('in pipeline container reducer');
 
-        const newDefinition: PipelineDefinition = (() => {
+        const newContainer: PipelineContainer = (() => {
+            const pipeline = state.container.pipeline;
             if (action.type === 'updatePipelineInfo') {
                 const newDefinition: PipelineDefinition = {
-                    ...state.definition,
+                    ...pipeline,
                 };
 
                 const info = action.info;
@@ -71,21 +74,23 @@ function modifiablePipelineDefinitionReducerBuilder(onUpdate?: ExternalPipelineU
                 }
 
 
-                return newDefinition;
-            } else {
-                let target = state.definition.targets["thing"];
-                switch (target.type) {
-                    case 'Action': target.value.type;
-                        break;
-                    case 'AllOf': target.value[0];
-                        break;
-                    case 'OneOf': target.value.actions
+                return {
+                    ...state.container,
+                    pipeline: newDefinition
+                };
+            } else if (action.type === 'updateTags') {
+                return {
+                    ...state.container,
+                    tags: action.tags
                 }
-
+            } else {
                 let updatedActions: { [k: string]: PipelineActionSettings } = {};
-                let currentActions = state.definition.actions.actions;
+                let currentActions = pipeline.actions.actions;
                 for (let key in currentActions) {
+                    console.log('checking key', key, 'against', action.id);
                     if (key === action.id) {
+                        console.log('updating action', action.id)
+
                         let cloned = _.cloneDeep(currentActions[key]);
                         const type = action.type;
 
@@ -126,53 +131,53 @@ function modifiablePipelineDefinitionReducerBuilder(onUpdate?: ExternalPipelineU
                     }
 
                 }
-
-                return {
-                    ...state.definition,
-                    definition: {
-                        ...state.definition,
+                let result: PipelineContainer = {
+                    ...state.container,
+                    pipeline: {
+                        ...state.container.pipeline,
                         actions: {
                             actions: updatedActions
                         }
                     },
-                }
+                };
+                return result;
             }
         })();
 
 
-        console.log('new definition from reducer:', newDefinition);
+        console.log('new definition from reducer:', newContainer);
 
         if (onUpdate) {
-            onUpdate(newDefinition); // perform arbitrary action, like saving, when the definition changes
+            onUpdate(newContainer); // perform arbitrary action, like saving, when the definition changes
         }
 
         return {
-            definition: newDefinition
+            container: newContainer
         }
     }
 
-    return modifiablePipelineDefinitionReducer;
+    return modifiablePipelineContainerReducer;
 }
 
-function ModifiablePipelineDefinitionProvider({ children, initialDefinition, onUpdate, }: ModifiablePipelineContextProviderProps) {
-    const [state, dispatch] = React.useReducer(modifiablePipelineDefinitionReducerBuilder(onUpdate), {
-        definition: initialDefinition,
+function ModifiablePipelineContainerProvider({ children, initialContainer, onUpdate, }: ModifiablePipelineContextProviderProps) {
+    const [state, dispatch] = React.useReducer(modifiablePipelineContainerReducerBuilder(onUpdate), {
+        container: initialContainer,
     });
 
     const value = { state, dispatch };
     return (
-        <ModifiablePipelineDefinitionStateContext.Provider value={value}>
+        <ModifiablePipelineContainerStateContext.Provider value={value}>
             {children}
-        </ModifiablePipelineDefinitionStateContext.Provider>
+        </ModifiablePipelineContainerStateContext.Provider>
     );
 }
 
-function useModifiablePipelineDefinition() {
-    const context = React.useContext(ModifiablePipelineDefinitionStateContext)
+function useModifiablePipelineContainer() {
+    const context = React.useContext(ModifiablePipelineContainerStateContext)
     if (context === undefined) {
         throw new Error('useSettings must be used within a SettingsProvider')
     }
     return context
 }
 
-export { ModifiablePipelineDefinitionProvider, useModifiablePipelineDefinition };
+export { ModifiablePipelineContainerProvider, useModifiablePipelineContainer };

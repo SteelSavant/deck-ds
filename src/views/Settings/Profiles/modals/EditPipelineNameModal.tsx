@@ -1,8 +1,8 @@
 import { ConfirmModal, TextField } from "decky-frontend-lib";
 import { ReactElement, useState } from "react";
-import { Pipeline } from "../../../../backend";
+import { PipelineDefinition } from "../../../../backend";
 
-export default function EditProfileNameModal({ pipeline, onSave, closeModal }: { pipeline: Pipeline, onSave: (name: string) => void, closeModal?: () => void }): ReactElement {
+export default function EditProfileNameModal({ pipeline, onSave, closeModal }: { pipeline: PipelineDefinition, onSave: (name: string) => void, closeModal?: () => void }): ReactElement {
     const [name, setName] = useState(pipeline.name);
 
 

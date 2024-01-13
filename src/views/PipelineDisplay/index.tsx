@@ -1,15 +1,15 @@
 import { Focusable, Tabs } from "decky-frontend-lib";
 import { ReactElement, useEffect, useRef, useState } from "react";
-import { ActionSelection, Pipeline } from "../../backend";
+import { ActionSelection, PipelineContainer } from "../../backend";
 import HandleLoading from "../../components/HandleLoading";
-import { useModifiablePipelineDefinition } from "../../context/modifiablePipelineContext";
+import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
 import useReifiedPipeline from "../../hooks/useReifiedPipeline";
 import PipelineHeader from "./PipelineHeader";
 import PipelineTargetDisplay from "./PipelineTargetDisplay";
 
 interface PipelineDisplayProps {
-    header: (pipeline: Pipeline) => ReactElement,
-    info: (pipeline: Pipeline) => ReactElement,
+    header: (container: PipelineContainer) => ReactElement,
+    info: (container: PipelineContainer) => ReactElement,
     secondaryAction?: () => void
     secondaryActionDescription?: string
 }
@@ -17,9 +17,9 @@ interface PipelineDisplayProps {
 export default function PipelineDisplay({ header, info, secondaryAction, secondaryActionDescription }: PipelineDisplayProps): ReactElement {
     const [currentTabRoute, setCurrentTabRoute] = useState<string>("info")
 
-    const { state } = useModifiablePipelineDefinition();
-    console.log('pipeline display updated with state', state.definition);
-    const result = useReifiedPipeline(state.definition);
+    const { state } = useModifiablePipelineContainer();
+    console.log('pipeline display updated with state', state.container);
+    const result = useReifiedPipeline(state.container.pipeline);
 
     let container = useRef<HTMLDivElement>(null);
     let [headerHeight, setHeaderHeight] = useState<number | null>(null);
@@ -67,7 +67,7 @@ export default function PipelineDisplay({ header, info, secondaryAction, seconda
                     const tabs = [
                         {
                             title: 'Info',
-                            content: info(pipeline),
+                            content: info(state.container),
                             id: 'info',
                         }
                         ,
@@ -92,7 +92,7 @@ export default function PipelineDisplay({ header, info, secondaryAction, seconda
                             display: 'flex',
                             flexDirection: 'column'
                         }}>
-                            <PipelineHeader containerRef={container} children={header(pipeline)} />
+                            <PipelineHeader containerRef={container} children={header(state.container)} />
 
                             <div style={{
                                 // marginTop: "160px",

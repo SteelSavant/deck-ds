@@ -1,21 +1,23 @@
 import { DialogButton, Field, Focusable, showModal } from "decky-frontend-lib";
 import { ReactElement } from "react";
 import { FaPlus, FaX } from "react-icons/fa6";
-import { CategoryProfile } from "../../../backend";
-import { useModifiablePipelineDefinition } from "../../../context/modifiablePipelineContext";
+import { CategoryProfile, PipelineContainer, isCategoryProfile } from "../../../backend";
+import { useModifiablePipelineContainer } from "../../../context/modifiablePipelineContext";
 import AddProfileTagModal from "./modals/AddProfileTagModal";
 
-export default function ProfileInfo(profile: CategoryProfile): ReactElement {
-    const { dispatch } = useModifiablePipelineDefinition();
+export default function ProfileInfo(container: PipelineContainer): ReactElement {
+    if (!isCategoryProfile(container)) {
+        throw 'PipelineContainer should be CategoryProfile';
+    }
+
+    const profile: CategoryProfile = container;
+
+    const { dispatch } = useModifiablePipelineContainer();
 
     function removeTag(tag: string) {
         dispatch({
-            type: 'updatePipelineInfo',
-            info: {
-                tags: profile.tags.filter((t) => t !== tag),
-                description: undefined,
-                name: undefined
-            }
+            type: 'updateTags',
+            tags: profile.tags.filter((t) => t !== tag),
         })
     }
 
@@ -25,12 +27,8 @@ export default function ProfileInfo(profile: CategoryProfile): ReactElement {
             const unique = new Set(profile.tags);
             unique.delete(tag);
             dispatch({
-                type: 'updatePipelineInfo',
-                info: {
-                    tags: [...unique, tag], // set unique tags; no duplicates. If tag exists in 
-                    description: undefined,
-                    name: undefined
-                }
+                type: 'updateTags',
+                tags: [...unique, tag], // set unique tags; no duplicates. If tag exists in 
             })
         }} />)
     }
