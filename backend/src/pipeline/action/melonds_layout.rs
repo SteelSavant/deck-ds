@@ -4,7 +4,7 @@ use crate::pipeline::executor::PipelineContext;
 
 use self::internal::RawMelonDSState;
 
-use super::{source_file::SourceFile, ActionImpl};
+use super::{source_file::SourceFile, ActionId, ActionImpl};
 use anyhow::{anyhow, Context, Result};
 use configparser::ini::Ini;
 use schemars::JsonSchema;
@@ -42,6 +42,8 @@ impl MelonDSSizingOption {
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct MelonDSLayout {
+    pub id: ActionId,
+
     pub layout_option: MelonDSLayoutOption,
     pub sizing_option: MelonDSSizingOption,
     pub book_mode: bool, // if in book mode, set rotation to 270,
@@ -212,6 +214,10 @@ impl ActionImpl for MelonDSLayout {
             None => Ok(()),
         }
     }
+
+    fn get_id(&self) -> ActionId {
+        self.id
+    }
 }
 
 #[cfg(test)]
@@ -250,6 +256,7 @@ mod tests {
         assert_eq!(source, actual_str);
 
         let expected: internal::RawMelonDSState = MelonDSLayout {
+            id: ActionId::new(), // ignored in conversion to raw state
             layout_option: MelonDSLayoutOption::Hybrid,
             sizing_option: MelonDSSizingOption::Even,
             book_mode: true,

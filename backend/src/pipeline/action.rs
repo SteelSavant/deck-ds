@@ -40,6 +40,8 @@ pub trait ActionImpl: DeserializeOwned + Serialize {
         // default to no dependencies
         vec![]
     }
+
+    fn get_id(&self) -> ActionId;
 }
 
 #[enum_delegate::register]
@@ -47,6 +49,7 @@ pub trait ErasedPipelineAction {
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()>;
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()>;
     fn get_dependencies(&self, ctx: &mut PipelineContext) -> Vec<Dependency>;
+    fn get_id(&self) -> ActionId;
 }
 
 impl<T> ErasedPipelineAction for T
@@ -72,26 +75,25 @@ where
     fn get_dependencies(&self, ctx: &mut PipelineContext) -> Vec<Dependency> {
         self.get_dependencies(ctx)
     }
+
+    fn get_id(&self) -> ActionId {
+        self.get_id()
+    }
 }
 
 newtype_uuid!(ActionId);
-pub type Action = v1::Action;
 
-pub mod v1 {
-    use super::*;
-
-    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-    #[enum_delegate::implement(ErasedPipelineAction)]
-    #[serde(tag = "type", content = "value")]
-    pub enum Action {
-        DisplayRestoration(DisplayRestoration),
-        VirtualScreen(VirtualScreen),
-        MultiWindow(MultiWindow),
-        CitraLayout(CitraLayout),
-        CemuLayout(CemuLayout),
-        MelonDSLayout(MelonDSLayout),
-        SourceFile(SourceFile),
-    }
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[enum_delegate::implement(ErasedPipelineAction)]
+#[serde(tag = "type", content = "value")]
+pub enum Action {
+    DisplayRestoration(DisplayRestoration),
+    VirtualScreen(VirtualScreen),
+    MultiWindow(MultiWindow),
+    CitraLayout(CitraLayout),
+    CemuLayout(CemuLayout),
+    MelonDSLayout(MelonDSLayout),
+    SourceFile(SourceFile),
 }
 
 impl<T: Into<Action>, R> From<T> for Selection<R> {
@@ -110,6 +112,20 @@ impl Action {
             Action::CemuLayout(_) => "CemuLayout",
             Action::MelonDSLayout(_) => "MelonDSLayout",
             Action::SourceFile(_) => "SourceFile",
+        }
+    }
+
+    pub fn cloned_with_id(&self, id: ActionId) -> Self {
+        match self {
+            Action::DisplayRestoration(a) => {
+                Action::DisplayRestoration(DisplayRestoration { id, ..a.clone() })
+            }
+            Action::VirtualScreen(a) => Action::VirtualScreen(VirtualScreen { id, ..a.clone() }),
+            Action::MultiWindow(a) => Action::MultiWindow(MultiWindow { id, ..a.clone() }),
+            Action::CitraLayout(a) => Action::CitraLayout(CitraLayout { id, ..a.clone() }),
+            Action::CemuLayout(a) => Action::CemuLayout(CemuLayout { id, ..a.clone() }),
+            Action::MelonDSLayout(a) => Action::MelonDSLayout(MelonDSLayout { id, ..a.clone() }),
+            Action::SourceFile(a) => Action::SourceFile(SourceFile { id, ..a.clone() }),
         }
     }
 }

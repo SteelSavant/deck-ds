@@ -6,11 +6,17 @@ use serde::{Deserialize, Serialize};
 
 use crate::pipeline::{dependency::Dependency, executor::PipelineContext};
 
-use super::ActionImpl;
+use super::{ActionId, ActionImpl};
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
+pub struct SourceFile {
+    pub id: ActionId,
+    pub source: FileSource,
+}
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
 #[serde(tag = "type", content = "value")]
-pub enum SourceFile {
+pub enum FileSource {
     Flatpak(FlatpakSource),
     AppImage(AppImageSource),
     EmuDeck(EmuDeckSource),
@@ -87,30 +93,30 @@ impl ActionImpl for SourceFile {
     type State = PathBuf;
 
     fn setup(&self, ctx: &mut PipelineContext) -> anyhow::Result<()> {
-        match &self {
-            SourceFile::Flatpak(flatpak) => {
+        match &self.source {
+            FileSource::Flatpak(flatpak) => {
                 ctx.set_state::<Self>(flatpak.settings_file(ctx));
 
                 Ok(())
             }
-            SourceFile::AppImage(appimage) => {
+            FileSource::AppImage(appimage) => {
                 ctx.set_state::<Self>(appimage.settings_file(ctx));
 
                 Ok(())
             }
-            SourceFile::EmuDeck(emudeck) => {
+            FileSource::EmuDeck(emudeck) => {
                 ctx.set_state::<Self>(emudeck.settings_file(ctx));
 
                 Ok(())
             }
-            SourceFile::Custom(CustomFileOptions {
+            FileSource::Custom(CustomFileOptions {
                 path: Some(file), ..
             }) => {
                 ctx.set_state::<Self>(file.clone());
 
                 Ok(())
             }
-            SourceFile::Custom(CustomFileOptions { path: None, .. }) => {
+            FileSource::Custom(CustomFileOptions { path: None, .. }) => {
                 None.with_context(|| "could not set source file; field not set")
             }
         }
@@ -120,30 +126,34 @@ impl ActionImpl for SourceFile {
         &self,
         ctx: &mut PipelineContext,
     ) -> Vec<crate::pipeline::dependency::Dependency> {
-        let dep = match &self {
-            SourceFile::Flatpak(flatpak) => Dependency::Path {
+        let dep = match &self.source {
+            FileSource::Flatpak(flatpak) => Dependency::Path {
                 path: flatpak.settings_file(ctx),
                 is_file: true,
             },
-            SourceFile::AppImage(appimage) => Dependency::Path {
+            FileSource::AppImage(appimage) => Dependency::Path {
                 path: appimage.settings_file(ctx),
                 is_file: true,
             },
-            SourceFile::EmuDeck(emudeck) => Dependency::Path {
+            FileSource::EmuDeck(emudeck) => Dependency::Path {
                 path: emudeck.settings_file(ctx),
                 is_file: true,
             },
-            SourceFile::Custom(CustomFileOptions {
+            FileSource::Custom(CustomFileOptions {
                 path: Some(file), ..
             }) => Dependency::Path {
                 path: file.clone(),
                 is_file: true,
             },
-            SourceFile::Custom(CustomFileOptions { path: None, .. }) => {
+            FileSource::Custom(CustomFileOptions { path: None, .. }) => {
                 Dependency::FieldNotSet("Custom File".to_string())
             }
         };
         vec![dep]
+    }
+
+    fn get_id(&self) -> ActionId {
+        self.id
     }
 }
 
@@ -155,7 +165,7 @@ mod tests {
 
     #[test]
     fn test_custom_serde() -> Result<()> {
-        let expected = SourceFile::Custom(CustomFileOptions {
+        let expected = FileSource::Custom(CustomFileOptions {
             valid_ext: vec![".ini".to_string()],
             path: None,
         });

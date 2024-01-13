@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::pipeline::executor::PipelineContext;
 
-use super::{source_file::SourceFile, ActionImpl};
+use super::{source_file::SourceFile, ActionId, ActionImpl};
 use anyhow::{Context, Result};
 use regex::Regex;
 use schemars::JsonSchema;
@@ -10,6 +10,12 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct CemuLayout {
+    pub id: ActionId,
+    pub layout: CemuLayoutState,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct CemuLayoutState {
     pub separate_gamepad_view: bool,
     pub fullscreen: bool,
 }
@@ -19,7 +25,7 @@ lazy_static::lazy_static! {
     static ref FULLSCREEN_RXP: Regex = Regex::new("<fullscreen>((?:true)|(?:false))</fullscreen>").unwrap();
 }
 
-impl CemuLayout {
+impl CemuLayoutState {
     fn read<P: AsRef<Path>>(xml_path: P) -> Result<Self> {
         let xml = std::fs::read_to_string(&xml_path)?;
 
@@ -55,7 +61,7 @@ impl CemuLayout {
 }
 
 impl ActionImpl for CemuLayout {
-    type State = CemuLayout;
+    type State = CemuLayoutState;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let (xml_path, layout) = {
@@ -63,10 +69,10 @@ impl ActionImpl for CemuLayout {
                 .get_state::<SourceFile>()
                 .with_context(|| "No source file set for Cemu settings")?;
 
-            (xml_path, CemuLayout::read(xml_path)?)
+            (xml_path, CemuLayoutState::read(xml_path)?)
         };
 
-        self.write(xml_path).map(|_| {
+        self.layout.write(xml_path).map(|_| {
             ctx.set_state::<Self>(layout);
         })
     }
@@ -84,6 +90,10 @@ impl ActionImpl for CemuLayout {
             }
             None => Ok(()),
         }
+    }
+
+    fn get_id(&self) -> ActionId {
+        self.id
     }
 }
 
@@ -106,11 +116,11 @@ mod tests {
 
         std::fs::write(&path, &source)?;
 
-        let expected = CemuLayout {
+        let expected = CemuLayoutState {
             separate_gamepad_view: false,
             fullscreen: false,
         };
-        let actual = CemuLayout::read(&path)?;
+        let actual = CemuLayoutState::read(&path)?;
 
         assert_eq!(expected, actual);
 
@@ -118,14 +128,14 @@ mod tests {
         let actual_str = std::fs::read_to_string(&path)?;
         assert_eq!(source, actual_str);
 
-        let expected = CemuLayout {
+        let expected = CemuLayoutState {
             separate_gamepad_view: true,
             fullscreen: true,
         };
 
         expected.write(&path)?;
 
-        let actual = CemuLayout::read(&path)?;
+        let actual = CemuLayoutState::read(&path)?;
 
         assert_eq!(expected, actual);
 

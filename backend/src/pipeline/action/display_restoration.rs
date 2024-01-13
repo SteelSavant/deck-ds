@@ -5,10 +5,12 @@ use xrandr::{Relation, XId};
 
 use crate::{pipeline::executor::PipelineContext, sys::x_display::ModePreference};
 
-use super::ActionImpl;
+use super::{ActionId, ActionImpl};
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct DisplayRestoration {
+    pub id: ActionId,
+
     pub teardown_external_settings: TeardownExternalSettings,
     pub teardown_deck_location: RelativeLocation,
 }
@@ -158,6 +160,10 @@ impl ActionImpl for DisplayRestoration {
         ctx.display = Some(display);
 
         res
+    }
+
+    fn get_id(&self) -> ActionId {
+        self.id
     }
 }
 

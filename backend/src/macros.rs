@@ -19,6 +19,10 @@ macro_rules! newtype_uuid {
                 Self(uuid::Uuid::new_v4())
             }
 
+            pub fn nil() -> Self {
+                Self(uuid::Uuid::nil())
+            }
+
             pub fn from_uuid(uuid: uuid::Uuid) -> Self {
                 Self(uuid)
             }

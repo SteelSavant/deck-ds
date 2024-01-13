@@ -10,10 +10,7 @@ use anyhow::{Context, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use super::{
-    action::Action,
-    action_registar::{PipelineActionLookup, PipelineActionRegistrar},
-};
+use super::{action::Action, action_registar::PipelineActionRegistrar};
 
 newtype_strid!(
     r#"Id in the form "plugin:group:action" | "plugin:group:action:variant""#,
@@ -55,6 +52,8 @@ pub type PipelineAction = generic::PipelineAction<Action>;
 pub type PipelineActionSettings = generic::PipelineActionSettings<Action>;
 pub type Selection<T> = generic::Selection<Action, T>;
 
+pub type PipelineActionLookup = generic::PipelineActionLookup<Action>;
+
 pub mod generic {
     use super::*;
 
@@ -63,7 +62,7 @@ pub mod generic {
         pub name: String,
         pub description: String,
         pub targets: HashMap<PipelineTarget, Selection<A, PipelineActionId>>,
-        pub actions: PipelineActionLookup,
+        pub actions: PipelineActionLookup<A>,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -104,6 +103,11 @@ pub mod generic {
         pub selection: Selection<A, PipelineActionId>,
     }
 
+    #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+    pub struct PipelineActionLookup<A> {
+        pub actions: HashMap<PipelineActionId, generic::PipelineActionSettings<A>>,
+    }
+
     #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
     #[serde(tag = "type", content = "value")]
     pub enum Selection<A, T> {
@@ -117,6 +121,29 @@ pub mod generic {
 }
 
 // Reification
+
+impl PipelineActionLookup {
+    pub fn get(
+        &self,
+        id: &PipelineActionId,
+        target: PipelineTarget,
+        registrar: &PipelineActionRegistrar,
+    ) -> Option<PipelineActionDefinition> {
+        let variant = id.variant(target);
+
+        registrar.get(id, target).map(|def| {
+            let settings = self
+                .actions
+                .get(&variant)
+                .or_else(|| self.actions.get(id))
+                .cloned();
+            PipelineActionDefinition {
+                settings: settings.unwrap_or_else(|| def.settings.clone()),
+                ..def.clone()
+            }
+        })
+    }
+}
 
 impl PipelineDefinition {
     pub fn reify(

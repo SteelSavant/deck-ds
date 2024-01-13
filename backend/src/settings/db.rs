@@ -12,21 +12,49 @@ use super::CategoryProfile;
 use crate::settings::ProfileId;
 use anyhow::Result;
 
+mod convert;
 mod migrate;
 mod model;
-mod transform;
 
 use model::v1;
 
 static DATABASE_BUILDER: Lazy<native_db::DatabaseBuilder> = Lazy::new(|| {
     let mut builder = DatabaseBuilder::new();
+    // V1
+    {
+        // Profiles
 
-    builder
-        .define::<v1::DbCategoryProfile>()
-        .expect("failed to define CategoryProfile v1");
-    builder
-        .define::<v1::DbAppProfile>()
-        .expect("failed to define AppProfile v1");
+        builder
+            .define::<v1::DbCategoryProfile>()
+            .expect("failed to define CategoryProfile v1");
+        builder
+            .define::<v1::DbAppProfile>()
+            .expect("failed to define AppProfile v1");
+
+        // Actions
+
+        builder
+            .define::<v1::DbCemuLayout>()
+            .expect("failed to define CemuLayout v1");
+        builder
+            .define::<v1::DbCitraLayout>()
+            .expect("failed to define CitraLayout v1");
+        builder
+            .define::<v1::DbMelonDSLayout>()
+            .expect("failed to define MelonDSLayout v1");
+        builder
+            .define::<v1::DbDisplayRestoration>()
+            .expect("failed to define DisplayRestoration v1");
+        builder
+            .define::<v1::DbMultiWindow>()
+            .expect("failed to define MultiWindow v1");
+        builder
+            .define::<v1::DbVirtualScreen>()
+            .expect("failed to define VirtualScreen v1");
+        builder
+            .define::<v1::DbSourceFile>()
+            .expect("failed to define SourceDbSourceFile v1");
+    }
 
     builder
 });
@@ -57,9 +85,24 @@ impl SettingsDb {
             .db
             .rw_transaction()
             .expect("failed to create rw_transaction");
-        profile.save_all(&rw);
+        profile.save_all(&rw)?;
+
+        let saved = rw
+            .get()
+            .primary::<DbCategoryProfile>(id)?
+            .expect("inserted profile should exist");
 
         rw.commit()?;
+
+        // Ideally, the reconstruct would happen inside the rw transaction,
+        // but the db types make that more complicated than I'd like
+
+        let ro = self
+            .db
+            .r_transaction()
+            .expect("Failed to create ro_transaction");
+
+        let profile = saved.reconstruct(&ro)?;
 
         Ok(profile)
     }
@@ -119,9 +162,12 @@ mod tests {
 
     use uuid::Uuid;
 
-    use crate::pipeline::{
-        action_registar::PipelineActionRegistrar,
-        data::{PipelineActionId, PipelineTarget, Selection},
+    use crate::{
+        pipeline::{
+            action_registar::PipelineActionRegistrar,
+            data::{PipelineActionId, PipelineTarget, Selection},
+        },
+        util::create_dir_all,
     };
 
     use super::*;
@@ -130,7 +176,11 @@ mod tests {
     fn test_profile_crud() -> Result<()> {
         let registrar = PipelineActionRegistrar::builder().with_core().build();
 
-        let db = SettingsDb::new("/test/out/deck-ds/profile.db".into());
+        let path: PathBuf = "/test/out/deck-ds/profile.db".into();
+        let parent = path.parent().unwrap();
+        create_dir_all(parent).unwrap();
+
+        let db = SettingsDb::new(path);
 
         let targets = HashMap::from_iter([(
             PipelineTarget::Desktop,
