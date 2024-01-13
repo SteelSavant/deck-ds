@@ -118,13 +118,13 @@ impl Action {
     pub fn cloned_with_id(&self, id: ActionId) -> Self {
         match self {
             Action::DisplayRestoration(a) => {
-                Action::DisplayRestoration(DisplayRestoration { id, ..a.clone() })
+                Action::DisplayRestoration(DisplayRestoration { id, ..*a })
             }
-            Action::VirtualScreen(a) => Action::VirtualScreen(VirtualScreen { id, ..a.clone() }),
-            Action::MultiWindow(a) => Action::MultiWindow(MultiWindow { id, ..a.clone() }),
-            Action::CitraLayout(a) => Action::CitraLayout(CitraLayout { id, ..a.clone() }),
-            Action::CemuLayout(a) => Action::CemuLayout(CemuLayout { id, ..a.clone() }),
-            Action::MelonDSLayout(a) => Action::MelonDSLayout(MelonDSLayout { id, ..a.clone() }),
+            Action::VirtualScreen(_) => Action::VirtualScreen(VirtualScreen { id }),
+            Action::MultiWindow(_) => Action::MultiWindow(MultiWindow { id }),
+            Action::CitraLayout(a) => Action::CitraLayout(CitraLayout { id, ..*a }),
+            Action::CemuLayout(a) => Action::CemuLayout(CemuLayout { id, ..*a }),
+            Action::MelonDSLayout(a) => Action::MelonDSLayout(MelonDSLayout { id, ..*a }),
             Action::SourceFile(a) => Action::SourceFile(SourceFile { id, ..a.clone() }),
         }
     }

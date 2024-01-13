@@ -27,16 +27,8 @@ macro_rules! newtype_uuid {
                 Self(uuid)
             }
 
-            pub fn try_parse(string: &str) -> Result<Self> {
-                Ok(Self(uuid::Uuid::parse_str(string)?))
-            }
-
             pub fn parse(string: &str) -> Self {
                 Self(uuid::Uuid::parse_str(string).expect("uuid should be valid"))
-            }
-
-            pub fn raw(&self) -> String {
-                self.0.to_string()
             }
         }
 

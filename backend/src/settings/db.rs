@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use native_db::{transaction::RwTransaction, Database, DatabaseBuilder};
+use native_db::{Database, DatabaseBuilder};
 use once_cell::sync::Lazy;
 
 use crate::pipeline::data::PipelineDefinition;
@@ -76,7 +76,7 @@ impl SettingsDb {
     pub fn create_profile(&self, pipeline: PipelineDefinition) -> Result<CategoryProfile> {
         let id = ProfileId::new();
         let profile = CategoryProfile {
-            id: id.clone(),
+            id,
             tags: vec![],
             pipeline,
         };
@@ -127,7 +127,7 @@ impl SettingsDb {
             .expect("failed to create ro_transaction");
         let profile = ro.get().primary::<DbCategoryProfile>(*id)?;
 
-        Ok(profile.map(|p| p.reconstruct(&ro)).transpose()?)
+        profile.map(|p| p.reconstruct(&ro)).transpose()
     }
 
     pub fn set_profile(&self, profile: CategoryProfile) -> Result<()> {
@@ -229,5 +229,14 @@ mod tests {
 
         std::fs::remove_file(path)?;
         Ok(())
+    }
+
+    #[test]
+    fn test_multiple_db_open() {
+        let path: PathBuf = "test/out/.config/deck-ds/multiple_db_open.db".into();
+        SettingsDb::new(path.clone());
+        let handle = std::thread::spawn(|| SettingsDb::new(path));
+        let res = handle.join();
+        res.expect("multiple dbs should be able to open");
     }
 }

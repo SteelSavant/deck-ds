@@ -1,6 +1,5 @@
 use std::{collections::HashMap, fmt::Debug};
 
-use anyhow::Result;
 newtype_uuid!(ProfileId);
 newtype_strid!("", AppId);
 

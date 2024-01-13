@@ -302,36 +302,36 @@ impl DbCategoryProfile {
 
         impl DbSelection<PipelineActionId> {
             fn remove(&self, rw: &RwTransaction) -> Result<()> {
-                let selection = match self {
+                match self {
                     DbSelection::Action(action) => action.remove(rw)?,
                     DbSelection::OneOf { .. } => (),
                     DbSelection::AllOf(_) => (),
                 };
 
-                Ok(selection)
+                Ok(())
             }
         }
 
         pipeline
             .targets
-            .iter()
-            .map(|(k, v)| -> Result<_> {
-                let def = v.remove(rw)?;
-                Ok((*k, def))
+            .values()
+            .map(|v| -> Result<_> {
+                v.remove(rw)?;
+                Ok(())
             })
-            .collect::<Result<HashMap<_, _>>>()?;
+            .collect::<Result<Vec<_>>>()?;
 
         impl DbPipelineActionLookup {
             fn remove(&self, rw: &RwTransaction) -> Result<()> {
                 self.actions
-                    .iter()
-                    .map(|(_, v)| v.selection.remove(rw))
+                    .values()
+                    .map(|v| v.selection.remove(rw))
                     .collect::<Result<Vec<_>>>()?;
 
                 Ok(())
             }
         }
 
-        Ok(pipeline.actions.remove(rw)?)
+        pipeline.actions.remove(rw)
     }
 }

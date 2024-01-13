@@ -1,6 +1,4 @@
 use anyhow::Context;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use crate::settings::ProfileId;
 
@@ -13,7 +11,7 @@ use super::{
         multi_window::MultiWindow,
         source_file::{CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile},
         virtual_screen::VirtualScreen,
-        Action, ActionId,
+        ActionId,
     },
     data::{
         PipelineActionDefinition, PipelineActionId, PipelineActionLookup, PipelineActionSettings,
