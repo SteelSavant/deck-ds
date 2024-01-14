@@ -181,10 +181,12 @@ fn main() -> Result<()> {
             match executor {
                 Some(executor) => {
                     log::info!("Found autostart pipeline.");
+
                     let exec_result = executor.and_then(|mut e| {
                         log::debug!("Pipeline executor initialized; executing");
-                        e.exec()
+                        e.exec(true)
                     });
+
                     // return to gamemode
                     #[cfg(not(debug_assertions))]
                     {
