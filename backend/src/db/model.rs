@@ -10,8 +10,8 @@ use crate::{
         action::{
             cemu_layout::{CemuLayout, CemuLayoutState},
             citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
-            display_restoration::DisplayRestoration,
             melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
+            ui_management::DisplayRestoration,
             ActionId,
         },
         data::generic,
@@ -43,12 +43,12 @@ pub mod v1 {
 
     use crate::{
         pipeline::action::{
-            display_restoration::{RelativeLocation, TeardownExternalSettings},
             multi_window::MultiWindow,
             source_file::{
                 AppImageSource, CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource,
                 SourceFile,
             },
+            ui_management::{RelativeLocation, TeardownExternalSettings},
             virtual_screen::VirtualScreen,
         },
         sys::x_display::{AspectRatioOption, ModeOption, ModePreference, Resolution},

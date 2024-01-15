@@ -6,8 +6,8 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use crate::macros::newtype_uuid;
 
 use self::{
-    cemu_layout::CemuLayout, citra_layout::CitraLayout, display_restoration::DisplayRestoration,
-    melonds_layout::MelonDSLayout, multi_window::MultiWindow, source_file::SourceFile,
+    cemu_layout::CemuLayout, citra_layout::CitraLayout, melonds_layout::MelonDSLayout,
+    multi_window::MultiWindow, source_file::SourceFile, ui_management::DisplayRestoration,
     virtual_screen::VirtualScreen,
 };
 
@@ -16,10 +16,10 @@ use anyhow::Result;
 
 pub mod cemu_layout;
 pub mod citra_layout;
-pub mod display_restoration;
 pub mod melonds_layout;
 pub mod multi_window;
 pub mod source_file;
+pub mod ui_management;
 pub mod virtual_screen;
 
 pub trait ActionImpl: DeserializeOwned + Serialize {

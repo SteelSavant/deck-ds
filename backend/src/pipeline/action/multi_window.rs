@@ -1,11 +1,18 @@
 use anyhow::{Context, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use xrandr::Relation;
+use xrandr::{Output, Relation};
 
-use crate::pipeline::{dependency::Dependency, executor::PipelineContext};
+use crate::{
+    pipeline::{
+        action::ui_management::{Pos, Size},
+        dependency::Dependency,
+        executor::PipelineContext,
+    },
+    sys::x_display::XDisplay,
+};
 
-use super::{ActionId, ActionImpl};
+use super::{ui_management::UiEvent, ActionId, ActionImpl};
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct MultiWindow {
@@ -28,7 +35,37 @@ impl ActionImpl for MultiWindow {
             .get_embedded_output()?
             .ok_or(anyhow::anyhow!("Failed to find embedded display"))?;
 
-        display.set_output_position(&deck, &Relation::Below, &external)
+        let res = display.set_output_position(&deck, &Relation::Below, &external);
+
+        fn viewport_update(
+            display: &mut XDisplay,
+            external: &Output,
+            deck: &Output,
+        ) -> Result<UiEvent> {
+            let external_mode = display
+                .get_current_mode(&external)
+                .with_context(|| "failed to get mode for external display")?
+                .with_context(|| "failed to get mode for external display")?;
+
+            let deck_mode = display
+                .get_current_mode(&deck)
+                .with_context(|| "failed to get mode for embedded display")?
+                .with_context(|| "failed to get mode for embedded display")?;
+
+            Ok(UiEvent::UpdateViewports {
+                primary_size: Size(external_mode.height, external_mode.width),
+                secondary_size: Size(deck_mode.height, deck_mode.width),
+                primary_position: Pos(0, 0),
+                secondary_position: Pos(0, external_mode.height),
+            })
+        }
+
+        let update = viewport_update(display, &external, &deck);
+        if let Ok(event) = update {
+            ctx.send_ui_event(event);
+        }
+
+        res
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {

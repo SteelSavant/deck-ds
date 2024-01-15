@@ -8,7 +8,10 @@ use crate::{
     sys::x_display::{AspectRatioOption, ModeOption, ModePreference, Resolution},
 };
 
-use super::{ActionId, ActionImpl};
+use super::{
+    ui_management::{Pos, Size},
+    ActionId, ActionImpl,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct VirtualScreen {
@@ -36,7 +39,7 @@ impl ActionImpl for VirtualScreen {
         let deck_mode = display
             .get_current_mode(&deck)?
             .expect("Deck screen should have active mode");
-        let res = if deck_mode.width < deck_mode.height {
+        let resolution = if deck_mode.width < deck_mode.height {
             Resolution {
                 h: deck_mode.width,
                 w: deck_mode.height,
@@ -51,13 +54,22 @@ impl ActionImpl for VirtualScreen {
         display.set_or_create_preferred_mode(
             &external,
             &ModePreference {
-                resolution: ModeOption::Exact(res),
-                aspect_ratio: AspectRatioOption::Exact(res.w as f32 / res.h as f32),
+                resolution: ModeOption::Exact(resolution),
+                aspect_ratio: AspectRatioOption::Exact(resolution.w as f32 / resolution.h as f32),
                 refresh: ModeOption::Exact(deck_mode.rate),
             },
         )?;
 
-        display.set_output_position(&deck, &Relation::Below, &external)
+        let res = display.set_output_position(&deck, &Relation::Below, &external);
+
+        ctx.send_ui_event(super::ui_management::UiEvent::UpdateViewports {
+            primary_size: Size(resolution.w, resolution.h),
+            secondary_size: Size(resolution.w, resolution.h),
+            primary_position: Pos(0, 0),
+            secondary_position: Pos(0, resolution.h),
+        });
+
+        res
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {

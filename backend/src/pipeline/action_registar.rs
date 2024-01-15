@@ -6,10 +6,10 @@ use super::{
     action::{
         cemu_layout::{CemuLayout, CemuLayoutState},
         citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
-        display_restoration::{DisplayRestoration, RelativeLocation, TeardownExternalSettings},
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
         multi_window::MultiWindow,
         source_file::{CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile},
+        ui_management::{DisplayRestoration, RelativeLocation, TeardownExternalSettings},
         virtual_screen::VirtualScreen,
         ActionId,
     },

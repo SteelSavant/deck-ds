@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Context, Result};
+use egui::Pos2;
 use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
 
@@ -15,6 +16,7 @@ use crate::sys::app_process::AppProcess;
 use crate::sys::kwin::KWin;
 use crate::sys::x_display::XDisplay;
 
+use super::action::ui_management::{DisplayRestoration, UiEvent};
 use super::action::{Action, ErasedPipelineAction};
 use super::data::{Pipeline, PipelineTarget};
 
@@ -74,6 +76,13 @@ impl<'a> PipelineContext<'a> {
     pub fn set_state<P: ActionImpl + 'static>(&mut self, state: P::State) -> Option<P::State> {
         self.state.insert::<StateKey<P, P::State>>(state)
     }
+
+    pub fn send_ui_event(&self, event: UiEvent) {
+        let ui_state = self.get_state::<DisplayRestoration>();
+        if let Some(ui_state) = ui_state {
+            ui_state.send_ui_event(event);
+        }
+    }
 }
 
 impl<'a> PipelineExecutor<'a> {
@@ -104,6 +113,11 @@ impl<'a> PipelineExecutor<'a> {
 
         // Install dependencies
         for action in pipeline.iter() {
+            self.ctx.send_ui_event(UiEvent::UpdateStatusMsg(format!(
+                "checking dependencies for {}...",
+                action.name()
+            )));
+
             if let Err(err) = action.exec(&mut self.ctx, ActionType::Dependencies) {
                 return Err(err).with_context(|| "Error installing dependencies");
             }
@@ -111,6 +125,11 @@ impl<'a> PipelineExecutor<'a> {
 
         // Setup
         for action in pipeline {
+            self.ctx.send_ui_event(UiEvent::UpdateStatusMsg(format!(
+                "setting up {}...",
+                action.name()
+            )));
+
             has_run.push(action);
             let res = has_run
                 .last()
@@ -126,6 +145,10 @@ impl<'a> PipelineExecutor<'a> {
         }
 
         if errors.is_empty() {
+            self.ctx.send_ui_event(UiEvent::UpdateStatusMsg(
+                "waiting for game launch...".to_string(),
+            ));
+
             // Run app
             if let Err(err) = self.run_app() {
                 log::error!("{}", err);
@@ -136,6 +159,11 @@ impl<'a> PipelineExecutor<'a> {
         // Teardown
         for action in has_run.into_iter().rev() {
             let ctx = &mut self.ctx;
+
+            ctx.send_ui_event(UiEvent::UpdateStatusMsg(format!(
+                "tearing down {}...",
+                action.name()
+            )));
 
             let res = action
                 .exec(ctx, ActionType::Teardown)
@@ -182,6 +210,11 @@ impl<'a> PipelineExecutor<'a> {
 
         const BTN0: gilrs::Button = gilrs::Button::Start;
         const BTN1: gilrs::Button = gilrs::Button::Select;
+
+        self.ctx.send_ui_event(UiEvent::ClearStatus);
+        self.ctx.send_ui_event(UiEvent::UpdateWindowLevel(
+            egui::WindowLevel::AlwaysOnBottom,
+        ));
 
         while app_process.is_alive() {
             std::thread::sleep(std::time::Duration::from_millis(100));
@@ -251,6 +284,13 @@ impl<'a> PipelineExecutor<'a> {
                 }
             }
         }
+
+        self.ctx.send_ui_event(UiEvent::UpdateStatusMsg(
+            "returning to game mode...".to_string(),
+        ));
+
+        self.ctx
+            .send_ui_event(UiEvent::UpdateWindowLevel(egui::WindowLevel::AlwaysOnTop));
 
         Ok(())
     }
