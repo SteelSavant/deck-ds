@@ -239,15 +239,13 @@ fn main() -> Result<()> {
                     });
 
                     // return to gamemode
-                    #[cfg(not(debug_assertions))]
-                    {
-                        use crate::sys::steamos_session_select::{steamos_session_select, Session};
-                        steamos_session_select(Session::Gamescope).and(exec_result)
-                    }
-                    #[cfg(debug_assertions)]
-                    {
-                        exec_result // avoid gamemode switch during dev
-                    }
+
+                    use crate::sys::steamos_session_select::{steamos_session_select, Session};
+                    let res = steamos_session_select(Session::Gamescope).and(exec_result);
+
+                    std::thread::sleep(Duration::from_secs(10)); // implicitly keep UI up during session switch
+
+                    res
                 }
                 None => {
                     log::info!("No autostart pipeline found. Staying on desktop.");
