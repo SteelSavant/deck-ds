@@ -14,7 +14,7 @@ newtype_strid!("", AppId);
 use crate::{
     macros::{newtype_strid, newtype_uuid},
     pipeline::{
-        action::display_restoration::DisplayRestoration,
+        action::ui_management::DisplayRestoration,
         action_registar::PipelineActionRegistrar,
         data::{Pipeline, PipelineDefinition, Template, TemplateId},
     },

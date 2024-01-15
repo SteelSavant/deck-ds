@@ -1,9 +1,13 @@
 use anyhow::Result;
+use egui::Pos2;
 use include_dir::{include_dir, Dir};
 use std::{
     env,
     path::Path,
-    sync::{Arc, Mutex},
+    sync::{
+        mpsc::{self, Receiver, Sender},
+        Arc, Mutex,
+    },
     thread::sleep,
     time::Duration,
 };
@@ -19,9 +23,17 @@ use crate::{
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
     db::ProfileDb,
     pipeline::{
-        action::ActionImpl, action_registar::PipelineActionRegistrar, executor::PipelineContext,
+        action::{
+            multi_window::MultiWindow,
+            ui_management::{DisplayRestoration, TeardownExternalSettings},
+            virtual_screen::VirtualScreen,
+            ActionId, ActionImpl,
+        },
+        action_registar::PipelineActionRegistrar,
+        executor::PipelineContext,
     },
     settings::Settings,
+    sys::x_display::{ModePreference, Resolution},
     util::create_dir_all,
 };
 use clap::{Parser, Subcommand};
@@ -63,7 +75,46 @@ enum Modes {
 
 static ASSETS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/assets");
 
+// fn ui_test() -> Result<()> {
+//     let home_dir = usdpl_back::api::dirs::home()
+//         .or_else(dirs::home_dir)
+//         .expect("home dir must exist");
+
+//     let config_dir = home_dir.join(".config").join(PACKAGE_NAME);
+//     let assets_dir = config_dir.join("assets"); // TODO::keep assets with decky plugin, not config
+
+//     let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
+//     let mut ctx = &mut PipelineContext::new(asset_manager, home_dir, config_dir);
+
+//     let ui = DisplayRestoration {
+//         id: ActionId::nil(),
+//         teardown_external_settings: TeardownExternalSettings::Preference(ModePreference {
+//             resolution: sys::x_display::ModeOption::Exact(Resolution { w: 1920, h: 1080 }),
+//             aspect_ratio: sys::x_display::AspectRatioOption::Any,
+//             refresh: sys::x_display::ModeOption::AtLeast(60.),
+//         }),
+//         teardown_deck_location: pipeline::action::ui_management::RelativeLocation::Below,
+//     };
+
+//     let vscreen = MultiWindow {
+//         id: ActionId::nil(),
+//     };
+
+//     let duration = Duration::from_secs(10);
+//     ui.setup(&mut ctx);
+//     std::thread::sleep(duration);
+//     vscreen.setup(ctx);
+//     std::thread::sleep(duration);
+//     vscreen.teardown(ctx);
+//     std::thread::sleep(duration);
+//     ui.teardown(&mut ctx);
+//     std::thread::sleep(duration);
+//     println!("done");
+//     return Ok(());
+// }
+
 fn main() -> Result<()> {
+    // return ui_test();
     let args: Vec<String> = std::env::args().collect();
     log::info!("Running DeckDS from {}", args[0]);
 
@@ -184,7 +235,7 @@ fn main() -> Result<()> {
 
                     let exec_result = executor.and_then(|mut e| {
                         log::debug!("Pipeline executor initialized; executing");
-                        e.exec(true)
+                        e.exec()
                     });
 
                     // return to gamemode
@@ -208,7 +259,8 @@ fn main() -> Result<()> {
                     if config.restore_displays_if_not_executing_pipeline {
                         let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
                         let ctx = &mut PipelineContext::new(asset_manager, home_dir, config_dir);
-                        let res = config.display_restoration.setup(ctx);
+
+                        let res = config.display_restoration.desktop_only(ctx);
                         if let Err(err) = res {
                             log::error!("{err}");
                         }

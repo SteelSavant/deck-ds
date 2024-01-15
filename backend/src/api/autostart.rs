@@ -84,7 +84,7 @@ pub fn autostart(
                     );
 
                     match executor {
-                        Ok(mut executor) => match executor.exec(false) {
+                        Ok(mut executor) => match executor.exec() {
                             Ok(_) => ResponseOk.to_response(),
                             Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
                         },

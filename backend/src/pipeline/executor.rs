@@ -6,7 +6,6 @@ use indexmap::IndexMap;
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::process::Command;
-use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant, SystemTime};
 use typemap::{Key, TypeMap};
 
@@ -17,14 +16,11 @@ use crate::sys::app_process::AppProcess;
 use crate::sys::kwin::KWin;
 use crate::sys::x_display::XDisplay;
 
-use self::ui::{DeckDsUi, UiEvent};
-
+use super::action::ui_management::{DisplayRestoration, UiEvent};
 use super::action::{Action, ErasedPipelineAction};
 use super::data::{Pipeline, PipelineTarget};
 
 use super::action::ActionImpl;
-
-mod ui;
 
 pub struct PipelineExecutor<'a> {
     app_id: AppId,
@@ -42,30 +38,8 @@ pub struct PipelineContext<'a> {
     pub kwin: KWin<'a>,
     /// Display handler,
     pub display: Option<XDisplay>,
-    channels: PipelineContextChannels,
     /// pipeline state
     state: TypeMap,
-}
-
-struct PipelineContextChannels {
-    pub ui_tx: Sender<UiEvent>,
-    ui_rx: Option<Receiver<UiEvent>>,
-    main_tx: Sender<egui::Context>,
-    main_rx: Receiver<egui::Context>,
-}
-
-impl PipelineContextChannels {
-    pub fn new() -> Self {
-        let (ui_tx, ui_rx): (Sender<UiEvent>, Receiver<UiEvent>) = mpsc::channel();
-        let (main_tx, main_rx): (Sender<egui::Context>, Receiver<egui::Context>) = mpsc::channel();
-
-        Self {
-            ui_rx: Some(ui_rx),
-            ui_tx,
-            main_rx,
-            main_tx,
-        }
-    }
 }
 
 // state impl
@@ -88,7 +62,6 @@ impl<'a> PipelineContext<'a> {
             kwin: KWin::new(assets_manager),
             display: XDisplay::new().ok(),
             state: TypeMap::new(),
-            channels: PipelineContextChannels::new(),
         }
     }
 
@@ -105,7 +78,10 @@ impl<'a> PipelineContext<'a> {
     }
 
     pub fn send_ui_event(&self, event: UiEvent) {
-        let _ = self.channels.ui_tx.send(event);
+        let ui_state = self.get_state::<DisplayRestoration>();
+        if let Some(ui_state) = ui_state {
+            ui_state.send_ui_event(event);
+        }
     }
 }
 
@@ -128,39 +104,7 @@ impl<'a> PipelineExecutor<'a> {
         Ok(s)
     }
 
-    pub fn exec(&mut self, with_ui: bool) -> Result<()> {
-        let ui_ctx = if with_ui {
-            let ui_rx = self
-                .ctx
-                .channels
-                .ui_rx
-                .take()
-                .expect("ui recieve channel should exist on exec start");
-            let main_tx = self.ctx.channels.main_tx.clone();
-
-            // let display = XDisplay::new().unwrap();
-            // let edp = display.get_embedded_output().unwrap().unwrap();
-            // let mode = display.get_current_mode(&edp);
-
-            // mode.unwrap().unwrap()
-
-            std::thread::spawn(move || {
-                DeckDsUi::new(Pos2::ZERO, Pos2::ZERO, ui_rx, main_tx)
-                    .run()
-                    .map_err(|err| format!("{err:?}"))
-            });
-
-            let ctx = self
-                .ctx
-                .channels
-                .main_rx
-                .recv()
-                .expect("UI thread should send ctx");
-            Some(ctx)
-        } else {
-            None
-        };
-
+    pub fn exec(&mut self) -> Result<()> {
         // Set up pipeline
         let mut has_run = vec![];
         let mut errors = vec![];
@@ -210,11 +154,6 @@ impl<'a> PipelineExecutor<'a> {
                 log::error!("{}", err);
                 errors.push(err);
             }
-        }
-
-        if let Some(ui_ctx) = ui_ctx {
-            ui_ctx.request_repaint_after(Duration::from_secs(1));
-            self.ctx.send_ui_event(UiEvent::Close);
         }
 
         if errors.is_empty() {
