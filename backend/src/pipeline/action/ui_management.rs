@@ -78,8 +78,45 @@ impl DisplayRestoration {
 pub struct DisplayState {
     previous_output_id: XId,
     previous_output_mode: Option<XId>,
+    runtime_state: Option<RuntimeDisplayState>,
+}
+
+#[derive(Debug)]
+struct RuntimeDisplayState {
     ui_tx: Sender<UiEvent>,
     ui_ctx: egui::Context,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct SerialiableDisplayState {
+    previous_output_id: XId,
+    previous_output_mode: Option<XId>,
+}
+
+impl Serialize for DisplayState {
+    fn serialize<S>(&self, serializer: S) -> std::prelude::v1::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        SerialiableDisplayState {
+            previous_output_id: self.previous_output_id,
+            previous_output_mode: self.previous_output_mode,
+        }
+        .serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for DisplayState {
+    fn deserialize<D>(deserializer: D) -> std::prelude::v1::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        SerialiableDisplayState::deserialize(deserializer).map(|de| DisplayState {
+            previous_output_id: de.previous_output_id,
+            previous_output_mode: de.previous_output_mode,
+            runtime_state: None,
+        })
+    }
 }
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
@@ -118,8 +155,10 @@ pub enum TeardownExternalSettings {
 
 impl DisplayState {
     pub fn send_ui_event(&self, event: UiEvent) {
-        let _ = self.ui_tx.send(event);
-        self.ui_ctx.request_repaint();
+        if let Some(state) = self.runtime_state.as_ref() {
+            let _ = state.ui_tx.send(event);
+            state.ui_ctx.request_repaint();
+        }
     }
 }
 
@@ -161,8 +200,7 @@ impl ActionImpl for DisplayRestoration {
                 ctx.set_state::<Self>(DisplayState {
                     previous_output_id: primary.xid,
                     previous_output_mode: primary.current_mode,
-                    ui_ctx,
-                    ui_tx,
+                    runtime_state: Some(RuntimeDisplayState { ui_ctx, ui_tx }),
                 });
                 Ok(())
             }
@@ -181,7 +219,10 @@ impl ActionImpl for DisplayRestoration {
 
         let res = match ctx.get_state::<Self>() {
             Some(state) => {
-                state.ui_ctx.request_repaint_after(Duration::from_secs(1));
+                if let Some(runtime) = state.runtime_state.as_ref() {
+                    runtime.ui_ctx.request_repaint_after(Duration::from_secs(1))
+                }
+
                 // let _ = state.ui_tx.send(UiEvent::Close);
 
                 let output = state.previous_output_id;

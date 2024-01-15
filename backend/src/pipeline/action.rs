@@ -24,7 +24,7 @@ pub mod virtual_screen;
 
 pub trait ActionImpl: DeserializeOwned + Serialize {
     /// Type of runtime state of the action
-    type State: 'static + Debug;
+    type State: 'static + Debug + DeserializeOwned + Serialize;
 
     fn setup(&self, _ctx: &mut PipelineContext) -> Result<()> {
         // default to no setup

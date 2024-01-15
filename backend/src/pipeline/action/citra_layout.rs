@@ -144,9 +144,11 @@ impl CitraLayoutState {
 mod internal {
     use std::path::PathBuf;
 
+    use serde::{Deserialize, Serialize};
+
     use super::CitraLayoutState;
 
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, Deserialize, Serialize)]
     pub struct CitraState {
         pub ini_path: PathBuf,
         pub layout: CitraLayoutState,

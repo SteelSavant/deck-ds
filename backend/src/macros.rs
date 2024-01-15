@@ -19,14 +19,17 @@ macro_rules! newtype_uuid {
                 Self(uuid::Uuid::new_v4())
             }
 
+            #[allow(dead_code)]
             pub fn nil() -> Self {
                 Self(uuid::Uuid::nil())
             }
 
+            #[allow(dead_code)]
             pub fn from_uuid(uuid: uuid::Uuid) -> Self {
                 Self(uuid)
             }
 
+            #[allow(dead_code)]
             pub fn parse(string: &str) -> Self {
                 Self(uuid::Uuid::parse_str(string).expect("uuid should be valid"))
             }
@@ -63,10 +66,12 @@ macro_rules! newtype_strid {
         pub struct $id(String);
 
         impl $id {
+            #[allow(dead_code)]
             pub fn new(id: &str) -> Self {
                 Self(id.to_string())
             }
 
+            #[allow(dead_code)]
             pub fn raw(&self) -> &str {
                 &self.0
             }

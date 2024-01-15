@@ -124,8 +124,8 @@ impl eframe::App for DeckDsUi {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         println!("repaint");
 
-        match self.rx.try_recv() {
-            Ok(event) => match event {
+        if let Ok(event) = self.rx.try_recv() {
+            match event {
                 UiEvent::UpdateViewports {
                     primary_size,
                     secondary_size,
@@ -150,9 +150,9 @@ impl eframe::App for DeckDsUi {
                     self.secondary_text = "".to_string();
                 }
                 UiEvent::Close => ctx.send_viewport_cmd(egui::ViewportCommand::Close),
-            },
-            Err(_) => (),
+            }
         }
+
         egui::CentralPanel::default()
             .frame(self.custom_frame)
             .show(ctx, |ui| {

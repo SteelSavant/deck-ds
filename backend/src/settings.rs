@@ -15,8 +15,7 @@ use crate::{
     macros::{newtype_strid, newtype_uuid},
     pipeline::{
         action::ui_management::DisplayRestoration,
-        action_registar::PipelineActionRegistrar,
-        data::{Pipeline, PipelineDefinition, Template, TemplateId},
+        data::{Pipeline, PipelineDefinition},
     },
     util::create_dir_all,
     PACKAGE_NAME,
@@ -39,12 +38,7 @@ pub struct GlobalConfig {
 }
 
 impl Settings {
-    pub fn new<P: AsRef<Path>>(
-        exe_path: P,
-        config_dir: P,
-        system_autostart_dir: P,
-        registrar: PipelineActionRegistrar,
-    ) -> Self {
+    pub fn new<P: AsRef<Path>>(exe_path: P, config_dir: P, system_autostart_dir: P) -> Self {
         let config_dir = config_dir.as_ref();
 
         if !config_dir.exists() {
@@ -188,12 +182,12 @@ pub struct AppProfile {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
 
     use std::path::Path;
 
-    use crate::{consts::PACKAGE_NAME, settings::Settings};
+    use crate::consts::PACKAGE_NAME;
 
-    use super::*;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -204,7 +198,6 @@ mod tests {
                 .join("bin/backend"),
             Path::new("test/out/.config").join(PACKAGE_NAME),
             Path::new("test/out/.config/autostart").to_path_buf(),
-            PipelineActionRegistrar::builder().with_core().build(),
         );
 
         let actual = settings.create_desktop_contents();

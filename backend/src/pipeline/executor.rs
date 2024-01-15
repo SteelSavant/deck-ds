@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Context, Result};
-use egui::Pos2;
 use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
 
@@ -83,6 +82,11 @@ impl<'a> PipelineContext<'a> {
             ui_state.send_ui_event(event);
         }
     }
+
+    fn save_state(&self) -> Result<()> {
+        // let serialized = serde_json::to_string_pretty(&self.state);
+        todo!()
+    }
 }
 
 impl<'a> PipelineExecutor<'a> {
@@ -136,6 +140,8 @@ impl<'a> PipelineExecutor<'a> {
                 .expect("action should exist")
                 .exec(&mut self.ctx, ActionType::Setup)
                 .with_context(|| format!("failed to execute setup for {}", action.name()));
+
+            self.ctx.save_state()?;
 
             if let Err(err) = res {
                 log::error!("{}", err);

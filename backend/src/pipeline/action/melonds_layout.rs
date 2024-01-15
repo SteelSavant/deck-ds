@@ -53,13 +53,15 @@ pub struct MelonDSLayout {
 mod internal {
     use std::path::PathBuf;
 
-    #[derive(Debug, Clone)]
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Debug, Clone, Deserialize, Serialize)]
     pub struct MelonDSLayoutState {
         pub layout: RawMelonDSState,
         pub ini_path: PathBuf,
     }
 
-    #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+    #[derive(Debug, Copy, Clone, Deserialize, Serialize, PartialEq, Eq)]
     pub struct RawMelonDSState {
         pub layout_option: u64,
         pub sizing_option: u64,

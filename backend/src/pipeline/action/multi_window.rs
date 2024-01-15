@@ -43,12 +43,12 @@ impl ActionImpl for MultiWindow {
             deck: &Output,
         ) -> Result<UiEvent> {
             let external_mode = display
-                .get_current_mode(&external)
+                .get_current_mode(external)
                 .with_context(|| "failed to get mode for external display")?
                 .with_context(|| "failed to get mode for external display")?;
 
             let deck_mode = display
-                .get_current_mode(&deck)
+                .get_current_mode(deck)
                 .with_context(|| "failed to get mode for embedded display")?
                 .with_context(|| "failed to get mode for embedded display")?;
 
