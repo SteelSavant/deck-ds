@@ -3,7 +3,10 @@
 use std::sync::mpsc::{Receiver, Sender};
 
 use eframe::egui;
-use egui::{Color32, Frame, Label, Pos2, RichText, Style, Ui, ViewportBuilder};
+use egui::{
+    Color32, Frame, Label, Pos2, RichText, Style, Ui, Vec2, ViewportBuilder, ViewportCommand,
+    WindowLevel,
+};
 use winit::platform::x11::EventLoopBuilderExtX11;
 
 pub enum UiEvent {
@@ -13,7 +16,9 @@ pub enum UiEvent {
         primary_position: Pos,
         secondary_position: Pos,
     },
+    UpdateWindowLevel(WindowLevel),
     UpdateStatusMsg(String),
+    ClearStatus,
     Close,
 }
 
@@ -23,13 +28,27 @@ pub struct DeckDsUi {
     primary_position: Pos,
     secondary_position: Pos,
     primary_text: String,
+    secondary_text: String,
     custom_frame: Frame,
     rx: Receiver<UiEvent>,
     tx: Sender<egui::Context>,
+    window_level: WindowLevel,
 }
 
 #[derive(Debug, Copy, Clone)]
 pub struct Pos(pub u32, pub u32);
+
+impl From<Pos> for Pos2 {
+    fn from(value: Pos) -> Self {
+        Pos2::new(value.0 as f32, value.1 as f32)
+    }
+}
+
+impl From<Size> for Vec2 {
+    fn from(value: Size) -> Self {
+        [value.0 as f32, value.1 as f32].into()
+    }
+}
 
 #[derive(Debug, Copy, Clone)]
 pub struct Size(pub u32, pub u32);
@@ -71,15 +90,17 @@ impl DeckDsUi {
             primary_position,
             secondary_position,
             primary_text: "starting up...".to_string(),
+            secondary_text: "hold (select) + (start) to exit\ngame after launch".to_string(),
             custom_frame,
             rx,
             tx,
+            window_level: WindowLevel::AlwaysOnTop,
         }
     }
 
     pub fn run(self) -> Result<(), eframe::Error> {
         let options = eframe::NativeOptions {
-            viewport: build_viewport(self.primary_position, self.primary_size),
+            viewport: build_viewport(self.primary_position, self.primary_size, self.window_level),
             event_loop_builder: Some(Box::new(|builder| {
                 builder.with_any_thread(true);
             })),
@@ -115,8 +136,19 @@ impl eframe::App for DeckDsUi {
                     self.primary_position = primary_position;
                     self.secondary_position = secondary_position;
                     self.secondary_size = secondary_size;
+
+                    ctx.send_viewport_cmd(ViewportCommand::OuterPosition(primary_position.into()));
+                    ctx.send_viewport_cmd(ViewportCommand::InnerSize(primary_size.into()))
                 }
                 UiEvent::UpdateStatusMsg(msg) => self.primary_text = msg,
+                UiEvent::UpdateWindowLevel(window_level) => {
+                    self.window_level = window_level;
+                    ctx.send_viewport_cmd(ViewportCommand::WindowLevel(window_level))
+                }
+                UiEvent::ClearStatus => {
+                    self.primary_text = "".to_string();
+                    self.secondary_text = "".to_string();
+                }
                 UiEvent::Close => ctx.send_viewport_cmd(egui::ViewportCommand::Close),
             },
             Err(_) => (),
@@ -137,7 +169,11 @@ impl eframe::App for DeckDsUi {
 
         ctx.show_viewport_immediate(
             egui::ViewportId::from_hash_of("DeckDS Secondary"),
-            build_viewport(self.secondary_position, self.secondary_size),
+            build_viewport(
+                self.secondary_position,
+                self.secondary_size,
+                self.window_level,
+            ),
             |ctx, class| {
                 assert!(
                     class == egui::ViewportClass::Immediate,
@@ -152,7 +188,7 @@ impl eframe::App for DeckDsUi {
                         ui.centered_and_justified(|ui| {
                             create_deckds_label(
                                 ui,
-                                RichText::new("hold (select) + (start) to exit\ngame after launch"),
+                                RichText::new(&self.secondary_text),
                                 ui.available_height(),
                             );
                         });
@@ -162,7 +198,7 @@ impl eframe::App for DeckDsUi {
     }
 }
 
-fn build_viewport(position: Pos, size: Size) -> ViewportBuilder {
+fn build_viewport(position: Pos, size: Size, window_level: WindowLevel) -> ViewportBuilder {
     // can't use fullscreen because
     // - the chosen monitor isn't selectable
     // - the virtual display for melonDS is only one screen,
@@ -170,10 +206,11 @@ fn build_viewport(position: Pos, size: Size) -> ViewportBuilder {
     egui::ViewportBuilder::default()
         .with_decorations(false)
         .with_active(false)
-        .with_position(Pos2::new(position.0 as f32, position.1 as f32))
-        .with_window_level(egui::WindowLevel::AlwaysOnBottom)
-        .with_inner_size([size.0 as f32, size.1 as f32])
+        .with_position(Pos2::from(position))
+        .with_window_level(window_level)
+        .with_inner_size(Vec2::from(size))
         .with_mouse_passthrough(true)
+
     // TODO::icon
 }
 

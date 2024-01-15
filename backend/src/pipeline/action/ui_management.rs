@@ -182,7 +182,7 @@ impl ActionImpl for DisplayRestoration {
         let res = match ctx.get_state::<Self>() {
             Some(state) => {
                 state.ui_ctx.request_repaint_after(Duration::from_secs(1));
-                let _ = state.ui_tx.send(UiEvent::Close);
+                // let _ = state.ui_tx.send(UiEvent::Close);
 
                 let output = state.previous_output_id;
 

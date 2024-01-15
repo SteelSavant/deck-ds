@@ -148,6 +148,7 @@ impl<'a> PipelineExecutor<'a> {
             self.ctx.send_ui_event(UiEvent::UpdateStatusMsg(
                 "waiting for game launch...".to_string(),
             ));
+
             // Run app
             if let Err(err) = self.run_app() {
                 log::error!("{}", err);
@@ -210,8 +211,10 @@ impl<'a> PipelineExecutor<'a> {
         const BTN0: gilrs::Button = gilrs::Button::Start;
         const BTN1: gilrs::Button = gilrs::Button::Select;
 
-        self.ctx
-            .send_ui_event(UiEvent::UpdateStatusMsg("".to_string()));
+        self.ctx.send_ui_event(UiEvent::ClearStatus);
+        self.ctx.send_ui_event(UiEvent::UpdateWindowLevel(
+            egui::WindowLevel::AlwaysOnBottom,
+        ));
 
         while app_process.is_alive() {
             std::thread::sleep(std::time::Duration::from_millis(100));
@@ -281,6 +284,13 @@ impl<'a> PipelineExecutor<'a> {
                 }
             }
         }
+
+        self.ctx.send_ui_event(UiEvent::UpdateStatusMsg(
+            "returning to game mode...".to_string(),
+        ));
+
+        self.ctx
+            .send_ui_event(UiEvent::UpdateWindowLevel(egui::WindowLevel::AlwaysOnTop));
 
         Ok(())
     }
