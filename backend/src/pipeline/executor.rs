@@ -113,6 +113,11 @@ impl<'a> PipelineExecutor<'a> {
 
         // Install dependencies
         for action in pipeline.iter() {
+            self.ctx.send_ui_event(UiEvent::UpdateStatusMsg(format!(
+                "checking dependencies for {}...",
+                action.name()
+            )));
+
             if let Err(err) = action.exec(&mut self.ctx, ActionType::Dependencies) {
                 return Err(err).with_context(|| "Error installing dependencies");
             }
@@ -120,6 +125,11 @@ impl<'a> PipelineExecutor<'a> {
 
         // Setup
         for action in pipeline {
+            self.ctx.send_ui_event(UiEvent::UpdateStatusMsg(format!(
+                "setting up {}...",
+                action.name()
+            )));
+
             has_run.push(action);
             let res = has_run
                 .last()
@@ -135,6 +145,9 @@ impl<'a> PipelineExecutor<'a> {
         }
 
         if errors.is_empty() {
+            self.ctx.send_ui_event(UiEvent::UpdateStatusMsg(
+                "waiting for game launch...".to_string(),
+            ));
             // Run app
             if let Err(err) = self.run_app() {
                 log::error!("{}", err);
@@ -145,6 +158,11 @@ impl<'a> PipelineExecutor<'a> {
         // Teardown
         for action in has_run.into_iter().rev() {
             let ctx = &mut self.ctx;
+
+            ctx.send_ui_event(UiEvent::UpdateStatusMsg(format!(
+                "tearing down {}...",
+                action.name()
+            )));
 
             let res = action
                 .exec(ctx, ActionType::Teardown)
@@ -191,6 +209,9 @@ impl<'a> PipelineExecutor<'a> {
 
         const BTN0: gilrs::Button = gilrs::Button::Start;
         const BTN1: gilrs::Button = gilrs::Button::Select;
+
+        self.ctx
+            .send_ui_event(UiEvent::UpdateStatusMsg("".to_string()));
 
         while app_process.is_alive() {
             std::thread::sleep(std::time::Duration::from_millis(100));
