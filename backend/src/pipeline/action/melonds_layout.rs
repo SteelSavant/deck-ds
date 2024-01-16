@@ -216,7 +216,6 @@ impl ActionImpl for MelonDSLayout {
             None => Ok(()),
         }
     }
-
     fn get_id(&self) -> ActionId {
         self.id
     }

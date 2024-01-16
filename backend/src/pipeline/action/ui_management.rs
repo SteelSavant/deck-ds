@@ -81,14 +81,23 @@ pub struct DisplayState {
     runtime_state: Option<RuntimeDisplayState>,
 }
 
+impl From<&DisplayState> for SerialiableDisplayState {
+    fn from(value: &DisplayState) -> Self {
+        Self {
+            previous_output_id: value.previous_output_id,
+            previous_output_mode: value.previous_output_mode,
+        }
+    }
+}
+
 #[derive(Debug)]
 struct RuntimeDisplayState {
     ui_tx: Sender<UiEvent>,
     ui_ctx: egui::Context,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-struct SerialiableDisplayState {
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SerialiableDisplayState {
     previous_output_id: XId,
     previous_output_mode: Option<XId>,
 }

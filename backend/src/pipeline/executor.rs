@@ -1,29 +1,39 @@
 use anyhow::{anyhow, Context, Result};
 use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
+use type_reg::untagged::TypeMap as SerdeMap;
 
 use std::marker::PhantomData;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant, SystemTime};
 use typemap::{Key, TypeMap};
 
 use crate::asset::AssetManager;
+use crate::pipeline::action::cemu_layout::CemuLayout;
+use crate::pipeline::action::citra_layout::CitraLayout;
+use crate::pipeline::action::melonds_layout::MelonDSLayout;
+use crate::pipeline::action::multi_window::MultiWindow;
+use crate::pipeline::action::source_file::SourceFile;
+use crate::pipeline::action::ui_management::{DisplayRestoration, SerialiableDisplayState};
+use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::data::{PipelineAction, Selection};
 use crate::settings::AppId;
 use crate::sys::app_process::AppProcess;
 use crate::sys::kwin::KWin;
 use crate::sys::x_display::XDisplay;
 
-use super::action::ui_management::{DisplayRestoration, UiEvent};
+use super::action::ui_management::UiEvent;
 use super::action::{Action, ErasedPipelineAction};
 use super::data::{Pipeline, PipelineTarget};
 
 use super::action::ActionImpl;
 
+const PIPELINE_CONTEXT_STATE_PATH: &str = "/tmp/deckds-context.tmp";
+
 pub struct PipelineExecutor<'a> {
     app_id: AppId,
-    pipeline: Pipeline,
+    pipeline: Option<Pipeline>,
     target: PipelineTarget,
     ctx: PipelineContext<'a>,
 }
@@ -37,6 +47,8 @@ pub struct PipelineContext<'a> {
     pub kwin: KWin<'a>,
     /// Display handler,
     pub display: Option<XDisplay>,
+    /// actions that have run
+    have_run: Vec<Action>,
     /// pipeline state
     state: TypeMap,
 }
@@ -61,6 +73,7 @@ impl<'a> PipelineContext<'a> {
             kwin: KWin::new(assets_manager),
             display: XDisplay::new().ok(),
             state: TypeMap::new(),
+            have_run: vec![],
         }
     }
 
@@ -83,9 +96,60 @@ impl<'a> PipelineContext<'a> {
         }
     }
 
+    fn setup_action(&mut self, action: Action) -> Result<()> {
+        let res = action
+            .exec(self, ActionType::Setup)
+            .with_context(|| format!("failed to execute setup for {}", action.name()));
+        self.have_run.push(action);
+        self.save_state().and(res)
+    }
+
+    fn teardown_action(&mut self, action: Action) -> Result<()> {
+        let res = action
+            .exec(self, ActionType::Teardown)
+            .with_context(|| format!("failed to execute teardown for {}", action.name()));
+        self.save_state().and(res)
+    }
+
     fn save_state(&self) -> Result<()> {
-        // let serialized = serde_json::to_string_pretty(&self.state);
-        todo!()
+        let mut map = SerdeMap::new();
+
+        for action in self.have_run.iter() {
+            match action {
+                Action::DisplayRestoration(_) => map.insert(
+                    action.name(),
+                    self.get_state::<DisplayRestoration>()
+                        .map(SerialiableDisplayState::from),
+                ),
+                Action::VirtualScreen(_) => {
+                    map.insert(action.name(), self.get_state::<VirtualScreen>().cloned())
+                }
+                Action::MultiWindow(_) => {
+                    map.insert(action.name(), self.get_state::<MultiWindow>().cloned())
+                }
+                Action::CitraLayout(_) => {
+                    map.insert(action.name(), self.get_state::<CitraLayout>().cloned())
+                }
+                Action::CemuLayout(_) => {
+                    map.insert(action.name(), self.get_state::<CemuLayout>().cloned())
+                }
+                Action::MelonDSLayout(_) => {
+                    map.insert(action.name(), self.get_state::<MelonDSLayout>().cloned())
+                }
+                Action::SourceFile(_) => {
+                    map.insert(action.name(), self.get_state::<SourceFile>().cloned())
+                }
+            };
+        }
+
+        let actions = self.have_run.iter().map(|a| a.name()).collect::<Vec<_>>();
+        map.insert("__actions__", actions);
+
+        let serialized = serde_json::to_string_pretty(&map)?;
+        Ok(std::fs::write(
+            Path::new(PIPELINE_CONTEXT_STATE_PATH),
+            serialized,
+        )?)
     }
 }
 
@@ -100,7 +164,7 @@ impl<'a> PipelineExecutor<'a> {
     ) -> Result<Self> {
         let s = Self {
             app_id,
-            pipeline,
+            pipeline: Some(pipeline),
             target,
             ctx: PipelineContext::new(assets_manager, home_dir, config_dir),
         };
@@ -108,12 +172,15 @@ impl<'a> PipelineExecutor<'a> {
         Ok(s)
     }
 
-    pub fn exec(&mut self) -> Result<()> {
+    pub fn exec(mut self) -> Result<()> {
         // Set up pipeline
-        let mut has_run = vec![];
         let mut errors = vec![];
 
-        let pipeline = self.pipeline.build_actions(self.target);
+        let pipeline = self
+            .pipeline
+            .take()
+            .with_context(|| "cannot execute pipeline; pipeline has already been executed")?
+            .build_actions(self.target);
 
         // Install dependencies
         for action in pipeline.iter() {
@@ -134,16 +201,7 @@ impl<'a> PipelineExecutor<'a> {
                 action.name()
             )));
 
-            has_run.push(action);
-            let res = has_run
-                .last()
-                .expect("action should exist")
-                .exec(&mut self.ctx, ActionType::Setup)
-                .with_context(|| format!("failed to execute setup for {}", action.name()));
-
-            self.ctx.save_state()?;
-
-            if let Err(err) = res {
+            if let Err(err) = self.ctx.setup_action(action) {
                 log::error!("{}", err);
                 errors.push(err);
                 break;
@@ -163,17 +221,15 @@ impl<'a> PipelineExecutor<'a> {
         }
 
         // Teardown
-        for action in has_run.into_iter().rev() {
-            let ctx = &mut self.ctx;
+        while let Some(action) = self.ctx.have_run.pop() {
+            let ctx: &mut PipelineContext<'_> = &mut self.ctx;
 
             ctx.send_ui_event(UiEvent::UpdateStatusMsg(format!(
                 "tearing down {}...",
                 action.name()
             )));
 
-            let res = action
-                .exec(ctx, ActionType::Teardown)
-                .with_context(|| format!("failed to execute teardown for {}", action.name()));
+            let res = ctx.teardown_action(action);
 
             if let Err(err) = res {
                 log::error!("{}", err);
@@ -309,22 +365,22 @@ enum ActionType {
 }
 
 impl Pipeline {
-    fn build_actions(&self, target: PipelineTarget) -> Vec<&Action> {
-        fn build_recursive(selection: &Selection<PipelineAction>) -> Vec<&Action> {
+    fn build_actions(mut self, target: PipelineTarget) -> Vec<Action> {
+        fn build_recursive(selection: Selection<PipelineAction>) -> Vec<Action> {
             match selection {
                 Selection::Action(action) => vec![action],
                 Selection::OneOf { selection, actions } => {
                     let action = actions
-                        .iter()
-                        .find(|a| a.id == *selection)
+                        .into_iter()
+                        .find(|a| a.id == selection)
                         .unwrap_or_else(|| panic!("Selection {selection:?} should exist"));
 
-                    build_recursive(&action.selection)
+                    build_recursive(action.selection)
                 }
                 Selection::AllOf(actions) => actions
-                    .iter()
+                    .into_iter()
                     .filter_map(|a| match a.enabled {
-                        None | Some(true) => Some(&a.selection),
+                        None | Some(true) => Some(a.selection),
                         Some(false) => None,
                     })
                     .flat_map(|a| build_recursive(a))
@@ -333,7 +389,7 @@ impl Pipeline {
         }
 
         self.targets
-            .get(&target)
+            .remove(&target)
             .into_iter()
             .flat_map(move |action| build_recursive(action))
             .collect()
