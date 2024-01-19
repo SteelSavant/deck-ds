@@ -1,91 +1,104 @@
-// import {
-//     ServerAPI,
-//     afterPatch,
-//     appDetailsClasses,
-//     basicAppDetailsSectionStylerClasses,
-//     findInReactTree,
-//     wrapReactType
-// } from 'decky-frontend-lib';
-// import { ReactElement } from 'react';
-// import { FaEye } from 'react-icons/fa';
+import {
+    ServerAPI,
+    afterPatch,
+    appDetailsClasses,
+    basicAppDetailsSectionStylerClasses,
+    findInReactTree,
+    wrapReactType
+} from 'decky-frontend-lib';
+import { ReactElement } from 'react';
+
+// TODO::don't patch if appid doesn't have pipeline
+// TODO::patch in real button
+
+function patchLibraryApp(serverAPI: ServerAPI) {
+    return serverAPI.routerHook.addPatch(
+        '/library/app/:appid',
+        (props?: { path?: string; children?: ReactElement }) => {
+            console.log("props", props);
+
+            if (!props?.children?.props?.renderFunc) {
+                return props;
+            }
+
+            console.log("props passed");
+
+            afterPatch(
+                props.children.props,
+                'renderFunc',
+                (_: Record<string, unknown>[], ret?: ReactElement) => {
+                    if (!ret?.props?.children?.type?.type) {
+                        return ret;
+                    }
+
+                    wrapReactType(ret.props.children)
+                    afterPatch(
+                        ret.props.children.type,
+                        'type',
+                        (_2: Record<string, unknown>[], ret2?: ReactElement) => {
+                            const container = findInReactTree(
+                                ret2,
+                                (x: ReactElement) =>
+                                    Array.isArray(x?.props?.children) &&
+                                    x?.props?.className?.includes(
+                                        appDetailsClasses.InnerContainer
+                                    )
+                            )
 
 
-// function patchLibraryApp(serverAPI: ServerAPI) {
-//     return serverAPI.routerHook.addPatch(
-//         '/library/app/:appid',
-//         (props?: { path?: string; children?: ReactElement }) => {
-//             if (!props?.children?.props?.renderFunc) {
-//                 return props
-//             }
-
-//             console.log('initial props with renderfunc', props.children);
+                            if (typeof container !== 'object') {
+                                return ret2;
+                            }
 
 
-//             afterPatch(
-//                 props.children.props,
-//                 'renderFunc',
-//                 (_: Record<string, unknown>[], ret?: ReactElement) => {
-//                     if (!ret?.props?.children?.type?.type) {
-//                         return ret
-//                     }
+                            const children = container.props.children;
+                            const child = children.find((c: any) => c?.type?.render);
 
-//                     console.log('props with type', ret.props.children);
+                            console.log('AppDetails child:', child);
 
+                            wrapReactType(child.type);
+                            afterPatch(child.type, 'render', (_3: Record<string, unknown>[], ret3?: ReactElement) => {
+                                const container = findInReactTree(
+                                    ret3,
+                                    (x: ReactElement) =>
+                                        Array.isArray(x?.props?.children) &&
+                                        x?.props?.className?.includes(
+                                            basicAppDetailsSectionStylerClasses.AppButtons
+                                        )
+                                );
 
-//                     wrapReactType(ret.props.children)
-//                     afterPatch(
-//                         ret.props.children.type,
-//                         'type',
-//                         (_2: Record<string, unknown>[], ret2?: ReactElement) => {
-//                             const container = findInReactTree(
-//                                 ret2,
-//                                 (x: ReactElement) =>
-//                                     Array.isArray(x?.props?.children) &&
-//                                     x?.props?.className?.includes(
-//                                         appDetailsClasses.InnerContainer
-//                                     )
-//                             )
+                                if (typeof container !== 'object') {
+                                    return ret3;
+                                }
 
-//                             for (const item of [basicAppDetailsSectionStylerClasses.PlaySection, basicAppDetailsSectionStylerClasses.ActionRow, basicAppDetailsSectionStylerClasses.AppActionButton, basicAppDetailsSectionStylerClasses.AppButtons
-//                             ]) {
-//                                 const found = findInReactTree(
-//                                     ret2,
-//                                     (x: ReactElement) =>
-//                                         Array.isArray(x?.props?.children) &&
-//                                         x?.props?.className?.includes(
-//                                             item
-//                                         )
-//                                 );
+                                const children = container?.props?.children;
 
-//                                 console.log(item, found);
-//                             }
+                                console.log('children', children.toString());
+                                if (children?.length && children?.length < 3) {
+                                    console.log('less than 3 children; adding:', children.toString());
+                                    children?.splice(0, 0, <p>HERE!</p>)
+                                }
+
+                                console.log('ret3 container', container);
 
 
-//                             if (typeof container !== 'object') {
-//                                 return ret2
-//                             }
+                                return ret3;
+                            });
 
-//                             console.log('InnerContainer props.children', container.props.children);
+                            console.log('returning 2');
 
-//                             container.props.children.splice(
-//                                 1,
-//                                 0,
-//                                 <div style={{ backgroundColor: 'red' }} >
-//                                     <FaEye />
-//                                 </div>
-//                             )
 
-//                             wrapReactType(ret2.props.children)
+                            return ret2;
+                        }
+                    )
 
-//                             return ret2
-//                         }
-//                     )
-//                     return ret
-//                 }
-//             )
-//             return props
-//         }
-//     )
-// }
+                    return ret;
+                }
+            )
 
-// export default patchLibraryApp
+            return props;
+        }
+    )
+}
+
+export default patchLibraryApp;
