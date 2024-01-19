@@ -64,11 +64,11 @@
             "type": {
               "type": "string",
               "enum": [
-                "DisplayRestoration"
+                "UIManagement"
               ]
             },
             "value": {
-              "$ref": "#/definitions/DisplayRestoration"
+              "$ref": "#/definitions/UIManagement"
             }
           }
         },
@@ -482,26 +482,6 @@
         "profile": {
           "type": "string",
           "format": "uuid"
-        }
-      }
-    },
-    "DisplayRestoration": {
-      "type": "object",
-      "required": [
-        "id",
-        "teardown_deck_location",
-        "teardown_external_settings"
-      ],
-      "properties": {
-        "id": {
-          "type": "string",
-          "format": "uuid"
-        },
-        "teardown_deck_location": {
-          "$ref": "#/definitions/RelativeLocation"
-        },
-        "teardown_external_settings": {
-          "$ref": "#/definitions/TeardownExternalSettings"
         }
       }
     },
@@ -1253,6 +1233,26 @@
         },
         "pipeline": {
           "$ref": "#/definitions/PipelineDefinition_for_Action"
+        }
+      }
+    },
+    "UIManagement": {
+      "type": "object",
+      "required": [
+        "id",
+        "teardown_deck_location",
+        "teardown_external_settings"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "teardown_deck_location": {
+          "$ref": "#/definitions/RelativeLocation"
+        },
+        "teardown_external_settings": {
+          "$ref": "#/definitions/TeardownExternalSettings"
         }
       }
     },

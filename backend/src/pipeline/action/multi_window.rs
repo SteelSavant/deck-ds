@@ -14,13 +14,15 @@ use crate::{
 
 use super::{ui_management::UiEvent, ActionId, ActionImpl};
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct MultiWindow {
     pub id: ActionId,
 }
 
 impl ActionImpl for MultiWindow {
     type State = ();
+
+    const NAME: &'static str = "MultiWindow";
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         ctx.kwin.set_script_enabled("emulatorwindowing", true)?;
@@ -43,12 +45,12 @@ impl ActionImpl for MultiWindow {
             deck: &Output,
         ) -> Result<UiEvent> {
             let external_mode = display
-                .get_current_mode(&external)
+                .get_current_mode(external)
                 .with_context(|| "failed to get mode for external display")?
                 .with_context(|| "failed to get mode for external display")?;
 
             let deck_mode = display
-                .get_current_mode(&deck)
+                .get_current_mode(deck)
                 .with_context(|| "failed to get mode for embedded display")?
                 .with_context(|| "failed to get mode for embedded display")?;
 
@@ -79,6 +81,7 @@ impl ActionImpl for MultiWindow {
         )]
     }
 
+    #[inline]
     fn get_id(&self) -> ActionId {
         self.id
     }

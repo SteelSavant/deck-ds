@@ -13,13 +13,15 @@ use super::{
     ActionId, ActionImpl,
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct VirtualScreen {
     pub id: ActionId,
 }
 
 impl ActionImpl for VirtualScreen {
     type State = ();
+
+    const NAME: &'static str = "VirtualScreen";
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         ctx.kwin.set_script_enabled("truevideowall", true)?;
@@ -83,6 +85,7 @@ impl ActionImpl for VirtualScreen {
         )]
     }
 
+    #[inline]
     fn get_id(&self) -> ActionId {
         self.id
     }

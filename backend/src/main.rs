@@ -1,13 +1,10 @@
 use anyhow::Result;
-use egui::Pos2;
+
 use include_dir::{include_dir, Dir};
 use std::{
     env,
     path::Path,
-    sync::{
-        mpsc::{self, Receiver, Sender},
-        Arc, Mutex,
-    },
+    sync::{Arc, Mutex},
     thread::sleep,
     time::Duration,
 };
@@ -22,18 +19,8 @@ use crate::{
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
     db::ProfileDb,
-    pipeline::{
-        action::{
-            multi_window::MultiWindow,
-            ui_management::{DisplayRestoration, TeardownExternalSettings},
-            virtual_screen::VirtualScreen,
-            ActionId, ActionImpl,
-        },
-        action_registar::PipelineActionRegistrar,
-        executor::PipelineContext,
-    },
+    pipeline::{action_registar::PipelineActionRegistrar, executor::PipelineContext},
     settings::Settings,
-    sys::x_display::{ModePreference, Resolution},
     util::create_dir_all,
 };
 use clap::{Parser, Subcommand};
@@ -76,6 +63,9 @@ enum Modes {
 static ASSETS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/assets");
 
 // fn ui_test() -> Result<()> {
+//  use     sys::x_display::{ModePreference, Resolution},
+// use    mpsc::{self, Receiver, Sender},
+
 //     let home_dir = usdpl_back::api::dirs::home()
 //         .or_else(dirs::home_dir)
 //         .expect("home dir must exist");
@@ -86,7 +76,7 @@ static ASSETS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/assets");
 //     let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
 //     let mut ctx = &mut PipelineContext::new(asset_manager, home_dir, config_dir);
 
-//     let ui = DisplayRestoration {
+//     let ui = UIManagement {
 //         id: ActionId::nil(),
 //         teardown_external_settings: TeardownExternalSettings::Preference(ModePreference {
 //             resolution: sys::x_display::ModeOption::Exact(Resolution { w: 1920, h: 1080 }),
@@ -190,18 +180,23 @@ fn main() -> Result<()> {
 
     let registrar = PipelineActionRegistrar::builder().with_core().build();
 
-    let settings = Settings::new(
-        &env::current_exe()?,
-        &config_dir,
-        &autostart_dir,
-        registrar.clone(),
-    );
+    let settings = Settings::new(&env::current_exe()?, &config_dir, &autostart_dir);
 
     let settings = Arc::new(Mutex::new(settings));
 
     let assets_dir = config_dir.join("assets"); // TODO::keep assets with decky plugin, not config
     let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir.clone());
     let request_handler = Arc::new(Mutex::new(RequestHandler::new()));
+
+    // teardown persisted state, ignore errors for now
+    if let Some(loaded) =
+        PipelineContext::load(asset_manager.clone(), home_dir.clone(), config_dir.clone())
+    {
+        log::info!("Tearing down last executed pipeline");
+        // TODO::this will cause display-dependent actions to automatically fail, but
+        // this (hopefully) isn't a major problem because xrandr isn't persistent across reboots
+        loaded.teardown(&mut vec![]);
+    }
 
     match mode {
         Modes::Autostart => {
@@ -233,7 +228,7 @@ fn main() -> Result<()> {
                 Some(executor) => {
                     log::info!("Found autostart pipeline.");
 
-                    let exec_result = executor.and_then(|mut e| {
+                    let exec_result = executor.and_then(|e| {
                         log::debug!("Pipeline executor initialized; executing");
                         e.exec()
                     });
@@ -270,7 +265,8 @@ fn main() -> Result<()> {
         }
         Modes::Serve => {
             let db_path = config_dir.join("profiles.db");
-            let profiles_db = Arc::new(Mutex::new(ProfileDb::new(db_path, registrar.clone())));
+            let profiles_db: &'static ProfileDb =
+                Box::leak(Box::new(ProfileDb::new(db_path, registrar.clone())));
 
             let instance = Instance::new(PORT)
                 .register("LOG", crate::api::general::log_it())
@@ -283,38 +279,35 @@ fn main() -> Result<()> {
                 )
                 .register(
                     "create_profile",
-                    api::profile::create_profile(request_handler.clone(), profiles_db.clone()),
+                    api::profile::create_profile(request_handler.clone(), profiles_db),
                 )
                 .register(
                     "get_profile",
-                    crate::api::profile::get_profile(request_handler.clone(), profiles_db.clone()),
+                    crate::api::profile::get_profile(request_handler.clone(), profiles_db),
                 )
                 .register(
                     "set_profile",
-                    crate::api::profile::set_profile(request_handler.clone(), profiles_db.clone()),
+                    crate::api::profile::set_profile(request_handler.clone(), profiles_db),
                 )
                 .register(
                     "delete_profile",
-                    crate::api::profile::delete_profile(
-                        request_handler.clone(),
-                        profiles_db.clone(),
-                    ),
+                    crate::api::profile::delete_profile(request_handler.clone(), profiles_db),
                 )
                 .register(
                     "get_profiles",
-                    crate::api::profile::get_profiles(profiles_db.clone()),
+                    crate::api::profile::get_profiles(profiles_db),
                 )
                 .register(
                     "reify_pipeline",
                     crate::api::profile::reify_pipeline(
                         request_handler.clone(),
-                        profiles_db.clone(),
+                        profiles_db,
                         registrar.clone(),
                     ),
                 )
                 .register(
                     "get_templates",
-                    crate::api::profile::get_templates(profiles_db.clone()),
+                    crate::api::profile::get_templates(profiles_db),
                 )
                 // .register(
                 //     "get_pipeline_actions",

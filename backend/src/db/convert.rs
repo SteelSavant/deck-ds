@@ -21,7 +21,7 @@ use crate::{
 };
 use anyhow::{Context, Result};
 
-use super::model::DbDisplayRestoration;
+use super::model::DbUIManagement;
 
 impl CategoryProfile {
     pub fn save_all(&self, rw: &RwTransaction) -> Result<()> {
@@ -42,9 +42,9 @@ impl CategoryProfile {
                 let id = cloned.get_id();
 
                 let transformed = match cloned {
-                    Action::DisplayRestoration(action) => {
-                        rw.insert::<DbDisplayRestoration>(action.into())?;
-                        DbAction::DisplayRestoration(id)
+                    Action::UIManagement(action) => {
+                        rw.insert::<DbUIManagement>(action.into())?;
+                        DbAction::UIManagement(id)
                     }
                     Action::VirtualScreen(action) => {
                         rw.insert::<DbVirtualScreen>(action.into())?;
@@ -159,9 +159,9 @@ impl DbCategoryProfile {
                 let id = self.get_id();
 
                 let transformed = match *self {
-                    DbAction::DisplayRestoration(id) => {
-                        let action = ro.get().primary::<DbDisplayRestoration>(id)?;
-                        action.map(|a| Action::DisplayRestoration(a.into()))
+                    DbAction::UIManagement(id) => {
+                        let action = ro.get().primary::<DbUIManagement>(id)?;
+                        action.map(|a| Action::UIManagement(a.into()))
                     }
                     DbAction::VirtualScreen(id) => {
                         let action = ro.get().primary::<DbVirtualScreen>(id)?;
@@ -263,8 +263,8 @@ impl DbCategoryProfile {
                 let id = self.get_id();
 
                 let transformed = match *self {
-                    DbAction::DisplayRestoration(id) => {
-                        let action = rw.get().primary::<DbDisplayRestoration>(id)?;
+                    DbAction::UIManagement(id) => {
+                        let action = rw.get().primary::<DbUIManagement>(id)?;
                         action.map(|a| rw.remove(a))
                     }
                     DbAction::VirtualScreen(id) => {

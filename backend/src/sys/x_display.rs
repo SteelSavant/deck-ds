@@ -16,27 +16,27 @@ pub struct XDisplay {
     timing_fallback: TimingFallbackMethod,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct ModePreference {
     pub resolution: ModeOption<Resolution>,
     pub aspect_ratio: AspectRatioOption,
     pub refresh: ModeOption<f64>,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub enum ModeOption<T> {
     Exact(T),
     AtLeast(T),
     AtMost(T),
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct Resolution {
     pub w: u32, // TODO::enforce w is multiple of 8 for CVT
     pub h: u32,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub enum AspectRatioOption {
     Any,
     Native,

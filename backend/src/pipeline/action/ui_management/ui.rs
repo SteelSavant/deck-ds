@@ -1,4 +1,4 @@
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
+// #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
 use std::sync::mpsc::{Receiver, Sender};
 
@@ -124,8 +124,8 @@ impl eframe::App for DeckDsUi {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         println!("repaint");
 
-        match self.rx.try_recv() {
-            Ok(event) => match event {
+        if let Ok(event) = self.rx.try_recv() {
+            match event {
                 UiEvent::UpdateViewports {
                     primary_size,
                     secondary_size,
@@ -150,9 +150,9 @@ impl eframe::App for DeckDsUi {
                     self.secondary_text = "".to_string();
                 }
                 UiEvent::Close => ctx.send_viewport_cmd(egui::ViewportCommand::Close),
-            },
-            Err(_) => (),
+            }
         }
+
         egui::CentralPanel::default()
             .frame(self.custom_frame)
             .show(ctx, |ui| {
