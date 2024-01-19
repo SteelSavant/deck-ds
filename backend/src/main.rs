@@ -192,6 +192,7 @@ fn main() -> Result<()> {
     if let Some(loaded) =
         PipelineContext::load(asset_manager.clone(), home_dir.clone(), config_dir.clone())
     {
+        log::info!("Tearing down last executed pipeline");
         // TODO::this will cause display-dependent actions to automatically fail, but
         // this (hopefully) isn't a major problem because xrandr isn't persistent across reboots
         loaded.teardown(&mut vec![]);

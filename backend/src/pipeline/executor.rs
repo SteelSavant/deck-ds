@@ -4,7 +4,7 @@ use indexmap::IndexMap;
 use type_reg::untagged::{TypeMap as SerdeMap, TypeReg};
 
 use std::marker::PhantomData;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
 use std::time::{Duration, Instant, SystemTime};
 use typemap::{Key, TypeMap};
@@ -28,11 +28,6 @@ use super::action::{Action, ErasedPipelineAction};
 use super::data::{Pipeline, PipelineTarget};
 
 use super::action::ActionImpl;
-
-#[cfg(not(test))]
-const PIPELINE_CONTEXT_STATE_PATH: &str = "/tmp/deckds-context.tmp";
-#[cfg(test)]
-const PIPELINE_CONTEXT_STATE_PATH: &str = "test/out/tmp/deckds-context.tmp";
 
 pub struct PipelineExecutor<'a> {
     app_id: AppId,
@@ -85,7 +80,12 @@ impl<'a> PipelineContext<'a> {
         home_dir: PathBuf,
         config_dir: PathBuf,
     ) -> Option<Self> {
-        let persisted = std::fs::read_to_string(Path::new(PIPELINE_CONTEXT_STATE_PATH)).ok()?;
+        let mut default: PipelineContext<'_> =
+            PipelineContext::new(assets_manager, home_dir, config_dir);
+
+        let persisted = std::fs::read_to_string(default.get_state_path()).ok()?;
+
+        log::info!("Pipeline context exists; loading");
 
         let mut type_reg = TypeReg::new();
         fn register_type<T>(type_reg: &mut TypeReg<String>)
@@ -108,8 +108,6 @@ impl<'a> PipelineContext<'a> {
 
         let mut deserializer = serde_json::Deserializer::from_str(&persisted);
         let type_map: SerdeMap<String> = type_reg.deserialize_map(&mut deserializer).unwrap();
-
-        let mut default = PipelineContext::new(assets_manager, home_dir, config_dir);
 
         let actions = type_map
             .get::<Vec<String>, _>("__actions__")?
@@ -182,10 +180,9 @@ impl<'a> PipelineContext<'a> {
         map.insert("__actions__".to_string(), actions);
 
         let serialized = serde_json::to_string_pretty(&map)?;
-        Ok(std::fs::write(
-            Path::new(PIPELINE_CONTEXT_STATE_PATH),
-            serialized,
-        )?)
+        let path = self.get_state_path();
+
+        Ok(std::fs::write(path, serialized)?)
     }
 
     pub fn get_state<P: ActionImpl + 'static>(&self) -> Option<&P::State> {
@@ -211,10 +208,11 @@ impl<'a> PipelineContext<'a> {
         while let Some(action) = self.have_run.pop() {
             let ctx: &mut PipelineContext<'_> = &mut self;
 
-            ctx.send_ui_event(UiEvent::UpdateStatusMsg(format!(
-                "tearing down {}...",
-                action.get_name()
-            )));
+            let msg = format!("tearing down {}...", action.get_name());
+
+            log::info!("{msg}");
+
+            ctx.send_ui_event(UiEvent::UpdateStatusMsg(msg));
 
             let res = ctx.teardown_action(action);
 
@@ -223,6 +221,12 @@ impl<'a> PipelineContext<'a> {
                 errors.push(err);
             }
         }
+
+        let _ = std::fs::remove_file(self.get_state_path());
+    }
+
+    fn get_state_path(&self) -> PathBuf {
+        self.config_dir.join("state.json")
     }
 
     fn setup_action(&mut self, action: Action) -> Result<()> {
@@ -490,6 +494,7 @@ impl Action {
 
 #[cfg(test)]
 mod tests {
+
     use crate::{
         pipeline::action::{
             cemu_layout::CemuLayoutState,
@@ -507,11 +512,13 @@ mod tests {
 
     #[test]
     fn test_ctx_serde() -> anyhow::Result<()> {
-        let home_dir: PathBuf = "tests/out/home/ctx-serde".into();
-        let config_dir: PathBuf = "tests/out/.config/deck-ds-ctx-serde".into();
+        let home_dir: PathBuf = "test/out/home/ctx-serde".into();
+        let config_dir: PathBuf = "test/out/.config/deck-ds-ctx-serde".into();
         let external_asset_path: PathBuf = "test/out/assets/ctx-serde".into();
 
-        create_dir_all(Path::new(PIPELINE_CONTEXT_STATE_PATH).parent().unwrap())?;
+        if !config_dir.exists() {
+            create_dir_all(&config_dir)?;
+        }
 
         let mut ctx = PipelineContext::new(
             AssetManager::new(&ASSETS_DIR, external_asset_path.clone()),
