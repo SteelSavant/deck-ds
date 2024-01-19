@@ -80,7 +80,7 @@ impl<'a> PipelineContext<'a> {
         }
     }
 
-    fn load(
+    pub fn load(
         assets_manager: AssetManager<'a>,
         home_dir: PathBuf,
         config_dir: PathBuf,
@@ -207,6 +207,24 @@ impl<'a> PipelineContext<'a> {
         }
     }
 
+    pub fn teardown(mut self, errors: &mut Vec<anyhow::Error>) {
+        while let Some(action) = self.have_run.pop() {
+            let ctx: &mut PipelineContext<'_> = &mut self;
+
+            ctx.send_ui_event(UiEvent::UpdateStatusMsg(format!(
+                "tearing down {}...",
+                action.get_name()
+            )));
+
+            let res = ctx.teardown_action(action);
+
+            if let Err(err) = res {
+                log::error!("{}", err);
+                errors.push(err);
+            }
+        }
+    }
+
     fn setup_action(&mut self, action: Action) -> Result<()> {
         let res = action
             .exec(self, ActionType::Setup)
@@ -291,21 +309,7 @@ impl<'a> PipelineExecutor<'a> {
         }
 
         // Teardown
-        while let Some(action) = self.ctx.have_run.pop() {
-            let ctx: &mut PipelineContext<'_> = &mut self.ctx;
-
-            ctx.send_ui_event(UiEvent::UpdateStatusMsg(format!(
-                "tearing down {}...",
-                action.get_name()
-            )));
-
-            let res = ctx.teardown_action(action);
-
-            if let Err(err) = res {
-                log::error!("{}", err);
-                errors.push(err);
-            }
-        }
+        self.ctx.teardown(&mut errors);
 
         if errors.is_empty() {
             Ok(())

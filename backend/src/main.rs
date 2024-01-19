@@ -188,6 +188,15 @@ fn main() -> Result<()> {
     let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir.clone());
     let request_handler = Arc::new(Mutex::new(RequestHandler::new()));
 
+    // teardown persisted state, ignore errors for now
+    if let Some(loaded) =
+        PipelineContext::load(asset_manager.clone(), home_dir.clone(), config_dir.clone())
+    {
+        // TODO::this will cause display-dependent actions to automatically fail, but
+        // this (hopefully) isn't a major problem because xrandr isn't persistent across reboots
+        loaded.teardown(&mut vec![]);
+    }
+
     match mode {
         Modes::Autostart => {
             // build the executor
