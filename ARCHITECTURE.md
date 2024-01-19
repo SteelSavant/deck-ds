@@ -14,6 +14,10 @@ Launch profiles are separated into
 - Category profiles, which apply to all apps with any configured tags
 - App profiles, which configure an existing category profile for a specific app (not implemented)
 
+### State
+
+Execution state is persisted to a plaintext file to handle any required teardown if the system is interrupted.
+
 ## Backend Modes
 
 The backend runs in three primary modes:
