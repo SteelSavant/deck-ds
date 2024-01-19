@@ -20,19 +20,19 @@ pub use ui::Pos;
 pub use ui::Size;
 pub use ui::UiEvent;
 
-#[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct DisplayRestoration {
+#[derive(Debug, Default, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct UIManagement {
     pub id: ActionId,
 
     pub teardown_external_settings: TeardownExternalSettings,
     pub teardown_deck_location: RelativeLocation,
 }
-impl DisplayRestoration {
+impl UIManagement {
     pub(crate) fn desktop_only(&self, ctx: &mut PipelineContext<'_>) -> Result<()> {
         let mut display = ctx
             .display
             .take()
-            .with_context(|| "DisplayRestoration requires x11 to be running")?;
+            .with_context(|| "UIManagement requires x11 to be running")?;
         if let Some(current_output) = display.get_preferred_external_output()? {
             match self.teardown_external_settings {
                 TeardownExternalSettings::Previous => Ok(()),
@@ -74,11 +74,21 @@ impl DisplayRestoration {
     }
 }
 
-#[derive(Debug)]
+#[cfg_attr(test, derive(Default))]
+#[derive(Debug, PartialEq)]
 pub struct DisplayState {
     previous_output_id: XId,
     previous_output_mode: Option<XId>,
     runtime_state: Option<RuntimeDisplayState>,
+}
+
+impl Clone for DisplayState {
+    /// Clone for DisplayState is only implemented for ease of the current serialization impl.
+    /// The clone will not contain any of the UI runtime context information.
+
+    fn clone(&self) -> Self {
+        SerialiableDisplayState::from(self).into()
+    }
 }
 
 impl From<&DisplayState> for SerialiableDisplayState {
@@ -90,10 +100,26 @@ impl From<&DisplayState> for SerialiableDisplayState {
     }
 }
 
+impl From<SerialiableDisplayState> for DisplayState {
+    fn from(value: SerialiableDisplayState) -> Self {
+        DisplayState {
+            previous_output_id: value.previous_output_id,
+            previous_output_mode: value.previous_output_mode,
+            runtime_state: None,
+        }
+    }
+}
+
 #[derive(Debug)]
 struct RuntimeDisplayState {
     ui_tx: Sender<UiEvent>,
     ui_ctx: egui::Context,
+}
+
+impl PartialEq for RuntimeDisplayState {
+    fn eq(&self, _: &Self) -> bool {
+        false
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -120,15 +146,11 @@ impl<'de> Deserialize<'de> for DisplayState {
     where
         D: serde::Deserializer<'de>,
     {
-        SerialiableDisplayState::deserialize(deserializer).map(|de| DisplayState {
-            previous_output_id: de.previous_output_id,
-            previous_output_mode: de.previous_output_mode,
-            runtime_state: None,
-        })
+        SerialiableDisplayState::deserialize(deserializer).map(|de| de.into())
     }
 }
 
-#[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub enum RelativeLocation {
     Above,
     #[default]
@@ -150,7 +172,7 @@ impl From<RelativeLocation> for Relation {
     }
 }
 
-#[derive(Debug, Default, Copy, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "type", content = "value")]
 pub enum TeardownExternalSettings {
     /// Previous resolution, before setup
@@ -171,14 +193,16 @@ impl DisplayState {
     }
 }
 
-impl ActionImpl for DisplayRestoration {
+impl ActionImpl for UIManagement {
     type State = DisplayState;
+
+    const NAME: &'static str = "UIManagement";
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let display = ctx
             .display
             .as_mut()
-            .with_context(|| "DisplayRestoration requires x11 to be running")?;
+            .with_context(|| "UIManagement requires x11 to be running")?;
 
         let preferred = display.get_preferred_external_output()?;
 
@@ -223,7 +247,7 @@ impl ActionImpl for DisplayRestoration {
         let mut display = ctx
             .display
             .take()
-            .with_context(|| "DisplayRestoration requires x11 to be running")?;
+            .with_context(|| "UIManagement requires x11 to be running")?;
         let current_output = display.get_preferred_external_output()?;
 
         let res = match ctx.get_state::<Self>() {
@@ -256,7 +280,7 @@ impl ActionImpl for DisplayRestoration {
                             let mode = display.get_mode(mode)?;
                             display.set_output_mode(&current_output, &mode)
                         }
-                        None => DisplayRestoration {
+                        None => UIManagement {
                             teardown_external_settings: TeardownExternalSettings::Native,
                             ..*self
                         }
@@ -309,10 +333,8 @@ impl ActionImpl for DisplayRestoration {
         res
     }
 
+    #[inline]
     fn get_id(&self) -> ActionId {
         self.id
     }
 }
-
-#[cfg(test)]
-mod tests {}

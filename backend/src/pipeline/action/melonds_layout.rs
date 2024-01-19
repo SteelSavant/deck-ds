@@ -10,9 +10,12 @@ use configparser::ini::Ini;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+#[cfg(test)]
+pub use internal::MelonDSLayoutState;
+
 /// melonDS layout options. Because of the "unique" way melonDS handles
 /// layouts, these options do not map 1:1.
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub enum MelonDSLayoutOption {
     Natural,    // Puts screens vertical normally, horizonal in book mode.
     Vertical,   // Puts screens vertical always,
@@ -21,7 +24,7 @@ pub enum MelonDSLayoutOption {
     Single,     // Displays only one screen,
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub enum MelonDSSizingOption {
     Even,
     EmphasizeTop,
@@ -40,7 +43,7 @@ impl MelonDSSizingOption {
     }
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct MelonDSLayout {
     pub id: ActionId,
 
@@ -55,12 +58,14 @@ mod internal {
 
     use serde::{Deserialize, Serialize};
 
-    #[derive(Debug, Clone, Deserialize, Serialize)]
+    #[cfg_attr(test, derive(Default))]
+    #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
     pub struct MelonDSLayoutState {
         pub layout: RawMelonDSState,
         pub ini_path: PathBuf,
     }
 
+    #[cfg_attr(test, derive(Default))]
     #[derive(Debug, Copy, Clone, Deserialize, Serialize, PartialEq, Eq)]
     pub struct RawMelonDSState {
         pub layout_option: u64,
@@ -191,6 +196,8 @@ impl internal::RawMelonDSState {
 impl ActionImpl for MelonDSLayout {
     type State = internal::MelonDSLayoutState;
 
+    const NAME: &'static str = "MelonDSLayout";
+
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let ini_path = ctx
             .get_state::<SourceFile>()
@@ -216,6 +223,8 @@ impl ActionImpl for MelonDSLayout {
             None => Ok(()),
         }
     }
+
+    #[inline]
     fn get_id(&self) -> ActionId {
         self.id
     }

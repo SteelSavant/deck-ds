@@ -63,6 +63,8 @@ impl CemuLayoutState {
 impl ActionImpl for CemuLayout {
     type State = CemuLayoutState;
 
+    const NAME: &'static str = "CemuLayout";
+
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let (xml_path, layout) = {
             let xml_path = ctx
@@ -92,6 +94,7 @@ impl ActionImpl for CemuLayout {
         }
     }
 
+    #[inline]
     fn get_id(&self) -> ActionId {
         self.id
     }

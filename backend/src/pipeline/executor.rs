@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
-use type_reg::untagged::TypeMap as SerdeMap;
+use type_reg::untagged::{TypeMap as SerdeMap, TypeReg};
 
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
@@ -15,7 +15,7 @@ use crate::pipeline::action::citra_layout::CitraLayout;
 use crate::pipeline::action::melonds_layout::MelonDSLayout;
 use crate::pipeline::action::multi_window::MultiWindow;
 use crate::pipeline::action::source_file::SourceFile;
-use crate::pipeline::action::ui_management::{DisplayRestoration, SerialiableDisplayState};
+use crate::pipeline::action::ui_management::UIManagement;
 use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::data::{PipelineAction, Selection};
 use crate::settings::AppId;
@@ -29,7 +29,10 @@ use super::data::{Pipeline, PipelineTarget};
 
 use super::action::ActionImpl;
 
+#[cfg(not(test))]
 const PIPELINE_CONTEXT_STATE_PATH: &str = "/tmp/deckds-context.tmp";
+#[cfg(test)]
+const PIPELINE_CONTEXT_STATE_PATH: &str = "test/out/tmp/deckds-context.tmp";
 
 pub struct PipelineExecutor<'a> {
     app_id: AppId,
@@ -77,6 +80,114 @@ impl<'a> PipelineContext<'a> {
         }
     }
 
+    fn load(
+        assets_manager: AssetManager<'a>,
+        home_dir: PathBuf,
+        config_dir: PathBuf,
+    ) -> Option<Self> {
+        let persisted = std::fs::read_to_string(Path::new(PIPELINE_CONTEXT_STATE_PATH)).ok()?;
+
+        let mut type_reg = TypeReg::new();
+        fn register_type<T>(type_reg: &mut TypeReg<String>)
+        where
+            T: ActionImpl + Clone + Send + Sync + 'static,
+            <T as ActionImpl>::State: Clone + Send + Sync,
+        {
+            type_reg.register::<(T, Option<<T as ActionImpl>::State>)>(T::NAME.to_string());
+        }
+
+        type_reg.register::<Vec<String>>("__actions__".to_string());
+
+        register_type::<UIManagement>(&mut type_reg);
+        register_type::<VirtualScreen>(&mut type_reg);
+        register_type::<MultiWindow>(&mut type_reg);
+        register_type::<SourceFile>(&mut type_reg);
+        register_type::<CemuLayout>(&mut type_reg);
+        register_type::<CitraLayout>(&mut type_reg);
+        register_type::<MelonDSLayout>(&mut type_reg);
+
+        let mut deserializer = serde_json::Deserializer::from_str(&persisted);
+        let type_map: SerdeMap<String> = type_reg.deserialize_map(&mut deserializer).unwrap();
+
+        let mut default = PipelineContext::new(assets_manager, home_dir, config_dir);
+
+        let actions = type_map
+            .get::<Vec<String>, _>("__actions__")?
+            .iter()
+            .map(|v| v.as_str());
+
+        for action in actions {
+            match action {
+                UIManagement::NAME => load_state::<UIManagement>(&mut default, &type_map),
+                VirtualScreen::NAME => load_state::<VirtualScreen>(&mut default, &type_map),
+                MultiWindow::NAME => load_state::<MultiWindow>(&mut default, &type_map),
+                SourceFile::NAME => load_state::<SourceFile>(&mut default, &type_map),
+                CemuLayout::NAME => load_state::<CemuLayout>(&mut default, &type_map),
+                CitraLayout::NAME => load_state::<CitraLayout>(&mut default, &type_map),
+                MelonDSLayout::NAME => load_state::<MelonDSLayout>(&mut default, &type_map),
+                _ => {}
+            }
+        }
+
+        fn load_state<T>(ctx: &mut PipelineContext, serde_map: &SerdeMap<String>)
+        where
+            T: ActionImpl + Clone + Send + Sync + 'static,
+            <T as ActionImpl>::State: Clone + Send + Sync,
+            Action: From<T>,
+        {
+            if let Some(value) = serde_map.get::<(T, Option<<T as ActionImpl>::State>), _>(T::NAME)
+            {
+                ctx.have_run.push(value.0.clone().into());
+                if let Some(state) = value.1.as_ref() {
+                    ctx.set_state::<T>(state.clone());
+                }
+            }
+        }
+
+        Some(default)
+    }
+
+    fn persist(&self) -> Result<()> {
+        let mut map = SerdeMap::new();
+
+        fn insert_action<T>(ctx: &PipelineContext, map: &mut SerdeMap<String>, action: &T)
+        where
+            T: ActionImpl + Clone + Send + Sync + 'static,
+            <T as ActionImpl>::State: Clone + Send + Sync,
+        {
+            map.insert(
+                T::NAME.to_string(),
+                (action.clone(), ctx.get_state::<T>().cloned()),
+            );
+        }
+
+        // TODO::clone less things
+        for action in self.have_run.iter() {
+            match action {
+                Action::UIManagement(a) => insert_action(self, &mut map, a),
+                Action::VirtualScreen(a) => insert_action(self, &mut map, a),
+                Action::MultiWindow(a) => insert_action(self, &mut map, a),
+                Action::CitraLayout(a) => insert_action(self, &mut map, a),
+                Action::CemuLayout(a) => insert_action(self, &mut map, a),
+                Action::MelonDSLayout(a) => insert_action(self, &mut map, a),
+                Action::SourceFile(a) => insert_action(self, &mut map, a),
+            };
+        }
+
+        let actions = self
+            .have_run
+            .iter()
+            .map(|a| a.get_name())
+            .collect::<Vec<_>>();
+        map.insert("__actions__".to_string(), actions);
+
+        let serialized = serde_json::to_string_pretty(&map)?;
+        Ok(std::fs::write(
+            Path::new(PIPELINE_CONTEXT_STATE_PATH),
+            serialized,
+        )?)
+    }
+
     pub fn get_state<P: ActionImpl + 'static>(&self) -> Option<&P::State> {
         self.state.get::<StateKey<P, P::State>>()
     }
@@ -90,7 +201,7 @@ impl<'a> PipelineContext<'a> {
     }
 
     pub fn send_ui_event(&self, event: UiEvent) {
-        let ui_state = self.get_state::<DisplayRestoration>();
+        let ui_state = self.get_state::<UIManagement>();
         if let Some(ui_state) = ui_state {
             ui_state.send_ui_event(event);
         }
@@ -99,57 +210,16 @@ impl<'a> PipelineContext<'a> {
     fn setup_action(&mut self, action: Action) -> Result<()> {
         let res = action
             .exec(self, ActionType::Setup)
-            .with_context(|| format!("failed to execute setup for {}", action.name()));
+            .with_context(|| format!("failed to execute setup for {}", action.get_name()));
         self.have_run.push(action);
-        self.save_state().and(res)
+        self.persist().and(res)
     }
 
     fn teardown_action(&mut self, action: Action) -> Result<()> {
         let res = action
             .exec(self, ActionType::Teardown)
-            .with_context(|| format!("failed to execute teardown for {}", action.name()));
-        self.save_state().and(res)
-    }
-
-    fn save_state(&self) -> Result<()> {
-        let mut map = SerdeMap::new();
-
-        for action in self.have_run.iter() {
-            match action {
-                Action::DisplayRestoration(_) => map.insert(
-                    action.name(),
-                    self.get_state::<DisplayRestoration>()
-                        .map(SerialiableDisplayState::from),
-                ),
-                Action::VirtualScreen(_) => {
-                    map.insert(action.name(), self.get_state::<VirtualScreen>().cloned())
-                }
-                Action::MultiWindow(_) => {
-                    map.insert(action.name(), self.get_state::<MultiWindow>().cloned())
-                }
-                Action::CitraLayout(_) => {
-                    map.insert(action.name(), self.get_state::<CitraLayout>().cloned())
-                }
-                Action::CemuLayout(_) => {
-                    map.insert(action.name(), self.get_state::<CemuLayout>().cloned())
-                }
-                Action::MelonDSLayout(_) => {
-                    map.insert(action.name(), self.get_state::<MelonDSLayout>().cloned())
-                }
-                Action::SourceFile(_) => {
-                    map.insert(action.name(), self.get_state::<SourceFile>().cloned())
-                }
-            };
-        }
-
-        let actions = self.have_run.iter().map(|a| a.name()).collect::<Vec<_>>();
-        map.insert("__actions__", actions);
-
-        let serialized = serde_json::to_string_pretty(&map)?;
-        Ok(std::fs::write(
-            Path::new(PIPELINE_CONTEXT_STATE_PATH),
-            serialized,
-        )?)
+            .with_context(|| format!("failed to execute teardown for {}", action.get_name()));
+        self.persist().and(res)
     }
 }
 
@@ -186,7 +256,7 @@ impl<'a> PipelineExecutor<'a> {
         for action in pipeline.iter() {
             self.ctx.send_ui_event(UiEvent::UpdateStatusMsg(format!(
                 "checking dependencies for {}...",
-                action.name()
+                action.get_name()
             )));
 
             if let Err(err) = action.exec(&mut self.ctx, ActionType::Dependencies) {
@@ -198,7 +268,7 @@ impl<'a> PipelineExecutor<'a> {
         for action in pipeline {
             self.ctx.send_ui_event(UiEvent::UpdateStatusMsg(format!(
                 "setting up {}...",
-                action.name()
+                action.get_name()
             )));
 
             if let Err(err) = self.ctx.setup_action(action) {
@@ -226,7 +296,7 @@ impl<'a> PipelineExecutor<'a> {
 
             ctx.send_ui_event(UiEvent::UpdateStatusMsg(format!(
                 "tearing down {}...",
-                action.name()
+                action.get_name()
             )));
 
             let res = ctx.teardown_action(action);
@@ -383,7 +453,7 @@ impl Pipeline {
                         None | Some(true) => Some(a.selection),
                         Some(false) => None,
                     })
-                    .flat_map(|a| build_recursive(a))
+                    .flat_map(build_recursive)
                     .collect(),
             }
         }
@@ -391,7 +461,7 @@ impl Pipeline {
         self.targets
             .remove(&target)
             .into_iter()
-            .flat_map(move |action| build_recursive(action))
+            .flat_map(build_recursive)
             .collect()
     }
 }
@@ -411,5 +481,132 @@ impl Action {
             ActionType::Setup => self.setup(ctx),
             ActionType::Teardown => self.teardown(ctx),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        pipeline::action::{
+            cemu_layout::CemuLayoutState,
+            citra_layout::{CitraLayoutOption, CitraLayoutState, CitraState},
+            melonds_layout::{MelonDSLayoutOption, MelonDSLayoutState, MelonDSSizingOption},
+            source_file::{FileSource, FlatpakSource},
+            ui_management::{DisplayState, RelativeLocation, TeardownExternalSettings},
+            ActionId,
+        },
+        util::create_dir_all,
+        ASSETS_DIR,
+    };
+
+    use super::*;
+
+    #[test]
+    fn test_ctx_serde() -> anyhow::Result<()> {
+        let home_dir: PathBuf = "tests/out/home/ctx-serde".into();
+        let config_dir: PathBuf = "tests/out/.config/deck-ds-ctx-serde".into();
+        let external_asset_path: PathBuf = "test/out/assets/ctx-serde".into();
+
+        create_dir_all(Path::new(PIPELINE_CONTEXT_STATE_PATH).parent().unwrap())?;
+
+        let mut ctx = PipelineContext::new(
+            AssetManager::new(&ASSETS_DIR, external_asset_path.clone()),
+            home_dir.clone(),
+            config_dir.clone(),
+        );
+
+        ctx.have_run = vec![
+            UIManagement {
+                id: ActionId::nil(),
+                teardown_external_settings: TeardownExternalSettings::Native,
+                teardown_deck_location: RelativeLocation::Below,
+            }
+            .clone()
+            .into(),
+            VirtualScreen {
+                id: ActionId::nil(),
+            }
+            .clone()
+            .into(),
+            MultiWindow {
+                id: ActionId::nil(),
+            }
+            .into(),
+            SourceFile {
+                id: ActionId::nil(),
+                source: FileSource::Flatpak(FlatpakSource::Cemu),
+            }
+            .into(),
+            CemuLayout {
+                id: ActionId::nil(),
+                layout: CemuLayoutState {
+                    separate_gamepad_view: true,
+                    fullscreen: true,
+                },
+            }
+            .into(),
+            CitraLayout {
+                id: ActionId::nil(),
+                layout: CitraLayoutState {
+                    layout_option: CitraLayoutOption::Default,
+                    swap_screens: false,
+                    fullscreen: true,
+                },
+            }
+            .into(),
+            MelonDSLayout {
+                id: ActionId::nil(),
+                layout_option: MelonDSLayoutOption::Vertical,
+                sizing_option: MelonDSSizingOption::Even,
+                book_mode: false,
+                swap_screens: false,
+            }
+            .into(),
+        ];
+
+        ctx.set_state::<UIManagement>(DisplayState::default());
+        // ctx.set_state::<VirtualScreen>(());
+        // ctx.set_state::<MultiWindow>(());
+        ctx.set_state::<SourceFile>("some_random_path".into());
+        ctx.set_state::<CemuLayout>(CemuLayoutState {
+            separate_gamepad_view: true,
+            fullscreen: false,
+        });
+        ctx.set_state::<CitraLayout>(CitraState::default());
+        ctx.set_state::<MelonDSLayout>(MelonDSLayoutState::default());
+
+        ctx.persist()?;
+
+        let loaded = PipelineContext::load(
+            AssetManager::new(&ASSETS_DIR, external_asset_path.clone()),
+            home_dir,
+            config_dir,
+        )
+        .with_context(|| "Persisted context should load")?;
+
+        for (expected_action, actual_action) in ctx.have_run.iter().zip(loaded.have_run.iter()) {
+            assert_eq!(expected_action, actual_action);
+        }
+
+        fn check_state<T>(ctx: &PipelineContext, loaded: &PipelineContext)
+        where
+            T: ActionImpl + 'static,
+            <T as ActionImpl>::State: PartialEq,
+        {
+            let expected = ctx.get_state::<T>();
+            let actual = loaded.get_state::<T>();
+
+            assert_eq!(expected, actual, "{} failed to match", T::NAME);
+        }
+
+        check_state::<UIManagement>(&ctx, &loaded);
+        check_state::<VirtualScreen>(&ctx, &loaded);
+        check_state::<MultiWindow>(&ctx, &loaded);
+        check_state::<SourceFile>(&ctx, &loaded);
+        check_state::<CemuLayout>(&ctx, &loaded);
+        check_state::<CitraLayout>(&ctx, &loaded);
+        check_state::<MelonDSLayout>(&ctx, &loaded);
+
+        Ok(())
     }
 }

@@ -92,6 +92,8 @@ impl SettingsSource for AppImageSource {
 impl ActionImpl for SourceFile {
     type State = PathBuf;
 
+    const NAME: &'static str = "SourceFile";
+
     fn setup(&self, ctx: &mut PipelineContext) -> anyhow::Result<()> {
         match &self.source {
             FileSource::Flatpak(flatpak) => {
@@ -152,6 +154,7 @@ impl ActionImpl for SourceFile {
         vec![dep]
     }
 
+    #[inline]
     fn get_id(&self) -> ActionId {
         self.id
     }

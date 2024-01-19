@@ -11,7 +11,7 @@ use crate::{
             cemu_layout::{CemuLayout, CemuLayoutState},
             citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
             melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
-            ui_management::DisplayRestoration,
+            ui_management::UIManagement,
             ActionId,
         },
         data::generic,
@@ -33,7 +33,7 @@ pub type DbPipelineActionSettings = v1::DbPipelineActionSettings;
 pub type DbCemuLayout = v1::DbCemuLayout;
 pub type DbCitraLayout = v1::DbCitraLayout;
 pub type DbMelonDSLayout = v1::DbMelonDSLayout;
-pub type DbDisplayRestoration = v1::DbDisplayRestoration;
+pub type DbUIManagement = v1::DbUIManagement;
 pub type DbMultiWindow = v1::DbMultiWindow;
 pub type DbSourceFile = v1::DbSourceFile;
 pub type DbVirtualScreen = v1::DbVirtualScreen;
@@ -81,7 +81,7 @@ pub mod v1 {
 
     #[derive(Debug, Clone, Deserialize, Serialize)]
     pub enum DbAction {
-        DisplayRestoration(ActionId),
+        UIManagement(ActionId),
         VirtualScreen(ActionId),
         MultiWindow(ActionId),
         CitraLayout(ActionId),
@@ -265,15 +265,15 @@ pub mod v1 {
     #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
     #[native_db]
     #[native_model(id = 6, version = 1, with = NativeModelJSON)]
-    pub struct DbDisplayRestoration {
+    pub struct DbUIManagement {
         #[primary_key]
         pub id: ActionId,
         pub teardown_external_settings: DbTeardownExternalSettings,
         pub teardown_deck_location: DbRelativeLocation,
     }
 
-    impl From<DisplayRestoration> for DbDisplayRestoration {
-        fn from(value: DisplayRestoration) -> Self {
+    impl From<UIManagement> for DbUIManagement {
+        fn from(value: UIManagement) -> Self {
             Self {
                 id: value.id,
                 teardown_external_settings: match value.teardown_external_settings {
@@ -330,8 +330,8 @@ pub mod v1 {
         }
     }
 
-    impl From<DbDisplayRestoration> for DisplayRestoration {
-        fn from(value: DbDisplayRestoration) -> Self {
+    impl From<DbUIManagement> for UIManagement {
+        fn from(value: DbUIManagement) -> Self {
             Self {
                 id: value.id,
                 teardown_external_settings: match value.teardown_external_settings {
@@ -574,7 +574,7 @@ pub mod v1 {
 impl DbAction {
     pub fn get_id(&self) -> ActionId {
         match *self {
-            v1::DbAction::DisplayRestoration(id) => id,
+            v1::DbAction::UIManagement(id) => id,
             v1::DbAction::VirtualScreen(id) => id,
             v1::DbAction::MultiWindow(id) => id,
             v1::DbAction::CitraLayout(id) => id,

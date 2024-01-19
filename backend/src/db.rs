@@ -48,8 +48,8 @@ static DATABASE_BUILDER: Lazy<native_db::DatabaseBuilder> = Lazy::new(|| {
             .define::<v1::DbMelonDSLayout>()
             .expect("failed to define MelonDSLayout v1");
         builder
-            .define::<v1::DbDisplayRestoration>()
-            .expect("failed to define DisplayRestoration v1");
+            .define::<v1::DbUIManagement>()
+            .expect("failed to define UIManagement v1");
         builder
             .define::<v1::DbMultiWindow>()
             .expect("failed to define MultiWindow v1");

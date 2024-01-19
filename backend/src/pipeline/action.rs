@@ -7,7 +7,7 @@ use crate::macros::newtype_uuid;
 
 use self::{
     cemu_layout::CemuLayout, citra_layout::CitraLayout, melonds_layout::MelonDSLayout,
-    multi_window::MultiWindow, source_file::SourceFile, ui_management::DisplayRestoration,
+    multi_window::MultiWindow, source_file::SourceFile, ui_management::UIManagement,
     virtual_screen::VirtualScreen,
 };
 
@@ -26,6 +26,9 @@ pub trait ActionImpl: DeserializeOwned + Serialize {
     /// Type of runtime state of the action
     type State: 'static + Debug + DeserializeOwned + Serialize;
 
+    /// Essentially a more stable, hardcoded typename.
+    const NAME: &'static str;
+
     fn setup(&self, _ctx: &mut PipelineContext) -> Result<()> {
         // default to no setup
         Ok(())
@@ -42,6 +45,11 @@ pub trait ActionImpl: DeserializeOwned + Serialize {
     }
 
     fn get_id(&self) -> ActionId;
+
+    /// Essentially a more stable, hardcoded typename.
+    fn get_name(&self) -> &'static str {
+        Self::NAME
+    }
 }
 
 #[enum_delegate::register]
@@ -50,6 +58,8 @@ pub trait ErasedPipelineAction {
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()>;
     fn get_dependencies(&self, ctx: &mut PipelineContext) -> Vec<Dependency>;
     fn get_id(&self) -> ActionId;
+    /// Essentially a more stable, hardcoded typename.
+    fn get_name(&self) -> &'static str;
 }
 
 impl<T> ErasedPipelineAction for T
@@ -79,15 +89,20 @@ where
     fn get_id(&self) -> ActionId {
         self.get_id()
     }
+
+    fn get_name(&self) -> &'static str {
+        self.get_name()
+    }
 }
 
 newtype_uuid!(ActionId);
 
+#[cfg_attr(test, derive(PartialEq))]
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[enum_delegate::implement(ErasedPipelineAction)]
 #[serde(tag = "type", content = "value")]
 pub enum Action {
-    DisplayRestoration(DisplayRestoration),
+    UIManagement(UIManagement),
     VirtualScreen(VirtualScreen),
     MultiWindow(MultiWindow),
     CitraLayout(CitraLayout),
@@ -103,23 +118,9 @@ impl<T: Into<Action>, R> From<T> for Selection<R> {
 }
 
 impl Action {
-    pub fn name(&self) -> &'static str {
-        match self {
-            Action::DisplayRestoration(_) => "DisplayRestoration",
-            Action::VirtualScreen(_) => "VirtualScreen",
-            Action::MultiWindow(_) => "MultiWindow",
-            Action::CitraLayout(_) => "CitraLayout",
-            Action::CemuLayout(_) => "CemuLayout",
-            Action::MelonDSLayout(_) => "MelonDSLayout",
-            Action::SourceFile(_) => "SourceFile",
-        }
-    }
-
     pub fn cloned_with_id(&self, id: ActionId) -> Self {
         match self {
-            Action::DisplayRestoration(a) => {
-                Action::DisplayRestoration(DisplayRestoration { id, ..*a })
-            }
+            Action::UIManagement(a) => Action::UIManagement(UIManagement { id, ..*a }),
             Action::VirtualScreen(_) => Action::VirtualScreen(VirtualScreen { id }),
             Action::MultiWindow(_) => Action::MultiWindow(MultiWindow { id }),
             Action::CitraLayout(a) => Action::CitraLayout(CitraLayout { id, ..*a }),

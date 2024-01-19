@@ -23,8 +23,8 @@ export type SelectionFor_ActionAnd_PipelineActionFor_Action =
     };
 export type Action =
   | {
-      type: "DisplayRestoration";
-      value: DisplayRestoration;
+      type: "UIManagement";
+      value: UIManagement;
     }
   | {
       type: "VirtualScreen";
@@ -181,7 +181,7 @@ export interface PipelineFor_Action {
     [k: string]: SelectionFor_ActionAnd_PipelineActionFor_Action;
   };
 }
-export interface DisplayRestoration {
+export interface UIManagement {
   id: string;
   teardown_deck_location: RelativeLocation;
   teardown_external_settings: TeardownExternalSettings;

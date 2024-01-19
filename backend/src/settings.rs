@@ -14,7 +14,7 @@ newtype_strid!("", AppId);
 use crate::{
     macros::{newtype_strid, newtype_uuid},
     pipeline::{
-        action::ui_management::DisplayRestoration,
+        action::ui_management::UIManagement,
         data::{Pipeline, PipelineDefinition},
     },
     util::create_dir_all,
@@ -32,7 +32,7 @@ pub struct Settings {
 
 #[derive(Debug, Default, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct GlobalConfig {
-    pub display_restoration: DisplayRestoration,
+    pub display_restoration: UIManagement,
     pub restore_displays_if_not_executing_pipeline: bool,
     // other global settings as needed
 }

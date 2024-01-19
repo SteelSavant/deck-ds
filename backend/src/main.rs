@@ -76,7 +76,7 @@ static ASSETS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/assets");
 //     let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
 //     let mut ctx = &mut PipelineContext::new(asset_manager, home_dir, config_dir);
 
-//     let ui = DisplayRestoration {
+//     let ui = UIManagement {
 //         id: ActionId::nil(),
 //         teardown_external_settings: TeardownExternalSettings::Preference(ModePreference {
 //             resolution: sys::x_display::ModeOption::Exact(Resolution { w: 1920, h: 1080 }),
@@ -218,7 +218,7 @@ fn main() -> Result<()> {
                 Some(executor) => {
                     log::info!("Found autostart pipeline.");
 
-                    let exec_result = executor.and_then(|mut e| {
+                    let exec_result = executor.and_then(|e| {
                         log::debug!("Pipeline executor initialized; executing");
                         e.exec()
                     });

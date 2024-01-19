@@ -9,10 +9,14 @@ use regex::Regex;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[cfg(test)]
+pub use internal::CitraState;
+
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "type", content = "value")]
 pub enum CitraLayoutOption {
-    Default,         // 0
+    #[default]
+    Default, // 0
     SingleScreen,    // 1
     LargeScreen,     // 2
     SideBySide,      // 3
@@ -53,6 +57,7 @@ pub struct CitraLayout {
     pub layout: CitraLayoutState,
 }
 
+#[cfg_attr(test, derive(Default))]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
 pub struct CitraLayoutState {
     pub layout_option: CitraLayoutOption,
@@ -148,7 +153,8 @@ mod internal {
 
     use super::CitraLayoutState;
 
-    #[derive(Debug, Clone, Deserialize, Serialize)]
+    #[cfg_attr(test, derive(Default))]
+    #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
     pub struct CitraState {
         pub ini_path: PathBuf,
         pub layout: CitraLayoutState,
@@ -157,6 +163,8 @@ mod internal {
 
 impl ActionImpl for CitraLayout {
     type State = internal::CitraState;
+
+    const NAME: &'static str = "CitraLayout";
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let (ini_path, layout) = {
@@ -181,6 +189,7 @@ impl ActionImpl for CitraLayout {
         }
     }
 
+    #[inline]
     fn get_id(&self) -> ActionId {
         self.id
     }

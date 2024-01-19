@@ -9,7 +9,7 @@ use super::{
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
         multi_window::MultiWindow,
         source_file::{CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile},
-        ui_management::{DisplayRestoration, RelativeLocation, TeardownExternalSettings},
+        ui_management::{RelativeLocation, TeardownExternalSettings, UIManagement},
         virtual_screen::VirtualScreen,
         ActionId,
     },
@@ -221,7 +221,7 @@ impl PipelineActionRegistarBuilder {
                             description: Some("Ensures the display resolution and layout are correctly configured before and after executing pipeline actions.".into()),
                             enabled: None,
                             profile_override: None,
-                            selection: DisplayRestoration {
+                            selection: UIManagement {
                                 id: ActionId::nil(),
                                 teardown_external_settings: TeardownExternalSettings::Previous,
                                 teardown_deck_location: RelativeLocation::Below,
