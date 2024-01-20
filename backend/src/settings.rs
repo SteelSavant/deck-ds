@@ -173,7 +173,7 @@ pub struct CategoryProfile {
     pub pipeline: PipelineDefinition,
 }
 
-#[derive(Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
 
 pub struct AppProfile {
     pub id: AppId,

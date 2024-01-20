@@ -152,7 +152,7 @@ impl ProfileDb {
         Ok(profiles)
     }
 
-    pub fn get_app_profile(&self, id: &AppId) -> Result<AppProfile> {
+    pub fn get_app_profile(&self, id: &AppId) -> Result<Option<AppProfile>> {
         let ro = self.read_only();
 
         AppProfile::load(id, &ro)
@@ -359,7 +359,7 @@ mod tests {
 
         let actual = db.get_app_profile(&app_id)?;
 
-        assert_eq!(expected, actual);
+        assert_eq!(Some(expected), actual);
 
         std::fs::remove_file(&path)?;
 

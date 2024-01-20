@@ -11,7 +11,7 @@ use crate::{
         action_registar::PipelineActionRegistrar,
         data::{Pipeline, PipelineDefinition, Template},
     },
-    settings::{CategoryProfile, ProfileId},
+    settings::{AppId, AppProfile, CategoryProfile, ProfileId},
 };
 
 use super::{
@@ -185,6 +185,114 @@ pub fn delete_profile(
     }
 }
 
+// Get App Profile
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct GetAppProfileRequest {
+    app_id: AppId,
+}
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct GetAppProfileResponse {
+    app: Option<AppProfile>,
+}
+
+pub fn get_app_profile(
+    request_handler: Arc<Mutex<RequestHandler>>,
+    profiles: &'static ProfileDb,
+) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+    move |args: super::ApiParameterType| {
+        log_invoke("get_app_profile", &args);
+
+        let args: Result<GetAppProfileRequest, _> = {
+            let mut lock = request_handler
+                .lock()
+                .expect("request handler should not be poisoned");
+
+            lock.resolve(args)
+        };
+        match args {
+            Ok(args) => match profiles.get_app_profile(&args.app_id) {
+                Ok(app) => GetAppProfileResponse { app }.to_response(),
+                Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
+            },
+            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
+        }
+    }
+}
+
+// Set App Settings
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct SetAppProfileSettingsRequest {
+    app_id: AppId,
+    default_profile: Option<ProfileId>,
+}
+
+pub fn set_app_profile_settings(
+    request_handler: Arc<Mutex<RequestHandler>>,
+    profiles: &'static ProfileDb,
+) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+    move |args: super::ApiParameterType| {
+        log_invoke("set_app_profile_settings", &args);
+
+        let args: Result<SetAppProfileSettingsRequest, _> = {
+            let mut lock = request_handler
+                .lock()
+                .expect("request handler should not be poisoned");
+
+            lock.resolve(args)
+        };
+
+        match args {
+            Ok(args) => {
+                match profiles.set_app_profile_settings(args.app_id, args.default_profile) {
+                    Ok(_) => ResponseOk.to_response(),
+                    Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
+                }
+            }
+            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
+        }
+    }
+}
+
+// Set App Profile Override
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct SetAppProfileOverrideRequest {
+    app_id: AppId,
+    profile_id: ProfileId,
+    pipeline: PipelineDefinition,
+}
+
+pub fn set_app_profile_override(
+    request_handler: Arc<Mutex<RequestHandler>>,
+    profiles: &'static ProfileDb,
+) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+    move |args: super::ApiParameterType| {
+        log_invoke("get_app_profile", &args);
+
+        let args: Result<SetAppProfileOverrideRequest, _> = {
+            let mut lock = request_handler
+                .lock()
+                .expect("request handler should not be poisoned");
+
+            lock.resolve(args)
+        };
+
+        match args {
+            Ok(args) => {
+                match profiles.set_app_profile_override(args.app_id, args.profile_id, args.pipeline)
+                {
+                    Ok(_) => ResponseOk.to_response(),
+                    Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
+                }
+            }
+            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
+        }
+    }
+}
+
 // Reify Pipeline
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
@@ -247,21 +355,3 @@ pub fn get_templates(
         GetTemplatesResponse { templates }.to_response()
     }
 }
-
-// // Pipeline Actions
-
-// #[derive(Debug, Clone, Serialize, JsonSchema)]
-// pub struct GetPipelineActionsResponse {
-//     pipeline_actions: HashMap<PipelineActionId, PipelineActionDefinition>,
-// }
-
-// pub fn get_pipeline_actions(
-//     action_registrar: PipelineActionRegistrar,
-// ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-//     move |_: super::ApiParameterType| {
-//         GetPipelineActionsResponse {
-//             pipeline_actions: action_registrar.all().as_ref().clone(),
-//         }
-//         .to_response()
-//     }
-// }

@@ -298,6 +298,24 @@ fn main() -> Result<()> {
                     crate::api::profile::get_profiles(profiles_db),
                 )
                 .register(
+                    "get_app_profile",
+                    crate::api::profile::get_app_profile(request_handler.clone(), profiles_db),
+                )
+                .register(
+                    "set_app_profile_settings",
+                    crate::api::profile::set_app_profile_settings(
+                        request_handler.clone(),
+                        profiles_db,
+                    ),
+                )
+                .register(
+                    "set_app_profile_override",
+                    crate::api::profile::set_app_profile_override(
+                        request_handler.clone(),
+                        profiles_db,
+                    ),
+                )
+                .register(
                     "reify_pipeline",
                     crate::api::profile::reify_pipeline(
                         request_handler.clone(),
@@ -309,10 +327,6 @@ fn main() -> Result<()> {
                     "get_templates",
                     crate::api::profile::get_templates(profiles_db),
                 )
-                // .register(
-                //     "get_pipeline_actions",
-                //     crate::api::profile::get_pipeline_actions(action_registrar.clone()),
-                // )
                 .register(
                     "autostart",
                     crate::api::autostart::autostart(
