@@ -161,12 +161,16 @@ export interface Api {
   create_profile_request: CreateProfileRequest;
   create_profile_response: CreateProfileResponse;
   delete_profile_request: DeleteProfileRequest;
+  get_app_profile_request: GetAppProfileRequest;
+  get_app_profile_response: GetAppProfileResponse;
   get_profile_request: GetProfileRequest;
   get_profile_response: GetProfileResponse;
   get_profiles_response: GetProfilesResponse;
   get_templates_response: GetTemplatesResponse;
   reify_pipeline_request: ReifyPipelineRequest;
   reify_pipeline_response: ReifyPipelineResponse;
+  set_app_profile_override_request: SetAppProfileOverrideRequest;
+  set_app_profile_settings_request: SetAppProfileSettingsRequest;
   set_profile_request: SetProfileRequest;
 }
 export interface AutoStartRequest {
@@ -292,6 +296,19 @@ export interface CreateProfileResponse {
 export interface DeleteProfileRequest {
   profile: string;
 }
+export interface GetAppProfileRequest {
+  app_id: string;
+}
+export interface GetAppProfileResponse {
+  app?: AppProfile | null;
+}
+export interface AppProfile {
+  default_profile?: string | null;
+  id: string;
+  overrides: {
+    [k: string]: PipelineDefinitionFor_Action;
+  };
+}
 export interface GetProfileRequest {
   profile_id: string;
 }
@@ -318,6 +335,15 @@ export interface ReifyPipelineRequest {
 }
 export interface ReifyPipelineResponse {
   pipeline: PipelineFor_Action;
+}
+export interface SetAppProfileOverrideRequest {
+  app_id: string;
+  pipeline: PipelineDefinitionFor_Action;
+  profile_id: string;
+}
+export interface SetAppProfileSettingsRequest {
+  app_id: string;
+  default_profile?: string | null;
 }
 export interface SetProfileRequest {
   profile: CategoryProfile;

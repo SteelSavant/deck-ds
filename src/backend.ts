@@ -1,4 +1,4 @@
-import { AutoStartRequest, CategoryProfile, CitraLayoutOption, CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineActionFor_Action, PipelineActionSettingsFor_Action, PipelineDefinitionFor_Action, PipelineFor_Action, ReifyPipelineRequest, ReifyPipelineResponse, SelectionFor_ActionAnd_PipelineActionFor_Action, SelectionFor_ActionAnd_String, SetProfileRequest, Template } from "./types/backend_api";
+import { AutoStartRequest, CategoryProfile, CitraLayoutOption, CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, GetAppProfileRequest, GetAppProfileResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineActionFor_Action, PipelineActionSettingsFor_Action, PipelineDefinitionFor_Action, PipelineFor_Action, ReifyPipelineRequest, ReifyPipelineResponse, SelectionFor_ActionAnd_PipelineActionFor_Action, SelectionFor_ActionAnd_String, SetAppProfileOverrideRequest, SetAppProfileSettingsRequest, SetProfileRequest, Template } from "./types/backend_api";
 import { call_backend, init_embedded, init_usdpl, target_usdpl } from "./usdpl_front";
 import { Err, Ok, Result } from "./util/result";
 
@@ -180,9 +180,13 @@ export async function logPath(): Promise<String> {
 
 // API
 
+// Autostart
+
 export async function autoStart(request: AutoStartRequest): Response<void> {
     return await call_backend_typed("autostart", request)
 }
+
+// CategoryProfile
 
 export async function createProfile(request: CreateProfileRequest): Response<CreateProfileResponse> {
     return await call_backend_typed("create_profile", request)
@@ -203,6 +207,22 @@ export async function deleteProfile(request: DeleteProfileRequest): Response<voi
 export async function getProfiles(): Response<GetProfilesResponse> {
     return await call_backend_typed("get_profiles", null);
 }
+
+// AppProfile
+
+export async function getAppProfile(request: GetAppProfileRequest): Response<GetAppProfileResponse> {
+    return await call_backend_typed("get_app_profile", request)
+}
+
+export async function setAppProfileSettings(request: SetAppProfileSettingsRequest): Response<void> {
+    return await call_backend_typed("set_app_profile_settings", request)
+}
+
+export async function setAppProfileOverride(request: SetAppProfileOverrideRequest): Response<void> {
+    return await call_backend_typed("set_app_profile_override", request)
+}
+
+// Templates
 
 export async function getTemplates(): Response<GetTemplatesResponse> {
     return await call_backend_typed("get_templates", null);
