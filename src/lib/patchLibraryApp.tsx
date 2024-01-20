@@ -15,13 +15,9 @@ function patchLibraryApp(serverAPI: ServerAPI) {
     return serverAPI.routerHook.addPatch(
         '/library/app/:appid',
         (props?: { path?: string; children?: ReactElement }) => {
-            console.log("props", props);
-
             if (!props?.children?.props?.renderFunc) {
                 return props;
             }
-
-            console.log("props passed");
 
             afterPatch(
                 props.children.props,
@@ -54,11 +50,9 @@ function patchLibraryApp(serverAPI: ServerAPI) {
                             const children = container.props.children;
                             const child = children.find((c: any) => c?.type?.render);
 
-                            console.log('AppDetails child:', child);
-
                             wrapReactType(child.type);
                             afterPatch(child.type, 'render', (_3: Record<string, unknown>[], ret3?: ReactElement) => {
-                                const container = findInReactTree(
+                                const appButtons = findInReactTree(
                                     ret3,
                                     (x: ReactElement) =>
                                         Array.isArray(x?.props?.children) &&
@@ -67,26 +61,38 @@ function patchLibraryApp(serverAPI: ServerAPI) {
                                         )
                                 );
 
-                                if (typeof container !== 'object') {
-                                    return ret3;
+                                const playButtonStatusPanel = findInReactTree(
+                                    ret3,
+                                    (x: ReactElement) =>
+                                        Array.isArray(x?.props?.children) &&
+                                        x?.props?.className?.includes(
+                                            basicAppDetailsSectionStylerClasses.ActionButtonAndStatusPanel
+                                        )
+                                )
+
+                                const missingAppButtons = typeof appButtons !== 'object';
+                                const missingPlayButtonStatusPanel = typeof playButtonStatusPanel !== 'object';
+
+                                if (!missingAppButtons) {
+                                    const children = appButtons?.props?.children;
+
+                                    console.log('children', children?.toString());
+                                    if (children?.length && children?.length < 3) {
+                                        children?.splice(0, 0, <p>HERE!</p>)
+                                    }
+
+                                    console.log('ret3 appButtons', appButtons);
                                 }
 
-                                const children = container?.props?.children;
-
-                                console.log('children', children.toString());
-                                if (children?.length && children?.length < 3) {
-                                    console.log('less than 3 children; adding:', children.toString());
-                                    children?.splice(0, 0, <p>HERE!</p>)
+                                if (!missingPlayButtonStatusPanel) {
+                                    console.log('ret3 playButton', playButtonStatusPanel);
+                                    const children = playButtonStatusPanel?.props?.children;
+                                    children?.splice(0, 1, <p>PLAY!</p>);
                                 }
-
-                                console.log('ret3 container', container);
-
 
                                 return ret3;
+
                             });
-
-                            console.log('returning 2');
-
 
                             return ret2;
                         }
