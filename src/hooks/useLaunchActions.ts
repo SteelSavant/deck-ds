@@ -16,7 +16,6 @@ type LaunchTarget = {
 const useLaunchActions = (appDetails: ShortAppDetails): LaunchActions[] => {
     let { profiles } = useProfiles();
 
-    console.log('getting launch actions for', appDetails);
 
     if (profiles?.isOk) {
         const loadedProfiles = profiles.data;
@@ -24,7 +23,6 @@ const useLaunchActions = (appDetails: ShortAppDetails): LaunchActions[] => {
         const validProfiles = collectionStore.userCollections.flatMap((uc) => {
             const containsApp = uc.apps.get(appDetails.appId);
 
-            console.log(uc.displayName, 'contains app', appDetails.appId, ":", containsApp);
 
             if (containsApp) {
                 const matchedProfiles = loadedProfiles
@@ -32,8 +30,6 @@ const useLaunchActions = (appDetails: ShortAppDetails): LaunchActions[] => {
                     .filter((p) => p.tags.includes(uc.id));
 
                 for (const p of matchedProfiles) {
-                    console.log(uc.displayName, 'adding profile');
-
                     includedProfiles.add(p.id);
                 }
                 return matchedProfiles;
@@ -41,8 +37,6 @@ const useLaunchActions = (appDetails: ShortAppDetails): LaunchActions[] => {
                 return []
             }
         });
-
-        console.log('found', validProfiles.length, 'valid profiles for launch');
 
         return validProfiles.map((p) => {
             const targets = p.pipeline.targets

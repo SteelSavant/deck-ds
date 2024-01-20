@@ -1,19 +1,17 @@
 import { DialogButton } from "decky-frontend-lib";
 import { ReactElement } from "react";
 import { FaDesktop } from "react-icons/fa";
-import { ShortAppDetails } from "../context/shortAppDetailsContext";
+import { useShortAppDetailsState } from "../context/shortAppDetailsContext";
 import useLaunchActions from "../hooks/useLaunchActions";
 
 
 interface DesktopPlayButtonProps {
     deckDSDesktopSentinel: 'sentinel'
-    appDetails: ShortAppDetails
 }
 
-export default function DesktopPlayButton({
-    appDetails
-}: DesktopPlayButtonProps): ReactElement {
-    const launchActions = useLaunchActions(appDetails);
+export default function DesktopPlayButton({ }: DesktopPlayButtonProps): ReactElement {
+    const { appDetails } = useShortAppDetailsState();
+    const launchActions = appDetails ? useLaunchActions(appDetails) : [];
 
     console.log(launchActions);
 

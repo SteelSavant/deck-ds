@@ -7,8 +7,9 @@ import {
     wrapReactType
 } from 'decky-frontend-lib';
 import { ReactElement } from 'react';
-import { ShortAppDetailsState } from '../context/shortAppDetailsContext';
+import { ShortAppDetailsState, ShortAppDetailsStateContextProvider } from '../context/shortAppDetailsContext';
 import DesktopPlayButton from './DesktopPlayButton';
+import GameModePlayButton from './GameModePlayButton';
 
 // TODO::don't patch if appid doesn't have pipeline
 // TODO::patch in real button
@@ -29,18 +30,6 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                         return ret;
                     }
 
-                    const appOverview = ret?.props?.children?.props?.overview;
-
-                    const appDetails = {
-                        appId: appOverview.appid,
-                        gameId: appOverview.m_gameid,
-                        displayName: appOverview.display_name
-                    };
-
-                    // may as well ensure appDetails are correct while we're here
-                    appDetailsState.setOnAppPage(appDetails);
-
-                    console.log('app details:', appDetails);
 
                     wrapReactType(ret.props.children)
                     afterPatch(
@@ -66,6 +55,10 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
 
                             wrapReactType(child.type);
                             afterPatch(child.type, 'render', (_3: Record<string, unknown>[], ret3?: ReactElement) => {
+                                if (!ret3) {
+                                    return ret3;
+                                }
+
                                 const appButtons = findInReactTree(
                                     ret3,
                                     (x: ReactElement) =>
@@ -92,31 +85,43 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
 
                                     console.log('appButtons:', children);
 
-                                    if (!children.find((c: any) => c.props.deckDSDesktopSentinel === 'sentinel')) {
+                                    if (!children.find((c: any) => c?.props?.children?.props?.deckDSDesktopSentinel === 'sentinel')) {
                                         children?.splice(0, 0,
-                                            <DesktopPlayButton appDetails={appDetails} deckDSDesktopSentinel='sentinel' />)
+                                            <ShortAppDetailsStateContextProvider ShortAppDetailsStateClass={appDetailsState}>
+                                                <DesktopPlayButton
+                                                    deckDSDesktopSentinel='sentinel'
+                                                />
+                                            </ShortAppDetailsStateContextProvider>
+                                        )
                                     }
                                 }
 
                                 if (!missingPlayButtonStatusPanel) {
                                     console.log('ret3 playButton', playButtonStatusPanel);
                                     const children = playButtonStatusPanel?.props?.children;
-                                    children?.splice(0, 1, <p>PLAY!</p>);
+                                    if (children && !children.find((c: any) => c?.props?.children?.props?.deckDSGameModeSentinel === 'sentinel')) {
+                                        const actualPlayButton = children[0];
+                                        children?.splice(0, 1,
+                                            <ShortAppDetailsStateContextProvider ShortAppDetailsStateClass={appDetailsState}>
+                                                <GameModePlayButton
+                                                    playButton={actualPlayButton}
+                                                    deckDSGameModeSentinel='sentinel'
+                                                />
+                                            </ShortAppDetailsStateContextProvider>);
+                                    }
                                 }
 
                                 return ret3;
                             });
 
                             return ret2;
-                        }
-                    )
+                        })
 
                     return ret;
-                },
-            )
+                })
 
             return props;
-        }
+        },
     )
 }
 
