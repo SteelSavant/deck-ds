@@ -14,6 +14,7 @@ import { FaShip } from "react-icons/fa";
 import * as backend from "./backend";
 import { ServerApiProvider } from "./context/serverApiContext";
 import { ShortAppDetailsState, ShortAppDetailsStateContextProvider } from "./context/shortAppDetailsContext";
+import patchLibraryApp from "./lib/patchLibraryApp";
 import QAM from "./views/QAM";
 import ProfileRoute from "./views/Settings/Profiles/ProfileRoute";
 import SettingsRouter from "./views/Settings/SettingsRouter";
@@ -68,7 +69,11 @@ const History = findModuleChild((m) => {
 export default definePlugin((serverApi: ServerAPI) => {
   let currentRoute = '/home'; // TODO::handle this better
 
+  console.log('Initial History:', History);
+
   const unlistenHistory = History.listen(async (info: any) => {
+    console.log('History:', History);
+
     currentRoute = info.pathname;
 
     const re = /^\/library\/app\/(\d+)(\/?.*)/
@@ -90,7 +95,7 @@ export default definePlugin((serverApi: ServerAPI) => {
     }
   });
 
-  // const libraryPatch = patchLibraryApp(serverApi);
+  const libraryPatch = patchLibraryApp(serverApi, appDetailsState);
 
   // Template Preview Route
   serverApi.routerHook.addRoute("/deck-ds/settings/templates/:templateid", () =>
@@ -128,7 +133,7 @@ export default definePlugin((serverApi: ServerAPI) => {
     onDismount() {
       unlistenHistory();
 
-      // serverApi.routerHook.removePatch('/library/app/:appid', libraryPatch);
+      serverApi.routerHook.removePatch('/library/app/:appid', libraryPatch);
 
       backend.log(backend.LogLevel.Debug, "DeckDS shutting down");
 

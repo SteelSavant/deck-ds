@@ -1,5 +1,6 @@
 // Adapted from https://github.com/OMGDuke/SDH-GameThemeMusic/blob/main/src/state/ShortAppDetailsState.tsx
 
+import _ from 'lodash';
 import {
     createContext,
     FC,
@@ -69,9 +70,11 @@ export class ShortAppDetailsState {
 
 
     private setOnAppPageInternal(appDetails: ShortAppDetails | null, time: number) {
-        if (time < this.lastOnAppPageTime) {
+        const areEqual = _.isEqual(appDetails, this.appDetails);
+        if (time < this.lastOnAppPageTime || areEqual) {
             return;
         }
+
         this.appDetails = appDetails;
         this.lastOnAppPageTime = time;
         this.forceUpdate();

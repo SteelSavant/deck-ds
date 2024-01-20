@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   decky-frontend-lib:
-    specifier: ^3.24.1
-    version: 3.24.1
+    specifier: ^3.24.3
+    version: 3.24.3
   lodash:
     specifier: ^4.17.21
     version: 4.17.21
@@ -509,8 +509,8 @@ packages:
       type: 1.2.0
     dev: true
 
-  /decky-frontend-lib@3.24.1:
-    resolution: {integrity: sha512-VGxLTPetxx/pQVC+t8odTHrwQAh7uy4bO2Od2gGWSTfmUUoxtAcEtiXGyE9mKsoD6t7QNHrGvgXn78sf2i/IeQ==}
+  /decky-frontend-lib@3.24.3:
+    resolution: {integrity: sha512-293oUaAgLrezvoz+TOQkarjwAlVlejkelB1WjtxQV4Y5qMpUZhNUtfpQAscGhwg9oQy6UGpZ5urkdPzLiVY52w==}
     dev: false
 
   /deepmerge@4.3.1:
