@@ -173,11 +173,12 @@ pub struct CategoryProfile {
     pub pipeline: PipelineDefinition,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, PartialEq, Deserialize, Serialize)]
 
 pub struct AppProfile {
     pub id: AppId,
-    pub profiles: HashMap<ProfileId, PipelineDefinition>,
+    pub default_profile: Option<ProfileId>,
+    pub overrides: HashMap<ProfileId, PipelineDefinition>,
 }
 
 #[cfg(test)]

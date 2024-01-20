@@ -83,8 +83,6 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                                 if (!missingAppButtons) {
                                     const children = appButtons?.props?.children;
 
-                                    console.log('appButtons:', children);
-
                                     if (!children.find((c: any) => c?.props?.children?.props?.deckDSDesktopSentinel === 'sentinel')) {
                                         children?.splice(0, 0,
                                             <ShortAppDetailsStateContextProvider ShortAppDetailsStateClass={appDetailsState}>
@@ -97,8 +95,8 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                                 }
 
                                 if (!missingPlayButtonStatusPanel) {
-                                    console.log('ret3 playButton', playButtonStatusPanel);
                                     const children = playButtonStatusPanel?.props?.children;
+
                                     if (children && !children.find((c: any) => c?.props?.children?.props?.deckDSGameModeSentinel === 'sentinel')) {
                                         const actualPlayButton = children[0];
                                         children?.splice(0, 1,

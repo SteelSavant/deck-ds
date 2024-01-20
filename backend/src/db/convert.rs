@@ -17,16 +17,17 @@ use crate::{
             Selection,
         },
     },
-    settings::CategoryProfile,
+    settings::{AppId, AppProfile, CategoryProfile},
 };
 use anyhow::{Context, Result};
 
-use super::model::DbUIManagement;
+use super::model::{
+    v1::{DbAppOverride, DbAppSettings},
+    DbUIManagement,
+};
 
 impl CategoryProfile {
     pub fn save_all(&self, rw: &RwTransaction) -> Result<()> {
-        let pipeline = &self.pipeline;
-
         impl Action {
             fn save_and_transform(&self, rw: &RwTransaction) -> Result<DbAction> {
                 let cloned = {
@@ -100,15 +101,6 @@ impl CategoryProfile {
             }
         }
 
-        let targets = pipeline
-            .targets
-            .iter()
-            .map(|(k, v)| -> Result<_> {
-                let def = v.save_all_and_transform(rw)?;
-                Ok((*k, def))
-            })
-            .collect::<Result<HashMap<_, _>>>()?;
-
         impl PipelineActionLookup {
             fn save_all_and_transform(&self, rw: &RwTransaction) -> Result<DbPipelineActionLookup> {
                 let actions = self
@@ -129,19 +121,37 @@ impl CategoryProfile {
             }
         }
 
-        let actions = pipeline.actions.save_all_and_transform(rw)?;
+        impl PipelineDefinition {
+            pub(super) fn save_all_and_transform(
+                &self,
+                rw: &RwTransaction,
+            ) -> Result<DbPipelineDefinition> {
+                let targets = self
+                    .targets
+                    .iter()
+                    .map(|(k, v)| -> Result<_> {
+                        let def = v.save_all_and_transform(rw)?;
+                        Ok((*k, def))
+                    })
+                    .collect::<Result<HashMap<_, _>>>()?;
 
-        let db_pipeline = DbPipelineDefinition {
-            name: pipeline.name.clone(),
-            description: pipeline.description.clone(),
-            targets,
-            actions,
-        };
+                let actions = self.actions.save_all_and_transform(rw)?;
+
+                let db_pipeline = DbPipelineDefinition {
+                    name: self.name.clone(),
+                    description: self.description.clone(),
+                    targets,
+                    actions,
+                };
+
+                Ok(db_pipeline)
+            }
+        }
 
         let db_profile = DbCategoryProfile {
             id: self.id,
             tags: self.tags.clone(),
-            pipeline: db_pipeline,
+            pipeline: self.pipeline.save_all_and_transform(rw)?,
         };
 
         rw.insert(db_profile)?;
@@ -152,8 +162,6 @@ impl CategoryProfile {
 
 impl DbCategoryProfile {
     pub fn reconstruct(self, ro: &RTransaction) -> Result<CategoryProfile> {
-        let pipeline = &self.pipeline;
-
         impl DbAction {
             fn transform(&self, ro: &RTransaction) -> Result<Action> {
                 let id = self.get_id();
@@ -208,15 +216,6 @@ impl DbCategoryProfile {
             }
         }
 
-        let targets = pipeline
-            .targets
-            .iter()
-            .map(|(k, v)| -> Result<_> {
-                let def = v.transform(ro)?;
-                Ok((*k, def))
-            })
-            .collect::<Result<HashMap<_, _>>>()?;
-
         impl DbPipelineActionLookup {
             fn transform(&self, ro: &RTransaction) -> Result<PipelineActionLookup> {
                 let actions = self
@@ -237,19 +236,32 @@ impl DbCategoryProfile {
             }
         }
 
-        let actions = pipeline.actions.transform(ro)?;
+        impl DbPipelineDefinition {
+            fn transform(&self, ro: &RTransaction) -> Result<PipelineDefinition> {
+                let actions = self.actions.transform(ro)?;
 
-        let pipeline = PipelineDefinition {
-            name: pipeline.name.clone(),
-            description: pipeline.description.clone(),
-            targets,
-            actions,
-        };
+                let targets = self
+                    .targets
+                    .iter()
+                    .map(|(k, v)| -> Result<_> {
+                        let def = v.transform(ro)?;
+                        Ok((*k, def))
+                    })
+                    .collect::<Result<HashMap<_, _>>>()?;
+
+                Ok(PipelineDefinition {
+                    name: self.name.clone(),
+                    description: self.description.clone(),
+                    targets,
+                    actions,
+                })
+            }
+        }
 
         let profile = CategoryProfile {
             id: self.id,
             tags: self.tags.clone(),
-            pipeline,
+            pipeline: self.pipeline.transform(ro)?,
         };
 
         Ok(profile)
@@ -331,5 +343,30 @@ impl DbCategoryProfile {
         }
 
         pipeline.actions.remove(rw)
+    }
+}
+
+impl AppProfile {
+    pub fn load(app_id: &AppId, ro: &RTransaction) -> Result<Self> {
+        // TODO::figure out if/how native_db supports multiple primary keys, so this can be done more efficiently
+        let overrides = HashMap::from_iter(
+            ro.scan()
+                .primary()?
+                .all()
+                .filter(|app: &DbAppOverride| app.id.0 == *app_id)
+                .map(|app: DbAppOverride| Ok((app.id.1, app.pipeline.transform(ro)?)))
+                .collect::<Result<Vec<_>>>()?,
+        );
+
+        let default_profile = ro
+            .get()
+            .primary(app_id.clone())?
+            .and_then(|settings: DbAppSettings| settings.default_profile);
+
+        Ok(Self {
+            id: app_id.clone(),
+            default_profile,
+            overrides,
+        })
     }
 }
