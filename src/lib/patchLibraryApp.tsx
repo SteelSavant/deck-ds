@@ -21,9 +21,6 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                 return props;
             }
 
-            console.log('props', props);
-
-
             afterPatch(
                 props.children.props,
                 'renderFunc',
@@ -32,15 +29,18 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                         return ret;
                     }
 
-                    console.log('ret', ret);
-
                     const appOverview = ret?.props?.children?.props?.overview;
 
-                    appDetailsState.setOnAppPage({
+                    const appDetails = {
                         appId: appOverview.appid,
                         gameId: appOverview.m_gameid,
                         displayName: appOverview.display_name
-                    });
+                    };
+
+                    // may as well ensure appDetails are correct while we're here
+                    appDetailsState.setOnAppPage(appDetails);
+
+                    console.log('app details:', appDetails);
 
                     wrapReactType(ret.props.children)
                     afterPatch(
@@ -60,10 +60,6 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                             if (typeof container !== 'object') {
                                 return ret2;
                             }
-
-                            console.log('ret2', ret2);
-
-
 
                             const children = container.props.children;
                             const child = children.find((c: any) => c?.type?.render);
@@ -94,12 +90,12 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                                 if (!missingAppButtons) {
                                     const children = appButtons?.props?.children;
 
-                                    console.log('children', children?.toString());
-                                    if (children?.length && children?.length < 3) {
-                                        children?.splice(0, 0, <DesktopPlayButton gameId={appOverview.m_gameid} />)
-                                    }
+                                    console.log('appButtons:', children);
 
-                                    console.log('ret3 appButtons', appButtons);
+                                    if (!children.find((c: any) => c.props.deckDSDesktopSentinel === 'sentinel')) {
+                                        children?.splice(0, 0,
+                                            <DesktopPlayButton appDetails={appDetails} deckDSDesktopSentinel='sentinel' />)
+                                    }
                                 }
 
                                 if (!missingPlayButtonStatusPanel) {
@@ -109,7 +105,6 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                                 }
 
                                 return ret3;
-
                             });
 
                             return ret2;
@@ -117,7 +112,7 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                     )
 
                     return ret;
-                }
+                },
             )
 
             return props;
