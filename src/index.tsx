@@ -69,7 +69,11 @@ const History = findModuleChild((m) => {
 export default definePlugin((serverApi: ServerAPI) => {
   let currentRoute = '/home'; // TODO::handle this better
 
+  console.log('Initial History:', History);
+
   const unlistenHistory = History.listen(async (info: any) => {
+    console.log('History:', History);
+
     currentRoute = info.pathname;
 
     const re = /^\/library\/app\/(\d+)(\/?.*)/
@@ -91,7 +95,7 @@ export default definePlugin((serverApi: ServerAPI) => {
     }
   });
 
-  const libraryPatch = patchLibraryApp(serverApi);
+  const libraryPatch = patchLibraryApp(serverApi, appDetailsState);
 
   // Template Preview Route
   serverApi.routerHook.addRoute("/deck-ds/settings/templates/:templateid", () =>

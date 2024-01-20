@@ -7,17 +7,22 @@ import {
     wrapReactType
 } from 'decky-frontend-lib';
 import { ReactElement } from 'react';
+import { ShortAppDetailsState } from '../context/shortAppDetailsContext';
+import DesktopPlayButton from './DesktopPlayButton';
 
 // TODO::don't patch if appid doesn't have pipeline
 // TODO::patch in real button
 
-function patchLibraryApp(serverAPI: ServerAPI) {
+function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsState) {
     return serverAPI.routerHook.addPatch(
         '/library/app/:appid',
         (props?: { path?: string; children?: ReactElement }) => {
             if (!props?.children?.props?.renderFunc) {
                 return props;
             }
+
+            console.log('props', props);
+
 
             afterPatch(
                 props.children.props,
@@ -26,6 +31,16 @@ function patchLibraryApp(serverAPI: ServerAPI) {
                     if (!ret?.props?.children?.type?.type) {
                         return ret;
                     }
+
+                    console.log('ret', ret);
+
+                    const appOverview = ret?.props?.children?.props?.overview;
+
+                    appDetailsState.setOnAppPage({
+                        appId: appOverview.appid,
+                        gameId: appOverview.m_gameid,
+                        displayName: appOverview.display_name
+                    });
 
                     wrapReactType(ret.props.children)
                     afterPatch(
@@ -45,6 +60,9 @@ function patchLibraryApp(serverAPI: ServerAPI) {
                             if (typeof container !== 'object') {
                                 return ret2;
                             }
+
+                            console.log('ret2', ret2);
+
 
 
                             const children = container.props.children;
@@ -78,7 +96,7 @@ function patchLibraryApp(serverAPI: ServerAPI) {
 
                                     console.log('children', children?.toString());
                                     if (children?.length && children?.length < 3) {
-                                        children?.splice(0, 0, <p>HERE!</p>)
+                                        children?.splice(0, 0, <DesktopPlayButton gameId={appOverview.m_gameid} />)
                                     }
 
                                     console.log('ret3 appButtons', appButtons);
