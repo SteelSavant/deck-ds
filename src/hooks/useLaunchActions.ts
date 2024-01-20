@@ -3,7 +3,7 @@ import { ShortAppDetails } from "../context/shortAppDetailsContext";
 import useProfiles from "./useProfiles";
 
 
-interface LaunchActions {
+export interface LaunchActions {
     profile: CategoryProfile,
     targets: LaunchTarget[]
 };
@@ -13,9 +13,12 @@ type LaunchTarget = {
     action: () => Promise<void>
 }
 
-const useLaunchActions = (appDetails: ShortAppDetails): LaunchActions[] => {
+const useLaunchActions = (appDetails: ShortAppDetails | null): LaunchActions[] => {
     let { profiles } = useProfiles();
 
+    if (!appDetails) {
+        return [];
+    }
 
     if (profiles?.isOk) {
         const loadedProfiles = profiles.data;

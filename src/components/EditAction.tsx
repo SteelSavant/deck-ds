@@ -119,7 +119,6 @@ export default function EditAction({
                         }} />
                     </ActionChild>
                     <ActionChild indentLevel={indentLevel} label="Swap Screens">
-
                         <Toggle value={cloned.value.swap_screens} onChange={(isEnabled) => {
                             cloned.value.swap_screens = isEnabled;
                             onChange(cloned);

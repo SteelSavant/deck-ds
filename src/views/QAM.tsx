@@ -1,11 +1,21 @@
 import { ButtonItem, PanelSection, PanelSectionRow, Router } from "decky-frontend-lib";
 import { Fragment, ReactElement } from "react";
-import { ShortAppDetails, useShortAppDetailsState } from "../context/shortAppDetailsContext";
-import useLaunchActions from "../hooks/useLaunchActions";
+import AppDefaultProfileDropdown from "../components/AppDefaultProfileDropdown";
+import HandleLoading from "../components/HandleLoading";
+import { IconForTarget } from "../components/IconForTarget";
+import { useShortAppDetailsState } from "../context/shortAppDetailsContext";
+import useAppProfile from "../hooks/useAppSettings";
+import useLaunchActions, { LaunchActions } from "../hooks/useLaunchActions";
 
 export default function QAM(): ReactElement {
     const appDetailsState = useShortAppDetailsState();
     const appDetails = appDetailsState.appDetails;
+
+    const launchActions = useLaunchActions(appDetails);
+    const appProfile = useAppProfile(appDetails);
+
+    console.log('launchActions:', launchActions);
+    console.log('appProfile', appProfile);
 
     return (
         <Fragment>
@@ -21,39 +31,56 @@ export default function QAM(): ReactElement {
                         Configuration
                     </ButtonItem>
                 </PanelSectionRow>
-            </PanelSection >
-            {appDetails ? <DeckDSProfilesForApp appDetails={appDetails} /> : <div />}
+            </PanelSection>
+            {appDetails ?
+                <Fragment>
+                    <HandleLoading
+                        value={appProfile}
+                        onOk={(appProfile) => < AppDefaultProfileDropdown
+                            appDetails={appDetails}
+                            appProfile={appProfile}
+                            launchActions={launchActions}
+                        />}
+                        onErr={(err) => <p>{err.err}</p>}
+                    />
+                    <DeckDSProfilesForApp launchActions={launchActions} />
+                </Fragment>
+                : <div />
+            }
+
         </Fragment>
     )
 }
 
-function DeckDSProfilesForApp({ appDetails }: { appDetails: ShortAppDetails }): ReactElement {
-    const launchActions = useLaunchActions(appDetails);
-
-
-
+function DeckDSProfilesForApp({ launchActions }: { launchActions: LaunchActions[] }): ReactElement {
     return <Fragment >
-        {launchActions.map((a) => {
+        {
+            launchActions.map((a) => {
+                // TODO::display icon next to target
 
-
-            // TODO::display icon next to target
-
-            return <PanelSection title={a.profile.pipeline.name}>
-                {
-                    a.targets.map((t) => {
-                        return (
-                            <PanelSectionRow>
-                                <ButtonItem
-                                    layout="below"
-                                    onClick={t.action}
-                                >
-                                    {t.target}
-                                </ButtonItem>
-                            </PanelSectionRow>
-                        )
-                    })
-                }
-            </PanelSection>
-        })}
+                return <PanelSection title={a.profile.pipeline.name}>
+                    {
+                        a.targets.map((t) => {
+                            return (
+                                <PanelSectionRow>
+                                    <ButtonItem
+                                        layout="below"
+                                        onClick={t.action}
+                                    >
+                                        <div style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between'
+                                        }}>
+                                            <IconForTarget target={t.target} />
+                                            {t.target}
+                                        </div>
+                                    </ButtonItem>
+                                </PanelSectionRow>
+                            )
+                        })
+                    }
+                </PanelSection>
+            })
+        }
     </Fragment>
 }
