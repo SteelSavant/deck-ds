@@ -14,13 +14,13 @@ interface QAMEditActionProps {
 export default function QAMEditAction({
     action,
     onChange,
-}: QAMEditActionProps): ReactElement {
+}: QAMEditActionProps): ReactElement | null {
     const cloned = _.cloneDeep(action);
     const type = cloned.type;
 
     const serverApi = useServerApi();
 
-    const notConfigurable = (<div />);
+    const notConfigurable = null;
 
     switch (type) {
         case 'UIManagement':
@@ -174,7 +174,7 @@ export default function QAMEditAction({
 
 function ActionChild({ children, label, description }: { children: ReactElement, label: string, description?: string | undefined }): ReactElement {
     return (
-        <Field label={label} focusable={false} description={description}  >
+        <Field label={label} focusable={false} description={description} childrenLayout="inline" inlineWrap="keep-inline"  >
             <div style={{ paddingRight: '10px' }}>
                 <Focusable >
                     {children}

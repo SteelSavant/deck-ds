@@ -1,24 +1,25 @@
-import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, PanelSection, Toggle } from "decky-frontend-lib";
+import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
 import { Fragment, ReactElement } from "react";
-import { FaLink } from "react-icons/fa";
 import { Action, ActionOneOf, ActionSelection, PipelineAction, } from "../../backend";
+import ActionIcon from "../../components/ActionIcon";
 import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
 import QAMEditAction from "./QAMEditAction";
 
 export default function QAMPipelineTargetDisplay({ root }: {
     root: ActionSelection,
 }): ReactElement {
+
     return (
-        <DialogBody>
+        <DialogBody style={{ marginBottom: '10px' }}>
             <DialogControlsSection>
                 <Field focusable={false} />
-                {buildSelection('root', root)}
+                {buildSelection('root', root) ?? <div />}
             </DialogControlsSection>
         </DialogBody>
     )
 }
 
-function buildSelection(id: string, selection: ActionSelection): ReactElement {
+function buildSelection(id: string, selection: ActionSelection): ReactElement | null {
     switch (selection.type) {
         case "Action":
             return buildAction(id, selection.value);
@@ -29,18 +30,22 @@ function buildSelection(id: string, selection: ActionSelection): ReactElement {
     }
 }
 
-function buildAction(id: string, action: Action): ReactElement {
+function buildAction(id: string, action: Action): ReactElement | null {
     const { dispatch } = useModifiablePipelineContainer();
 
-    return (
-        <QAMEditAction action={action} onChange={(updatedAction) => {
+    // invoked as a function to allow seeing if the component returns null,
+    // so we can ignore rendering things that aren't configurable in the QAM
+    const component = QAMEditAction({
+        action, onChange: (updatedAction) => {
             dispatch({
                 type: 'updateAction',
                 id: id,
                 action: updatedAction,
             });
-        }} />
-    )
+        }
+    });
+
+    return component;
 }
 
 function buildOneOf(oneOf: ActionOneOf): ReactElement {
@@ -51,91 +56,132 @@ function buildOneOf(oneOf: ActionOneOf): ReactElement {
 function buildAllOf(allOf: PipelineAction[]): ReactElement {
     return (
         <Fragment>
-            {allOf.flatMap((action) => buildPipelineAction(action))}
+            {allOf.map((action) => buildPipelineAction(action))}
         </Fragment>
-    )
+    );
 }
 
 function buildPipelineAction(action: PipelineAction): ReactElement {
     const { dispatch } = useModifiablePipelineContainer();
 
-
     const selection = action.selection;
     const type = selection.type;
 
-    const isEnabled = action.enabled;
-    const forcedEnabled = isEnabled === null || isEnabled === undefined;
+    const forcedEnabled = action.enabled === null || action.enabled === undefined;
+    const isEnabled = action.enabled || forcedEnabled;
+
+    const displayName = action.name.toLocaleUpperCase();
+
+    const fromProfileComponent = <Field focusable={false} label="Use per-game profile">
+        <Focusable>
+            <Toggle value={!!action.profile_override} onChange={(value) => null // TODO::This
+                // dispatch({
+                //     type: 'updateEnabled',
+                //     id: action.id,
+                //     isEnabled: value,
+                // })
+            } />
+        </Focusable>
+    </Field>;
+
     const enabledComponent = forcedEnabled
         ? <div />
-        : <Focusable>
-            ENABLED (Add P before):
-            <Toggle value={isEnabled} onChange={(value) =>
-                dispatch({
-                    type: 'updateEnabled',
-                    id: action.id,
-                    isEnabled: value,
-                })
-            } />
-        </Focusable>;
+        : <Field focusable={false} label="Enabled">
+            <Focusable>
+                <Toggle value={isEnabled} onChange={(value) =>
+                    dispatch({
+                        type: 'updateEnabled',
+                        id: action.id,
+                        isEnabled: value,
+                    })
+                } />
+            </Focusable>
+        </Field>;
 
+    function Header(): ReactElement {
+        return (
+            <Fragment>
+                <Field
+                    focusable={false}
+                    label={displayName}
+                    icon={<ActionIcon action={action} />}
+                />
+                {fromProfileComponent}
+                {enabledComponent}
+            </Fragment>
+        );
+    }
 
     switch (type) {
         case 'AllOf':
-            return (
-                <Fragment>
-                    {
-                        enabledComponent // TODO::better enabled where we can include override + title in panel section
-                    }
-                    {selection.value.flatMap((a) => buildSelection(a.id, a.selection))}
-                </Fragment>
-            )
+            if (forcedEnabled || selection.value.length == 0) {
+                return buildAllOf(selection.value);
+            } else {
+                return (
+                    <Fragment>
+                        <Header />
+                        {
+                            isEnabled
+                                ? buildAllOf(selection.value)
+                                : <div />
+                        }
+                    </Fragment>
+                )
+            }
+
         case 'OneOf':
             return (
                 <Fragment>
-                    <PanelSection title={action.name} >
-                        {enabledComponent}
-                        <Focusable >
-                            <Dropdown selectedOption={selection.value.selection} rgOptions={selection.value.actions.map((a) => {
-                                // TODO::add "from profile" as option
-                                return {
-                                    label: a.name,
-                                    data: a.id
-                                }
-                            })} onChange={(option) => {
-                                dispatch({
-                                    type: 'updateOneOf',
-                                    id: action.id,
-                                    selection: option.data,
-                                    actions: selection.value.actions.map((a) => a.id)
-                                })
-                            }} />
-                        </Focusable>
-                    </PanelSection>
-                    {buildOneOf(selection.value)}
+                    <Header />
+                    {
+                        isEnabled
+                            ? <Fragment>
+                                <Field focusable={false} childrenContainerWidth="max">
+                                    <Focusable >
+                                        <Dropdown selectedOption={selection.value.selection} rgOptions={selection.value.actions.map((a) => {
+                                            return {
+                                                label: a.name,
+                                                data: a.id
+                                            }
+                                        })} onChange={(option) => {
+                                            dispatch({
+                                                type: 'updateOneOf',
+                                                id: action.id,
+                                                selection: option.data,
+                                                actions: selection.value.actions.map((a) => a.id)
+                                            })
+                                        }} />
+                                    </Focusable>
+                                </Field>
+                                {buildOneOf(selection.value)}
+                            </Fragment>
+                            : <div />
+                    }
                 </Fragment>
             )
         case 'Action':
-            return (
-                <PanelSection title={action.name} >
-                    {enabledComponent}
-                    {buildAction(action.id, selection.value)}
-                </PanelSection>
-            )
+            const actionComponent = buildAction(action.id, selection.value);
+
+            console.log(displayName, actionComponent);
+
+            if (actionComponent) {
+                return (
+                    <Fragment>
+                        <Header />
+                        {isEnabled ? actionComponent : <div />}
+                    </Fragment>
+                );
+            } else {
+                return <Fragment />
+            }
+
+
         default:
             const typecheck: never = type;
-            throw typecheck ?? 'action selection failed to typecheck';
+            throw typecheck ?? 'action type failed to typecheck'
     }
 }
 
 
-function ActionLabel({ action }: { action: PipelineAction }): ReactElement {
-    return action.id.split(':').length === 3 && action.selection.type !== 'AllOf'
-        ? <div>
-            <h4>{action.name}</h4>
-            <FaLink style={{
-                paddingLeft: '10px',
-                paddingRight: '10px'
-            }} />
-        </div>
-        : <p>{action.name}</p>
-}
+
+

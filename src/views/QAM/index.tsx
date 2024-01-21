@@ -125,7 +125,10 @@ function AppProfileSection({ launchActions }: { launchActions: LaunchActions }):
                                 marginBottom: margin,
                                 borderTopLeftRadius: 0,
                                 borderBottomLeftRadius: 0,
-                                padding: 0
+                                padding: 0,
+                                backgroundColor: view[t.target]
+                                    ? 'lightgreen'
+                                    : undefined
                             }}
                             onClick={() => {
                                 const newView = { ...view };
@@ -135,8 +138,8 @@ function AppProfileSection({ launchActions }: { launchActions: LaunchActions }):
                         >
                             {
                                 view[t.target]
-                                    ? <RiArrowDownSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill' }} />
-                                    : <RiArrowRightSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'cover' }} />
+                                    ? <RiArrowDownSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill', }} />
+                                    : <RiArrowRightSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill' }} />
                             }
                         </DialogButton>
                     </div>
