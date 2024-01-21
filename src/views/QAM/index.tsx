@@ -89,68 +89,67 @@ function AppProfileSection({ launchActions }: { launchActions: LaunchActions }):
 
     const height = '40px';
     const margin = '5px';
-    return <Fragment>
+    return <PanelSection title={launchActions.profile.pipeline.name} >
         {
             launchActions.targets.map((t) => (
                 <Fragment>
-                    <PanelSection title={launchActions.profile.pipeline.name} >
-                        <div style={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
-                            <DialogButton
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'row',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    width: "90%",
-                                    maxWidth: "90%",
-                                    minWidth: 0,
-                                    height,
-                                    marginRight: margin,
-                                    marginBottom: margin,
-                                    borderTopRightRadius: 0,
-                                    borderBottomRightRadius: 0
-                                }}
-                                onClick={t.action}
-                                onOKButton={t.action}
-                            >
-                                <IconForTarget target={t.target} />
-                                {t.target}
-                            </DialogButton>
-                            <DialogButton
-                                style={{
-                                    alignItems: 'center',
-                                    justifyItems: 'center',
-                                    width: "10%",
-                                    minWidth: 0,
-                                    height,
-                                    marginBottom: margin,
-                                    borderTopLeftRadius: 0,
-                                    borderBottomLeftRadius: 0,
-                                    padding: 0
-                                }}
-                                onClick={() => {
-                                    const newView = { ...view };
-                                    newView[t.target] = !newView[t.target];
-                                    setView(newView)
-                                }}
-                            >
-                                {
-                                    view[t.target]
-                                        ? <RiArrowDownSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill' }} />
-                                        : <RiArrowRightSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'cover' }} />
-                                }
-                            </DialogButton>
-                        </div>
-                    </PanelSection>
+                    <div style={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
+                        <DialogButton
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                width: "90%",
+                                maxWidth: "90%",
+                                minWidth: 0,
+                                height,
+                                marginRight: margin,
+                                marginBottom: margin,
+                                borderTopRightRadius: 0,
+                                borderBottomRightRadius: 0
+                            }}
+                            onClick={t.action}
+                            onOKButton={t.action}
+                        >
+                            <IconForTarget target={t.target} />
+                            {t.target}
+                        </DialogButton>
+                        <DialogButton
+                            style={{
+                                alignItems: 'center',
+                                justifyItems: 'center',
+                                width: "10%",
+                                minWidth: 0,
+                                height,
+                                marginBottom: margin,
+                                borderTopLeftRadius: 0,
+                                borderBottomLeftRadius: 0,
+                                padding: 0
+                            }}
+                            onClick={() => {
+                                const newView = { ...view };
+                                newView[t.target] = !newView[t.target];
+                                setView(newView)
+                            }}
+                        >
+                            {
+                                view[t.target]
+                                    ? <RiArrowDownSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill' }} />
+                                    : <RiArrowRightSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'cover' }} />
+                            }
+                        </DialogButton>
+                    </div>
                     {
                         view[t.target] ?
-                            <QAMTarget target={t.target} />
+                            <QAMTarget target={t.target
+                            } />
                             : <div />
                     }
                 </Fragment>
             ))
         }
-    </Fragment >;
+    </PanelSection>;
 }
 
 function QAMTarget({ target }: { target: PipelineTarget }): ReactElement {

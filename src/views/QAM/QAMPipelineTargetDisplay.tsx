@@ -1,4 +1,4 @@
-import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, PanelSectionRow, Toggle } from "decky-frontend-lib";
+import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, PanelSection, Toggle } from "decky-frontend-lib";
 import { Fragment, ReactElement } from "react";
 import { FaLink } from "react-icons/fa";
 import { Action, ActionOneOf, ActionSelection, PipelineAction, } from "../../backend";
@@ -18,7 +18,7 @@ export default function QAMPipelineTargetDisplay({ root }: {
     )
 }
 
-function buildSelection(id: string, selection: ActionSelection): ReactElement[] {
+function buildSelection(id: string, selection: ActionSelection): ReactElement {
     switch (selection.type) {
         case "Action":
             return buildAction(id, selection.value);
@@ -29,7 +29,7 @@ function buildSelection(id: string, selection: ActionSelection): ReactElement[] 
     }
 }
 
-function buildAction(id: string, action: Action): ReactElement[] {
+function buildAction(id: string, action: Action): ReactElement {
     const { dispatch } = useModifiablePipelineContainer();
 
     return (
@@ -43,7 +43,7 @@ function buildAction(id: string, action: Action): ReactElement[] {
     )
 }
 
-function buildOneOf(oneOf: ActionOneOf): ReactElement[] {
+function buildOneOf(oneOf: ActionOneOf): ReactElement {
     const action = oneOf.actions.find((a) => a.id === oneOf.selection)!;
     return buildPipelineAction(action);
 }
@@ -51,38 +51,49 @@ function buildOneOf(oneOf: ActionOneOf): ReactElement[] {
 function buildAllOf(allOf: PipelineAction[]): ReactElement {
     return (
         <Fragment>
-            {allOf.map((action) => buildPipelineAction(action))}
+            {allOf.flatMap((action) => buildPipelineAction(action))}
         </Fragment>
-    );
+    )
 }
 
 function buildPipelineAction(action: PipelineAction): ReactElement {
     const { dispatch } = useModifiablePipelineContainer();
 
-    const selection = action.selection;
-    const isEnabled = action.enabled;
 
+    const selection = action.selection;
+    const type = selection.type;
+
+    const isEnabled = action.enabled;
     const forcedEnabled = isEnabled === null || isEnabled === undefined;
-    return (
-        <div style={{ flexDirection: 'row' }}>
-            <PanelSectionRow>
-                <ActionLabel action={action} />
-                {
-                    forcedEnabled
-                        ? <div />
-                        : <Focusable>
-                            ENABLED (Add P before):
-                            <Toggle value={isEnabled} onChange={(value) =>
-                                dispatch({
-                                    type: 'updateEnabled',
-                                    id: action.id,
-                                    isEnabled: value,
-                                })
-                            } />
-                        </Focusable>
-                }
-                {
-                    selection.type === 'OneOf' ?
+    const enabledComponent = forcedEnabled
+        ? <div />
+        : <Focusable>
+            ENABLED (Add P before):
+            <Toggle value={isEnabled} onChange={(value) =>
+                dispatch({
+                    type: 'updateEnabled',
+                    id: action.id,
+                    isEnabled: value,
+                })
+            } />
+        </Focusable>;
+
+
+    switch (type) {
+        case 'AllOf':
+            return (
+                <Fragment>
+                    {
+                        enabledComponent // TODO::better enabled where we can include override + title in panel section
+                    }
+                    {selection.value.flatMap((a) => buildSelection(a.id, a.selection))}
+                </Fragment>
+            )
+        case 'OneOf':
+            return (
+                <Fragment>
+                    <PanelSection title={action.name} >
+                        {enabledComponent}
                         <Focusable >
                             <Dropdown selectedOption={selection.value.selection} rgOptions={selection.value.actions.map((a) => {
                                 // TODO::add "from profile" as option
@@ -99,12 +110,21 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                                 })
                             }} />
                         </Focusable>
-                        : <div />
-                }
-            </PanelSectionRow>
-            {forcedEnabled || isEnabled ? buildSelection(action.id, action.selection) : <div />}
-        </div>
-    )
+                    </PanelSection>
+                    {buildOneOf(selection.value)}
+                </Fragment>
+            )
+        case 'Action':
+            return (
+                <PanelSection title={action.name} >
+                    {enabledComponent}
+                    {buildAction(action.id, selection.value)}
+                </PanelSection>
+            )
+        default:
+            const typecheck: never = type;
+            throw typecheck ?? 'action selection failed to typecheck';
+    }
 }
 
 
