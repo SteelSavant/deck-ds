@@ -54,8 +54,6 @@ const ModifiablePipelineContainerStateContext = React.createContext<
 
 function modifiablePipelineContainerReducerBuilder(onUpdate?: ExternalPipelineUpdate): (state: State, action: StateAction) => State {
     function modifiablePipelineContainerReducer(state: State, action: StateAction): State {
-        console.log('in pipeline container reducer');
-
         const newContainer: PipelineContainer = (() => {
             const pipeline = state.container.pipeline;
             if (action.type === 'updatePipelineInfo') {
@@ -140,9 +138,6 @@ function modifiablePipelineContainerReducerBuilder(onUpdate?: ExternalPipelineUp
                 return result;
             }
         })();
-
-
-        console.log('new definition from reducer:', newContainer);
 
         if (onUpdate) {
             onUpdate(newContainer); // perform arbitrary action, like saving, when the definition changes

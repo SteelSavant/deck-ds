@@ -9,7 +9,6 @@ export default function ProfileMenuItem({ profile, deleteProfile }: { profile: C
 
     function viewProfile() {
         const route = `/deck-ds/settings/profiles/${profile.id}`;
-        console.log("Navigating to", route);
         Navigation.Navigate(route);
     }
 

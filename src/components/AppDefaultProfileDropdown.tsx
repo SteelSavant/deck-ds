@@ -1,7 +1,6 @@
 import { DropdownItem, PanelSection, PanelSectionRow } from "decky-frontend-lib";
-import { ReactElement, useState } from "react";
-import { setAppProfileSettings } from "../backend";
-import { ShortAppDetails } from "../context/shortAppDetailsContext";
+import { ReactElement } from "react";
+import { ShortAppDetails, useAppState } from "../context/appContext";
 import { LaunchActions } from "../hooks/useLaunchActions";
 import { AppProfile } from "../types/backend_api";
 
@@ -14,13 +13,11 @@ export default function AppDefaultProfileDropdown({
     appProfile: AppProfile | null
     launchActions: LaunchActions[],
 }): ReactElement {
-    const useAppDefault = launchActions
-        .find((a) => a.profile.id == appProfile?.default_profile);
+    const appDetailsState = useAppState();
 
-    const [selected, setSelected] = useState(useAppDefault ?
-        appProfile?.default_profile : null);
-
-    console.log("checking with", launchActions.length, "actions");
+    const selected = launchActions
+        .find((a) => a.profile.id == appProfile?.default_profile)
+        ?.profile?.id ?? null;
 
     if (launchActions.length > 1) {
         return (
@@ -40,13 +37,7 @@ export default function AppDefaultProfileDropdown({
                             })
                         ]}
                         onChange={async (option) => {
-                            const res = await setAppProfileSettings({
-                                app_id: appDetails.appId.toString(),
-                                default_profile: option.data
-                            });
-                            if (res?.isOk) {
-                                setSelected(option.data);
-                            }
+                            appDetailsState.setAppProfileDefault(appDetails, option.data);
                         }} />
                 </PanelSectionRow >
             </PanelSection >)

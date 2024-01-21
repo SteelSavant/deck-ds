@@ -1,5 +1,5 @@
 import { CategoryProfile, PipelineTarget, autoStart, reifyPipeline } from "../backend";
-import { ShortAppDetails } from "../context/shortAppDetailsContext";
+import { ShortAppDetails } from "../context/appContext";
 import useProfiles from "./useProfiles";
 
 

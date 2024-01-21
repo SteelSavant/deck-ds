@@ -35,7 +35,6 @@ function buildAction(id: string, action: Action, indentLevel: number): ReactElem
 
     return (
         <EditAction action={action} indentLevel={indentLevel + 1} onChange={(updatedAction) => {
-            console.log('updating action from', action, 'to', updatedAction);
             dispatch({
                 type: 'updateAction',
                 id: id,

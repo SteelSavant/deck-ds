@@ -8,6 +8,9 @@ import {
     useEffect,
     useState
 } from 'react';
+import { getAppProfile, setAppProfileSettings } from '../backend';
+import { AppProfile } from '../types/backend_api';
+import { Loading } from '../util/loading';
 
 export type ShortAppDetails = {
     appId: number,
@@ -16,23 +19,23 @@ export type ShortAppDetails = {
 };
 
 interface PublicShortAppDetailsState {
-    gamesRunning: number[]
     appDetails: ShortAppDetails | null
+    appProfile: Loading<AppProfile | null>
 }
 
 // The localThemeEntry interface refers to the theme data as given by the python function, the Theme class refers to a theme after it has been formatted and the generate function has been added
 
-interface PublicShortAppDetailsStateContext
+interface PublicAppStateContext
     extends PublicShortAppDetailsState {
-    setGamesRunning(gamesRunning: number[]): void
-    setOnAppPage(appDetails: ShortAppDetails): void
+    setOnAppPage(appDetails: ShortAppDetails): void,
+    setAppProfileDefault(appDetails: ShortAppDetails, defaultProfileId: string | null): Promise<void>
 }
 
 // This class creates the getter and setter functions for all of the global state data.
 export class ShortAppDetailsState {
     private delayMs = 1000
-    private gamesRunning: number[] = []
     private appDetails: ShortAppDetails | null = null;
+    private appProfile: Loading<AppProfile | null>;
     private lastOnAppPageTime: number = 0
 
     // You can listen to this eventBus' 'stateUpdate' event and use that to trigger a useState or other function that causes a re-render
@@ -40,21 +43,9 @@ export class ShortAppDetailsState {
 
     getPublicState(): PublicShortAppDetailsState {
         return {
-            gamesRunning: this.gamesRunning,
-            appDetails: this.appDetails ? { ...this.appDetails } : null
+            appDetails: this.appDetails ? { ...this.appDetails } : null,
+            appProfile: this.appProfile ? { ...this.appProfile } : null
         }
-    }
-
-    setGamesRunning(gamesRunning: number[]) {
-        const noGamesRunning = gamesRunning.length === 0
-        this.gamesRunning = gamesRunning
-
-        setTimeout(
-            () => {
-                this.forceUpdate()
-            },
-            noGamesRunning ? this.delayMs : 0
-        )
     }
 
     setOnAppPage(appDetails: ShortAppDetails | null) {
@@ -68,6 +59,22 @@ export class ShortAppDetailsState {
         )
     }
 
+    async setAppProfileDefault(appDetails: ShortAppDetails, defaultProfileId: string | null) {
+        const res = await setAppProfileSettings({
+            app_id: appDetails.appId.toString(),
+            default_profile: defaultProfileId
+        });
+
+        if (res?.isOk && this.appDetails?.appId == appDetails.appId) {
+            this.appProfile = (await getAppProfile({
+                app_id: appDetails.appId.toString()
+            }))
+                .map((a) => a.app ?? null);
+            this.forceUpdate();
+        }
+        // TODO::handle error cases
+    }
+
 
     private setOnAppPageInternal(appDetails: ShortAppDetails | null, time: number) {
         const areEqual = _.isEqual(appDetails, this.appDetails);
@@ -76,8 +83,21 @@ export class ShortAppDetailsState {
         }
 
         this.appDetails = appDetails;
+        this.appProfile = null;
         this.lastOnAppPageTime = time;
+        this.fetchProfile();
         this.forceUpdate();
+    }
+
+    private async fetchProfile() {
+        const appDetails = this.appDetails;
+        if (appDetails) {
+            const profile = (await getAppProfile({ app_id: appDetails.appId.toString() })).map((v) => v.app ?? null)
+            if (this.appDetails?.appId == appDetails.appId) {
+                this.appProfile = profile;
+                this.forceUpdate();
+            }
+        }
     }
 
     private forceUpdate() {
@@ -85,10 +105,10 @@ export class ShortAppDetailsState {
     }
 }
 
-const ShortAppDetailsStateContext =
-    createContext<PublicShortAppDetailsStateContext>(null as any)
-export const useShortAppDetailsState = () =>
-    useContext(ShortAppDetailsStateContext)
+const AppContext =
+    createContext<PublicAppStateContext>(null as any)
+export const useAppState = () =>
+    useContext(AppContext)
 
 interface ProviderProps {
     ShortAppDetailsStateClass: ShortAppDetailsState
@@ -120,20 +140,23 @@ export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
             )
     }, [])
 
-    const setGamesRunning = (gamesRunning: number[]) =>
-        ShortAppDetailsStateClass.setGamesRunning(gamesRunning)
+
     const setOnAppPage = (appDetails: ShortAppDetails) =>
         ShortAppDetailsStateClass.setOnAppPage(appDetails)
 
+    const setAppProfileDefault = async (appDetails: ShortAppDetails, defaultProfileId: string | null) => {
+        ShortAppDetailsStateClass.setAppProfileDefault(appDetails, defaultProfileId);
+    }
+
     return (
-        <ShortAppDetailsStateContext.Provider
+        <AppContext.Provider
             value={{
                 ...publicState,
-                setGamesRunning,
-                setOnAppPage
+                setOnAppPage,
+                setAppProfileDefault,
             }}
         >
             {children}
-        </ShortAppDetailsStateContext.Provider>
+        </AppContext.Provider>
     )
 }

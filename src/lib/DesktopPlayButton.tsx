@@ -1,7 +1,7 @@
 import { DialogButton } from "decky-frontend-lib";
 import { ReactElement } from "react";
 import { FaDesktop } from "react-icons/fa";
-import { useShortAppDetailsState } from "../context/shortAppDetailsContext";
+import { useAppState } from "../context/appContext";
 import useLaunchActions from "../hooks/useLaunchActions";
 
 
@@ -10,10 +10,8 @@ interface DesktopPlayButtonProps {
 }
 
 export default function DesktopPlayButton({ }: DesktopPlayButtonProps): ReactElement {
-    const { appDetails } = useShortAppDetailsState();
+    const { appDetails } = useAppState();
     const launchActions = appDetails ? useLaunchActions(appDetails) : [];
-
-    console.log(launchActions);
 
     const onLaunch = launchActions[0]?.targets?.find((t) => t.target === 'Desktop')?.action;
     const vPadding = 14;

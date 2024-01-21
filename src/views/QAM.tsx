@@ -3,19 +3,12 @@ import { Fragment, ReactElement } from "react";
 import AppDefaultProfileDropdown from "../components/AppDefaultProfileDropdown";
 import HandleLoading from "../components/HandleLoading";
 import { IconForTarget } from "../components/IconForTarget";
-import { useShortAppDetailsState } from "../context/shortAppDetailsContext";
-import useAppProfile from "../hooks/useAppSettings";
+import { useAppState } from "../context/appContext";
 import useLaunchActions, { LaunchActions } from "../hooks/useLaunchActions";
 
 export default function QAM(): ReactElement {
-    const appDetailsState = useShortAppDetailsState();
-    const appDetails = appDetailsState.appDetails;
-
+    const { appDetails, appProfile } = useAppState();
     const launchActions = useLaunchActions(appDetails);
-    const appProfile = useAppProfile(appDetails);
-
-    console.log('launchActions:', launchActions);
-    console.log('appProfile', appProfile);
 
     return (
         <Fragment>

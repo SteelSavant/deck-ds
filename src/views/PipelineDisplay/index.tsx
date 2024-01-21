@@ -18,7 +18,6 @@ export default function PipelineDisplay({ header, info, secondaryAction, seconda
     const [currentTabRoute, setCurrentTabRoute] = useState<string>("info")
 
     const { state } = useModifiablePipelineContainer();
-    console.log('pipeline display updated with state', state.container);
     const result = useReifiedPipeline(state.container.pipeline);
 
     let container = useRef<HTMLDivElement>(null);

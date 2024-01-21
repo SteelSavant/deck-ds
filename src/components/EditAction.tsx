@@ -64,7 +64,6 @@ export default function EditAction({
                 <div>
                     <ActionChild indentLevel={indentLevel} label="Separate Gamepad View">
                         <Toggle value={cloned.value.layout.separate_gamepad_view} onChange={(isEnabled) => {
-                            console.log("toggling separate gamepad view:", isEnabled);
                             cloned.value.layout.separate_gamepad_view = isEnabled;
                             onChange(cloned);
                         }} />

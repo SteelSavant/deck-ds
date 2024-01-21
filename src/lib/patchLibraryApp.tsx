@@ -7,7 +7,7 @@ import {
     wrapReactType
 } from 'decky-frontend-lib';
 import { ReactElement } from 'react';
-import { ShortAppDetailsState, ShortAppDetailsStateContextProvider } from '../context/shortAppDetailsContext';
+import { ShortAppDetailsState, ShortAppDetailsStateContextProvider } from '../context/appContext';
 import DesktopPlayButton from './DesktopPlayButton';
 import GameModePlayButton from './GameModePlayButton';
 
