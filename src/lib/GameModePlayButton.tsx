@@ -1,7 +1,7 @@
 import { Button } from "decky-frontend-lib";
 import { ReactElement } from "react";
-import { FaGamepad } from "react-icons/fa";
 import HandleLoading from "../components/HandleLoading";
+import { IconForTarget } from "../components/IconForTarget";
 import { useAppState } from "../context/appContext";
 import useLaunchActions from "../hooks/useLaunchActions";
 
@@ -36,7 +36,7 @@ export default function GameModePlayButton({
                     <div
                         className="appactionbutton_PlayButton_3ydig appactionbutton_ButtonChild_2AzIX Focusable gpfocus gpfocuswithin"
                     >
-                        <FaGamepad />
+                        <IconForTarget target="Gamemode" />
                         Play
                     </div>
                 </Button>

@@ -1,6 +1,6 @@
 import { DialogButton } from "decky-frontend-lib";
 import { ReactElement } from "react";
-import { FaDesktop } from "react-icons/fa";
+import { IconForTarget } from "../components/IconForTarget";
 import { useAppState } from "../context/appContext";
 import useLaunchActions from "../hooks/useLaunchActions";
 
@@ -30,7 +30,7 @@ export default function DesktopPlayButton({ }: DesktopPlayButtonProps): ReactEle
             onClick={onLaunch}
             onOKButton={onLaunch}
         >
-            <FaDesktop />
+            <IconForTarget target="Desktop" />
         </DialogButton>
     ) : <div />;
 }
