@@ -51,10 +51,11 @@ const Content: VFC<{ serverApi: ServerAPI }> = ({ serverApi }) => {
   }
 
   return (
-    <ShortAppDetailsStateContextProvider ShortAppDetailsStateClass={appDetailsState}>
-      <QAM />
-    </ShortAppDetailsStateContextProvider>
-
+    <ServerApiProvider serverApi={serverApi}>
+      <ShortAppDetailsStateContextProvider ShortAppDetailsStateClass={appDetailsState}>
+        <QAM />
+      </ShortAppDetailsStateContextProvider>
+    </ServerApiProvider>
   );
 }
 

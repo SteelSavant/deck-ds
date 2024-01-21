@@ -1,8 +1,8 @@
 import { DropdownItem, PanelSection, PanelSectionRow } from "decky-frontend-lib";
 import { ReactElement } from "react";
-import { ShortAppDetails, useAppState } from "../context/appContext";
-import { LaunchActions } from "../hooks/useLaunchActions";
-import { AppProfile } from "../types/backend_api";
+import { ShortAppDetails, useAppState } from "../../context/appContext";
+import { LaunchActions } from "../../hooks/useLaunchActions";
+import { AppProfile } from "../../types/backend_api";
 
 export default function AppDefaultProfileDropdown({
     appDetails,

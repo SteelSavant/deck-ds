@@ -28,13 +28,16 @@ export type ActionSelection = SelectionFor_ActionAnd_PipelineActionFor_Action;
 export type DefinitionOneOf = { selection: string, actions: string[] }
 export type DefinitionSelection = SelectionFor_ActionAnd_String;
 
-export type PipelineContainer = CategoryProfile | Template;
+export interface AppProfileOveride {
+    profileId: string,
+    appId: string,
+    pipeline: PipelineDefinition
+};
+export type PipelineContainer = CategoryProfile | Template | AppProfileOveride;
 
 export function isCategoryProfile(container: PipelineContainer): container is CategoryProfile {
     return (container as any).tags !== undefined;
 }
-
-
 
 // Action 
 

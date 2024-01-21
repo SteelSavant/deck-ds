@@ -2,7 +2,7 @@ import _ from 'lodash';
 import * as React from 'react';
 import { Action, PipelineActionSettings, PipelineContainer, PipelineDefinition } from '../backend';
 
-type State = {
+type PipelineContainerState = {
     container: PipelineContainer,
 }
 
@@ -47,13 +47,13 @@ type ModifiablePipelineContextProviderProps = {
 }
 
 const ModifiablePipelineContainerStateContext = React.createContext<
-    { state: State; dispatch: Dispatch } | undefined
+    { state: PipelineContainerState; dispatch: Dispatch } | undefined
 >(undefined)
 
 
 
-function modifiablePipelineContainerReducerBuilder(onUpdate?: ExternalPipelineUpdate): (state: State, action: StateAction) => State {
-    function modifiablePipelineContainerReducer(state: State, action: StateAction): State {
+function modifiablePipelineContainerReducerBuilder(onUpdate?: ExternalPipelineUpdate): (state: PipelineContainerState, action: StateAction) => PipelineContainerState {
+    function modifiablePipelineContainerReducer(state: PipelineContainerState, action: StateAction): PipelineContainerState {
         const newContainer: PipelineContainer = (() => {
             const pipeline = state.container.pipeline;
             if (action.type === 'updatePipelineInfo') {
