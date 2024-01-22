@@ -82,6 +82,8 @@ function AppProfileSection({ appProfile, appDetails, launchActions }: { appProfi
     const { openViews, setAppViewOpen, setAppProfileOverride, updateExternalProfile } = useAppState();
     const pipeline = useAppOverridePipeline(appProfile, profileId);
 
+    console.log('got new app profile override?; rebuilding AppProfileSection', pipeline);
+
     return (
         <HandleLoading value={pipeline} onOk={(pipeline) => {
             if (!pipeline) {
@@ -178,6 +180,8 @@ function AppProfileSection({ appProfile, appDetails, launchActions }: { appProfi
 
 function QAMTarget({ target }: { target: PipelineTarget }): ReactElement {
     const { state } = useModifiablePipelineContainer();
+
+    console.log('got new pipeline?; rebuilding QAMTarget', state.container.pipeline);
 
     const reified = useReifiedPipeline(state.container.pipeline);
 

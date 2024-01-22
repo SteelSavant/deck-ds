@@ -1,11 +1,14 @@
 import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
 import { Fragment, ReactElement, useContext } from "react";
 import { ProfileContext } from ".";
-import { Action, ActionOneOf, ActionSelection, PipelineAction, } from "../../backend";
+import { Action, ActionOneOf, ActionSelection, PipelineAction } from "../../backend";
 import ActionIcon from "../../components/ActionIcon";
-import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
+import { StateAction, modifiablePipelineContainerReducer, useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
 import { MaybeString } from "../../types/short";
 import QAMEditAction from "./QAMEditAction";
+
+
+
 
 
 export default function QAMPipelineTargetDisplay({ root }: {
@@ -34,7 +37,12 @@ function buildRootSelection(id: string, selection: ActionSelection): ReactElemen
 }
 
 function buildAction(id: string, externalProfile: MaybeString, action: Action): ReactElement | null {
-    const { dispatch } = useModifiablePipelineContainer();
+    // HACK: can't use hook dispatch because QAM unloads for dropdowns, so we make our own
+    const { state } = useModifiablePipelineContainer();
+    function dispatch(stateAction: StateAction) {
+        console.log('dispatch hack with', state, stateAction)
+        modifiablePipelineContainerReducer(state, stateAction);
+    }
 
     // invoked as a function to allow seeing if the component returns null,
     // so we can ignore rendering things that aren't configurable in the QAM
@@ -75,7 +83,13 @@ function buildAllOf(allOf: PipelineAction[]): ReactElement {
 }
 
 function buildPipelineAction(action: PipelineAction): ReactElement {
-    const { dispatch } = useModifiablePipelineContainer();
+    // HACK: can't use hook dispatch because QAM unloads for dropdowns, so we make our own
+    const { state } = useModifiablePipelineContainer();
+    function dispatch(stateAction: StateAction) {
+        console.log('dispatch hack with', state, stateAction)
+        modifiablePipelineContainerReducer(state, stateAction);
+    }
+
     const profileBeingOverridden = useContext(ProfileContext);
 
     const selection = action.selection;

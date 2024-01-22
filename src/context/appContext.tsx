@@ -49,8 +49,8 @@ export class ShortAppDetailsState {
 
     getPublicState(): PublicAppState {
         return {
-            appDetails: this.appDetails ? { ...this.appDetails } : null,
-            appProfile: this.appProfile ? { ...this.appProfile } : null,
+            appDetails: _.cloneDeep(this.appDetails),
+            appProfile: _.cloneDeep(this.appProfile),
             openViews: { ...this.openViews }
         }
     }
@@ -135,18 +135,23 @@ export class ShortAppDetailsState {
     }
 
     private async refetchProfile(appIdToMatch?: number) {
-        if (this.appDetails && (!appIdToMatch || this.appDetails?.appId == appIdToMatch)) {
-            this.appProfile = (await getAppProfile({
-                app_id: this.appDetails.appId.toString()
-            }))
-                .map((a) => a.app ?? null);
+        const internal = async () => {
+            if (this.appDetails && (!appIdToMatch || this.appDetails?.appId == appIdToMatch)) {
+                this.appProfile = (await getAppProfile({
+                    app_id: this.appDetails.appId.toString()
+                }))
+                    .map((a) => a.app ?? null);
 
-            if (!this.appProfile?.isOk) {
-                console.log('failed to refetch app(', appIdToMatch, ')');
+                if (!this.appProfile?.isOk) {
+                    console.log('failed to refetch app(', appIdToMatch, ')');
+                } else {
+                    console.log('refetched; updating to', this.appProfile.data?.overrides);
+                }
+
+                this.forceUpdate();
             }
-
-            this.forceUpdate();
-        }
+        };
+        await internal();
     }
 
 
