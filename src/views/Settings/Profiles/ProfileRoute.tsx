@@ -25,7 +25,7 @@ export default function ProfilePreviewRoute(): ReactElement {
                     return <div> Profile {profileid} does not exist! Something has gone terribly wrong...</div>;
                 } else {
                     return (
-                        <ModifiablePipelineContainerProvider initialContainer={profile} onUpdate={async (profile) => {
+                        <ModifiablePipelineContainerProvider initialContainer={profile} onPipelineUpdate={async (profile) => {
                             if (!isCategoryProfile(profile)) {
                                 throw 'PipelineContainer should be CategoryProfile'
                             }

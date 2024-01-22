@@ -27,7 +27,8 @@ type UpdateExternalProfile = (profileId: string, update: PipelineUpdate) => void
 type ModifiablePipelineContextProviderProps = {
     children: React.ReactNode,
     initialContainer: PipelineContainer,
-    onUpdate?: UpdatePipeline
+    onPipelineUpdate?: UpdatePipeline,
+    onExternalProfileUpdate?: UpdateExternalProfile,
 }
 
 const ModifiablePipelineContainerStateContext = React.createContext<
@@ -76,8 +77,8 @@ function modifiablePipelineContainerReducerBuilder(onPipelineUpdate?: UpdatePipe
     return modifiablePipelineContainerReducer;
 }
 
-function ModifiablePipelineContainerProvider({ children, initialContainer, onUpdate, }: ModifiablePipelineContextProviderProps) {
-    const [state, dispatch] = React.useReducer(modifiablePipelineContainerReducerBuilder(onUpdate), {
+function ModifiablePipelineContainerProvider({ children, initialContainer, onPipelineUpdate, onExternalProfileUpdate }: ModifiablePipelineContextProviderProps) {
+    const [state, dispatch] = React.useReducer(modifiablePipelineContainerReducerBuilder(onPipelineUpdate, onExternalProfileUpdate), {
         container: initialContainer,
     });
 

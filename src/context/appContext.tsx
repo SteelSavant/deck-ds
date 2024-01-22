@@ -8,9 +8,10 @@ import {
     useEffect,
     useState
 } from 'react';
-import { getAppProfile, setAppProfileSettings } from '../backend';
+import { getAppProfile, getProfile, PipelineDefinition, setAppProfileOverride, setAppProfileSettings, setProfile } from '../backend';
 import { AppProfile } from '../types/backend_api';
 import { Loading } from '../util/loading';
+import { patchPipeline, PipelineUpdate } from '../util/patch';
 
 export type ShortAppDetails = {
     appId: number,
@@ -29,6 +30,8 @@ interface PublicAppStateContext
     extends PublicShortAppDetailsState {
     setOnAppPage(appDetails: ShortAppDetails): void,
     setAppProfileDefault(appDetails: ShortAppDetails, defaultProfileId: string | null): Promise<void>
+    setAppProfileOverride(appDetails: ShortAppDetails, profileId: string, pipeline: PipelineDefinition): Promise<void>
+    updateExternalProfile(profileId: string, update: PipelineUpdate): Promise<void>
 }
 
 // This class creates the getter and setter functions for all of the global state data.
@@ -65,14 +68,60 @@ export class ShortAppDetailsState {
             default_profile: defaultProfileId
         });
 
-        if (res?.isOk && this.appDetails?.appId == appDetails.appId) {
+        if (res?.isOk) {
+            this.refetchProfile(appDetails.appId)
+        }
+        // TODO::error handling
+    }
+
+    async setAppProfileOverride(appDetails: ShortAppDetails, profileId: string, pipeline: PipelineDefinition) {
+        const res = await setAppProfileOverride({
+            app_id: appDetails.appId.toString(),
+            profile_id: profileId,
+            pipeline,
+        });
+
+        if (res?.isOk) {
+            this.refetchProfile(appDetails.appId)
+        }
+        // TODO::error handling
+    }
+
+    async updateExternalProfile(profileId: string, update: PipelineUpdate) {
+        const profileResponse = await getProfile({
+            profile_id: profileId,
+        });
+
+        if (profileResponse?.isOk) {
+            const profile = profileResponse.data.profile;
+            const pipeline = profile?.pipeline;
+            if (pipeline) {
+                const newPipeline = patchPipeline(pipeline, update);
+                const res = await setProfile({
+                    profile: {
+                        ...profile,
+                        pipeline: newPipeline
+                    }
+                });
+
+                if (res?.isOk) {
+                    this.refetchProfile()
+                }
+            }
+            // TODO::error handling
+        }
+
+        // TODO::error handling
+    }
+
+    private async refetchProfile(appIdToMatch?: number) {
+        if (this.appDetails && (!appIdToMatch || this.appDetails?.appId == appIdToMatch)) {
             this.appProfile = (await getAppProfile({
-                app_id: appDetails.appId.toString()
+                app_id: this.appDetails.appId.toString()
             }))
                 .map((a) => a.app ?? null);
             this.forceUpdate();
         }
-        // TODO::handle error cases
     }
 
 
@@ -148,12 +197,24 @@ export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
         ShortAppDetailsStateClass.setAppProfileDefault(appDetails, defaultProfileId);
     }
 
+    const setAppProfileOverride = async (appDetails: ShortAppDetails, profileId: string, pipeline: PipelineDefinition) => {
+        ShortAppDetailsStateClass.setAppProfileOverride(appDetails, profileId, pipeline);
+    }
+
+    const updateExternalProfile = async (profileId: string, update: PipelineUpdate) => {
+        ShortAppDetailsStateClass.updateExternalProfile(profileId, update);
+    }
+
+
+
     return (
         <AppContext.Provider
             value={{
                 ...publicState,
                 setOnAppPage,
                 setAppProfileDefault,
+                setAppProfileOverride,
+                updateExternalProfile
             }}
         >
             {children}

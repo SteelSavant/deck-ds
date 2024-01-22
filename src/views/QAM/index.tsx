@@ -1,7 +1,7 @@
 import { ButtonItem, DialogButton, PanelSection, PanelSectionRow, Router } from "decky-frontend-lib";
 import { Fragment, ReactElement, createContext, useState } from "react";
 import { RiArrowDownSFill, RiArrowRightSFill } from "react-icons/ri";
-import { AppProfileOveride, PipelineTarget, setAppProfileOverride } from "../../backend";
+import { AppProfileOveride, PipelineTarget } from "../../backend";
 import HandleLoading from "../../components/HandleLoading";
 import { IconForTarget } from "../../components/IconForTarget";
 import { ShortAppDetails, useAppState } from "../../context/appContext";
@@ -19,7 +19,6 @@ export default function QAM(): ReactElement {
 
     return (
         <Fragment>
-
             <PanelSection>
                 <PanelSectionRow>
                     <ButtonItem
@@ -53,37 +52,40 @@ export default function QAM(): ReactElement {
 }
 
 function DeckDSProfilesForApp({ appDetails, launchActions }: { appDetails: ShortAppDetails, launchActions: LaunchActions[] }): ReactElement {
+    const { setAppProfileOverride, updateExternalProfile } = useAppState();
+
     return <Fragment >
         {
             launchActions.map((a) => {
                 const initial: AppProfileOveride = {
                     appId: appDetails.appId.toString(),
                     profileId: a.profile.id,
-                    pipeline: a.profile.pipeline
+                    pipeline: null
                 };
 
                 return (
                     <ProfileContext.Provider value={a.profile.id}>
-
                         <ModifiablePipelineContainerProvider
                             initialContainer={initial}
-                            onUpdate={(pipelineSettings) => {
-                                const typed = pipelineSettings as AppProfileOveride
-                                setAppProfileOverride({
-                                    app_id: typed.appId,
-                                    pipeline: typed.pipeline,
-                                    profile_id: typed.profileId
-                                })
+                            onPipelineUpdate={(pipelineSettings) => {
+                                const typed = pipelineSettings as AppProfileOveride;
+                                setAppProfileOverride(
+                                    appDetails,
+                                    typed.profileId,
+                                    typed.pipeline,
+                                );
+                            }}
+                            onExternalProfileUpdate={(profileId, update) => {
+                                updateExternalProfile(profileId, update);
                             }}
                         >
                             <AppProfileSection launchActions={a} />
                         </ModifiablePipelineContainerProvider>
                     </ProfileContext.Provider>
-
                 )
             })
         }
-    </Fragment>
+    </Fragment >
     // TODO::horizonal line at end of fragment
 }
 
