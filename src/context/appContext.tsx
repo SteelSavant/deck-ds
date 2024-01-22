@@ -70,6 +70,8 @@ export class ShortAppDetailsState {
 
         if (res?.isOk) {
             this.refetchProfile(appDetails.appId)
+        } else {
+            console.log('failed to set app(', appDetails.appId, ') default to', defaultProfileId);
         }
         // TODO::error handling
     }
@@ -83,6 +85,8 @@ export class ShortAppDetailsState {
 
         if (res?.isOk) {
             this.refetchProfile(appDetails.appId)
+        } else {
+            console.log('failed to set app(', appDetails.appId, ') override for', profileId);
         }
         // TODO::error handling
     }
@@ -106,9 +110,15 @@ export class ShortAppDetailsState {
 
                 if (res?.isOk) {
                     this.refetchProfile()
+                } else {
+                    console.log('failed to set external profile', profileId)
                 }
+            } else {
+                console.log('external profile', profileId, 'not found');
             }
             // TODO::error handling
+        } else {
+            console.log('failed to fetch external profile', profileId);
         }
 
         // TODO::error handling
@@ -120,6 +130,11 @@ export class ShortAppDetailsState {
                 app_id: this.appDetails.appId.toString()
             }))
                 .map((a) => a.app ?? null);
+
+            if (!this.appProfile?.isOk) {
+                console.log('failed to refetch app(', appIdToMatch, ')');
+            }
+
             this.forceUpdate();
         }
     }
@@ -204,8 +219,6 @@ export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
     const updateExternalProfile = async (profileId: string, update: PipelineUpdate) => {
         ShortAppDetailsStateClass.updateExternalProfile(profileId, update);
     }
-
-
 
     return (
         <AppContext.Provider

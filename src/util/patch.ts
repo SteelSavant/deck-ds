@@ -14,7 +14,6 @@ export type PipelineUpdate = {
     type: 'updateOneOf',
     id: string,
     selection: string,
-    actions: string[],
 } | {
     type: 'updateAction',
     id: string,
@@ -70,13 +69,7 @@ export function patchPipeline(pipeline: PipelineDefinition, update: PipelineUpda
                             throw 'Invalid selection type for updateOneOf';
                         }
 
-                        cloned.selection = {
-                            type: 'OneOf',
-                            value: {
-                                selection: update.selection,
-                                actions: update.actions,
-                            }
-                        }
+                        cloned.selection.value.selection = update.selection;
                         break;
                     case 'updateProfileOverride':
                         cloned.profile_override = update.profileOverride

@@ -18,7 +18,6 @@ const useReifiedPipeline = (definition: PipelineDefinition): Loading<Pipeline> =
                 return;
             }
 
-
             setResult(res.map((r) => r.pipeline));
         })();
 

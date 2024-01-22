@@ -109,7 +109,6 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number): React
                                             type: 'updateOneOf',
                                             id: action.id,
                                             selection: option.data,
-                                            actions: selection.value.actions.map((a) => a.id)
                                         }
                                     })
                                 }} />

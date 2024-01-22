@@ -40,6 +40,13 @@ function buildAction(id: string, externalProfile: MaybeString, action: Action): 
     // so we can ignore rendering things that aren't configurable in the QAM
     const component = QAMEditAction({
         action, onChange: (updatedAction) => {
+
+            console.log('dispatching action edit', {
+                type: 'updateAction',
+                id: id,
+                action: updatedAction,
+            });
+
             dispatch({
                 externalProfile: externalProfile,
                 update: {
@@ -160,7 +167,11 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                                                 data: a.id
                                             }
                                         })} onChange={(option) => {
-
+                                            console.log('dispatching oneof edit', {
+                                                type: 'updateOneOf',
+                                                id: action.id,
+                                                selection: option.data,
+                                            });
 
                                             dispatch({
                                                 externalProfile: action.profile_override,
@@ -168,7 +179,6 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                                                     type: 'updateOneOf',
                                                     id: action.id,
                                                     selection: option.data,
-                                                    actions: selection.value.actions.map((a) => a.id)
                                                 }
                                             })
                                         }} />

@@ -39,13 +39,19 @@ const ModifiablePipelineContainerStateContext = React.createContext<
 
 function modifiablePipelineContainerReducerBuilder(onPipelineUpdate?: UpdatePipeline, onExternalProfileUpdate?: UpdateExternalProfile): (state: PipelineContainerState, action: StateAction) => PipelineContainerState {
     function modifiablePipelineContainerReducer(state: PipelineContainerState, action: StateAction): PipelineContainerState {
+        console.log('handling modifiable pipeline dispatch for', action);
+
         // defer updates to external profiles, to avoid complexity of local state
         if (action.externalProfile) {
+            console.log('is external profile update');
             if (action.update.type != 'updateTags' && onExternalProfileUpdate) {
+                console.log('performing external profile update');
                 onExternalProfileUpdate(action.externalProfile, action.update)
             }
             return state;
         }
+
+        console.log('is pipeline update');
 
         const newContainer: PipelineContainer = (() => {
             const pipeline = state.container.pipeline;
@@ -66,6 +72,8 @@ function modifiablePipelineContainerReducerBuilder(onPipelineUpdate?: UpdatePipe
         })();
 
         if (onPipelineUpdate) {
+            console.log('performing pipeline update');
+
             onPipelineUpdate(newContainer); // perform arbitrary action, like saving, when the definition changes
         }
 
