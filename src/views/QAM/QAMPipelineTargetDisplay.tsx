@@ -81,15 +81,15 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
 
     const fromProfileComponent = <Field focusable={false} label="Use per-game profile">
         <Focusable>
-            <Toggle value={!!action.profile_override} onChange={(value) => {
+            <Toggle value={!action.profile_override} onChange={(value) => {
                 dispatch({
                     externalProfile: null,
                     update: {
                         type: 'updateProfileOverride',
                         id: action.id,
                         profileOverride: value
-                            ? profileBeingOverridden
-                            : null
+                            ? null
+                            : profileBeingOverridden
                     }
                 })
             }
@@ -160,6 +160,8 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                                                 data: a.id
                                             }
                                         })} onChange={(option) => {
+
+
                                             dispatch({
                                                 externalProfile: action.profile_override,
                                                 update: {
@@ -180,8 +182,6 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
             )
         case 'Action':
             const actionComponent = buildAction(action.id, action.profile_override, selection.value);
-
-            console.log(displayName, actionComponent);
 
             if (actionComponent) {
                 return (

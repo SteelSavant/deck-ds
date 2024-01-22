@@ -293,6 +293,63 @@ pub fn set_app_profile_override(
     }
 }
 
+// Get Default App Override Pipline for Profile
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct GetDefaultAppOverrideForProfileRequest {
+    profile_id: ProfileId,
+}
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct GetDefaultAppOverrideForProfileResponse {
+    pipeline: Option<PipelineDefinition>,
+}
+
+pub fn get_default_app_override_pipeline_for_profile(
+    request_handler: Arc<Mutex<RequestHandler>>,
+    profiles: &'static ProfileDb,
+    registrar: PipelineActionRegistrar,
+) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+    move |args: super::ApiParameterType| {
+        log_invoke("get_default_app_override_pipeline_for_profile", &args);
+
+        let args: Result<GetDefaultAppOverrideForProfileRequest, _> = {
+            let mut lock = request_handler
+                .lock()
+                .expect("request handler should not be poisoned");
+
+            lock.resolve(args)
+        };
+
+        match args {
+            Ok(args) => {
+                let profile = profiles.get_profile(&args.profile_id);
+                match profile {
+                    Ok(profile) => GetDefaultAppOverrideForProfileResponse {
+                        pipeline: profile.map(|profile| {
+                            let pipeline = profile.pipeline;
+
+                            let mut lookup = registrar.make_lookup(&pipeline.targets);
+
+                            for action in lookup.actions.values_mut() {
+                                action.profile_override = Some(args.profile_id)
+                            }
+
+                            return PipelineDefinition {
+                                actions: lookup,
+                                ..pipeline
+                            };
+                        }),
+                    }
+                    .to_response(),
+                    Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
+                }
+            }
+            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
+        }
+    }
+}
+
 // Reify Pipeline
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]

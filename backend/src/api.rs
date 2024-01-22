@@ -10,8 +10,9 @@ use self::{
     autostart::AutoStartRequest,
     profile::{
         CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, GetAppProfileRequest,
-        GetAppProfileResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse,
-        GetTemplatesResponse, ReifyPipelineRequest, ReifyPipelineResponse,
+        GetAppProfileResponse, GetDefaultAppOverrideForProfileRequest,
+        GetDefaultAppOverrideForProfileResponse, GetProfileRequest, GetProfileResponse,
+        GetProfilesResponse, GetTemplatesResponse, ReifyPipelineRequest, ReifyPipelineResponse,
         SetAppProfileOverrideRequest, SetAppProfileSettingsRequest, SetProfileRequest,
     },
 };
@@ -85,6 +86,8 @@ pub struct Api {
     pub get_app_profile_response: GetAppProfileResponse,
     pub set_app_profile_settings_request: SetAppProfileSettingsRequest,
     pub set_app_profile_override_request: SetAppProfileOverrideRequest,
+    pub get_default_app_override_for_profile_request: GetDefaultAppOverrideForProfileRequest,
+    pub get_default_app_override_for_profile_response: GetDefaultAppOverrideForProfileResponse,
     pub reify_pipeline_request: ReifyPipelineRequest,
     pub reify_pipeline_response: ReifyPipelineResponse,
     pub get_templates_response: GetTemplatesResponse,

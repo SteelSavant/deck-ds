@@ -10,6 +10,8 @@
     "delete_profile_request",
     "get_app_profile_request",
     "get_app_profile_response",
+    "get_default_app_override_for_profile_request",
+    "get_default_app_override_for_profile_response",
     "get_profile_request",
     "get_profile_response",
     "get_profiles_response",
@@ -38,6 +40,12 @@
     },
     "get_app_profile_response": {
       "$ref": "#/definitions/GetAppProfileResponse"
+    },
+    "get_default_app_override_for_profile_request": {
+      "$ref": "#/definitions/GetDefaultAppOverrideForProfileRequest"
+    },
+    "get_default_app_override_for_profile_response": {
+      "$ref": "#/definitions/GetDefaultAppOverrideForProfileResponse"
     },
     "get_profile_request": {
       "$ref": "#/definitions/GetProfileRequest"
@@ -634,6 +642,33 @@
           "anyOf": [
             {
               "$ref": "#/definitions/AppProfile"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "GetDefaultAppOverrideForProfileRequest": {
+      "type": "object",
+      "required": [
+        "profile_id"
+      ],
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "GetDefaultAppOverrideForProfileResponse": {
+      "type": "object",
+      "properties": {
+        "pipeline": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PipelineDefinition_for_Action"
             },
             {
               "type": "null"

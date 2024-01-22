@@ -1,4 +1,4 @@
-import { AutoStartRequest, CategoryProfile, CitraLayoutOption, CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, GetAppProfileRequest, GetAppProfileResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineActionFor_Action, PipelineActionSettingsFor_Action, PipelineDefinitionFor_Action, PipelineFor_Action, ReifyPipelineRequest, ReifyPipelineResponse, SelectionFor_ActionAnd_PipelineActionFor_Action, SelectionFor_ActionAnd_String, SetAppProfileOverrideRequest, SetAppProfileSettingsRequest, SetProfileRequest, Template } from "./types/backend_api";
+import { AutoStartRequest, CategoryProfile, CitraLayoutOption, CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, GetAppProfileRequest, GetAppProfileResponse, GetDefaultAppOverrideForProfileRequest, GetDefaultAppOverrideForProfileResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineActionFor_Action, PipelineActionSettingsFor_Action, PipelineDefinitionFor_Action, PipelineFor_Action, ReifyPipelineRequest, ReifyPipelineResponse, SelectionFor_ActionAnd_PipelineActionFor_Action, SelectionFor_ActionAnd_String, SetAppProfileOverrideRequest, SetAppProfileSettingsRequest, SetProfileRequest, Template } from "./types/backend_api";
 import { call_backend, init_embedded, init_usdpl, target_usdpl } from "./usdpl_front";
 import { Err, Ok, Result } from "./util/result";
 
@@ -223,6 +223,10 @@ export async function setAppProfileSettings(request: SetAppProfileSettingsReques
 
 export async function setAppProfileOverride(request: SetAppProfileOverrideRequest): Response<void> {
     return await call_backend_typed("set_app_profile_override", request)
+}
+
+export async function getDefaultAppOverrideForProfileRequest(request: GetDefaultAppOverrideForProfileRequest): Response<GetDefaultAppOverrideForProfileResponse> {
+    return await call_backend_typed("get_default_app_override_for_profile_request", request);
 }
 
 // Templates

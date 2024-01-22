@@ -316,6 +316,14 @@ fn main() -> Result<()> {
                     ),
                 )
                 .register(
+                    "get_default_app_override_for_profile_request",
+                    crate::api::profile::get_default_app_override_pipeline_for_profile(
+                        request_handler.clone(),
+                        profiles_db,
+                        registrar.clone(),
+                    ),
+                )
+                .register(
                     "reify_pipeline",
                     crate::api::profile::reify_pipeline(
                         request_handler.clone(),

@@ -163,6 +163,8 @@ export interface Api {
   delete_profile_request: DeleteProfileRequest;
   get_app_profile_request: GetAppProfileRequest;
   get_app_profile_response: GetAppProfileResponse;
+  get_default_app_override_for_profile_request: GetDefaultAppOverrideForProfileRequest;
+  get_default_app_override_for_profile_response: GetDefaultAppOverrideForProfileResponse;
   get_profile_request: GetProfileRequest;
   get_profile_response: GetProfileResponse;
   get_profiles_response: GetProfilesResponse;
@@ -308,6 +310,12 @@ export interface AppProfile {
   overrides: {
     [k: string]: PipelineDefinitionFor_Action;
   };
+}
+export interface GetDefaultAppOverrideForProfileRequest {
+  profile_id: string;
+}
+export interface GetDefaultAppOverrideForProfileResponse {
+  pipeline?: PipelineDefinitionFor_Action | null;
 }
 export interface GetProfileRequest {
   profile_id: string;

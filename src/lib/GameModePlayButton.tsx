@@ -17,8 +17,6 @@ export default function GameModePlayButton({
     const { appDetails, appProfile } = useAppState();
     const launchActions = useLaunchActions(appDetails);
 
-    console.log('current App:', appDetails, appProfile);
-
     return <HandleLoading
         value={appProfile}
         onOk={(appProfile) => {
