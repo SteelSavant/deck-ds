@@ -9,7 +9,7 @@ import {
     useState
 } from 'react';
 import { getAppProfile, getProfile, PipelineDefinition, setAppProfileOverride, setAppProfileSettings, setProfile } from '../backend';
-import { AppProfile } from '../types/backend_api';
+import { AppProfile, PipelineTarget } from '../types/backend_api';
 import { Loading } from '../util/loading';
 import { patchPipeline, PipelineUpdate } from '../util/patch';
 
@@ -19,18 +19,20 @@ export type ShortAppDetails = {
     displayName: string,
 };
 
-interface PublicShortAppDetailsState {
+interface PublicAppState {
     appDetails: ShortAppDetails | null
     appProfile: Loading<AppProfile | null>
+    openViews: { [k: string]: { [k: string]: boolean } },
 }
 
 // The localThemeEntry interface refers to the theme data as given by the python function, the Theme class refers to a theme after it has been formatted and the generate function has been added
 
 interface PublicAppStateContext
-    extends PublicShortAppDetailsState {
+    extends PublicAppState {
     setOnAppPage(appDetails: ShortAppDetails): void,
     setAppProfileDefault(appDetails: ShortAppDetails, defaultProfileId: string | null): Promise<void>
     setAppProfileOverride(appDetails: ShortAppDetails, profileId: string, pipeline: PipelineDefinition): Promise<void>
+    setAppViewOpen(profileId: string, view: PipelineTarget, isOpen: boolean): void
     updateExternalProfile(profileId: string, update: PipelineUpdate): Promise<void>
 }
 
@@ -39,15 +41,17 @@ export class ShortAppDetailsState {
     private delayMs = 1000
     private appDetails: ShortAppDetails | null = null;
     private appProfile: Loading<AppProfile | null>;
+    private openViews: { [k: string]: { [k: string]: boolean } } = {};
     private lastOnAppPageTime: number = 0
 
     // You can listen to this eventBus' 'stateUpdate' event and use that to trigger a useState or other function that causes a re-render
     public eventBus = new EventTarget()
 
-    getPublicState(): PublicShortAppDetailsState {
+    getPublicState(): PublicAppState {
         return {
             appDetails: this.appDetails ? { ...this.appDetails } : null,
-            appProfile: this.appProfile ? { ...this.appProfile } : null
+            appProfile: this.appProfile ? { ...this.appProfile } : null,
+            openViews: { ...this.openViews }
         }
     }
 
@@ -60,6 +64,12 @@ export class ShortAppDetailsState {
             },
             appDetails ? 0 : this.delayMs
         )
+    }
+
+    setAppViewOpen(profileId: string, view: PipelineTarget, isOpen: boolean) {
+        this.openViews[profileId] ??= {};
+        this.openViews[profileId][view] = isOpen;
+        this.forceUpdate();
     }
 
     async setAppProfileDefault(appDetails: ShortAppDetails, defaultProfileId: string | null) {
@@ -148,6 +158,7 @@ export class ShortAppDetailsState {
 
         this.appDetails = appDetails;
         this.appProfile = null;
+        this.openViews = {};
         this.lastOnAppPageTime = time;
         this.fetchProfile();
         this.forceUpdate();
@@ -183,7 +194,7 @@ export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
     children,
     ShortAppDetailsStateClass
 }) => {
-    const [publicState, setPublicState] = useState<PublicShortAppDetailsState>({
+    const [publicState, setPublicState] = useState<PublicAppState>({
         ...ShortAppDetailsStateClass.getPublicState()
     })
 
@@ -220,6 +231,10 @@ export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
         ShortAppDetailsStateClass.updateExternalProfile(profileId, update);
     }
 
+    const setAppViewOpen = (profileId: string, view: PipelineTarget, isOpen: boolean) => {
+        ShortAppDetailsStateClass.setAppViewOpen(profileId, view, isOpen);
+    }
+
     return (
         <AppContext.Provider
             value={{
@@ -227,6 +242,7 @@ export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
                 setOnAppPage,
                 setAppProfileDefault,
                 setAppProfileOverride,
+                setAppViewOpen,
                 updateExternalProfile
             }}
         >

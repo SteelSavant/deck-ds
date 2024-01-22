@@ -1,5 +1,5 @@
 import { ButtonItem, DialogButton, PanelSection, PanelSectionRow, Router } from "decky-frontend-lib";
-import { Fragment, ReactElement, createContext, useState } from "react";
+import { Fragment, ReactElement, createContext } from "react";
 import { RiArrowDownSFill, RiArrowRightSFill } from "react-icons/ri";
 import { AppProfileOveride, PipelineTarget } from "../../backend";
 import HandleLoading from "../../components/HandleLoading";
@@ -79,9 +79,8 @@ function AppProfileSection({ appProfile, appDetails, launchActions }: { appProfi
     const margin = '5px';
     const profileId = launchActions.profile.id;
 
-    const { setAppProfileOverride, updateExternalProfile } = useAppState();
+    const { openViews, setAppViewOpen, setAppProfileOverride, updateExternalProfile } = useAppState();
     const pipeline = useAppOverridePipeline(appProfile, profileId);
-    const [view, setView] = useState<{ [k: string]: boolean }>({});
 
     return (
         <HandleLoading value={pipeline} onOk={(pipeline) => {
@@ -146,25 +145,23 @@ function AppProfileSection({ appProfile, appDetails, launchActions }: { appProfi
                                             borderTopLeftRadius: 0,
                                             borderBottomLeftRadius: 0,
                                             padding: 0,
-                                            backgroundColor: view[t.target]
+                                            backgroundColor: openViews[t.target]
                                                 ? 'lightgreen'
                                                 : undefined
                                         }}
                                         onClick={() => {
-                                            const newView = { ...view };
-                                            newView[t.target] = !newView[t.target];
-                                            setView(newView)
+                                            setAppViewOpen(profileId, t.target, !openViews[profileId]?.[t.target])
                                         }}
                                     >
                                         {
-                                            view[t.target]
+                                            openViews[profileId]?.[t.target]
                                                 ? <RiArrowDownSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill', }} />
                                                 : <RiArrowRightSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill' }} />
                                         }
                                     </DialogButton>
                                 </div>
                                 {
-                                    view[t.target] ?
+                                    openViews[profileId]?.[t.target] ?
                                         <QAMTarget target={t.target
                                         } />
                                         : <div />
