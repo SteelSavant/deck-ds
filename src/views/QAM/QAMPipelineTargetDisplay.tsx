@@ -1,9 +1,12 @@
 import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
-import { Fragment, ReactElement } from "react";
+import { Fragment, ReactElement, useContext } from "react";
+import { ProfileContext } from ".";
 import { Action, ActionOneOf, ActionSelection, PipelineAction, } from "../../backend";
 import ActionIcon from "../../components/ActionIcon";
 import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
+import { MaybeString } from "../../types/short";
 import QAMEditAction from "./QAMEditAction";
+
 
 export default function QAMPipelineTargetDisplay({ root }: {
     root: ActionSelection,
@@ -13,16 +16,16 @@ export default function QAMPipelineTargetDisplay({ root }: {
         <DialogBody style={{ marginBottom: '10px' }}>
             <DialogControlsSection>
                 <Field focusable={false} />
-                {buildSelection('root', root) ?? <div />}
+                {buildRootSelection('root', root) ?? <div />}
             </DialogControlsSection>
         </DialogBody>
     )
 }
 
-function buildSelection(id: string, selection: ActionSelection): ReactElement | null {
+function buildRootSelection(id: string, selection: ActionSelection): ReactElement | null {
     switch (selection.type) {
         case "Action":
-            return buildAction(id, selection.value);
+            return buildAction(id, null, selection.value);
         case "OneOf":
             return buildOneOf(selection.value);
         case "AllOf":
@@ -30,7 +33,7 @@ function buildSelection(id: string, selection: ActionSelection): ReactElement | 
     }
 }
 
-function buildAction(id: string, action: Action): ReactElement | null {
+function buildAction(id: string, externalProfile: MaybeString, action: Action): ReactElement | null {
     const { dispatch } = useModifiablePipelineContainer();
 
     // invoked as a function to allow seeing if the component returns null,
@@ -38,9 +41,12 @@ function buildAction(id: string, action: Action): ReactElement | null {
     const component = QAMEditAction({
         action, onChange: (updatedAction) => {
             dispatch({
-                type: 'updateAction',
-                id: id,
-                action: updatedAction,
+                externalProfile: externalProfile,
+                update: {
+                    type: 'updateAction',
+                    id: id,
+                    action: updatedAction,
+                }
             });
         }
     });
@@ -63,6 +69,7 @@ function buildAllOf(allOf: PipelineAction[]): ReactElement {
 
 function buildPipelineAction(action: PipelineAction): ReactElement {
     const { dispatch } = useModifiablePipelineContainer();
+    const profileBeingOverridden = useContext(ProfileContext);
 
     const selection = action.selection;
     const type = selection.type;
@@ -74,12 +81,18 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
 
     const fromProfileComponent = <Field focusable={false} label="Use per-game profile">
         <Focusable>
-            <Toggle value={!!action.profile_override} onChange={(value) => null // TODO::This
-                // dispatch({
-                //     type: 'updateEnabled',
-                //     id: action.id,
-                //     isEnabled: value,
-                // })
+            <Toggle value={!!action.profile_override} onChange={(value) => {
+                dispatch({
+                    externalProfile: null,
+                    update: {
+                        type: 'updateProfileOverride',
+                        id: action.id,
+                        profileOverride: value
+                            ? profileBeingOverridden
+                            : null
+                    }
+                })
+            }
             } />
         </Focusable>
     </Field>;
@@ -90,9 +103,12 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
             <Focusable>
                 <Toggle value={isEnabled} onChange={(value) =>
                     dispatch({
-                        type: 'updateEnabled',
-                        id: action.id,
-                        isEnabled: value,
+                        externalProfile: action.profile_override,
+                        update: {
+                            type: 'updateEnabled',
+                            id: action.id,
+                            isEnabled: value,
+                        }
                     })
                 } />
             </Focusable>
@@ -145,10 +161,13 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                                             }
                                         })} onChange={(option) => {
                                             dispatch({
-                                                type: 'updateOneOf',
-                                                id: action.id,
-                                                selection: option.data,
-                                                actions: selection.value.actions.map((a) => a.id)
+                                                externalProfile: action.profile_override,
+                                                update: {
+                                                    type: 'updateOneOf',
+                                                    id: action.id,
+                                                    selection: option.data,
+                                                    actions: selection.value.actions.map((a) => a.id)
+                                                }
                                             })
                                         }} />
                                     </Focusable>
@@ -160,7 +179,7 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                 </Fragment>
             )
         case 'Action':
-            const actionComponent = buildAction(action.id, selection.value);
+            const actionComponent = buildAction(action.id, action.profile_override, selection.value);
 
             console.log(displayName, actionComponent);
 

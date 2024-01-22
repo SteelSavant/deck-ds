@@ -57,10 +57,13 @@ function PipelineHeader(container: PipelineContainer): ReactElement {
         showModal(
             <EditProfileNameModal pipeline={state.container.pipeline} onSave={(name) => {
                 dispatch({
-                    type: 'updatePipelineInfo',
-                    info: {
-                        ...container.pipeline,
-                        name: name,
+                    externalProfile: null,
+                    update: {
+                        type: 'updatePipelineInfo',
+                        info: {
+                            ...container.pipeline,
+                            name: name,
+                        }
                     }
                 })
             }} />

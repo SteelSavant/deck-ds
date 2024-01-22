@@ -1,5 +1,5 @@
 import { ButtonItem, DialogButton, PanelSection, PanelSectionRow, Router } from "decky-frontend-lib";
-import { Fragment, ReactElement, useState } from "react";
+import { Fragment, ReactElement, createContext, useState } from "react";
 import { RiArrowDownSFill, RiArrowRightSFill } from "react-icons/ri";
 import { AppProfileOveride, PipelineTarget, setAppProfileOverride } from "../../backend";
 import HandleLoading from "../../components/HandleLoading";
@@ -11,6 +11,7 @@ import useReifiedPipeline from "../../hooks/useReifiedPipeline";
 import AppDefaultProfileDropdown from "./AppDefaultProfileDropdown";
 import QAMPipelineTargetDisplay from "./QAMPipelineTargetDisplay";
 
+export const ProfileContext = createContext("");
 
 export default function QAM(): ReactElement {
     const { appDetails, appProfile } = useAppState();
@@ -55,8 +56,6 @@ function DeckDSProfilesForApp({ appDetails, launchActions }: { appDetails: Short
     return <Fragment >
         {
             launchActions.map((a) => {
-                // TODO::display icon next to target
-
                 const initial: AppProfileOveride = {
                     appId: appDetails.appId.toString(),
                     profileId: a.profile.id,
@@ -64,19 +63,23 @@ function DeckDSProfilesForApp({ appDetails, launchActions }: { appDetails: Short
                 };
 
                 return (
-                    <ModifiablePipelineContainerProvider
-                        initialContainer={initial}
-                        onUpdate={(pipelineSettings) => {
-                            const typed = pipelineSettings as AppProfileOveride
-                            setAppProfileOverride({
-                                app_id: typed.appId,
-                                pipeline: typed.pipeline,
-                                profile_id: typed.profileId
-                            })
-                        }}
-                    >
-                        <AppProfileSection launchActions={a} />
-                    </ModifiablePipelineContainerProvider>
+                    <ProfileContext.Provider value={a.profile.id}>
+
+                        <ModifiablePipelineContainerProvider
+                            initialContainer={initial}
+                            onUpdate={(pipelineSettings) => {
+                                const typed = pipelineSettings as AppProfileOveride
+                                setAppProfileOverride({
+                                    app_id: typed.appId,
+                                    pipeline: typed.pipeline,
+                                    profile_id: typed.profileId
+                                })
+                            }}
+                        >
+                            <AppProfileSection launchActions={a} />
+                        </ModifiablePipelineContainerProvider>
+                    </ProfileContext.Provider>
+
                 )
             })
         }

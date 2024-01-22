@@ -1,49 +1,33 @@
-import _ from 'lodash';
 import * as React from 'react';
-import { Action, PipelineActionSettings, PipelineContainer, PipelineDefinition } from '../backend';
+import { PipelineContainer } from '../backend';
+import { MaybeString } from '../types/short';
+import { PipelineUpdate, patchPipeline } from '../util/patch';
 
-type PipelineContainerState = {
+interface PipelineContainerState {
     container: PipelineContainer,
 }
 
-interface PipelineInfo {
-    description: string | undefined;
-    name: string | undefined;
-}
-
-type StateAction = {
-    type: 'updateEnabled',
-    id: string,
-    isEnabled: boolean
-} | {
-    type: 'updateProfileOverride',
-    id: string,
-    profileOverride: string | null | undefined
-} | {
-    type: 'updateOneOf',
-    id: string,
-    selection: string,
-    actions: string[],
-} | {
-    type: 'updateAction',
-    id: string,
-    action: Action
-} | {
-    type: 'updatePipelineInfo',
-    info: PipelineInfo,
-} | {
+type ProfileUpdate = {
     type: 'updateTags',
     tags: string[]
 };
 
+interface StateAction {
+    ///  if null patch self, else defer to exteral update using provided profile
+    externalProfile: MaybeString,
+    update: PipelineUpdate | ProfileUpdate,
+}
+
+
 type Dispatch = (action: StateAction) => void
 
-type ExternalPipelineUpdate = (pipelineSettings: PipelineContainer) => void;
+type UpdatePipeline = (pipelineSettings: PipelineContainer) => void;
+type UpdateExternalProfile = (profileId: string, update: PipelineUpdate) => void;
 
 type ModifiablePipelineContextProviderProps = {
     children: React.ReactNode,
     initialContainer: PipelineContainer,
-    onUpdate?: ExternalPipelineUpdate
+    onUpdate?: UpdatePipeline
 }
 
 const ModifiablePipelineContainerStateContext = React.createContext<
@@ -52,95 +36,36 @@ const ModifiablePipelineContainerStateContext = React.createContext<
 
 
 
-function modifiablePipelineContainerReducerBuilder(onUpdate?: ExternalPipelineUpdate): (state: PipelineContainerState, action: StateAction) => PipelineContainerState {
+function modifiablePipelineContainerReducerBuilder(onPipelineUpdate?: UpdatePipeline, onExternalProfileUpdate?: UpdateExternalProfile): (state: PipelineContainerState, action: StateAction) => PipelineContainerState {
     function modifiablePipelineContainerReducer(state: PipelineContainerState, action: StateAction): PipelineContainerState {
+        // defer updates to external profiles, to avoid complexity of local state
+        if (action.externalProfile) {
+            if (action.update.type != 'updateTags' && onExternalProfileUpdate) {
+                onExternalProfileUpdate(action.externalProfile, action.update)
+            }
+            return state;
+        }
+
         const newContainer: PipelineContainer = (() => {
             const pipeline = state.container.pipeline;
-            if (action.type === 'updatePipelineInfo') {
-                const newDefinition: PipelineDefinition = {
-                    ...pipeline,
-                };
 
-                const info = action.info;
-
-                if (info.description) {
-                    newDefinition.description = info.description
-                }
-
-                if (info.name) {
-                    newDefinition.name = info.name
-                }
-
-
+            const updateType = action.update.type;
+            if (updateType === 'updateTags') {
                 return {
                     ...state.container,
-                    pipeline: newDefinition
-                };
-            } else if (action.type === 'updateTags') {
-                return {
-                    ...state.container,
-                    tags: action.tags
+                    tags: action.update.tags
                 }
             } else {
-                let updatedActions: { [k: string]: PipelineActionSettings } = {};
-                let currentActions = pipeline.actions.actions;
-                for (let key in currentActions) {
-                    if (key === action.id) {
-                        let cloned = _.cloneDeep(currentActions[key]);
-                        const type = action.type;
-
-                        switch (type) {
-                            case 'updateEnabled':
-                                cloned.enabled = action.isEnabled;
-                                break;
-                            case 'updateAction':
-                                cloned.selection = {
-                                    type: 'Action',
-                                    value: action.action
-                                };
-                                break;
-                            case 'updateOneOf':
-                                if (cloned.selection.type != 'OneOf') {
-                                    throw 'Invalid selection type for updateOneOf';
-                                }
-
-                                cloned.selection = {
-                                    type: 'OneOf',
-                                    value: {
-                                        selection: action.selection,
-                                        actions: action.actions,
-                                    }
-                                }
-                                break;
-                            case 'updateProfileOverride':
-                                cloned.profile_override = action.profileOverride
-                                break;
-                            default:
-                                const typecheck: never = type;
-                                throw typecheck ?? 'action update failed to typecheck';
-                        }
-
-                        updatedActions[key] = cloned;
-                    } else {
-                        updatedActions[key] = currentActions[key];
-                    }
-
-                }
-                let result: PipelineContainer = {
+                const newPipeline = patchPipeline(pipeline, action.update);
+                return {
                     ...state.container,
-                    pipeline: {
-                        ...state.container.pipeline,
-                        actions: {
-                            actions: updatedActions
-                        }
-                    },
-                };
-                return result;
+                    pipeline: newPipeline,
+                }
             }
         })();
 
-        if (onUpdate) {
-            onUpdate(newContainer); // perform arbitrary action, like saving, when the definition changes
+        if (onPipelineUpdate) {
+            onPipelineUpdate(newContainer); // perform arbitrary action, like saving, when the definition changes
         }
 
         return {
