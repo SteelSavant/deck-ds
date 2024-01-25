@@ -31,27 +31,20 @@ export interface PipelineInfo {
 
 export function patchPipeline(pipeline: PipelineDefinition, update: PipelineUpdate): PipelineDefinition {
     if (update.type === 'updatePipelineInfo') {
-        const newDefinition: PipelineDefinition = {
-            ...pipeline,
-        };
-
         const info = update.info;
 
-        if (info.description) {
-            newDefinition.description = info.description
-        }
-
-        if (info.name) {
-            newDefinition.name = info.name
-        }
-
-        return newDefinition;
+        return {
+            ...pipeline,
+            description: info.description ?? pipeline.description,
+            name: info.name ?? pipeline.name,
+        };
     } else {
         let updatedActions: { [k: string]: PipelineActionSettings } = {};
         let currentActions = pipeline.actions.actions;
         for (let key in currentActions) {
             if (key === update.id) {
                 let cloned = _.cloneDeep(currentActions[key]);
+
                 const type = update.type;
 
                 switch (type) {
@@ -59,10 +52,20 @@ export function patchPipeline(pipeline: PipelineDefinition, update: PipelineUpda
                         cloned.enabled = update.isEnabled;
                         break;
                     case 'updateAction':
+                        if (cloned.selection.type !== 'Action') {
+                            throw 'Invalid selection type for updateAction';
+                        }
+
+                        const id = cloned.selection.value.value.id;
+
                         cloned.selection = {
                             type: 'Action',
-                            value: update.action
+                            value: {
+                                ...update.action
+                            }
                         };
+
+                        cloned.selection.value.value.id = id;
                         break;
                     case 'updateOneOf':
                         if (cloned.selection.type != 'OneOf') {
@@ -79,11 +82,12 @@ export function patchPipeline(pipeline: PipelineDefinition, update: PipelineUpda
                         throw typecheck ?? 'action update failed to typecheck';
                 }
 
+                console.log('updated action at', key, 'to', cloned, 'with update', update);
+
                 updatedActions[key] = cloned;
             } else {
                 updatedActions[key] = currentActions[key];
             }
-
         }
 
         return {

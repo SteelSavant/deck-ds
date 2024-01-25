@@ -2,19 +2,14 @@ import { useEffect } from "react";
 import { useAppState } from "../context/appContext";
 
 
-const useEnsureAppOverridePipeline = (profileId: string | null): void => {
+const useEnsureAppOverridePipeline = (profileId: string): void => {
     const { appDetails, reifiedPipelines, loadProfileOverride } = useAppState();
 
-    const nonNullId = profileId ??= 'noprofile';
-
-
     useEffect(() => {
-        profileId ??= 'noprofile';
-
-        if (!reifiedPipelines[nonNullId] && appDetails) {
+        if (!reifiedPipelines[profileId] && appDetails) {
             loadProfileOverride(appDetails?.appId, profileId);
         }
-    }, [appDetails?.appId, reifiedPipelines[nonNullId]]);
+    }, [reifiedPipelines[profileId]]);
 }
 
 export default useEnsureAppOverridePipeline;

@@ -7,10 +7,6 @@ import { useAppState } from "../../context/appContext";
 import { MaybeString } from "../../types/short";
 import QAMEditAction from "./QAMEditAction";
 
-
-
-
-
 export default function QAMPipelineTargetDisplay({ root }: {
     root: ActionSelection,
 }): ReactElement {
@@ -39,9 +35,6 @@ function buildRootSelection(id: string, selection: ActionSelection): ReactElemen
 function buildAction(id: string, externalProfile: MaybeString, action: Action): ReactElement | null {
     const { dispatchUpdate } = useAppState();
     const profileId = useContext(ProfileContext);
-
-    console.log('got profilecontext with value', profileId);
-
 
     // invoked as a function to allow seeing if the component returns null,
     // so we can ignore rendering things that aren't configurable in the QAM
@@ -93,59 +86,10 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
     const forcedEnabled = action.enabled === null || action.enabled === undefined;
     const isEnabled = action.enabled || forcedEnabled;
 
-    const displayName = action.name.toLocaleUpperCase();
-
-
-
-
-
-    const fromProfileComponent = <Field focusable={false} label="Use per-game profile">
-        <Focusable>
-            <Toggle value={!action.profile_override} onChange={(value) => {
-                dispatchUpdate(profileBeingOverridden, {
-                    externalProfile: null,
-                    update: {
-                        type: 'updateProfileOverride',
-                        id: action.id,
-                        profileOverride: value
-                            ? null
-                            : profileBeingOverridden
-                    }
-                })
-            }
-            } />
-        </Focusable>
-    </Field>;
-
-    const enabledComponent = forcedEnabled
-        ? <div />
-        : <Field focusable={false} label="Enabled">
-            <Focusable>
-                <Toggle value={isEnabled} onChange={(value) =>
-                    dispatchUpdate(profileBeingOverridden, {
-                        externalProfile: action.profile_override,
-                        update: {
-                            type: 'updateEnabled',
-                            id: action.id,
-                            isEnabled: value,
-                        }
-                    })
-                } />
-            </Focusable>
-        </Field>;
-
-    function Header(): ReactElement {
-        return (
-            <Fragment>
-                <Field
-                    focusable={false}
-                    label={displayName}
-                    icon={<ActionIcon action={action} />}
-                />
-                {fromProfileComponent}
-                {enabledComponent}
-            </Fragment>
-        );
+    const props: HeaderProps = {
+        isEnabled,
+        forcedEnabled,
+        action
     }
 
     switch (type) {
@@ -155,7 +99,7 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
             } else {
                 return (
                     <Fragment>
-                        <Header />
+                        <Header {...props} />
                         {
                             isEnabled
                                 ? buildAllOf(selection.value)
@@ -168,7 +112,7 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
         case 'OneOf':
             return (
                 <Fragment>
-                    <Header />
+                    <Header {...props} />
                     {
                         isEnabled
                             ? <Fragment>
@@ -180,12 +124,6 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                                                 data: a.id
                                             }
                                         })} onChange={(option) => {
-                                            console.log('dispatching oneof edit', {
-                                                type: 'updateOneOf',
-                                                id: action.id,
-                                                selection: option.data,
-                                            });
-
                                             dispatchUpdate(profileBeingOverridden, {
                                                 externalProfile: action.profile_override,
                                                 update: {
@@ -209,7 +147,7 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
             if (actionComponent) {
                 return (
                     <Fragment>
-                        <Header />
+                        <Header {...props} />
                         {isEnabled ? actionComponent : <div />}
                     </Fragment>
                 );
@@ -223,6 +161,71 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
             throw typecheck ?? 'action type failed to typecheck'
     }
 }
+
+interface HeaderProps { isEnabled: boolean, forcedEnabled: boolean, action: PipelineAction }
+
+
+function FromProfileComponent({ action }: { action: any }) {
+    const profileBeingOverridden = useContext(ProfileContext);
+    const { dispatchUpdate } = useAppState();
+
+    return <Field focusable={false} label="Use per-game profile">
+        <Focusable>
+            <Toggle value={!action.profile_override} onChange={(value) => {
+                dispatchUpdate(profileBeingOverridden, {
+                    externalProfile: null,
+                    update: {
+                        type: 'updateProfileOverride',
+                        id: action.id,
+                        profileOverride: value
+                            ? null
+                            : profileBeingOverridden
+                    }
+                })
+            }} />
+        </Focusable>
+    </Field>
+};
+
+function EnabledComponent({ isEnabled, forcedEnabled, action }: HeaderProps): ReactElement {
+    const profileBeingOverridden = useContext(ProfileContext);
+    const { dispatchUpdate } = useAppState();
+
+    return forcedEnabled
+        ? <div />
+        : <Field focusable={false} label="Enabled">
+            <Focusable>
+                <Toggle value={isEnabled} onChange={(value) =>
+                    dispatchUpdate(profileBeingOverridden, {
+                        externalProfile: action.profile_override,
+                        update: {
+                            type: 'updateEnabled',
+                            id: action.id,
+                            isEnabled: value,
+                        }
+                    })
+                } />
+            </Focusable>
+        </Field>
+}
+
+function Header(props: HeaderProps): ReactElement {
+    const action = props.action;
+    const displayName = action.name.toLocaleUpperCase();
+
+    return (
+        <Fragment>
+            <Field
+                focusable={false}
+                label={displayName}
+                icon={<ActionIcon action={action} />}
+            />
+            <FromProfileComponent action={action} />
+            <EnabledComponent {...props} />
+        </Fragment>
+    );
+}
+
 
 
 

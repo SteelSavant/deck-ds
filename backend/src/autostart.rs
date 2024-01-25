@@ -6,7 +6,6 @@ use std::{
 
 use crate::{
     asset::AssetManager,
-    macros::newtype_strid,
     pipeline::{
         data::{PipelineAction, PipelineActionId, PipelineTarget, Selection},
         executor::PipelineExecutor,

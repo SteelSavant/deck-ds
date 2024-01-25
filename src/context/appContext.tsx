@@ -96,13 +96,13 @@ export class ShortAppDetailsState {
             console.log('is external profile update');
             await this.updateExternalProfile(action.externalProfile, action.update);
         } else {
-
             if (this.appProfile?.isOk) {
                 console.log(profileId, 'is pipeline update; current state:', this.appProfile);
 
                 const pipeline = this.appProfile.data.overrides[profileId];
                 if (pipeline) {
                     const newPipeline = patchPipeline(pipeline, action.update);
+
                     await this.setAppProfileOverride(
                         appId,
                         profileId,
@@ -132,6 +132,7 @@ export class ShortAppDetailsState {
     }
 
     async loadProfileOverride(appId: number, profileId: string) {
+        console.log("loading app profile");
         let shouldUpdate = false;
         if (this.appDetails?.appId === appId && this.appProfile?.isOk) {
             const overrides = this.appProfile.data.overrides;
@@ -145,11 +146,15 @@ export class ShortAppDetailsState {
                     shouldUpdate = true;
                 }
                 // TODO::error handling
+            } else {
+                console.log('existing override found:', overrides[profileId]);
             }
 
             if (overrides[profileId]) {
                 this.reifiedPipelines[profileId] = (await reifyPipeline({ pipeline: overrides[profileId] }))
                     .map((r) => r.pipeline);
+
+                console.log('load reified to:', this.reifiedPipelines[profileId]);
                 shouldUpdate = true;
             }
         }
@@ -166,7 +171,18 @@ export class ShortAppDetailsState {
             pipeline,
         });
 
-        if (res?.isOk) {
+        if (res?.isOk && this.appDetails?.appId === appId) {
+            this.appProfile = this.appProfile?.map((p) => {
+                const overrides = {
+                    ...p.overrides
+                };
+                overrides[profileId] = pipeline;
+
+                return {
+                    ...p,
+                    overrides,
+                }
+            })
             this.refetchProfile(appId)
         } else {
             console.log('failed to set app(', appId, ') override for', profileId);
@@ -210,14 +226,19 @@ export class ShortAppDetailsState {
     private async refetchProfile(appIdToMatch?: number) {
         const internal = async () => {
             if (this.appDetails && (!appIdToMatch || this.appDetails?.appId == appIdToMatch)) {
-                this.appProfile = (await getAppProfile({
+                const newProfile = (await getAppProfile({
                     app_id: this.appDetails.appId.toString()
                 }))
                     .map((a) => a.app ?? null);
 
+                if (this.appProfile?.isOk && newProfile.isOk) {
+                    for (const key in this.appProfile.data.overrides) {
+                        newProfile.data.overrides[key] ??= this.appProfile.data.overrides[key];
+                    }
+                }
+
                 if (!this.appProfile?.isOk) {
                     console.log('failed to refetch app(', appIdToMatch, ')', this.appProfile?.err);
-
                 } else {
                     const overrides = this.appProfile.data.overrides;
                     for (const k in overrides) {

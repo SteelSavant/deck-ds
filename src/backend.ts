@@ -103,7 +103,6 @@ async function call_backend_typed<T, R>(fn: string, arg: T): Response<R> {
     // USDPL has a comparatively small content limit, so we chunk manually to bypass.
     const stringified = JSON.stringify(arg);
     const bytesLen = stringified.length;
-    console.log(`DeckDS: api sending ~${bytesLen} bytes.`);
     const maxBytes = 1024;
 
     if (bytesLen > maxBytes) {
@@ -118,7 +117,7 @@ async function call_backend_typed<T, R>(fn: string, arg: T): Response<R> {
             const end = i + windowLen;
             const slice = stringified.slice(i, end);
             if (slice.length > 0) {
-                console.log('writing chunk', i / windowLen, 'of', bytesLen / windowLen);
+                // console.log('writing chunk', i / windowLen, 'of', bytesLen / windowLen);
 
                 let res = await call_backend("chunked_request", [id, slice]);
                 let typed = handle_backend_response<R>(res); // not really <R>, but we'll never return the OK, so its fine.
@@ -127,8 +126,6 @@ async function call_backend_typed<T, R>(fn: string, arg: T): Response<R> {
                     console.log('error chunking request', typed.err);
                     return typed;
                 }
-            } else {
-                console.log('chunks got empty slice from', i, 'to', end)
             }
         }
 

@@ -58,7 +58,6 @@ function DeckDSProfilesForApp({ launchActions }: { launchActions: LaunchActions[
     return <Fragment >
         {
             launchActions.map((a) => {
-                console.log('creating profilecontext with value', a.profile.id);
                 return (
                     <ProfileContext.Provider value={a.profile.id}>
                         <AppProfileSection launchActions={a} />
