@@ -213,6 +213,13 @@ impl ActionImpl for UIManagement {
                     mpsc::channel();
 
                 let main_tx = main_tx.clone();
+                let should_register_exit_hooks = ctx.should_register_exit_hooks;
+                let secondary_text = if should_register_exit_hooks {
+                    "hold (select) + (start) to exit\ngame after launch"
+                } else {
+                    "exit hooks not registered;\nuse Steam Input mapping or press (Alt+F) to exit\ngame after launch"
+                }
+                .to_string();
 
                 std::thread::spawn(move || {
                     // TODO::caluculate current sizes + positions; mostly don't care as it will be immediately reset
@@ -221,6 +228,7 @@ impl ActionImpl for UIManagement {
                         Size(1280, 800),
                         Pos(0, 0),
                         Pos(0, 1920),
+                        secondary_text,
                         ui_rx,
                         main_tx,
                     )

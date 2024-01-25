@@ -255,6 +255,7 @@ mod tests {
             pipeline: PipelineDefinition {
                 name: "Test Pipeline".to_string(),
                 description: "Test Description".to_string(),
+                register_exit_hooks: true,
                 targets,
                 actions,
             },
@@ -323,6 +324,7 @@ mod tests {
                 PipelineDefinition {
                     name: "Profile 1".into(),
                     description: "Profile 1".into(),
+                    register_exit_hooks: true,
                     targets: targets1,
                     actions: actions1,
                 },
@@ -332,6 +334,7 @@ mod tests {
                 PipelineDefinition {
                     name: "Profile 2".into(),
                     description: "Profile 2".into(),
+                    register_exit_hooks: true,
                     targets: targets2,
                     actions: actions2,
                 },

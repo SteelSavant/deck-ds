@@ -188,6 +188,7 @@ export interface PipelineDefinitionFor_Action {
   actions: PipelineActionLookupFor_Action;
   description: string;
   name: string;
+  register_exit_hooks: boolean;
   targets: {
     [k: string]: SelectionFor_ActionAnd_String;
   };
@@ -324,6 +325,7 @@ export interface ReifyPipelineResponse {
 export interface PipelineFor_Action {
   description: string;
   name: string;
+  register_exit_hooks: boolean;
   targets: {
     [k: string]: SelectionFor_ActionAnd_PipelineActionFor_Action;
   };

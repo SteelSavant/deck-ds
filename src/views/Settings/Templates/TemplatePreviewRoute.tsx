@@ -39,7 +39,7 @@ function TemplatePreviewLogic(): ReactElement {
 
     return <PipelineDisplay
         header={TemplateHeader}
-        info={TemplateInfo}
+        general={TemplateInfo}
         secondaryActionDescription="Save as New Profile"
         secondaryAction={async () => {
             if (!waiting) {

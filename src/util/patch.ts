@@ -24,8 +24,9 @@ export type PipelineUpdate = {
 };
 
 export interface PipelineInfo {
-    description: string | undefined;
-    name: string | undefined;
+    description?: string | undefined;
+    name?: string | undefined;
+    register_exit_hooks?: boolean | undefined;
 }
 
 
@@ -37,6 +38,7 @@ export function patchPipeline(pipeline: PipelineDefinition, update: PipelineUpda
             ...pipeline,
             description: info.description ?? pipeline.description,
             name: info.name ?? pipeline.name,
+            register_exit_hooks: info.register_exit_hooks ?? pipeline.register_exit_hooks
         };
     } else {
         let updatedActions: { [k: string]: PipelineActionSettings } = {};

@@ -45,6 +45,7 @@ pub struct PipelineContext<'a> {
     pub kwin: KWin<'a>,
     /// Display handler,
     pub display: Option<XDisplay>,
+    pub should_register_exit_hooks: bool,
     /// actions that have run
     have_run: Vec<Action>,
     /// pipeline state
@@ -72,6 +73,7 @@ impl<'a> PipelineContext<'a> {
             display: XDisplay::new().ok(),
             state: TypeMap::new(),
             have_run: vec![],
+            should_register_exit_hooks: true,
         }
     }
 
@@ -266,13 +268,22 @@ impl<'a> PipelineExecutor<'a> {
 
     pub fn exec(mut self) -> Result<()> {
         // Set up pipeline
-        let mut errors = vec![];
+        let should_register_exit_hooks = self.target == PipelineTarget::Desktop
+            && self
+                .pipeline
+                .as_ref()
+                .map(|p| p.register_exit_hooks)
+                .unwrap_or_default();
+
+        self.ctx.should_register_exit_hooks = should_register_exit_hooks;
 
         let pipeline = self
             .pipeline
             .take()
             .with_context(|| "cannot execute pipeline; pipeline has already been executed")?
             .build_actions(self.target);
+
+        let mut errors = vec![];
 
         // Install dependencies
         for action in pipeline.iter() {
@@ -306,7 +317,7 @@ impl<'a> PipelineExecutor<'a> {
             ));
 
             // Run app
-            if let Err(err) = self.run_app() {
+            if let Err(err) = self.run_app(should_register_exit_hooks) {
                 log::error!("{}", err);
                 errors.push(err);
             }
@@ -325,7 +336,7 @@ impl<'a> PipelineExecutor<'a> {
         }
     }
 
-    fn run_app(&self) -> Result<()> {
+    fn run_app(&self, should_register_exit_hooks: bool) -> Result<()> {
         let app_id = self.game_id.raw();
         let launch_type = match self.target {
             PipelineTarget::Desktop => "rungameid",
@@ -358,6 +369,10 @@ impl<'a> PipelineExecutor<'a> {
 
         while app_process.is_alive() {
             std::thread::sleep(std::time::Duration::from_millis(100));
+            if !should_register_exit_hooks {
+                continue;
+            }
+
             while let Some(Event { id, event, time }) = gilrs.next_event() {
                 fn create_instant(time: SystemTime) -> Instant {
                     let elapsed = time.elapsed().unwrap_or_default();

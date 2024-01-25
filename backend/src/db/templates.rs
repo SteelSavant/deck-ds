@@ -30,6 +30,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                     name: self.name,
                     description: self.description,
                     targets: self.targets,
+                    register_exit_hooks: true, // For now, default exit hooks to true, since no configs won't use them.
                     actions,
                 },
             }

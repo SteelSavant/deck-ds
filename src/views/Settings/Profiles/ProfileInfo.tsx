@@ -1,4 +1,4 @@
-import { DialogButton, Field, Focusable, showModal } from "decky-frontend-lib";
+import { DialogButton, Field, Focusable, Toggle, showModal } from "decky-frontend-lib";
 import { ReactElement } from "react";
 import { FaPlus, FaX } from "react-icons/fa6";
 import { CategoryProfile, PipelineContainer, isCategoryProfile } from "../../../backend";
@@ -63,6 +63,25 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                 }
             </div>
             <Field focusable={false} />
+            <Field
+                focusable={false}
+                label='Register Exit Hooks'
+                description='Register holding (select + start) as hooks to exit app when launched in desktop mode. Disable if your controller config in Steam Input already has an exit mapping.'
+            >
+                <Toggle
+                    value={profile.pipeline.register_exit_hooks}
+                    onChange={(value) => {
+                        dispatch({
+                            update: {
+                                type: 'updatePipelineInfo',
+                                info: {
+                                    register_exit_hooks: value
+                                }
+                            }
+                        });
+                    }}
+                />
+            </Field>
         </div>
     );
 }

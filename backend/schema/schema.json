@@ -991,6 +991,7 @@
         "actions",
         "description",
         "name",
+        "register_exit_hooks",
         "targets"
       ],
       "properties": {
@@ -1002,6 +1003,9 @@
         },
         "name": {
           "type": "string"
+        },
+        "register_exit_hooks": {
+          "type": "boolean"
         },
         "targets": {
           "type": "object",
@@ -1023,6 +1027,7 @@
       "required": [
         "description",
         "name",
+        "register_exit_hooks",
         "targets"
       ],
       "properties": {
@@ -1031,6 +1036,9 @@
         },
         "name": {
           "type": "string"
+        },
+        "register_exit_hooks": {
+          "type": "boolean"
         },
         "targets": {
           "type": "object",
