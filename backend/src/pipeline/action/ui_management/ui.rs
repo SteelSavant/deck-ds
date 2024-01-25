@@ -59,6 +59,7 @@ impl DeckDsUi {
         secondary_size: Size,
         primary_position: Pos,
         secondary_position: Pos,
+        secondary_text: String,
         rx: Receiver<UiEvent>,
         tx: Sender<egui::Context>,
     ) -> Self {
@@ -90,7 +91,7 @@ impl DeckDsUi {
             primary_position,
             secondary_position,
             primary_text: "starting up...".to_string(),
-            secondary_text: "hold (select) + (start) to exit\ngame after launch".to_string(),
+            secondary_text: secondary_text,
             custom_frame,
             rx,
             tx,

@@ -45,6 +45,7 @@ pub struct PipelineContext<'a> {
     pub kwin: KWin<'a>,
     /// Display handler,
     pub display: Option<XDisplay>,
+    pub should_register_exit_hooks: bool,
     /// actions that have run
     have_run: Vec<Action>,
     /// pipeline state
@@ -72,6 +73,7 @@ impl<'a> PipelineContext<'a> {
             display: XDisplay::new().ok(),
             state: TypeMap::new(),
             have_run: vec![],
+            should_register_exit_hooks: true,
         }
     }
 
@@ -266,7 +268,6 @@ impl<'a> PipelineExecutor<'a> {
 
     pub fn exec(mut self) -> Result<()> {
         // Set up pipeline
-        let mut errors = vec![];
         let should_register_exit_hooks = self.target == PipelineTarget::Desktop
             && self
                 .pipeline
@@ -274,11 +275,15 @@ impl<'a> PipelineExecutor<'a> {
                 .map(|p| p.register_exit_hooks)
                 .unwrap_or_default();
 
+        self.ctx.should_register_exit_hooks = should_register_exit_hooks;
+
         let pipeline = self
             .pipeline
             .take()
             .with_context(|| "cannot execute pipeline; pipeline has already been executed")?
             .build_actions(self.target);
+
+        let mut errors = vec![];
 
         // Install dependencies
         for action in pipeline.iter() {

@@ -41,7 +41,7 @@ export default function ProfilePreviewRoute(): ReactElement {
                                 });
                             }
                         }} >
-                            <PipelineDisplay header={PipelineHeader} info={ProfileInfo} />
+                            <PipelineDisplay header={PipelineHeader} general={ProfileInfo} />
                         </ModifiablePipelineContainerProvider>
                     );
                 }

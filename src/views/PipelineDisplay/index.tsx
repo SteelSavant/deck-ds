@@ -9,13 +9,13 @@ import PipelineTargetDisplay from "./PipelineTargetDisplay";
 
 interface PipelineDisplayProps {
     header: (container: PipelineContainer) => ReactElement,
-    info: (container: PipelineContainer) => ReactElement,
+    general: (container: PipelineContainer) => ReactElement,
     secondaryAction?: () => void
     secondaryActionDescription?: string
 }
 
-export default function PipelineDisplay({ header, info, secondaryAction, secondaryActionDescription }: PipelineDisplayProps): ReactElement {
-    const [currentTabRoute, setCurrentTabRoute] = useState<string>("info")
+export default function PipelineDisplay({ header, general, secondaryAction, secondaryActionDescription }: PipelineDisplayProps): ReactElement {
+    const [currentTabRoute, setCurrentTabRoute] = useState<string>("general")
 
     const { state } = useModifiablePipelineContainer();
     const result = useReifiedPipeline(state.container.pipeline);
@@ -65,9 +65,9 @@ export default function PipelineDisplay({ header, info, secondaryAction, seconda
 
                     const tabs = [
                         {
-                            title: 'Info',
-                            content: info(state.container),
-                            id: 'info',
+                            title: 'General',
+                            content: general(state.container),
+                            id: 'general',
                         }
                         ,
                         ...allTargets.map((kv) => {
