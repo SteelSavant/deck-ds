@@ -105,26 +105,25 @@ static ASSETS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/assets");
 
 fn main() -> Result<()> {
     // return ui_test();
-    let args: Vec<String> = std::env::args().collect();
-    log::info!("Running DeckDS from {}", args[0]);
+    let args = Cli::parse();
+    let mode = args.mode.unwrap_or_default();
+
+    let log_file_name = format!(
+        "{}.{}.log",
+        PACKAGE_NAME,
+        match mode {
+            Modes::Autostart => "autostart",
+            Modes::Serve => "server",
+            Modes::Schema { .. } => "schema",
+        }
+    );
 
     #[cfg(debug_assertions)]
     let log_filepath = usdpl_back::api::dirs::home()
         .unwrap_or_else(|| "/tmp/".into())
-        .join(PACKAGE_NAME.to_owned() + ".log");
+        .join(log_file_name);
     #[cfg(not(debug_assertions))]
-    let log_filepath = std::path::Path::new("/tmp").join(format!("{}.log", PACKAGE_NAME));
-    #[cfg(debug_assertions)]
-    {
-        let old_log_filepath = usdpl_back::api::dirs::home()
-            .unwrap_or_else(|| "/tmp/".into())
-            .join(PACKAGE_NAME.to_owned() + ".log.old");
-
-        if std::path::Path::new(&log_filepath).exists() {
-            std::fs::copy(&log_filepath, old_log_filepath)
-                .expect("Unable to increment logs. Do you have write permissions?");
-        }
-    }
+    let log_filepath = std::path::Path::new("/tmp").join(log_file_name);
     WriteLogger::init(
         #[cfg(debug_assertions)]
         {
@@ -174,9 +173,6 @@ fn main() -> Result<()> {
     } else {
         log::info!("Updated version file succesfully");
     }
-
-    let args = Cli::parse();
-    let mode = args.mode.unwrap_or_default();
 
     let registrar = PipelineActionRegistrar::builder().with_core().build();
 
