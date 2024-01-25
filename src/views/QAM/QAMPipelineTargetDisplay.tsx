@@ -75,7 +75,6 @@ function buildAllOf(allOf: PipelineAction[]): ReactElement {
 }
 
 function buildPipelineAction(action: PipelineAction): ReactElement {
-    // HACK: can't use hook dispatch because QAM unloads for dropdowns, so we make our own
     const { dispatchUpdate } = useAppState();
 
     const profileBeingOverridden = useContext(ProfileContext);
