@@ -140,6 +140,7 @@ impl CategoryProfile {
                 let db_pipeline = DbPipelineDefinition {
                     name: self.name.clone(),
                     description: self.description.clone(),
+                    register_exit_hooks: self.register_exit_hooks,
                     targets,
                     actions,
                 };
@@ -252,6 +253,7 @@ impl DbCategoryProfile {
                 Ok(PipelineDefinition {
                     name: self.name.clone(),
                     description: self.description.clone(),
+                    register_exit_hooks: self.register_exit_hooks,
                     targets,
                     actions,
                 })

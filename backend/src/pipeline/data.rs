@@ -61,6 +61,7 @@ pub mod generic {
     pub struct PipelineDefinition<A> {
         pub name: String,
         pub description: String,
+        pub register_exit_hooks: bool,
         pub targets: HashMap<PipelineTarget, Selection<A, PipelineActionId>>,
         pub actions: PipelineActionLookup<A>,
     }
@@ -69,6 +70,7 @@ pub mod generic {
     pub struct Pipeline<A> {
         pub name: String,
         pub description: String,
+        pub register_exit_hooks: bool,
         pub targets: HashMap<PipelineTarget, Selection<A, PipelineAction<A>>>,
     }
 
@@ -162,6 +164,7 @@ impl PipelineDefinition {
         Ok(Pipeline {
             name: self.name.clone(),
             description: self.description.clone(),
+            register_exit_hooks: self.register_exit_hooks,
             targets,
         })
     }
