@@ -10,7 +10,6 @@ export default function TemplateMenuItem({ template }: { template: Template }): 
 
     function previewTemplate(templateId: string) {
         const route = `/deck-ds/settings/templates/${templateId}`;
-        console.log("Navigating to", route);
         Navigation.Navigate(route);
     }
 
@@ -21,7 +20,6 @@ export default function TemplateMenuItem({ template }: { template: Template }): 
 
             if (response.isOk) {
                 const route = `/deck-ds/settings/profiles/${response.data.profile_id}`;
-                console.log("Navigating to", route);
                 Navigation.Navigate(route);
             } else {
                 serverApi.toaster.toast({

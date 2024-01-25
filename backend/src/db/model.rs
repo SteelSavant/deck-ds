@@ -69,9 +69,19 @@ pub mod v1 {
     #[derive(Serialize, Deserialize)]
     #[native_db]
     #[native_model(id = 2, version = 1, with = NativeModelJSON)]
-    pub struct DbAppProfile {
+    pub struct DbAppOverride {
         #[primary_key]
-        pub id: AppId,
+        pub id: (AppId, ProfileId),
+        pub pipeline: DbPipelineDefinition,
+    }
+
+    #[derive(Serialize, Deserialize)]
+    #[native_db]
+    #[native_model(id = 3, version = 1, with = NativeModelJSON)]
+    pub struct DbAppSettings {
+        #[primary_key]
+        pub app_id: AppId,
+        pub default_profile: Option<ProfileId>,
     }
 
     pub type DbPipelineDefinition = generic::PipelineDefinition<DbAction>;
@@ -94,7 +104,7 @@ pub mod v1 {
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[native_db]
-    #[native_model(id = 3, version = 1, with = NativeModelJSON)]
+    #[native_model(id = 4, version = 1, with = NativeModelJSON)]
     pub struct DbCemuLayout {
         #[primary_key]
         pub id: ActionId,
@@ -126,7 +136,7 @@ pub mod v1 {
 
     #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
     #[native_db]
-    #[native_model(id = 4, version = 1, with = NativeModelJSON)]
+    #[native_model(id = 5, version = 1, with = NativeModelJSON)]
     pub struct DbCitraLayout {
         #[primary_key]
         pub id: ActionId,
@@ -189,7 +199,7 @@ pub mod v1 {
 
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     #[native_db]
-    #[native_model(id = 5, version = 1, with = NativeModelJSON)]
+    #[native_model(id = 6, version = 1, with = NativeModelJSON)]
     pub struct DbMelonDSLayout {
         #[primary_key]
         pub id: ActionId,
@@ -264,7 +274,7 @@ pub mod v1 {
 
     #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
     #[native_db]
-    #[native_model(id = 6, version = 1, with = NativeModelJSON)]
+    #[native_model(id = 7, version = 1, with = NativeModelJSON)]
     pub struct DbUIManagement {
         #[primary_key]
         pub id: ActionId,
@@ -439,7 +449,7 @@ pub mod v1 {
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     #[native_db]
-    #[native_model(id = 7, version = 1, with = NativeModelJSON)]
+    #[native_model(id = 8, version = 1, with = NativeModelJSON)]
     pub struct DbMultiWindow {
         #[primary_key]
         pub id: ActionId,
@@ -459,7 +469,7 @@ pub mod v1 {
 
     #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize)]
     #[native_db]
-    #[native_model(id = 8, version = 1, with = NativeModelJSON)]
+    #[native_model(id = 9, version = 1, with = NativeModelJSON)]
     pub struct DbSourceFile {
         #[primary_key]
         pub id: ActionId,
@@ -552,7 +562,7 @@ pub mod v1 {
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     #[native_db]
-    #[native_model(id = 9, version = 1, with = NativeModelJSON)]
+    #[native_model(id = 10, version = 1, with = NativeModelJSON)]
     pub struct DbVirtualScreen {
         #[primary_key]
         pub id: ActionId,

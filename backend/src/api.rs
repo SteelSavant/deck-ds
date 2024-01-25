@@ -9,9 +9,11 @@ use usdpl_back::core::serdes::Primitive;
 use self::{
     autostart::AutoStartRequest,
     profile::{
-        CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, GetProfileRequest,
-        GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, ReifyPipelineRequest,
-        ReifyPipelineResponse, SetProfileRequest,
+        CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, GetAppProfileRequest,
+        GetAppProfileResponse, GetDefaultAppOverrideForProfileRequest,
+        GetDefaultAppOverrideForProfileResponse, GetProfileRequest, GetProfileResponse,
+        GetProfilesResponse, GetTemplatesResponse, ReifyPipelineRequest, ReifyPipelineResponse,
+        SetAppProfileOverrideRequest, SetAppProfileSettingsRequest, SetProfileRequest,
     },
 };
 
@@ -80,10 +82,15 @@ pub struct Api {
     pub set_profile_request: SetProfileRequest,
     pub delete_profile_request: DeleteProfileRequest,
     pub get_profiles_response: GetProfilesResponse,
+    pub get_app_profile_request: GetAppProfileRequest,
+    pub get_app_profile_response: GetAppProfileResponse,
+    pub set_app_profile_settings_request: SetAppProfileSettingsRequest,
+    pub set_app_profile_override_request: SetAppProfileOverrideRequest,
+    pub get_default_app_override_for_profile_request: GetDefaultAppOverrideForProfileRequest,
+    pub get_default_app_override_for_profile_response: GetDefaultAppOverrideForProfileResponse,
     pub reify_pipeline_request: ReifyPipelineRequest,
     pub reify_pipeline_response: ReifyPipelineResponse,
     pub get_templates_response: GetTemplatesResponse,
-    // pub get_pipeline_actions_response: GetPipelineActionsResponse,
 
     // autostart
     pub autostart_request: AutoStartRequest,

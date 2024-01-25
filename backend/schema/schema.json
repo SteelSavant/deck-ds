@@ -8,12 +8,18 @@
     "create_profile_request",
     "create_profile_response",
     "delete_profile_request",
+    "get_app_profile_request",
+    "get_app_profile_response",
+    "get_default_app_override_for_profile_request",
+    "get_default_app_override_for_profile_response",
     "get_profile_request",
     "get_profile_response",
     "get_profiles_response",
     "get_templates_response",
     "reify_pipeline_request",
     "reify_pipeline_response",
+    "set_app_profile_override_request",
+    "set_app_profile_settings_request",
     "set_profile_request"
   ],
   "properties": {
@@ -28,6 +34,18 @@
     },
     "delete_profile_request": {
       "$ref": "#/definitions/DeleteProfileRequest"
+    },
+    "get_app_profile_request": {
+      "$ref": "#/definitions/GetAppProfileRequest"
+    },
+    "get_app_profile_response": {
+      "$ref": "#/definitions/GetAppProfileResponse"
+    },
+    "get_default_app_override_for_profile_request": {
+      "$ref": "#/definitions/GetDefaultAppOverrideForProfileRequest"
+    },
+    "get_default_app_override_for_profile_response": {
+      "$ref": "#/definitions/GetDefaultAppOverrideForProfileResponse"
     },
     "get_profile_request": {
       "$ref": "#/definitions/GetProfileRequest"
@@ -46,6 +64,12 @@
     },
     "reify_pipeline_response": {
       "$ref": "#/definitions/ReifyPipelineResponse"
+    },
+    "set_app_profile_override_request": {
+      "$ref": "#/definitions/SetAppProfileOverrideRequest"
+    },
+    "set_app_profile_settings_request": {
+      "$ref": "#/definitions/SetAppProfileSettingsRequest"
     },
     "set_profile_request": {
       "$ref": "#/definitions/SetProfileRequest"
@@ -188,6 +212,31 @@
         "Cemu"
       ]
     },
+    "AppProfile": {
+      "type": "object",
+      "required": [
+        "id",
+        "overrides"
+      ],
+      "properties": {
+        "default_profile": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "id": {
+          "type": "string"
+        },
+        "overrides": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PipelineDefinition_for_Action"
+          }
+        }
+      }
+    },
     "AspectRatioOption": {
       "oneOf": [
         {
@@ -215,16 +264,21 @@
     "AutoStartRequest": {
       "type": "object",
       "required": [
-        "app",
-        "pipeline",
+        "app_id",
+        "game_id",
+        "profile_id",
         "target"
       ],
       "properties": {
-        "app": {
+        "app_id": {
           "type": "string"
         },
-        "pipeline": {
-          "$ref": "#/definitions/Pipeline_for_Action"
+        "game_id": {
+          "type": "string"
+        },
+        "profile_id": {
+          "type": "string",
+          "format": "uuid"
         },
         "target": {
           "$ref": "#/definitions/PipelineTarget"
@@ -574,6 +628,55 @@
         "Citra",
         "MelonDS"
       ]
+    },
+    "GetAppProfileRequest": {
+      "type": "object",
+      "required": [
+        "app_id"
+      ],
+      "properties": {
+        "app_id": {
+          "type": "string"
+        }
+      }
+    },
+    "GetAppProfileResponse": {
+      "type": "object",
+      "required": [
+        "app"
+      ],
+      "properties": {
+        "app": {
+          "$ref": "#/definitions/AppProfile"
+        }
+      }
+    },
+    "GetDefaultAppOverrideForProfileRequest": {
+      "type": "object",
+      "required": [
+        "profile_id"
+      ],
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "GetDefaultAppOverrideForProfileResponse": {
+      "type": "object",
+      "properties": {
+        "pipeline": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PipelineDefinition_for_Action"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
     },
     "GetProfileRequest": {
       "type": "object",
@@ -1139,6 +1242,44 @@
           }
         }
       ]
+    },
+    "SetAppProfileOverrideRequest": {
+      "type": "object",
+      "required": [
+        "app_id",
+        "pipeline",
+        "profile_id"
+      ],
+      "properties": {
+        "app_id": {
+          "type": "string"
+        },
+        "pipeline": {
+          "$ref": "#/definitions/PipelineDefinition_for_Action"
+        },
+        "profile_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "SetAppProfileSettingsRequest": {
+      "type": "object",
+      "required": [
+        "app_id"
+      ],
+      "properties": {
+        "app_id": {
+          "type": "string"
+        },
+        "default_profile": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        }
+      }
     },
     "SetProfileRequest": {
       "type": "object",

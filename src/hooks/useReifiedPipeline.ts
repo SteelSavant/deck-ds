@@ -6,10 +6,7 @@ import { Loading } from "../util/loading";
 const useReifiedPipeline = (definition: PipelineDefinition): Loading<Pipeline> => {
     const [result, setResult] = useState<Loading<Pipeline>>(null);
 
-    console.log("rebuild reified pipeline with:", definition);
-
     useEffect(() => {
-        console.log("rerun reified pipeline effect");
         let active = true;
 
         (async function load() {
@@ -20,8 +17,6 @@ const useReifiedPipeline = (definition: PipelineDefinition): Loading<Pipeline> =
             if (!active) {
                 return;
             }
-
-            console.log("reify returned", res);
 
             setResult(res.map((r) => r.pipeline));
         })();

@@ -12,8 +12,8 @@ import { VFC } from "react";
 import { FaShip } from "react-icons/fa";
 
 import * as backend from "./backend";
+import { ShortAppDetailsState, ShortAppDetailsStateContextProvider } from "./context/appContext";
 import { ServerApiProvider } from "./context/serverApiContext";
-import { ShortAppDetailsState, ShortAppDetailsStateContextProvider } from "./context/shortAppDetailsContext";
 import patchLibraryApp from "./lib/patchLibraryApp";
 import QAM from "./views/QAM";
 import ProfileRoute from "./views/Settings/Profiles/ProfileRoute";
@@ -51,10 +51,11 @@ const Content: VFC<{ serverApi: ServerAPI }> = ({ serverApi }) => {
   }
 
   return (
-    <ShortAppDetailsStateContextProvider ShortAppDetailsStateClass={appDetailsState}>
-      <QAM />
-    </ShortAppDetailsStateContextProvider>
-
+    <ServerApiProvider serverApi={serverApi}>
+      <ShortAppDetailsStateContextProvider ShortAppDetailsStateClass={appDetailsState}>
+        <QAM />
+      </ShortAppDetailsStateContextProvider>
+    </ServerApiProvider>
   );
 }
 
@@ -69,16 +70,10 @@ const History = findModuleChild((m) => {
 export default definePlugin((serverApi: ServerAPI) => {
   let currentRoute = '/home'; // TODO::handle this better
 
-  console.log('Initial History:', History);
-
   const unlistenHistory = History.listen(async (info: any) => {
-    console.log('History:', History);
-
     currentRoute = info.pathname;
 
     const re = /^\/library\/app\/(\d+)(\/?.*)/
-
-    console.log('current route: ', currentRoute);
 
     if (re.test(currentRoute)) {
       const appIdStr = re.exec(currentRoute)![1]!;
@@ -137,7 +132,6 @@ export default definePlugin((serverApi: ServerAPI) => {
 
       backend.log(backend.LogLevel.Debug, "DeckDS shutting down");
 
-      appDetailsState.setGamesRunning([]);
       appDetailsState.setOnAppPage(null);
 
       serverApi.routerHook.removeRoute("/deck-ds/settings/templates/:templateid");

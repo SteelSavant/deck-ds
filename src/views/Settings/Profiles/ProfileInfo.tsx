@@ -16,8 +16,10 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
 
     function removeTag(tag: string) {
         dispatch({
-            type: 'updateTags',
-            tags: profile.tags.filter((t) => t !== tag),
+            update: {
+                type: 'updateTags',
+                tags: profile.tags.filter((t) => t !== tag),
+            }
         })
     }
 
@@ -27,8 +29,10 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
             const unique = new Set(profile.tags);
             unique.delete(tag);
             dispatch({
-                type: 'updateTags',
-                tags: [...unique, tag], // set unique tags; no duplicates. If tag exists in 
+                update: {
+                    type: 'updateTags',
+                    tags: [...unique, tag], // set unique tags; no duplicates. If tag exists in 
+                }
             })
         }} />)
     }

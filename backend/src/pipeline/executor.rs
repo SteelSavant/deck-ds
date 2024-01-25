@@ -18,7 +18,7 @@ use crate::pipeline::action::source_file::SourceFile;
 use crate::pipeline::action::ui_management::UIManagement;
 use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::data::{PipelineAction, Selection};
-use crate::settings::AppId;
+use crate::settings::GameId;
 use crate::sys::app_process::AppProcess;
 use crate::sys::kwin::KWin;
 use crate::sys::x_display::XDisplay;
@@ -30,7 +30,7 @@ use super::data::{Pipeline, PipelineTarget};
 use super::action::ActionImpl;
 
 pub struct PipelineExecutor<'a> {
-    app_id: AppId,
+    game_id: GameId,
     pipeline: Option<Pipeline>,
     target: PipelineTarget,
     ctx: PipelineContext<'a>,
@@ -247,7 +247,7 @@ impl<'a> PipelineContext<'a> {
 
 impl<'a> PipelineExecutor<'a> {
     pub fn new(
-        app_id: AppId,
+        game_id: GameId,
         pipeline: Pipeline,
         target: PipelineTarget,
         assets_manager: AssetManager<'a>,
@@ -255,7 +255,7 @@ impl<'a> PipelineExecutor<'a> {
         config_dir: PathBuf,
     ) -> Result<Self> {
         let s = Self {
-            app_id,
+            game_id,
             pipeline: Some(pipeline),
             target,
             ctx: PipelineContext::new(assets_manager, home_dir, config_dir),
@@ -326,7 +326,7 @@ impl<'a> PipelineExecutor<'a> {
     }
 
     fn run_app(&self) -> Result<()> {
-        let app_id = self.app_id.raw();
+        let app_id = self.game_id.raw();
         let launch_type = match self.target {
             PipelineTarget::Desktop => "rungameid",
             PipelineTarget::Gamemode => "launch",

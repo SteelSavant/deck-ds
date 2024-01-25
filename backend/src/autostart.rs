@@ -1,9 +1,8 @@
+use anyhow::Result;
 use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
 };
-
-use anyhow::Result;
 
 use crate::{
     asset::AssetManager,
@@ -88,7 +87,7 @@ impl LoadedAutoStart {
         config_dir: PathBuf,
     ) -> Result<PipelineExecutor> {
         PipelineExecutor::new(
-            self.autostart.app_id,
+            self.autostart.game_id,
             self.autostart.pipeline,
             self.target,
             assets_manager,

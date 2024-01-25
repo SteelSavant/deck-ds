@@ -97,8 +97,7 @@ where
 
 newtype_uuid!(ActionId);
 
-#[cfg_attr(test, derive(PartialEq))]
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Serialize, PartialEq, Deserialize, JsonSchema)]
 #[enum_delegate::implement(ErasedPipelineAction)]
 #[serde(tag = "type", content = "value")]
 pub enum Action {

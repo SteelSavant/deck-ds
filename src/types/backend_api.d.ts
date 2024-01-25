@@ -5,7 +5,8 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-export type SelectionFor_ActionAnd_PipelineActionFor_Action =
+export type PipelineTarget = "Desktop" | "Gamemode";
+export type SelectionFor_ActionAnd_String =
   | {
       type: "Action";
       value: Action;
@@ -13,13 +14,13 @@ export type SelectionFor_ActionAnd_PipelineActionFor_Action =
   | {
       type: "OneOf";
       value: {
-        actions: PipelineActionFor_Action[];
+        actions: string[];
         selection: string;
       };
     }
   | {
       type: "AllOf";
-      value: PipelineActionFor_Action[];
+      value: string[];
     };
 export type Action =
   | {
@@ -135,8 +136,7 @@ export type FileSource =
 export type FlatpakSource = "Cemu" | "Citra" | "MelonDS";
 export type AppImageSource = "Cemu";
 export type EmuDeckSource = "CemuProton";
-export type PipelineTarget = "Desktop" | "Gamemode";
-export type SelectionFor_ActionAnd_String =
+export type SelectionFor_ActionAnd_PipelineActionFor_Action =
   | {
       type: "Action";
       value: Action;
@@ -144,13 +144,13 @@ export type SelectionFor_ActionAnd_String =
   | {
       type: "OneOf";
       value: {
-        actions: string[];
+        actions: PipelineActionFor_Action[];
         selection: string;
       };
     }
   | {
       type: "AllOf";
-      value: string[];
+      value: PipelineActionFor_Action[];
     };
 
 /**
@@ -161,25 +161,55 @@ export interface Api {
   create_profile_request: CreateProfileRequest;
   create_profile_response: CreateProfileResponse;
   delete_profile_request: DeleteProfileRequest;
+  get_app_profile_request: GetAppProfileRequest;
+  get_app_profile_response: GetAppProfileResponse;
+  get_default_app_override_for_profile_request: GetDefaultAppOverrideForProfileRequest;
+  get_default_app_override_for_profile_response: GetDefaultAppOverrideForProfileResponse;
   get_profile_request: GetProfileRequest;
   get_profile_response: GetProfileResponse;
   get_profiles_response: GetProfilesResponse;
   get_templates_response: GetTemplatesResponse;
   reify_pipeline_request: ReifyPipelineRequest;
   reify_pipeline_response: ReifyPipelineResponse;
+  set_app_profile_override_request: SetAppProfileOverrideRequest;
+  set_app_profile_settings_request: SetAppProfileSettingsRequest;
   set_profile_request: SetProfileRequest;
 }
 export interface AutoStartRequest {
-  app: string;
-  pipeline: PipelineFor_Action;
+  app_id: string;
+  game_id: string;
+  profile_id: string;
   target: PipelineTarget;
 }
-export interface PipelineFor_Action {
+export interface CreateProfileRequest {
+  pipeline: PipelineDefinitionFor_Action;
+}
+export interface PipelineDefinitionFor_Action {
+  actions: PipelineActionLookupFor_Action;
   description: string;
   name: string;
   targets: {
-    [k: string]: SelectionFor_ActionAnd_PipelineActionFor_Action;
+    [k: string]: SelectionFor_ActionAnd_String;
   };
+}
+export interface PipelineActionLookupFor_Action {
+  actions: {
+    [k: string]: PipelineActionSettingsFor_Action;
+  };
+}
+export interface PipelineActionSettingsFor_Action {
+  /**
+   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+   */
+  enabled?: boolean | null;
+  /**
+   * Flags whether the selection is overridden by the setting from a different profile.
+   */
+  profile_override?: string | null;
+  /**
+   * The value of the pipeline action
+   */
+  selection: SelectionFor_ActionAnd_String;
 }
 export interface UIManagement {
   id: string;
@@ -239,58 +269,30 @@ export interface CustomFileOptions {
    */
   valid_ext: string[];
 }
-export interface PipelineActionFor_Action {
-  description?: string | null;
-  /**
-   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
-   */
-  enabled?: boolean | null;
-  id: string;
-  name: string;
-  /**
-   * Flags whether the selection is overridden by the setting from a different profile.
-   */
-  profile_override?: string | null;
-  /**
-   * The value of the pipeline action
-   */
-  selection: SelectionFor_ActionAnd_PipelineActionFor_Action;
-}
-export interface CreateProfileRequest {
-  pipeline: PipelineDefinitionFor_Action;
-}
-export interface PipelineDefinitionFor_Action {
-  actions: PipelineActionLookupFor_Action;
-  description: string;
-  name: string;
-  targets: {
-    [k: string]: SelectionFor_ActionAnd_String;
-  };
-}
-export interface PipelineActionLookupFor_Action {
-  actions: {
-    [k: string]: PipelineActionSettingsFor_Action;
-  };
-}
-export interface PipelineActionSettingsFor_Action {
-  /**
-   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
-   */
-  enabled?: boolean | null;
-  /**
-   * Flags whether the selection is overridden by the setting from a different profile.
-   */
-  profile_override?: string | null;
-  /**
-   * The value of the pipeline action
-   */
-  selection: SelectionFor_ActionAnd_String;
-}
 export interface CreateProfileResponse {
   profile_id: string;
 }
 export interface DeleteProfileRequest {
   profile: string;
+}
+export interface GetAppProfileRequest {
+  app_id: string;
+}
+export interface GetAppProfileResponse {
+  app: AppProfile;
+}
+export interface AppProfile {
+  default_profile?: string | null;
+  id: string;
+  overrides: {
+    [k: string]: PipelineDefinitionFor_Action;
+  };
+}
+export interface GetDefaultAppOverrideForProfileRequest {
+  profile_id: string;
+}
+export interface GetDefaultAppOverrideForProfileResponse {
+  pipeline?: PipelineDefinitionFor_Action | null;
 }
 export interface GetProfileRequest {
   profile_id: string;
@@ -318,6 +320,39 @@ export interface ReifyPipelineRequest {
 }
 export interface ReifyPipelineResponse {
   pipeline: PipelineFor_Action;
+}
+export interface PipelineFor_Action {
+  description: string;
+  name: string;
+  targets: {
+    [k: string]: SelectionFor_ActionAnd_PipelineActionFor_Action;
+  };
+}
+export interface PipelineActionFor_Action {
+  description?: string | null;
+  /**
+   * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+   */
+  enabled?: boolean | null;
+  id: string;
+  name: string;
+  /**
+   * Flags whether the selection is overridden by the setting from a different profile.
+   */
+  profile_override?: string | null;
+  /**
+   * The value of the pipeline action
+   */
+  selection: SelectionFor_ActionAnd_PipelineActionFor_Action;
+}
+export interface SetAppProfileOverrideRequest {
+  app_id: string;
+  pipeline: PipelineDefinitionFor_Action;
+  profile_id: string;
+}
+export interface SetAppProfileSettingsRequest {
+  app_id: string;
+  default_profile?: string | null;
 }
 export interface SetProfileRequest {
   profile: CategoryProfile;

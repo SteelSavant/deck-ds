@@ -93,7 +93,7 @@ impl From<MelonDSLayout> for RawMelonDSState {
             }
             (MelonDSLayoutOption::Vertical, sizing, book_mode, swap_screens) => {
                 internal::RawMelonDSState {
-                    layout_option: 0,
+                    layout_option: 1,
                     sizing_option: sizing.raw(),
                     rotation: if book_mode { 3 } else { 0 },
                     swap_screens: if swap_screens { 1 } else { 0 },
@@ -101,7 +101,7 @@ impl From<MelonDSLayout> for RawMelonDSState {
             }
             (MelonDSLayoutOption::Horizontal, sizing, book_mode, swap_screens) => {
                 internal::RawMelonDSState {
-                    layout_option: 0,
+                    layout_option: 2,
                     sizing_option: sizing.raw(),
                     rotation: if book_mode { 3 } else { 0 },
                     swap_screens: if swap_screens { 1 } else { 0 },

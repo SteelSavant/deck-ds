@@ -2,27 +2,25 @@ import { DialogButton, Dropdown, Field, FileSelectionType, Focusable, Toggle } f
 import _ from "lodash";
 import { ReactElement } from "react";
 import { FaFile } from "react-icons/fa";
-import { Action, RelativeLocation, TeardownExternalSettings, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../backend";
-import { useServerApi } from "../context/serverApiContext";
+import { Action, RelativeLocation, TeardownExternalSettings, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../../backend";
+import { useServerApi } from "../../context/serverApiContext";
 
 
-interface EditActionProps {
+interface QAMEditActionProps {
     action: Action,
-    indentLevel: number,
     onChange: (action: Action) => void,
 }
 
-export default function EditAction({
+export default function QAMEditAction({
     action,
-    indentLevel,
     onChange,
-}: EditActionProps): ReactElement {
+}: QAMEditActionProps): ReactElement | null {
     const cloned = _.cloneDeep(action);
     const type = cloned.type;
 
     const serverApi = useServerApi();
 
-    const notConfigurable = (<div />);
+    const notConfigurable = null;
 
     switch (type) {
         case 'UIManagement':
@@ -31,7 +29,7 @@ export default function EditAction({
             const externalSettings: TeardownExternalSettings[] = [{ type: 'Previous' }, { type: 'Native' }] // Preference excluded because its a pain to configure, and I'm pretty sure doesn't work
             return (
                 <div>
-                    <ActionChild indentLevel={indentLevel} label="External Display Settings" description="External display settings after executing pipeline.">
+                    <ActionChild label="External Display Settings" description="External display settings after executing pipeline.">
                         <Dropdown selectedOption={display.teardown_external_settings.type} rgOptions={externalSettings.map((setting) => {
                             return {
                                 label: setting.type,
@@ -44,7 +42,7 @@ export default function EditAction({
                             }}
                         />
                     </ActionChild>
-                    <ActionChild indentLevel={indentLevel} label="Deck Screen Location" description="Location of the Deck screen on the desktop after executing pipeline.">
+                    <ActionChild label="Deck Screen Location" description="Location of the Deck screen on the desktop after executing pipeline.">
                         <Dropdown selectedOption={display.teardown_deck_location} rgOptions={locations.map((location) => {
                             return {
                                 label: location,
@@ -62,7 +60,7 @@ export default function EditAction({
         case 'CemuLayout':
             return (
                 <div>
-                    <ActionChild indentLevel={indentLevel} label="Separate Gamepad View">
+                    <ActionChild label="Separate Gamepad View">
                         <Toggle value={cloned.value.layout.separate_gamepad_view} onChange={(isEnabled) => {
                             cloned.value.layout.separate_gamepad_view = isEnabled;
                             onChange(cloned);
@@ -73,7 +71,7 @@ export default function EditAction({
         case 'CitraLayout':
             return (
                 <div>
-                    <ActionChild indentLevel={indentLevel} label="Layout Option">
+                    <ActionChild label="Layout Option">
                         <Dropdown selectedOption={cloned.value.layout.layout_option.type} rgOptions={citraLayoutOptions.map((a) => {
                             return {
                                 label: a.type,
@@ -84,7 +82,7 @@ export default function EditAction({
                             onChange(cloned);
                         }} />
                     </ActionChild>
-                    <ActionChild indentLevel={indentLevel} label="Swap Screens">
+                    <ActionChild label="Swap Screens">
                         <Toggle value={cloned.value.layout.swap_screens} onChange={(isEnabled) => {
                             cloned.value.layout.swap_screens = isEnabled;
                             onChange(cloned);
@@ -95,7 +93,7 @@ export default function EditAction({
         case 'MelonDSLayout':
             return (
                 <div>
-                    <ActionChild indentLevel={indentLevel} label="Layout Option">
+                    <ActionChild label="Layout Option">
                         <Dropdown selectedOption={cloned.value.layout_option} rgOptions={melonDSLayoutOptions.map((a) => {
                             return {
                                 label: a,
@@ -106,7 +104,7 @@ export default function EditAction({
                             onChange(cloned);
                         }} />
                     </ActionChild>
-                    <ActionChild indentLevel={indentLevel} label="Sizing Option">
+                    <ActionChild label="Sizing Option">
                         <Dropdown selectedOption={cloned.value.sizing_option} rgOptions={melonDSSizingOptions.map((a) => {
                             return {
                                 label: a,
@@ -117,13 +115,13 @@ export default function EditAction({
                             onChange(cloned);
                         }} />
                     </ActionChild>
-                    <ActionChild indentLevel={indentLevel} label="Swap Screens">
+                    <ActionChild label="Swap Screens">
                         <Toggle value={cloned.value.swap_screens} onChange={(isEnabled) => {
                             cloned.value.swap_screens = isEnabled;
                             onChange(cloned);
                         }} />
                     </ActionChild>
-                    <ActionChild indentLevel={indentLevel} label="Book Mode (Rotate Screens)">
+                    <ActionChild label="Book Mode (Rotate Screens)">
                         <Toggle value={cloned.value.book_mode} onChange={(isEnabled) => {
                             cloned.value.book_mode = isEnabled;
                             onChange(cloned);
@@ -154,7 +152,7 @@ export default function EditAction({
                         }
                         onChange(cloned)
                     }
-                    return <ActionChild indentLevel={indentLevel} label="File Path" description={file ?? 'Not set'}>
+                    return <ActionChild label="File Path" description={file ?? 'Not set'}>
                         <DialogButton style={{ display: 'flex', width: '100%', position: 'relative' }} onClick={onSelectFile} onOKButton={onSelectFile}>
                             <div style={{ display: 'flex', minWidth: '100px', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <FaFile style={{ paddingRight: '1rem' }} />
@@ -174,9 +172,9 @@ export default function EditAction({
     }
 }
 
-function ActionChild({ children, label, description, indentLevel }: { children: ReactElement, label: string, description?: string | undefined, indentLevel: number }): ReactElement {
+function ActionChild({ children, label, description }: { children: ReactElement, label: string, description?: string | undefined }): ReactElement {
     return (
-        <Field label={label} focusable={false} description={description} indentLevel={indentLevel} >
+        <Field label={label} focusable={false} description={description} childrenLayout="inline" inlineWrap="keep-inline"  >
             <div style={{ paddingRight: '10px' }}>
                 <Focusable >
                     {children}

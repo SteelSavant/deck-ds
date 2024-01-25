@@ -48,7 +48,6 @@ function TemplatePreviewLogic(): ReactElement {
 
                 if (response.isOk) {
                     const route = `/deck-ds/settings/profiles/${response.data.profile_id}`;
-                    console.log("Navigating to", route);
                     Navigation.Navigate(route);
                 } else {
                     serverApi.toaster.toast({

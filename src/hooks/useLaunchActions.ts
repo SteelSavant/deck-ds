@@ -1,9 +1,9 @@
 import { CategoryProfile, PipelineTarget, autoStart, reifyPipeline } from "../backend";
-import { ShortAppDetails } from "../context/shortAppDetailsContext";
+import { ShortAppDetails } from "../context/appContext";
 import useProfiles from "./useProfiles";
 
 
-interface LaunchActions {
+export interface LaunchActions {
     profile: CategoryProfile,
     targets: LaunchTarget[]
 };
@@ -13,9 +13,12 @@ type LaunchTarget = {
     action: () => Promise<void>
 }
 
-const useLaunchActions = (appDetails: ShortAppDetails): LaunchActions[] => {
+const useLaunchActions = (appDetails: ShortAppDetails | null): LaunchActions[] => {
     let { profiles } = useProfiles();
 
+    if (!appDetails) {
+        return [];
+    }
 
     if (profiles?.isOk) {
         const loadedProfiles = profiles.data;
@@ -52,8 +55,9 @@ const useLaunchActions = (appDetails: ShortAppDetails): LaunchActions[] => {
 
                     if (reified.isOk) {
                         const res = await autoStart({
-                            app: appDetails.gameId,
-                            pipeline: reified.data.pipeline,
+                            game_id: appDetails.gameId,
+                            app_id: appDetails.appId.toString(),
+                            profile_id: p.id,
                             target: key as PipelineTarget
                         });
 

@@ -57,7 +57,7 @@ pub type PipelineActionLookup = generic::PipelineActionLookup<Action>;
 pub mod generic {
     use super::*;
 
-    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
     pub struct PipelineDefinition<A> {
         pub name: String,
         pub description: String,
@@ -93,7 +93,7 @@ pub mod generic {
         pub selection: Selection<A, PipelineAction<A>>,
     }
 
-    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
     pub struct PipelineActionSettings<A> {
         /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
         pub enabled: Option<bool>,
@@ -103,12 +103,12 @@ pub mod generic {
         pub selection: Selection<A, PipelineActionId>,
     }
 
-    #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+    #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
     pub struct PipelineActionLookup<A> {
         pub actions: HashMap<PipelineActionId, generic::PipelineActionSettings<A>>,
     }
 
-    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
     #[serde(tag = "type", content = "value")]
     pub enum Selection<A, T> {
         Action(A),

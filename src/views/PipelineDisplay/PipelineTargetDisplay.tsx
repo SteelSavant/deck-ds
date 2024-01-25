@@ -1,7 +1,7 @@
 import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
 import { Fragment, ReactElement } from "react";
-import { FaLink } from "react-icons/fa";
 import { Action, ActionOneOf, ActionSelection, PipelineAction, } from "../../backend";
+import ActionIcon from "../../components/ActionIcon";
 import EditAction from "../../components/EditAction";
 import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
 
@@ -35,12 +35,14 @@ function buildAction(id: string, action: Action, indentLevel: number): ReactElem
 
     return (
         <EditAction action={action} indentLevel={indentLevel + 1} onChange={(updatedAction) => {
-            console.log('updating action from', action, 'to', updatedAction);
-            dispatch({
-                type: 'updateAction',
-                id: id,
-                action: updatedAction,
-            });
+            dispatch(
+                {
+                    update: {
+                        type: 'updateAction',
+                        id: id,
+                        action: updatedAction,
+                    }
+                });
         }} />
     )
 }
@@ -67,16 +69,24 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number): React
     const forcedEnabled = isEnabled === null || isEnabled === undefined;
     return (
         <div style={{ flexDirection: 'row' }}>
-            <Field indentLevel={indentLevel} focusable={forcedEnabled && selection.type !== 'OneOf'} label={labelAction(action)} description={action.description}>
+            <Field
+                indentLevel={indentLevel}
+                focusable={forcedEnabled && selection.type !== 'OneOf'}
+                label={action.name}
+                description={action.description}
+                icon={<ActionIcon action={action} />}
+            >
                 <div style={{ paddingRight: '10px' }}>
                     {
                         forcedEnabled ? <div />
                             : <Focusable>
                                 <Toggle value={isEnabled} onChange={(value) =>
                                     dispatch({
-                                        type: 'updateEnabled',
-                                        id: action.id,
-                                        isEnabled: value,
+                                        update: {
+                                            type: 'updateEnabled',
+                                            id: action.id,
+                                            isEnabled: value,
+                                        }
                                     })
                                 } />
                             </Focusable>
@@ -91,10 +101,11 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number): React
                                     }
                                 })} onChange={(option) => {
                                     dispatch({
-                                        type: 'updateOneOf',
-                                        id: action.id,
-                                        selection: option.data,
-                                        actions: selection.value.actions.map((a) => a.id)
+                                        update: {
+                                            type: 'updateOneOf',
+                                            id: action.id,
+                                            selection: option.data,
+                                        }
                                     })
                                 }} />
                             </Focusable>
@@ -105,16 +116,4 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number): React
             {forcedEnabled || isEnabled ? buildSelection(action.id, action.selection, selection.type === 'OneOf' ? indentLevel = + 1 : indentLevel) : <div />}
         </div>
     )
-}
-
-
-function labelAction(action: PipelineAction): ReactElement {
-    return action.id.split(':').length === 3 && action.selection.type !== 'AllOf' ? <div>
-        {action.name}
-        <FaLink style={{
-            paddingLeft: '10px',
-            paddingRight: '10px'
-        }} />
-    </div>
-        : <p>{action.name}</p>
 }
