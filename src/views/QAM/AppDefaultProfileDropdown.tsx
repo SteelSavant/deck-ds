@@ -10,13 +10,13 @@ export default function AppDefaultProfileDropdown({
     launchActions
 }: {
     appDetails: ShortAppDetails
-    appProfile: AppProfile | null
+    appProfile: AppProfile
     launchActions: LaunchActions[],
 }): ReactElement {
     const appDetailsState = useAppState();
 
     const selected = launchActions
-        .find((a) => a.profile.id == appProfile?.default_profile)
+        .find((a) => a.profile.id == appProfile.default_profile)
         ?.profile?.id ?? null;
 
     if (launchActions.length > 1) {

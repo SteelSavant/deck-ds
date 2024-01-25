@@ -339,6 +339,8 @@ fn main() -> Result<()> {
                     "autostart",
                     crate::api::autostart::autostart(
                         request_handler.clone(),
+                        profiles_db,
+                        registrar.clone(),
                         settings.clone(),
                         asset_manager,
                         home_dir,

@@ -3,7 +3,7 @@ import { Fragment, ReactElement, useContext } from "react";
 import { ProfileContext } from ".";
 import { Action, ActionOneOf, ActionSelection, PipelineAction } from "../../backend";
 import ActionIcon from "../../components/ActionIcon";
-import { StateAction, modifiablePipelineContainerReducer, useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
+import { useAppState } from "../../context/appContext";
 import { MaybeString } from "../../types/short";
 import QAMEditAction from "./QAMEditAction";
 
@@ -37,12 +37,11 @@ function buildRootSelection(id: string, selection: ActionSelection): ReactElemen
 }
 
 function buildAction(id: string, externalProfile: MaybeString, action: Action): ReactElement | null {
-    // HACK: can't use hook dispatch because QAM unloads for dropdowns, so we make our own
-    const { state } = useModifiablePipelineContainer();
-    function dispatch(stateAction: StateAction) {
-        console.log('dispatch hack with', state, stateAction)
-        modifiablePipelineContainerReducer(state, stateAction);
-    }
+    const { dispatchUpdate } = useAppState();
+    const profileId = useContext(ProfileContext);
+
+    console.log('got profilecontext with value', profileId);
+
 
     // invoked as a function to allow seeing if the component returns null,
     // so we can ignore rendering things that aren't configurable in the QAM
@@ -55,7 +54,7 @@ function buildAction(id: string, externalProfile: MaybeString, action: Action): 
                 action: updatedAction,
             });
 
-            dispatch({
+            dispatchUpdate(profileId, {
                 externalProfile: externalProfile,
                 update: {
                     type: 'updateAction',
@@ -84,11 +83,7 @@ function buildAllOf(allOf: PipelineAction[]): ReactElement {
 
 function buildPipelineAction(action: PipelineAction): ReactElement {
     // HACK: can't use hook dispatch because QAM unloads for dropdowns, so we make our own
-    const { state } = useModifiablePipelineContainer();
-    function dispatch(stateAction: StateAction) {
-        console.log('dispatch hack with', state, stateAction)
-        modifiablePipelineContainerReducer(state, stateAction);
-    }
+    const { dispatchUpdate } = useAppState();
 
     const profileBeingOverridden = useContext(ProfileContext);
 
@@ -100,10 +95,14 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
 
     const displayName = action.name.toLocaleUpperCase();
 
+
+
+
+
     const fromProfileComponent = <Field focusable={false} label="Use per-game profile">
         <Focusable>
             <Toggle value={!action.profile_override} onChange={(value) => {
-                dispatch({
+                dispatchUpdate(profileBeingOverridden, {
                     externalProfile: null,
                     update: {
                         type: 'updateProfileOverride',
@@ -123,7 +122,7 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
         : <Field focusable={false} label="Enabled">
             <Focusable>
                 <Toggle value={isEnabled} onChange={(value) =>
-                    dispatch({
+                    dispatchUpdate(profileBeingOverridden, {
                         externalProfile: action.profile_override,
                         update: {
                             type: 'updateEnabled',
@@ -187,7 +186,7 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                                                 selection: option.data,
                                             });
 
-                                            dispatch({
+                                            dispatchUpdate(profileBeingOverridden, {
                                                 externalProfile: action.profile_override,
                                                 update: {
                                                     type: 'updateOneOf',

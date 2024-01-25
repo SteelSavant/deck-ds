@@ -55,8 +55,9 @@ const useLaunchActions = (appDetails: ShortAppDetails | null): LaunchActions[] =
 
                     if (reified.isOk) {
                         const res = await autoStart({
-                            app: appDetails.gameId,
-                            pipeline: reified.data.pipeline,
+                            game_id: appDetails.gameId,
+                            app_id: appDetails.appId.toString(),
+                            profile_id: p.id,
                             target: key as PipelineTarget
                         });
 

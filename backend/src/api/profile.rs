@@ -194,7 +194,7 @@ pub struct GetAppProfileRequest {
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetAppProfileResponse {
-    app: Option<AppProfile>,
+    app: AppProfile,
 }
 
 pub fn get_app_profile(

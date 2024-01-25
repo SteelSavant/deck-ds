@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 
 newtype_uuid!(ProfileId);
 newtype_strid!("", AppId);
+newtype_strid!("", GameId);
 
 use crate::{
     macros::{newtype_strid, newtype_uuid},
@@ -24,7 +25,6 @@ use crate::{
 pub struct Settings {
     // Path vars
     system_autostart_dir: PathBuf,
-
     global_config_path: PathBuf,
     autostart_path: PathBuf,
     exe_path: PathBuf,
@@ -162,7 +162,7 @@ Type=Application"
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AutoStart {
-    pub app_id: AppId,
+    pub game_id: GameId,
     pub pipeline: Pipeline,
 }
 

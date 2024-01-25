@@ -4,7 +4,6 @@ import { Action, ActionOneOf, ActionSelection, PipelineAction, } from "../../bac
 import ActionIcon from "../../components/ActionIcon";
 import EditAction from "../../components/EditAction";
 import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
-import { MaybeString } from "../../types/short";
 
 export default function PipelineTargetDisplay({ root, description }: {
     root: ActionSelection,
@@ -14,16 +13,16 @@ export default function PipelineTargetDisplay({ root, description }: {
         <DialogBody>
             <DialogControlsSection>
                 <Field focusable={false} description={description} />
-                {buildSelection('root', null, root, root.type === 'AllOf' ? -1 : 0)}
+                {buildSelection('root', root, root.type === 'AllOf' ? -1 : 0)}
             </DialogControlsSection>
         </DialogBody>
     )
 }
 
-function buildSelection(id: string, externalProfile: MaybeString, selection: ActionSelection, indentLevel: number): ReactElement {
+function buildSelection(id: string, selection: ActionSelection, indentLevel: number): ReactElement {
     switch (selection.type) {
         case "Action":
-            return buildAction(id, externalProfile, selection.value, indentLevel);
+            return buildAction(id, selection.value, indentLevel);
         case "OneOf":
             return buildOneOf(selection.value, indentLevel);
         case "AllOf":
@@ -31,14 +30,13 @@ function buildSelection(id: string, externalProfile: MaybeString, selection: Act
     }
 }
 
-function buildAction(id: string, externalProfile: MaybeString, action: Action, indentLevel: number): ReactElement {
+function buildAction(id: string, action: Action, indentLevel: number): ReactElement {
     const { dispatch } = useModifiablePipelineContainer();
 
     return (
         <EditAction action={action} indentLevel={indentLevel + 1} onChange={(updatedAction) => {
             dispatch(
                 {
-                    externalProfile: externalProfile,
                     update: {
                         type: 'updateAction',
                         id: id,
@@ -84,7 +82,6 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number): React
                             : <Focusable>
                                 <Toggle value={isEnabled} onChange={(value) =>
                                     dispatch({
-                                        externalProfile: action.profile_override,
                                         update: {
                                             type: 'updateEnabled',
                                             id: action.id,
@@ -104,7 +101,6 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number): React
                                     }
                                 })} onChange={(option) => {
                                     dispatch({
-                                        externalProfile: action.profile_override,
                                         update: {
                                             type: 'updateOneOf',
                                             id: action.id,
@@ -117,7 +113,7 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number): React
                     }
                 </div>
             </Field>
-            {forcedEnabled || isEnabled ? buildSelection(action.id, action.profile_override, action.selection, selection.type === 'OneOf' ? indentLevel = + 1 : indentLevel) : <div />}
+            {forcedEnabled || isEnabled ? buildSelection(action.id, action.selection, selection.type === 'OneOf' ? indentLevel = + 1 : indentLevel) : <div />}
         </div>
     )
 }

@@ -347,7 +347,7 @@ impl DbCategoryProfile {
 }
 
 impl AppProfile {
-    pub fn load(app_id: &AppId, ro: &RTransaction) -> Result<Option<Self>> {
+    pub fn load(app_id: &AppId, ro: &RTransaction) -> Result<Self> {
         // TODO::figure out if/how native_db supports multiple primary keys, so this can be done more efficiently
         let overrides = HashMap::from_iter(
             ro.scan()
@@ -363,16 +363,10 @@ impl AppProfile {
             .primary(app_id.clone())?
             .and_then(|settings: DbAppSettings| settings.default_profile);
 
-        let profile = if overrides.is_empty() && default_profile.is_none() {
-            None
-        } else {
-            Some(Self {
-                id: app_id.clone(),
-                default_profile,
-                overrides,
-            })
-        };
-
-        Ok(profile)
+        Ok(Self {
+            id: app_id.clone(),
+            default_profile,
+            overrides,
+        })
     }
 }

@@ -1,19 +1,16 @@
 import { ButtonItem, DialogButton, PanelSection, PanelSectionRow, Router } from "decky-frontend-lib";
 import { Fragment, ReactElement, createContext } from "react";
 import { RiArrowDownSFill, RiArrowRightSFill } from "react-icons/ri";
-import { AppProfileOveride, PipelineTarget } from "../../backend";
+import { PipelineTarget } from "../../backend";
 import HandleLoading from "../../components/HandleLoading";
 import { IconForTarget } from "../../components/IconForTarget";
-import { ShortAppDetails, useAppState } from "../../context/appContext";
-import { ModifiablePipelineContainerProvider, useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
-import useAppOverridePipeline from "../../hooks/useAppOverridePipeline";
+import { useAppState } from "../../context/appContext";
+import useEnsureAppOverridePipeline from "../../hooks/useEnsureAppOverridePipeline";
 import useLaunchActions, { LaunchActions } from "../../hooks/useLaunchActions";
-import useReifiedPipeline from "../../hooks/useReifiedPipeline";
-import { AppProfile } from "../../types/backend_api";
 import AppDefaultProfileDropdown from "./AppDefaultProfileDropdown";
 import QAMPipelineTargetDisplay from "./QAMPipelineTargetDisplay";
 
-export const ProfileContext = createContext("");
+export const ProfileContext = createContext("notset");
 
 export default function QAM(): ReactElement {
     const { appDetails, appProfile } = useAppState();
@@ -45,7 +42,7 @@ export default function QAM(): ReactElement {
                                     appProfile={appProfile}
                                     launchActions={launchActions}
                                 />
-                                <DeckDSProfilesForApp appProfile={appProfile} appDetails={appDetails} launchActions={launchActions} />
+                                <DeckDSProfilesForApp launchActions={launchActions} />
                             </Fragment>
                         }
                         onErr={(err) => <p>{err.err}</p>}
@@ -57,15 +54,14 @@ export default function QAM(): ReactElement {
     )
 }
 
-function DeckDSProfilesForApp({ appProfile, appDetails, launchActions }: { appProfile: AppProfile | null, appDetails: ShortAppDetails, launchActions: LaunchActions[] }): ReactElement {
-
+function DeckDSProfilesForApp({ launchActions }: { launchActions: LaunchActions[] }): ReactElement {
     return <Fragment >
         {
             launchActions.map((a) => {
-
+                console.log('creating profilecontext with value', a.profile.id);
                 return (
                     <ProfileContext.Provider value={a.profile.id}>
-                        <AppProfileSection appProfile={appProfile} appDetails={appDetails} launchActions={a} />
+                        <AppProfileSection launchActions={a} />
                     </ProfileContext.Provider>
                 )
             })
@@ -74,116 +70,83 @@ function DeckDSProfilesForApp({ appProfile, appDetails, launchActions }: { appPr
     // TODO::horizonal line at end of fragment
 }
 
-function AppProfileSection({ appProfile, appDetails, launchActions }: { appProfile: AppProfile | null, appDetails: ShortAppDetails, launchActions: LaunchActions }): ReactElement {
+function AppProfileSection({ launchActions }: { launchActions: LaunchActions }): ReactElement {
     const height = '40px';
     const margin = '5px';
     const profileId = launchActions.profile.id;
 
-    const { openViews, setAppViewOpen, setAppProfileOverride, updateExternalProfile } = useAppState();
-    const pipeline = useAppOverridePipeline(appProfile, profileId);
+    const { openViews, setAppViewOpen } = useAppState();
 
-    console.log('got new app profile override?; rebuilding AppProfileSection', pipeline);
-
-    return (
-        <HandleLoading value={pipeline} onOk={(pipeline) => {
-            if (!pipeline) {
-                // the profile doesn't exist, and something has gone terribly wrong
-                return <div />
-            }
-
-            const initial: AppProfileOveride = {
-                appId: appDetails.appId.toString(),
-                profileId: profileId,
-                pipeline: pipeline
-            };
-
-            return (<ModifiablePipelineContainerProvider
-                initialContainer={initial}
-                onPipelineUpdate={(pipelineSettings) => {
-                    const typed = pipelineSettings as AppProfileOveride;
-                    setAppProfileOverride(
-                        appDetails,
-                        typed.profileId,
-                        typed.pipeline,
-                    );
-                }}
-                onExternalProfileUpdate={(profileId, update) => {
-                    updateExternalProfile(profileId, update);
-                }}
-            > <PanelSection title={launchActions.profile.pipeline.name} >
+    return (<PanelSection title={launchActions.profile.pipeline.name} >
+        {
+            launchActions.targets.map((t) => (
+                <Fragment>
+                    <div style={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
+                        <DialogButton
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                width: "90%",
+                                maxWidth: "90%",
+                                minWidth: 0,
+                                height,
+                                marginRight: margin,
+                                marginBottom: margin,
+                                borderTopRightRadius: 0,
+                                borderBottomRightRadius: 0
+                            }}
+                            onClick={t.action}
+                            onOKButton={t.action}
+                        >
+                            <IconForTarget target={t.target} />
+                            {t.target}
+                        </DialogButton>
+                        <DialogButton
+                            style={{
+                                alignItems: 'center',
+                                justifyItems: 'center',
+                                width: "10%",
+                                minWidth: 0,
+                                height,
+                                marginBottom: margin,
+                                borderTopLeftRadius: 0,
+                                borderBottomLeftRadius: 0,
+                                padding: 0,
+                                backgroundColor: openViews[t.target]
+                                    ? 'lightgreen'
+                                    : undefined
+                            }}
+                            onClick={() => {
+                                setAppViewOpen(profileId, t.target, !openViews[profileId]?.[t.target])
+                            }}
+                        >
+                            {
+                                openViews[profileId]?.[t.target]
+                                    ? <RiArrowDownSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill', }} />
+                                    : <RiArrowRightSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill' }} />
+                            }
+                        </DialogButton>
+                    </div>
                     {
-                        launchActions.targets.map((t) => (
-                            <Fragment>
-                                <div style={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
-                                    <DialogButton
-                                        style={{
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            width: "90%",
-                                            maxWidth: "90%",
-                                            minWidth: 0,
-                                            height,
-                                            marginRight: margin,
-                                            marginBottom: margin,
-                                            borderTopRightRadius: 0,
-                                            borderBottomRightRadius: 0
-                                        }}
-                                        onClick={t.action}
-                                        onOKButton={t.action}
-                                    >
-                                        <IconForTarget target={t.target} />
-                                        {t.target}
-                                    </DialogButton>
-                                    <DialogButton
-                                        style={{
-                                            alignItems: 'center',
-                                            justifyItems: 'center',
-                                            width: "10%",
-                                            minWidth: 0,
-                                            height,
-                                            marginBottom: margin,
-                                            borderTopLeftRadius: 0,
-                                            borderBottomLeftRadius: 0,
-                                            padding: 0,
-                                            backgroundColor: openViews[t.target]
-                                                ? 'lightgreen'
-                                                : undefined
-                                        }}
-                                        onClick={() => {
-                                            setAppViewOpen(profileId, t.target, !openViews[profileId]?.[t.target])
-                                        }}
-                                    >
-                                        {
-                                            openViews[profileId]?.[t.target]
-                                                ? <RiArrowDownSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill', }} />
-                                                : <RiArrowRightSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill' }} />
-                                        }
-                                    </DialogButton>
-                                </div>
-                                {
-                                    openViews[profileId]?.[t.target] ?
-                                        <QAMTarget target={t.target
-                                        } />
-                                        : <div />
-                                }
-                            </Fragment>
-                        ))
+                        openViews[profileId]?.[t.target] ?
+                            <QAMTarget profileId={profileId} target={t.target
+                            } />
+                            : <div />
                     }
-                </PanelSection>
-            </ModifiablePipelineContainerProvider>
-            );
-        }} />
+                </Fragment>
+            ))
+        }
+    </PanelSection>
     );
 }
 
-function QAMTarget({ target }: { target: PipelineTarget }): ReactElement {
-    const { state } = useModifiablePipelineContainer();
+function QAMTarget({ profileId, target }: { profileId: string, target: PipelineTarget }): ReactElement {
+    useEnsureAppOverridePipeline(profileId);
+    const { reifiedPipelines } = useAppState();
 
-    console.log('got new pipeline?; rebuilding QAMTarget', state.container.pipeline);
-
-    const reified = useReifiedPipeline(state.container.pipeline);
+    const reified = reifiedPipelines[profileId];
 
     return <HandleLoading
         value={reified}

@@ -264,16 +264,21 @@
     "AutoStartRequest": {
       "type": "object",
       "required": [
-        "app",
-        "pipeline",
+        "app_id",
+        "game_id",
+        "profile_id",
         "target"
       ],
       "properties": {
-        "app": {
+        "app_id": {
           "type": "string"
         },
-        "pipeline": {
-          "$ref": "#/definitions/Pipeline_for_Action"
+        "game_id": {
+          "type": "string"
+        },
+        "profile_id": {
+          "type": "string",
+          "format": "uuid"
         },
         "target": {
           "$ref": "#/definitions/PipelineTarget"
@@ -637,16 +642,12 @@
     },
     "GetAppProfileResponse": {
       "type": "object",
+      "required": [
+        "app"
+      ],
       "properties": {
         "app": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/AppProfile"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "$ref": "#/definitions/AppProfile"
         }
       }
     },

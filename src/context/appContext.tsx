@@ -8,10 +8,18 @@ import {
     useEffect,
     useState
 } from 'react';
-import { getAppProfile, getProfile, PipelineDefinition, setAppProfileOverride, setAppProfileSettings, setProfile } from '../backend';
+import { ApiError, getAppProfile, getDefaultAppOverrideForProfileRequest, getProfile, Pipeline, PipelineDefinition, reifyPipeline, setAppProfileOverride, setAppProfileSettings, setProfile } from '../backend';
 import { AppProfile, PipelineTarget } from '../types/backend_api';
+import { MaybeString } from '../types/short';
 import { Loading } from '../util/loading';
 import { patchPipeline, PipelineUpdate } from '../util/patch';
+import { Result } from '../util/result';
+
+
+export interface StateAction {
+    externalProfile: MaybeString
+    update: PipelineUpdate,
+}
 
 export type ShortAppDetails = {
     appId: number,
@@ -19,9 +27,11 @@ export type ShortAppDetails = {
     displayName: string,
 };
 
+
 interface PublicAppState {
     appDetails: ShortAppDetails | null
-    appProfile: Loading<AppProfile | null>
+    appProfile: Loading<AppProfile>
+    reifiedPipelines: { [k: string]: Result<Pipeline, ApiError> }
     openViews: { [k: string]: { [k: string]: boolean } },
 }
 
@@ -31,16 +41,17 @@ interface PublicAppStateContext
     extends PublicAppState {
     setOnAppPage(appDetails: ShortAppDetails): void,
     setAppProfileDefault(appDetails: ShortAppDetails, defaultProfileId: string | null): Promise<void>
-    setAppProfileOverride(appDetails: ShortAppDetails, profileId: string, pipeline: PipelineDefinition): Promise<void>
     setAppViewOpen(profileId: string, view: PipelineTarget, isOpen: boolean): void
-    updateExternalProfile(profileId: string, update: PipelineUpdate): Promise<void>
+    dispatchUpdate(profileId: string, action: StateAction): Promise<void>
+    loadProfileOverride(appId: number, profileId: string): Promise<void>
 }
 
 // This class creates the getter and setter functions for all of the global state data.
 export class ShortAppDetailsState {
     private delayMs = 1000
     private appDetails: ShortAppDetails | null = null;
-    private appProfile: Loading<AppProfile | null>;
+    private appProfile: Loading<AppProfile>;
+    private reifiedPipelines: { [k: string]: Result<Pipeline, ApiError> } = {};
     private openViews: { [k: string]: { [k: string]: boolean } } = {};
     private lastOnAppPageTime: number = 0
 
@@ -49,8 +60,9 @@ export class ShortAppDetailsState {
 
     getPublicState(): PublicAppState {
         return {
-            appDetails: _.cloneDeep(this.appDetails),
-            appProfile: _.cloneDeep(this.appProfile),
+            appDetails: this.appDetails ? { ...this.appDetails } : null,
+            appProfile: this.appProfile ? { ... this.appProfile } : null,
+            reifiedPipelines: { ...this.reifiedPipelines },
             openViews: { ...this.openViews }
         }
     }
@@ -72,6 +84,39 @@ export class ShortAppDetailsState {
         this.forceUpdate();
     }
 
+    async dispatchUpdate(profileId: string, action: StateAction) {
+        const appId = this.appDetails?.appId;
+
+        if (appId === null || appId === undefined) {
+            return;
+        }
+
+        // defer updates to external profiles, to avoid complexity of local state
+        if (action.externalProfile) {
+            console.log('is external profile update');
+            await this.updateExternalProfile(action.externalProfile, action.update);
+        } else {
+
+            if (this.appProfile?.isOk) {
+                console.log(profileId, 'is pipeline update; current state:', this.appProfile);
+
+                const pipeline = this.appProfile.data.overrides[profileId];
+                if (pipeline) {
+                    const newPipeline = patchPipeline(pipeline, action.update);
+                    await this.setAppProfileOverride(
+                        appId,
+                        profileId,
+                        newPipeline
+                    )
+                } else {
+                    console.log('pipeline should already be loaded before updating', pipeline);
+                }
+            }
+        }
+
+        await this.refetchProfile(appId)
+    }
+
     async setAppProfileDefault(appDetails: ShortAppDetails, defaultProfileId: string | null) {
         const res = await setAppProfileSettings({
             app_id: appDetails.appId.toString(),
@@ -86,22 +131,50 @@ export class ShortAppDetailsState {
         // TODO::error handling
     }
 
-    async setAppProfileOverride(appDetails: ShortAppDetails, profileId: string, pipeline: PipelineDefinition) {
+    async loadProfileOverride(appId: number, profileId: string) {
+        let shouldUpdate = false;
+        if (this.appDetails?.appId === appId && this.appProfile?.isOk) {
+            const overrides = this.appProfile.data.overrides;
+            if (!overrides[profileId]) {
+                const res = await getDefaultAppOverrideForProfileRequest({
+                    profile_id: profileId
+                });
+                if (res.isOk && res.data.pipeline) {
+                    overrides[profileId] = res.data.pipeline;
+                    console.log('set override for', profileId, 'to', overrides[profileId]);
+                    shouldUpdate = true;
+                }
+                // TODO::error handling
+            }
+
+            if (overrides[profileId]) {
+                this.reifiedPipelines[profileId] = (await reifyPipeline({ pipeline: overrides[profileId] }))
+                    .map((r) => r.pipeline);
+                shouldUpdate = true;
+            }
+        }
+
+        if (shouldUpdate) {
+            this.forceUpdate();
+        }
+    }
+
+    private async setAppProfileOverride(appId: number, profileId: string, pipeline: PipelineDefinition) {
         const res = await setAppProfileOverride({
-            app_id: appDetails.appId.toString(),
+            app_id: appId.toString(),
             profile_id: profileId,
             pipeline,
         });
 
         if (res?.isOk) {
-            this.refetchProfile(appDetails.appId)
+            this.refetchProfile(appId)
         } else {
-            console.log('failed to set app(', appDetails.appId, ') override for', profileId);
+            console.log('failed to set app(', appId, ') override for', profileId);
         }
         // TODO::error handling
     }
 
-    async updateExternalProfile(profileId: string, update: PipelineUpdate) {
+    private async updateExternalProfile(profileId: string, update: PipelineUpdate) {
         const profileResponse = await getProfile({
             profile_id: profileId,
         });
@@ -144,9 +217,18 @@ export class ShortAppDetailsState {
 
                 if (!this.appProfile?.isOk) {
                     console.log('failed to refetch app(', appIdToMatch, ')');
+
                 } else {
+                    const overrides = this.appProfile.data.overrides;
+                    for (const k in overrides) {
+                        this.reifiedPipelines[k] = (await reifyPipeline({
+                            pipeline: overrides[k]
+                        })).map((p) => p.pipeline);
+                    }
+
                     console.log('refetched; updating to', this.appProfile.data?.overrides);
                 }
+
 
                 this.forceUpdate();
             }
@@ -164,6 +246,7 @@ export class ShortAppDetailsState {
         this.appDetails = appDetails;
         this.appProfile = null;
         this.openViews = {};
+        this.reifiedPipelines = {};
         this.lastOnAppPageTime = time;
         this.fetchProfile();
         this.forceUpdate();
@@ -228,16 +311,16 @@ export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
         ShortAppDetailsStateClass.setAppProfileDefault(appDetails, defaultProfileId);
     }
 
-    const setAppProfileOverride = async (appDetails: ShortAppDetails, profileId: string, pipeline: PipelineDefinition) => {
-        ShortAppDetailsStateClass.setAppProfileOverride(appDetails, profileId, pipeline);
-    }
-
-    const updateExternalProfile = async (profileId: string, update: PipelineUpdate) => {
-        ShortAppDetailsStateClass.updateExternalProfile(profileId, update);
-    }
-
     const setAppViewOpen = (profileId: string, view: PipelineTarget, isOpen: boolean) => {
         ShortAppDetailsStateClass.setAppViewOpen(profileId, view, isOpen);
+    }
+
+    const dispatchUpdate = async (profileId: string, action: StateAction) => {
+        ShortAppDetailsStateClass.dispatchUpdate(profileId, action)
+    }
+
+    const loadProfileOverride = async (appId: number, profileId: string) => {
+        ShortAppDetailsStateClass.loadProfileOverride(appId, profileId);
     }
 
     return (
@@ -246,9 +329,9 @@ export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
                 ...publicState,
                 setOnAppPage,
                 setAppProfileDefault,
-                setAppProfileOverride,
                 setAppViewOpen,
-                updateExternalProfile
+                dispatchUpdate,
+                loadProfileOverride
             }}
         >
             {children}
