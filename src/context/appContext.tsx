@@ -216,7 +216,7 @@ export class ShortAppDetailsState {
                     .map((a) => a.app ?? null);
 
                 if (!this.appProfile?.isOk) {
-                    console.log('failed to refetch app(', appIdToMatch, ')');
+                    console.log('failed to refetch app(', appIdToMatch, ')', this.appProfile?.err);
 
                 } else {
                     const overrides = this.appProfile.data.overrides;
