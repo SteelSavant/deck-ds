@@ -55,6 +55,7 @@ impl AutoStart {
                                         enabled: None,
                                         profile_override: None,
                                         selection: action,
+                                        is_visible_on_qam: false,
                                     }
                                 })
                                 .collect(),

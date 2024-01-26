@@ -1,5 +1,6 @@
-import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
+import { DialogBody, DialogButton, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
 import { Fragment, ReactElement } from "react";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Action, ActionOneOf, ActionSelection, PipelineAction, } from "../../backend";
 import ActionIcon from "../../components/ActionIcon";
 import EditAction from "../../components/EditAction";
@@ -13,28 +14,28 @@ export default function PipelineTargetDisplay({ root, description }: {
         <DialogBody>
             <DialogControlsSection>
                 <Field focusable={false} description={description} />
-                {buildSelection('root', root, root.type === 'AllOf' ? -1 : 0)}
+                {buildSelection('root', root, root.type === 'AllOf' ? -1 : 0, false)}
             </DialogControlsSection>
         </DialogBody>
     )
 }
 
-function buildSelection(id: string, selection: ActionSelection, indentLevel: number): ReactElement {
+function buildSelection(id: string, selection: ActionSelection, indentLevel: number, qamHiddenByParent: boolean): ReactElement | null {
     switch (selection.type) {
         case "Action":
             return buildAction(id, selection.value, indentLevel);
         case "OneOf":
-            return buildOneOf(selection.value, indentLevel);
+            return buildOneOf(selection.value, indentLevel, qamHiddenByParent);
         case "AllOf":
-            return buildAllOf(selection.value, indentLevel);
+            return buildAllOf(selection.value, indentLevel, qamHiddenByParent);
     }
 }
 
-function buildAction(id: string, action: Action, indentLevel: number): ReactElement {
+function buildAction(id: string, action: Action, indentLevel: number): ReactElement | null {
     const { dispatch } = useModifiablePipelineContainer();
 
-    return (
-        <EditAction action={action} indentLevel={indentLevel + 1} onChange={(updatedAction) => {
+    return EditAction({
+        action: action, indentLevel: indentLevel + 1, onChange: (updatedAction) => {
             dispatch(
                 {
                     update: {
@@ -43,77 +44,130 @@ function buildAction(id: string, action: Action, indentLevel: number): ReactElem
                         action: updatedAction,
                     }
                 });
-        }} />
+        }
+    }
     )
 }
 
-function buildOneOf(oneOf: ActionOneOf, indentLevel: number): ReactElement {
+function buildOneOf(oneOf: ActionOneOf, indentLevel: number, qamHiddenByParent: boolean): ReactElement {
     const action = oneOf.actions.find((a) => a.id === oneOf.selection)!;
-    return buildPipelineAction(action, indentLevel + 1);
+    return buildPipelineAction(action, indentLevel + 1, qamHiddenByParent);
 }
 
-function buildAllOf(allOf: PipelineAction[], indentLevel: number): ReactElement {
+function buildAllOf(allOf: PipelineAction[], indentLevel: number, qamHiddenByParent: boolean): ReactElement {
     return (
         <Fragment>
-            {allOf.map((action) => buildPipelineAction(action, indentLevel + 1))}
+            {allOf.map((action) => buildPipelineAction(action, indentLevel + 1, qamHiddenByParent))}
         </Fragment>
     );
 }
 
-function buildPipelineAction(action: PipelineAction, indentLevel: number): ReactElement {
+function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHiddenByParent: boolean): ReactElement {
     const { dispatch } = useModifiablePipelineContainer();
 
     const selection = action.selection;
     const isEnabled = action.enabled;
 
     const forcedEnabled = isEnabled === null || isEnabled === undefined;
+
+    const toggleQAMVisible = (action: PipelineAction) => {
+        dispatch({
+            update: {
+                type: 'updateVisibleOnQAM',
+                id: action.id,
+                visible: !action.is_visible_on_qam
+            }
+        })
+    }
+
+    const hideQamForChildren = !action.is_visible_on_qam || qamHiddenByParent;
+    const newIndentLevel = selection.type === 'OneOf'
+        ? indentLevel = + 1
+        : indentLevel;
+    const built = forcedEnabled || isEnabled
+        ? buildSelection(action.id, action.selection, newIndentLevel, hideQamForChildren) : <div />;
+    console.log(built?.props);
     return (
-        <div style={{ flexDirection: 'row' }}>
+        <Fragment>
             <Field
                 indentLevel={indentLevel}
-                focusable={forcedEnabled && selection.type !== 'OneOf'}
+                focusable={(!built && forcedEnabled) || (selection.type !== 'AllOf' && forcedEnabled && qamHiddenByParent)}
                 label={action.name}
                 description={action.description}
                 icon={<ActionIcon action={action} />}
             >
-                <div style={{ paddingRight: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', }}>
                     {
-                        forcedEnabled ? <div />
-                            : <Focusable>
-                                <Toggle value={isEnabled} onChange={(value) =>
-                                    dispatch({
-                                        update: {
-                                            type: 'updateEnabled',
-                                            id: action.id,
-                                            isEnabled: value,
+                        [
+                            forcedEnabled ? null
+                                : <Focusable>
+                                    <Toggle value={isEnabled} onChange={(value) =>
+                                        dispatch({
+                                            update: {
+                                                type: 'updateEnabled',
+                                                id: action.id,
+                                                isEnabled: value,
+                                            }
+                                        })
+                                    } />
+                                </Focusable>,
+                            selection.type === 'OneOf'
+                                ? <Focusable >
+                                    <Dropdown selectedOption={selection.value.selection} rgOptions={selection.value.actions.map((a) => {
+                                        return {
+                                            label: a.name,
+                                            data: a.id
                                         }
-                                    })
-                                } />
-                            </Focusable>
-                    }
-                    {
-                        selection.type === 'OneOf' ?
-                            <Focusable >
-                                <Dropdown selectedOption={selection.value.selection} rgOptions={selection.value.actions.map((a) => {
-                                    return {
-                                        label: a.name,
-                                        data: a.id
+                                    })} onChange={(option) => {
+                                        dispatch({
+                                            update: {
+                                                type: 'updateOneOf',
+                                                id: action.id,
+                                                selection: option.data,
+                                            }
+                                        })
+                                    }} />
+                                </Focusable>
+                                : null,
+                            selection.type !== 'AllOf' && built
+                                ?
+                                <DialogButton
+                                    focusable={!qamHiddenByParent}
+                                    style={{
+                                        width: 'fit-content',
+                                        minWidth: 'fit-content',
+                                        height: 'fit-content',
+                                        padding: '10px 12px',
+                                        opacity: qamHiddenByParent ? '60%' : '100%'
+                                    }}
+                                    onClick={qamHiddenByParent
+                                        ? undefined
+                                        : () => toggleQAMVisible(action)}
+                                    onOKButton={qamHiddenByParent
+                                        ? undefined
+                                        : () => toggleQAMVisible(action)}
+                                    onOKActionDescription={qamHiddenByParent
+                                        ? undefined
+                                        : action.is_visible_on_qam
+                                            ? 'hide on QAM'
+                                            : 'show on QAM'}
+                                >
+                                    {
+                                        action.is_visible_on_qam && !qamHiddenByParent
+                                            ? <FaEye />
+                                            : <FaEyeSlash />
                                     }
-                                })} onChange={(option) => {
-                                    dispatch({
-                                        update: {
-                                            type: 'updateOneOf',
-                                            id: action.id,
-                                            selection: option.data,
-                                        }
-                                    })
-                                }} />
-                            </Focusable>
-                            : <div />
+                                </DialogButton>
+                                : null,
+
+                        ].filter((x) => x)
+                            .map((x) => <div style={{ marginRight: '10px' }}>
+                                {x}
+                            </div>)
                     }
                 </div>
             </Field>
-            {forcedEnabled || isEnabled ? buildSelection(action.id, action.selection, selection.type === 'OneOf' ? indentLevel = + 1 : indentLevel) : <div />}
-        </div>
+            {built}
+        </Fragment >
     )
 }

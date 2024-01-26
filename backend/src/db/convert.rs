@@ -111,6 +111,7 @@ impl CategoryProfile {
                             enabled: v.enabled,
                             profile_override: v.profile_override,
                             selection: v.selection.save_all_and_transform(rw)?,
+                            is_visible_on_qam: v.is_visible_on_qam,
                         };
 
                         Ok((k.clone(), settings))
@@ -227,6 +228,7 @@ impl DbCategoryProfile {
                             enabled: v.enabled,
                             profile_override: v.profile_override,
                             selection: v.selection.transform(ro)?,
+                            is_visible_on_qam: v.is_visible_on_qam,
                         };
 
                         Ok((k.clone(), settings))

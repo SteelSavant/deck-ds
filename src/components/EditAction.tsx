@@ -16,13 +16,13 @@ export default function EditAction({
     action,
     indentLevel,
     onChange,
-}: EditActionProps): ReactElement {
+}: EditActionProps): ReactElement | null {
     const cloned = _.cloneDeep(action);
     const type = cloned.type;
 
     const serverApi = useServerApi();
 
-    const notConfigurable = (<div />);
+    const notConfigurable = null;
 
     switch (type) {
         case 'UIManagement':
