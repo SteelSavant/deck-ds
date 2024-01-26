@@ -1,6 +1,7 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::Context;
+use regex::Regex;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -66,12 +67,47 @@ impl SettingsSource for FlatpakSource {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub enum EmuDeckSource {
     CemuProton,
+    // Don't really expect any other EmuDeck sources to depend on it, but hey.
 }
 
 impl SettingsSource for EmuDeckSource {
     fn settings_file(&self, ctx: &PipelineContext) -> PathBuf {
-        match self {
-            EmuDeckSource::CemuProton => ctx.home_dir.join("Emulation/roms/wiiu/settings.xml"),
+        let emudeck_settings_file = ctx.home_dir.join("emudeck/settings.sh");
+
+        log::debug!("found emudeck settings file");
+
+        let emudeck_settings = std::fs::read_to_string(&emudeck_settings_file);
+
+        match emudeck_settings {
+            Ok(emudeck_settings) => {
+                log::debug!("emudeck settings: {emudeck_settings}");
+
+                let rxp = Regex::new(r"emulationPath=(.*)")
+                    .expect("emudeck emulation path regex should be valid");
+                let found = rxp.captures(&emudeck_settings);
+
+                log::debug!("found emudeck captures {found:?}");
+
+                match found {
+                    Some(c) => {
+                        let path = Path::new(c.get(1).unwrap().as_str().trim());
+                        let resolved = if !path.is_dir() && ctx.home_dir.join(path).is_dir() {
+                            ctx.home_dir.join(path)
+                        } else {
+                            path.to_path_buf()
+                        };
+
+                        let cemu_proton_path = resolved.join("roms/wiiu/settings.xml");
+                        log::debug!("cemu_proton_path at {cemu_proton_path:?}",);
+
+                        match self {
+                            EmuDeckSource::CemuProton => cemu_proton_path,
+                        }
+                    }
+                    None => return emudeck_settings_file, // if this is missing, nothing works, so we return it as the path for deps to tell us its missing/wrong
+                }
+            }
+            Err(_) => return emudeck_settings_file, // same reasoning as previous return
         }
     }
 }
