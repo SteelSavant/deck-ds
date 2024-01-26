@@ -89,6 +89,8 @@ pub mod generic {
         pub id: PipelineActionId,
         /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
         pub enabled: Option<bool>,
+        /// Whether or not the pipeline action is hidden on the QAM
+        pub is_visible_on_qam: bool,
         /// Flags whether the selection is overridden by the setting from a different profile.
         pub profile_override: Option<ProfileId>,
         /// The value of the pipeline action
@@ -99,12 +101,12 @@ pub mod generic {
     pub struct PipelineActionSettings<A> {
         /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
         pub enabled: Option<bool>,
+        /// Whether or not the pipeline action is hidden on the QAM
+        pub is_visible_on_qam: bool,
         /// Flags whether the selection is overridden by the setting from a different profile.
         pub profile_override: Option<ProfileId>,
         /// The value of the pipeline action
         pub selection: Selection<A, PipelineActionId>,
-        /// Whether or not the pipeline action is hidden on the QAM
-        pub is_visible_on_qam: bool,
     }
 
     #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
@@ -258,6 +260,7 @@ impl PipelineActionDefinition {
             enabled: self.settings.enabled,
             profile_override,
             selection,
+            is_visible_on_qam: self.settings.is_visible_on_qam,
         })
     }
 }

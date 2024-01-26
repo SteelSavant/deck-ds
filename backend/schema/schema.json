@@ -949,6 +949,7 @@
       "type": "object",
       "required": [
         "id",
+        "is_visible_on_qam",
         "name",
         "selection"
       ],
@@ -968,6 +969,10 @@
         },
         "id": {
           "type": "string"
+        },
+        "is_visible_on_qam": {
+          "description": "Whether or not the pipeline action is hidden on the QAM",
+          "type": "boolean"
         },
         "name": {
           "type": "string"

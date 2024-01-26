@@ -1,5 +1,6 @@
-import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
+import { DialogBody, DialogButton, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
 import { Fragment, ReactElement } from "react";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Action, ActionOneOf, ActionSelection, PipelineAction, } from "../../backend";
 import ActionIcon from "../../components/ActionIcon";
 import EditAction from "../../components/EditAction";
@@ -19,7 +20,7 @@ export default function PipelineTargetDisplay({ root, description }: {
     )
 }
 
-function buildSelection(id: string, selection: ActionSelection, indentLevel: number): ReactElement {
+function buildSelection(id: string, selection: ActionSelection, indentLevel: number): ReactElement | null {
     switch (selection.type) {
         case "Action":
             return buildAction(id, selection.value, indentLevel);
@@ -30,11 +31,11 @@ function buildSelection(id: string, selection: ActionSelection, indentLevel: num
     }
 }
 
-function buildAction(id: string, action: Action, indentLevel: number): ReactElement {
+function buildAction(id: string, action: Action, indentLevel: number): ReactElement | null {
     const { dispatch } = useModifiablePipelineContainer();
 
-    return (
-        <EditAction action={action} indentLevel={indentLevel + 1} onChange={(updatedAction) => {
+    return EditAction({
+        action: action, indentLevel: indentLevel + 1, onChange: (updatedAction) => {
             dispatch(
                 {
                     update: {
@@ -43,7 +44,8 @@ function buildAction(id: string, action: Action, indentLevel: number): ReactElem
                         action: updatedAction,
                     }
                 });
-        }} />
+        }
+    }
     )
 }
 
@@ -67,53 +69,90 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number): React
     const isEnabled = action.enabled;
 
     const forcedEnabled = isEnabled === null || isEnabled === undefined;
+
+    const toggleQAMVisible = (action: PipelineAction) => {
+        dispatch({
+            update: {
+                type: 'updateVisibleOnQAM',
+                id: action.id,
+                visible: !action.is_visible_on_qam
+            }
+        })
+    }
+
+    const built = forcedEnabled || isEnabled ? buildSelection(action.id, action.selection, selection.type === 'OneOf' ? indentLevel = + 1 : indentLevel) : <div />;
+    console.log(built?.props);
     return (
-        <div style={{ flexDirection: 'row' }}>
+        <Fragment>
             <Field
                 indentLevel={indentLevel}
                 focusable={forcedEnabled && selection.type !== 'OneOf'}
                 label={action.name}
                 description={action.description}
                 icon={<ActionIcon action={action} />}
+
             >
-                <div style={{ paddingRight: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', }}>
                     {
-                        forcedEnabled ? <div />
-                            : <Focusable>
-                                <Toggle value={isEnabled} onChange={(value) =>
-                                    dispatch({
-                                        update: {
-                                            type: 'updateEnabled',
-                                            id: action.id,
-                                            isEnabled: value,
+                        [
+                            forcedEnabled ? null
+                                : <Focusable>
+                                    <Toggle value={isEnabled} onChange={(value) =>
+                                        dispatch({
+                                            update: {
+                                                type: 'updateEnabled',
+                                                id: action.id,
+                                                isEnabled: value,
+                                            }
+                                        })
+                                    } />
+                                </Focusable>,
+                            selection.type === 'OneOf'
+                                ? <Focusable >
+                                    <Dropdown selectedOption={selection.value.selection} rgOptions={selection.value.actions.map((a) => {
+                                        return {
+                                            label: a.name,
+                                            data: a.id
                                         }
-                                    })
-                                } />
-                            </Focusable>
-                    }
-                    {
-                        selection.type === 'OneOf' ?
-                            <Focusable >
-                                <Dropdown selectedOption={selection.value.selection} rgOptions={selection.value.actions.map((a) => {
-                                    return {
-                                        label: a.name,
-                                        data: a.id
-                                    }
-                                })} onChange={(option) => {
-                                    dispatch({
-                                        update: {
-                                            type: 'updateOneOf',
-                                            id: action.id,
-                                            selection: option.data,
+                                    })} onChange={(option) => {
+                                        dispatch({
+                                            update: {
+                                                type: 'updateOneOf',
+                                                id: action.id,
+                                                selection: option.data,
+                                            }
+                                        })
+                                    }} />
+                                </Focusable>
+                                : null,
+                            selection.type !== 'AllOf' && built
+                                ? < Focusable >
+                                    <DialogButton style={{
+                                        width: 'fit-content',
+                                        minWidth: 'fit-content',
+                                        height: 'fit-content',
+                                        padding: '10px 12px'
+                                    }}
+                                        onClick={() => toggleQAMVisible(action)}
+                                        onOKButton={() => toggleQAMVisible(action)}
+                                    >
+                                        {
+                                            action.is_visible_on_qam
+                                                ? <FaEye />
+                                                : <FaEyeSlash />
                                         }
-                                    })
-                                }} />
-                            </Focusable>
-                            : <div />
+                                    </DialogButton>
+                                </Focusable>
+                                : null,
+
+                        ].filter((x) => x)
+                            .map((x) => <div style={{ marginRight: '10px' }}>
+                                {x}
+                            </div>)
                     }
                 </div>
             </Field>
-            {forcedEnabled || isEnabled ? buildSelection(action.id, action.selection, selection.type === 'OneOf' ? indentLevel = + 1 : indentLevel) : <div />}
-        </div>
+            {built}
+        </Fragment >
     )
 }

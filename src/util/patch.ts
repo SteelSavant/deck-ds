@@ -21,6 +21,10 @@ export type PipelineUpdate = {
 } | {
     type: 'updatePipelineInfo',
     info: PipelineInfo,
+} | {
+    type: 'updateVisibleOnQAM',
+    id: string,
+    visible: boolean,
 };
 
 export interface PipelineInfo {
@@ -78,6 +82,9 @@ export function patchPipeline(pipeline: PipelineDefinition, update: PipelineUpda
                         break;
                     case 'updateProfileOverride':
                         cloned.profile_override = update.profileOverride
+                        break;
+                    case 'updateVisibleOnQAM':
+                        cloned.is_visible_on_qam = update.visible;
                         break;
                     default:
                         const typecheck: never = type;
