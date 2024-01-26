@@ -220,6 +220,7 @@ impl PipelineActionRegistarBuilder {
                             name: "Display Restoration".to_string(),
                             description: Some("Ensures the display resolution and layout are correctly configured before and after executing pipeline actions.".into()),
                             enabled: None,
+                            is_visible_on_qam: false,
                             profile_override: None,
                             selection: UIManagement {
                                 id: ActionId::nil(),
@@ -233,6 +234,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Virtual Screen".to_string(),
                         description: Some("Maps the internal and external monitor to a single virtual screen, for applications that do not support multiple windows.".into()),
                         enabled: None,
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection: VirtualScreen {
                             id: ActionId::nil(),
@@ -241,6 +243,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Multi-Window Emulation".to_string(),
                         description: Some("Manages windows for known emulators configurations with multiple display windows.".into()),
                         enabled: None,
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection: MultiWindow {
                             id: ActionId::nil(),
@@ -252,6 +255,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Citra Configuration".to_string(),
                         description: None,
                         enabled: None,
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection: Selection::AllOf(vec![
                             PipelineActionId::new("core:citra:source"),
@@ -262,6 +266,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Citra Settings Source".to_string(),
                         description: Some("Source file to use when editing Citra settings.".to_string()),
                         enabled: None,
+                        is_visible_on_qam: false,
                         profile_override: None,
                         selection:  Selection::OneOf {selection: PipelineActionId::new("core:citra:flatpak_source"), actions: vec![
                             PipelineActionId::new("core:citra:flatpak_source"),
@@ -272,6 +277,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Flatpak".to_string(),
                         description: Some("Sets the settings INI file location to the default Flatpak location.".to_string()),
                         enabled: None,
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection:SourceFile {
                             id: ActionId::nil(),
@@ -282,6 +288,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Custom".to_string(),
                         description: Some("Sets the settings INI file location to a custom location.".to_string()),
                         enabled: None,
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection: SourceFile {
                             id: ActionId::nil(),
@@ -292,6 +299,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Citra Layout".to_string(),
                         description: Some("Edits Citra ini file to desired layout settings.".to_string()),
                         enabled: Some(true),
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection: CitraLayout {
                             id: ActionId::nil(),
@@ -305,6 +313,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Citra Layout".to_string(),
                         description: Some("Edits Citra ini file to desired layout settings.".to_string()),
                         enabled: Some(true),
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection: CitraLayout {
                             id: ActionId::nil(),
@@ -321,6 +330,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Cemu Configuration".to_string(),
                         description: None,
                         enabled: None,
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection: Selection::AllOf(vec![
                             PipelineActionId::new("core:cemu:source"),
@@ -331,6 +341,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Cemu Settings Source".to_string(),
                         description: Some("Source file to use when editing Cemu settings.".to_string()),
                         enabled: None,
+                        is_visible_on_qam: false,
                         profile_override: None,
                         selection:  Selection::OneOf {selection: PipelineActionId::new("core:cemu:flatpak_source"), actions: vec![
                             PipelineActionId::new("core:cemu:flatpak_source"),
@@ -342,6 +353,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Flatpak".to_string(),
                         description: Some("Sets the settings INI file location to the default Flatpak location.".to_string()),
                         enabled: None,
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection:SourceFile {
                             id: ActionId::nil(),
@@ -352,6 +364,7 @@ impl PipelineActionRegistarBuilder {
                         name: "EmuDeck (Proton)".to_string(),
                         description: Some("Sets the settings INI file location to the default EmuDeck (Proton) location.".to_string()),
                         enabled: None,
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection:SourceFile {
                             id: ActionId::nil(),
@@ -362,6 +375,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Custom".to_string(),
                         description: Some("Sets the settings XML file location to a custom location.".to_string()),
                         enabled: None,
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection: SourceFile {
                             id: ActionId::nil(),
@@ -371,6 +385,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Cemu Layout".to_string(),
                         description: Some("Edits Cemu settings.xml file to desired settings.".to_string()),
                         enabled: Some(true),
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection: CemuLayout {
                             id: ActionId::nil(),
@@ -383,6 +398,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Cemu Layout".to_string(),
                         description: Some("Edits Cemu settings.xml file to desired settings.".to_string()),
                         enabled: Some(true),
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection: CemuLayout {
                             id: ActionId::nil(),
@@ -398,6 +414,7 @@ impl PipelineActionRegistarBuilder {
                         name: "melonDS Configuration".to_string(),
                         description: None,
                         enabled: None,
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection: Selection::AllOf(vec![
                             PipelineActionId::new("core:melonds:source"),
@@ -408,6 +425,7 @@ impl PipelineActionRegistarBuilder {
                         name: "melonDS Settings Source".to_string(),
                         description: Some("Source file to use when editing melonDS settings.".to_string()),
                         enabled: None,
+                        is_visible_on_qam: false,
                         profile_override: None,
                         selection:  Selection::OneOf {selection: PipelineActionId::new("core:melonds:flatpak_source"), actions: vec![
                             PipelineActionId::new("core:melonds:flatpak_source"),
@@ -418,6 +436,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Flatpak".to_string(),
                         description: Some("Sets the settings INI file location to the default Flatpak location.".to_string()),
                         enabled: None,
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection: SourceFile {
                             id: ActionId::nil(),
@@ -428,6 +447,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Custom".to_string(),
                         description: Some("Sets the settings INI file location to a custom location.".to_string()),
                         enabled: None,
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection: SourceFile {
                             id: ActionId::nil(),
@@ -438,6 +458,7 @@ impl PipelineActionRegistarBuilder {
                         name: "melonDS Layout".to_string(),
                         description: Some("Edits melonDS ini file to desired layout settings.".to_string()),
                         enabled: Some(true),
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection: MelonDSLayout {
                             id: ActionId::nil(),
@@ -450,6 +471,7 @@ impl PipelineActionRegistarBuilder {
                         name: "melonDS Layout".to_string(),
                         description: Some("Edits melonDS ini file to desired settings.".to_string()),
                         enabled: Some(true),
+                        is_visible_on_qam: true,
                         profile_override: None,
                         selection: MelonDSLayout {
                             id: ActionId::nil(),
@@ -472,8 +494,10 @@ pub struct PipelineActionDefinitionBuilder {
     pub enabled: Option<bool>,
     /// Flags whether the selection is overridden by the setting from a different profile.
     pub profile_override: Option<ProfileId>,
-    /// The value of the pipeline action
+    /// The value of the pipeline action.
     pub selection: Selection<PipelineActionId>,
+    /// If true, the action is visible to be configured on the quick-access menu.
+    pub is_visible_on_qam: bool,
 }
 
 impl PipelineActionDefinitionBuilder {
@@ -486,7 +510,7 @@ impl PipelineActionDefinitionBuilder {
                 enabled: self.enabled,
                 profile_override: self.profile_override,
                 selection: self.selection,
-                is_visible_on_qam: true, // default to visible
+                is_visible_on_qam: self.is_visible_on_qam,
             },
         }
     }

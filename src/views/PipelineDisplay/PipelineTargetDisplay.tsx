@@ -14,20 +14,20 @@ export default function PipelineTargetDisplay({ root, description }: {
         <DialogBody>
             <DialogControlsSection>
                 <Field focusable={false} description={description} />
-                {buildSelection('root', root, root.type === 'AllOf' ? -1 : 0)}
+                {buildSelection('root', root, root.type === 'AllOf' ? -1 : 0, false)}
             </DialogControlsSection>
         </DialogBody>
     )
 }
 
-function buildSelection(id: string, selection: ActionSelection, indentLevel: number): ReactElement | null {
+function buildSelection(id: string, selection: ActionSelection, indentLevel: number, qamHiddenByParent: boolean): ReactElement | null {
     switch (selection.type) {
         case "Action":
             return buildAction(id, selection.value, indentLevel);
         case "OneOf":
-            return buildOneOf(selection.value, indentLevel);
+            return buildOneOf(selection.value, indentLevel, qamHiddenByParent);
         case "AllOf":
-            return buildAllOf(selection.value, indentLevel);
+            return buildAllOf(selection.value, indentLevel, qamHiddenByParent);
     }
 }
 
@@ -49,20 +49,20 @@ function buildAction(id: string, action: Action, indentLevel: number): ReactElem
     )
 }
 
-function buildOneOf(oneOf: ActionOneOf, indentLevel: number): ReactElement {
+function buildOneOf(oneOf: ActionOneOf, indentLevel: number, qamHiddenByParent: boolean): ReactElement {
     const action = oneOf.actions.find((a) => a.id === oneOf.selection)!;
-    return buildPipelineAction(action, indentLevel + 1);
+    return buildPipelineAction(action, indentLevel + 1, qamHiddenByParent);
 }
 
-function buildAllOf(allOf: PipelineAction[], indentLevel: number): ReactElement {
+function buildAllOf(allOf: PipelineAction[], indentLevel: number, qamHiddenByParent: boolean): ReactElement {
     return (
         <Fragment>
-            {allOf.map((action) => buildPipelineAction(action, indentLevel + 1))}
+            {allOf.map((action) => buildPipelineAction(action, indentLevel + 1, qamHiddenByParent))}
         </Fragment>
     );
 }
 
-function buildPipelineAction(action: PipelineAction, indentLevel: number): ReactElement {
+function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHiddenByParent: boolean): ReactElement {
     const { dispatch } = useModifiablePipelineContainer();
 
     const selection = action.selection;
@@ -80,17 +80,21 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number): React
         })
     }
 
-    const built = forcedEnabled || isEnabled ? buildSelection(action.id, action.selection, selection.type === 'OneOf' ? indentLevel = + 1 : indentLevel) : <div />;
+    const hideQamForChildren = !action.is_visible_on_qam || qamHiddenByParent;
+    const newIndentLevel = selection.type === 'OneOf'
+        ? indentLevel = + 1
+        : indentLevel;
+    const built = forcedEnabled || isEnabled
+        ? buildSelection(action.id, action.selection, newIndentLevel, hideQamForChildren) : <div />;
     console.log(built?.props);
     return (
         <Fragment>
             <Field
                 indentLevel={indentLevel}
-                focusable={forcedEnabled && selection.type !== 'OneOf'}
+                focusable={(!built && forcedEnabled) || (selection.type !== 'AllOf' && forcedEnabled && qamHiddenByParent)}
                 label={action.name}
                 description={action.description}
                 icon={<ActionIcon action={action} />}
-
             >
                 <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', }}>
                     {
@@ -126,23 +130,34 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number): React
                                 </Focusable>
                                 : null,
                             selection.type !== 'AllOf' && built
-                                ? < Focusable >
-                                    <DialogButton style={{
+                                ?
+                                <DialogButton
+                                    focusable={!qamHiddenByParent}
+                                    style={{
                                         width: 'fit-content',
                                         minWidth: 'fit-content',
                                         height: 'fit-content',
-                                        padding: '10px 12px'
+                                        padding: '10px 12px',
+                                        opacity: qamHiddenByParent ? '60%' : '100%'
                                     }}
-                                        onClick={() => toggleQAMVisible(action)}
-                                        onOKButton={() => toggleQAMVisible(action)}
-                                    >
-                                        {
-                                            action.is_visible_on_qam
-                                                ? <FaEye />
-                                                : <FaEyeSlash />
-                                        }
-                                    </DialogButton>
-                                </Focusable>
+                                    onClick={qamHiddenByParent
+                                        ? undefined
+                                        : () => toggleQAMVisible(action)}
+                                    onOKButton={qamHiddenByParent
+                                        ? undefined
+                                        : () => toggleQAMVisible(action)}
+                                    onOKActionDescription={qamHiddenByParent
+                                        ? undefined
+                                        : action.is_visible_on_qam
+                                            ? 'hide on QAM'
+                                            : 'show on QAM'}
+                                >
+                                    {
+                                        action.is_visible_on_qam && !qamHiddenByParent
+                                            ? <FaEye />
+                                            : <FaEyeSlash />
+                                    }
+                                </DialogButton>
                                 : null,
 
                         ].filter((x) => x)

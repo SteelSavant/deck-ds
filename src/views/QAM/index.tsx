@@ -78,64 +78,66 @@ function AppProfileSection({ launchActions }: { launchActions: LaunchActions }):
 
     return (<PanelSection title={launchActions.profile.pipeline.name} >
         {
-            launchActions.targets.map((t) => (
-                <Fragment>
-                    <div style={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
-                        <DialogButton
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'row',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                width: "90%",
-                                maxWidth: "90%",
-                                minWidth: 0,
-                                height,
-                                marginRight: margin,
-                                marginBottom: margin,
-                                borderTopRightRadius: 0,
-                                borderBottomRightRadius: 0
-                            }}
-                            onClick={t.action}
-                            onOKButton={t.action}
-                        >
-                            <IconForTarget target={t.target} />
-                            {t.target}
-                        </DialogButton>
-                        <DialogButton
-                            style={{
-                                alignItems: 'center',
-                                justifyItems: 'center',
-                                width: "10%",
-                                minWidth: 0,
-                                height,
-                                marginBottom: margin,
-                                borderTopLeftRadius: 0,
-                                borderBottomLeftRadius: 0,
-                                padding: 0,
-                                backgroundColor: openViews[t.target]
-                                    ? 'lightgreen'
-                                    : undefined
-                            }}
-                            onClick={() => {
-                                setAppViewOpen(profileId, t.target, !openViews[profileId]?.[t.target])
-                            }}
-                        >
-                            {
-                                openViews[profileId]?.[t.target]
-                                    ? <RiArrowDownSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill', }} />
-                                    : <RiArrowRightSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill' }} />
-                            }
-                        </DialogButton>
-                    </div>
-                    {
-                        openViews[profileId]?.[t.target] ?
-                            <QAMTarget profileId={profileId} target={t.target
-                            } />
-                            : <div />
-                    }
-                </Fragment>
-            ))
+            launchActions.targets.map((t) => {
+                const isOpen = openViews[profileId]?.[t.target];
+                return (
+                    <Fragment>
+                        <div style={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
+                            <DialogButton
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    width: "90%",
+                                    maxWidth: "90%",
+                                    minWidth: 0,
+                                    height,
+                                    marginRight: margin,
+                                    marginBottom: margin,
+                                    borderTopRightRadius: 0,
+                                    borderBottomRightRadius: 0
+                                }}
+                                onClick={t.action}
+                                onOKButton={t.action}
+                            >
+                                <IconForTarget target={t.target} />
+                                {t.target}
+                            </DialogButton>
+                            <DialogButton
+                                style={{
+                                    alignItems: 'center',
+                                    justifyItems: 'center',
+                                    width: "10%",
+                                    minWidth: 0,
+                                    height,
+                                    marginBottom: margin,
+                                    borderTopLeftRadius: 0,
+                                    borderBottomLeftRadius: 0,
+                                    padding: 0,
+                                    backgroundColor: isOpen
+                                        ? 'lightgreen'
+                                        : undefined
+                                }}
+                                onClick={() => {
+                                    setAppViewOpen(profileId, t.target, !isOpen)
+                                }}
+                            >
+                                {
+                                    isOpen
+                                        ? <RiArrowDownSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill' }} />
+                                        : <RiArrowRightSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill' }} />
+                                }
+                            </DialogButton>
+                        </div>
+                        {
+                            isOpen ?
+                                <QAMTarget profileId={profileId} target={t.target} />
+                                : <div />
+                        }
+                    </Fragment>
+                )
+            })
         }
     </PanelSection>
     );

@@ -79,6 +79,10 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
 
     const profileBeingOverridden = useContext(ProfileContext);
 
+    if (!action.is_visible_on_qam) {
+        return <div />
+    }
+
     const selection = action.selection;
     const type = selection.type;
 
