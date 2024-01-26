@@ -204,6 +204,10 @@ export interface PipelineActionSettingsFor_Action {
    */
   enabled?: boolean | null;
   /**
+   * Whether or not the pipeline action is hidden on the QAM
+   */
+  is_visible_on_qam: boolean;
+  /**
    * Flags whether the selection is overridden by the setting from a different profile.
    */
   profile_override?: string | null;

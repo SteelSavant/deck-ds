@@ -103,6 +103,8 @@ pub mod generic {
         pub profile_override: Option<ProfileId>,
         /// The value of the pipeline action
         pub selection: Selection<A, PipelineActionId>,
+        /// Whether or not the pipeline action is hidden on the QAM
+        pub is_visible_on_qam: bool,
     }
 
     #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]

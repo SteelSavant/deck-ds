@@ -486,6 +486,7 @@ impl PipelineActionDefinitionBuilder {
                 enabled: self.enabled,
                 profile_override: self.profile_override,
                 selection: self.selection,
+                is_visible_on_qam: true, // default to visible
             },
         }
     }

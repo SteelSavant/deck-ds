@@ -912,6 +912,7 @@
     "PipelineActionSettings_for_Action": {
       "type": "object",
       "required": [
+        "is_visible_on_qam",
         "selection"
       ],
       "properties": {
@@ -921,6 +922,10 @@
             "boolean",
             "null"
           ]
+        },
+        "is_visible_on_qam": {
+          "description": "Whether or not the pipeline action is hidden on the QAM",
+          "type": "boolean"
         },
         "profile_override": {
           "description": "Flags whether the selection is overridden by the setting from a different profile.",
