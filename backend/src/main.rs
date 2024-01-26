@@ -265,14 +265,17 @@ fn main() -> Result<()> {
                 Box::leak(Box::new(ProfileDb::new(db_path, registrar.clone())));
 
             let instance = Instance::new(PORT)
+                // logging
                 .register("LOG", crate::api::general::log_it())
                 .register("LOGPATH", move |_| {
                     vec![log_filepath.to_string_lossy().to_string().into()]
                 })
+                // requests
                 .register(
                     "chunked_request",
                     api::request_handler::chunked_request(request_handler.clone()),
                 )
+                // profile
                 .register(
                     "create_profile",
                     api::profile::create_profile(request_handler.clone(), profiles_db),
@@ -331,6 +334,16 @@ fn main() -> Result<()> {
                     "get_templates",
                     crate::api::profile::get_templates(profiles_db),
                 )
+                // settings
+                .register(
+                    "get_settings",
+                    crate::api::general::get_settings(settings.clone()),
+                )
+                .register(
+                    "set_settings",
+                    crate::api::general::set_settings(request_handler.clone(), settings.clone()),
+                )
+                // autostart
                 .register(
                     "autostart",
                     crate::api::autostart::autostart(

@@ -2,7 +2,9 @@ import {
     SidebarNavigation
 } from "decky-frontend-lib";
 import { VFC } from "react";
-import { HiOutlineArchive, HiOutlineTemplate } from "react-icons/hi";
+import { FaGears } from "react-icons/fa6";
+import { HiFolder, HiTemplate } from "react-icons/hi";
+import { GlobalSettingsPage } from "./GlobalSettings";
 import { ProfilesPage } from "./Profiles";
 import { TemplatesPage } from "./Templates";
 
@@ -11,16 +13,23 @@ const SettingsRouter: VFC = () => {
         {
             title: 'Profiles',
             content: <div > <ProfilesPage /> </div>,
-            icon: <HiOutlineArchive />,
+            icon: <HiFolder />,
             hideTitle: false,
             identifier: 'profiles',
         },
         {
             title: 'Templates',
             content: <div> <TemplatesPage /> </div>,
-            icon: <HiOutlineTemplate />,
+            icon: <HiTemplate />,
             hideTitle: false,
             identifier: 'templates',
+        },
+        {
+            title: 'Settings',
+            content: <div> <GlobalSettingsPage /> </div>,
+            icon: <FaGears />,
+            hideTitle: false,
+            identifier: 'global',
         },
     ].map((p) => {
         return {

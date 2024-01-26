@@ -58,7 +58,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
         TemplateBuilder {
             id: TemplateId::parse("fe82be74-22b9-4135-b7a0-cb6d8f51aecd"),
             name: "Citra".to_string(),
-            description: "Maps primary and secondary windows to different screens for Citra. Allows optional Citra layout configuration".to_string(),
+            description: "Maps primary and secondary windows to different screens for Citra. Allows optional Citra layout configuration.".to_string(),
             targets: HashMap::from_iter([
                 (PipelineTarget::Desktop, Selection::AllOf(vec![
                     PipelineActionId::new("core:citra:config"),
