@@ -15,12 +15,14 @@
     "get_profile_request",
     "get_profile_response",
     "get_profiles_response",
+    "get_settings_response",
     "get_templates_response",
     "reify_pipeline_request",
     "reify_pipeline_response",
     "set_app_profile_override_request",
     "set_app_profile_settings_request",
-    "set_profile_request"
+    "set_profile_request",
+    "set_settings_request"
   ],
   "properties": {
     "autostart_request": {
@@ -56,6 +58,9 @@
     "get_profiles_response": {
       "$ref": "#/definitions/GetProfilesResponse"
     },
+    "get_settings_response": {
+      "$ref": "#/definitions/GetSettingsResponse"
+    },
     "get_templates_response": {
       "$ref": "#/definitions/GetTemplatesResponse"
     },
@@ -73,6 +78,9 @@
     },
     "set_profile_request": {
       "$ref": "#/definitions/SetProfileRequest"
+    },
+    "set_settings_request": {
+      "$ref": "#/definitions/SetSettingsRequest"
     }
   },
   "definitions": {
@@ -719,6 +727,17 @@
         }
       }
     },
+    "GetSettingsResponse": {
+      "type": "object",
+      "required": [
+        "global_settings"
+      ],
+      "properties": {
+        "global_settings": {
+          "$ref": "#/definitions/GlobalConfig"
+        }
+      }
+    },
     "GetTemplatesResponse": {
       "type": "object",
       "required": [
@@ -730,6 +749,21 @@
           "items": {
             "$ref": "#/definitions/Template"
           }
+        }
+      }
+    },
+    "GlobalConfig": {
+      "type": "object",
+      "required": [
+        "display_restoration",
+        "restore_displays_if_not_executing_pipeline"
+      ],
+      "properties": {
+        "display_restoration": {
+          "$ref": "#/definitions/UIManagement"
+        },
+        "restore_displays_if_not_executing_pipeline": {
+          "type": "boolean"
         }
       }
     },
@@ -1307,6 +1341,17 @@
       "properties": {
         "profile": {
           "$ref": "#/definitions/CategoryProfile"
+        }
+      }
+    },
+    "SetSettingsRequest": {
+      "type": "object",
+      "required": [
+        "global_settings"
+      ],
+      "properties": {
+        "global_settings": {
+          "$ref": "#/definitions/GlobalConfig"
         }
       }
     },

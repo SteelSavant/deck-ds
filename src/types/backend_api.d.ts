@@ -168,12 +168,14 @@ export interface Api {
   get_profile_request: GetProfileRequest;
   get_profile_response: GetProfileResponse;
   get_profiles_response: GetProfilesResponse;
+  get_settings_response: GetSettingsResponse;
   get_templates_response: GetTemplatesResponse;
   reify_pipeline_request: ReifyPipelineRequest;
   reify_pipeline_response: ReifyPipelineResponse;
   set_app_profile_override_request: SetAppProfileOverrideRequest;
   set_app_profile_settings_request: SetAppProfileSettingsRequest;
   set_profile_request: SetProfileRequest;
+  set_settings_request: SetSettingsRequest;
 }
 export interface AutoStartRequest {
   app_id: string;
@@ -313,6 +315,13 @@ export interface CategoryProfile {
 export interface GetProfilesResponse {
   profiles: CategoryProfile[];
 }
+export interface GetSettingsResponse {
+  global_settings: GlobalConfig;
+}
+export interface GlobalConfig {
+  display_restoration: UIManagement;
+  restore_displays_if_not_executing_pipeline: boolean;
+}
 export interface GetTemplatesResponse {
   templates: Template[];
 }
@@ -366,4 +375,7 @@ export interface SetAppProfileSettingsRequest {
 }
 export interface SetProfileRequest {
   profile: CategoryProfile;
+}
+export interface SetSettingsRequest {
+  global_settings: GlobalConfig;
 }

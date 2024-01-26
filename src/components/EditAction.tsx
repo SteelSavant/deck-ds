@@ -31,7 +31,7 @@ export default function EditAction({
             const externalSettings: TeardownExternalSettings[] = [{ type: 'Previous' }, { type: 'Native' }] // Preference excluded because its a pain to configure, and I'm pretty sure doesn't work
             return (
                 <div>
-                    <ActionChild indentLevel={indentLevel} label="External Display Settings" description="External display settings after executing pipeline.">
+                    <ActionChild indentLevel={indentLevel} label="External Display Settings" description="External display settings (resolution, refresh rate, etc.).">
                         <Dropdown selectedOption={display.teardown_external_settings.type} rgOptions={externalSettings.map((setting) => {
                             return {
                                 label: setting.type,
@@ -44,7 +44,7 @@ export default function EditAction({
                             }}
                         />
                     </ActionChild>
-                    <ActionChild indentLevel={indentLevel} label="Deck Screen Location" description="Location of the Deck screen on the desktop after executing pipeline.">
+                    <ActionChild indentLevel={indentLevel} label="Deck Screen Location" description="Location of the Deck screen on the desktop relative to the external screen.">
                         <Dropdown selectedOption={display.teardown_deck_location} rgOptions={locations.map((location) => {
                             return {
                                 label: location,
