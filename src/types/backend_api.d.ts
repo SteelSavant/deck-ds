@@ -320,6 +320,14 @@ export interface GetSettingsResponse {
 }
 export interface GlobalConfig {
   display_restoration: UIManagement;
+  /**
+   * If true, inject buttons onto app action bar
+   */
+  enable_ui_inject: boolean;
+  /**
+   * If `enable_ui_inject` is true, set the "Play" button to this target
+   */
+  primary_ui_target: PipelineTarget;
   restore_displays_if_not_executing_pipeline: boolean;
 }
 export interface GetTemplatesResponse {

@@ -756,11 +756,25 @@
       "type": "object",
       "required": [
         "display_restoration",
+        "enable_ui_inject",
+        "primary_ui_target",
         "restore_displays_if_not_executing_pipeline"
       ],
       "properties": {
         "display_restoration": {
           "$ref": "#/definitions/UIManagement"
+        },
+        "enable_ui_inject": {
+          "description": "If true, inject buttons onto app action bar",
+          "type": "boolean"
+        },
+        "primary_ui_target": {
+          "description": "If `enable_ui_inject` is true, set the \"Play\" button to this target",
+          "allOf": [
+            {
+              "$ref": "#/definitions/PipelineTarget"
+            }
+          ]
         },
         "restore_displays_if_not_executing_pipeline": {
           "type": "boolean"

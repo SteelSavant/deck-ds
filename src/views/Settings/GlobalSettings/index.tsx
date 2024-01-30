@@ -7,7 +7,7 @@ import useGlobalSettings from "../../../hooks/useGlobalSettings";
 export const GlobalSettingsPage: VFC = () => {
     const { settings, updateSettings } = useGlobalSettings();
 
-    // TODO:: make profiles reorderable
+    // TODO:: make UI inject configurable
     return <HandleLoading
         value={settings}
         onOk={(settings) => {
