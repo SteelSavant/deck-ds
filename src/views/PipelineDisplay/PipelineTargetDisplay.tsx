@@ -8,7 +8,7 @@ import { useModifiablePipelineContainer } from "../../context/modifiablePipeline
 
 export default function PipelineTargetDisplay({ root, description }: {
     root: ActionSelection,
-    description: string
+    description: ReactElement
 }): ReactElement {
     return (
         <DialogBody>

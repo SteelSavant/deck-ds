@@ -14,10 +14,10 @@ import {
   staticClasses
 } from "decky-frontend-lib";
 import { VFC } from "react";
-import { FaShip } from "react-icons/fa";
 
-import { FaGears } from "react-icons/fa6";
+import { FaGears, FaWaveSquare } from "react-icons/fa6";
 import * as backend from "./backend";
+import { IconForTarget } from "./components/IconForTarget";
 import { ShortAppDetailsState, ShortAppDetailsStateContextProvider } from "./context/appContext";
 import { ServerApiProvider } from "./context/serverApiContext";
 import patchLibraryApp from "./patch/patchLibraryApp";
@@ -165,23 +165,20 @@ export default definePlugin((serverApi: ServerAPI) => {
     title: <div>DeckDS</div>,
     alwaysRender: true,
     content: <Content serverApi={serverApi} />,
-    icon: <FaShip />,
+    icon: (
+      <div>
+        <IconForTarget target="Desktop" />
+        <FaWaveSquare />
+        <IconForTarget target="Gamemode" />
+      </div>
+    ),
     onDismount: () => {
-      console.log("unlistening history");
-      unlistenHistory();
-
-      console.log("removing library patch");
-
-      serverApi.routerHook.removePatch('/library/app/:appid', libraryPatch);
-
       backend.log(backend.LogLevel.Debug, "DeckDS shutting down");
 
-      console.log("setting not on app page");
-
+      unlistenHistory();
       appDetailsState.setOnAppPage(null);
 
-      console.log("removing routes");
-
+      serverApi.routerHook.removePatch('/library/app/:appid', libraryPatch);
       serverApi.routerHook.removeRoute("/deck-ds/settings/templates/:templateid");
       serverApi.routerHook.removeRoute("/deck-ds/settings/:setting");
     },
