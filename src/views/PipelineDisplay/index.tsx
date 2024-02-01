@@ -1,7 +1,8 @@
 import { Focusable, Tabs } from "decky-frontend-lib";
 import { ReactElement, useEffect, useRef, useState } from "react";
-import { ActionSelection, PipelineContainer } from "../../backend";
+import { ActionSelection, PipelineContainer, PipelineTarget } from "../../backend";
 import HandleLoading from "../../components/HandleLoading";
+import { IconForTarget } from "../../components/IconForTarget";
 import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
 import useReifiedPipeline from "../../hooks/useReifiedPipeline";
 import PipelineHeader from "./PipelineHeader";
@@ -33,22 +34,32 @@ export default function PipelineDisplay({ header, general, secondaryAction, seco
                     interface TargetDescriptor {
                         target: string,
                         root: ActionSelection,
-                        description: string,
+                        description: ReactElement,
                     }
 
                     const defaultTargets: TargetDescriptor[] = [];
                     const extraTargets: TargetDescriptor[] = [] // no real intention of actually supporting extra targets, but...
 
                     const descriptions: { [k: string]: string } = {
-                        ['Gamemode']: 'Actions that run when launched in Game mode.',
-                        ['Desktop']: 'Actions that run when launched in Desktop mode.'
+                        ['Gamemode']: 'Game',
+                        ['Desktop']: 'Desktop'
                     }
 
                     for (const key in pipeline.targets) {
                         const value: TargetDescriptor = {
                             target: key,
                             root: pipeline.targets[key],
-                            description: descriptions[key] ?? '',
+                            description: <div
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    alignItems: 'center'
+                                }}
+                            >
+                                <p>Action that run when launched in {descriptions[key]} (</p>
+                                {<IconForTarget target={key as PipelineTarget} />}
+                                <p>) mode.</p>
+                            </div>
                         };
 
                         if (key === 'Gamemode') {
