@@ -2,19 +2,25 @@ import {
   ButtonItem,
   definePlugin,
 
+  DialogButton,
+
   findModuleChild,
 
+  Focusable,
+
   PanelSection,
+  Router,
   ServerAPI,
   staticClasses
 } from "decky-frontend-lib";
 import { VFC } from "react";
 import { FaShip } from "react-icons/fa";
 
+import { FaGears } from "react-icons/fa6";
 import * as backend from "./backend";
 import { ShortAppDetailsState, ShortAppDetailsStateContextProvider } from "./context/appContext";
 import { ServerApiProvider } from "./context/serverApiContext";
-import patchLibraryApp from "./lib/patchLibraryApp";
+import patchLibraryApp from "./patch/patchLibraryApp";
 import QAM from "./views/QAM";
 import ProfileRoute from "./views/Settings/Profiles/ProfileRoute";
 import SettingsRouter from "./views/Settings/SettingsRouter";
@@ -121,18 +127,60 @@ export default definePlugin((serverApi: ServerAPI) => {
     exact: true,
   });
 
+  const navigateToSettings = () => {
+    Router.CloseSideMenus();
+    Router.Navigate("/deck-ds/settings/profiles");
+  };
+
   return {
-    title: <div className={staticClasses.Title}>DeckDS</div>,
+    titleView: <Focusable
+      style={{
+        display: "flex",
+        padding: "0",
+        width: "100%",
+        boxShadow: "none",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}
+      className={staticClasses.Title}
+    >
+      <div>DeckDS</div>
+      <DialogButton
+        style={{
+          width: 'fit-content',
+          minWidth: 'fit-content',
+          height: 'fit-content',
+          minHeight: 'fit-content',
+          paddingLeft: 10,
+          paddingRight: 10,
+          paddingTop: 5,
+          paddingBottom: 5
+        }}
+        onClick={navigateToSettings}
+        onOKButton={navigateToSettings}
+      >
+        <FaGears />
+      </DialogButton>
+    </Focusable>,
+    title: <div>DeckDS</div>,
+    alwaysRender: true,
     content: <Content serverApi={serverApi} />,
     icon: <FaShip />,
-    onDismount() {
+    onDismount: () => {
+      console.log("unlistening history");
       unlistenHistory();
+
+      console.log("removing library patch");
 
       serverApi.routerHook.removePatch('/library/app/:appid', libraryPatch);
 
       backend.log(backend.LogLevel.Debug, "DeckDS shutting down");
 
+      console.log("setting not on app page");
+
       appDetailsState.setOnAppPage(null);
+
+      console.log("removing routes");
 
       serverApi.routerHook.removeRoute("/deck-ds/settings/templates/:templateid");
       serverApi.routerHook.removeRoute("/deck-ds/settings/:setting");

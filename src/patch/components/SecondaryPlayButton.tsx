@@ -1,23 +1,25 @@
 import { DialogButton } from "decky-frontend-lib";
 import { ReactElement } from "react";
-import { IconForTarget } from "../components/IconForTarget";
-import { useAppState } from "../context/appContext";
-import useLaunchActions from "../hooks/useLaunchActions";
+import { IconForTarget } from "../../components/IconForTarget";
+import { useAppState } from "../../context/appContext";
+import useAppTarget from "../../hooks/useAppTarget";
+import useLaunchActions from "../../hooks/useLaunchActions";
 
 
-interface DesktopPlayButtonProps {
+interface SecondaryPlayButtonProps {
     deckDSDesktopSentinel: 'sentinel'
 }
 
-export default function DesktopPlayButton({ }: DesktopPlayButtonProps): ReactElement {
+export default function SecondaryPlayButton({ }: SecondaryPlayButtonProps): ReactElement {
     const { appDetails } = useAppState();
-    const launchActions = appDetails ? useLaunchActions(appDetails) : [];
+    const launchActions = useLaunchActions(appDetails)
 
-    const onLaunch = launchActions[0]?.targets?.find((t) => t.target === 'Desktop')?.action;
+    const target = useAppTarget({ isPrimary: false });
+    const onLaunch = launchActions[0]?.targets?.find((t) => t.target === target)?.action;
     const vPadding = 14;
     const wPadding = 17;
 
-    return onLaunch ? (
+    return target && onLaunch ?
         <DialogButton
             // I would be thrilled if this matched the other buttons exactly, but alas...
             style={{
@@ -30,7 +32,7 @@ export default function DesktopPlayButton({ }: DesktopPlayButtonProps): ReactEle
             onClick={onLaunch}
             onOKButton={onLaunch}
         >
-            <IconForTarget target="Desktop" />
+            <IconForTarget target={target} />
         </DialogButton>
-    ) : <div />;
+        : <div />;
 }

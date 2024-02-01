@@ -16,7 +16,7 @@ use crate::{
     macros::{newtype_strid, newtype_uuid},
     pipeline::{
         action::ui_management::UIManagement,
-        data::{Pipeline, PipelineDefinition},
+        data::{Pipeline, PipelineDefinition, PipelineTarget},
     },
     util::create_dir_all,
     PACKAGE_NAME,
@@ -30,11 +30,25 @@ pub struct Settings {
     exe_path: PathBuf,
 }
 
-#[derive(Debug, Default, Clone, Deserialize, Serialize, JsonSchema)]
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct GlobalConfig {
     pub display_restoration: UIManagement,
     pub restore_displays_if_not_executing_pipeline: bool,
-    // other global settings as needed
+    /// If true, inject buttons onto app action bar
+    pub enable_ui_inject: bool,
+    /// If `enable_ui_inject` is true, set the "Play" button to this target
+    pub primary_ui_target: PipelineTarget,
+}
+
+impl Default for GlobalConfig {
+    fn default() -> Self {
+        Self {
+            display_restoration: Default::default(),
+            restore_displays_if_not_executing_pipeline: false,
+            enable_ui_inject: true,
+            primary_ui_target: PipelineTarget::Gamemode,
+        }
+    }
 }
 
 impl Settings {

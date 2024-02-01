@@ -1,10 +1,10 @@
-import { ButtonItem, DialogButton, PanelSection, PanelSectionRow, Router } from "decky-frontend-lib";
+import { DialogButton, PanelSection } from "decky-frontend-lib";
 import { Fragment, ReactElement, createContext } from "react";
 import { RiArrowDownSFill, RiArrowRightSFill } from "react-icons/ri";
 import { PipelineTarget } from "../../backend";
 import HandleLoading from "../../components/HandleLoading";
 import { IconForTarget } from "../../components/IconForTarget";
-import { useAppState } from "../../context/appContext";
+import { ShortAppDetails, useAppState } from "../../context/appContext";
 import useEnsureAppOverridePipeline from "../../hooks/useEnsureAppOverridePipeline";
 import useLaunchActions, { LaunchActions } from "../../hooks/useLaunchActions";
 import AppDefaultProfileDropdown from "./AppDefaultProfileDropdown";
@@ -16,57 +16,58 @@ export default function QAM(): ReactElement {
     const { appDetails, appProfile } = useAppState();
     const launchActions = useLaunchActions(appDetails);
 
-    return (
-        <Fragment>
-            <PanelSection>
-                <PanelSectionRow>
-                    <ButtonItem
-                        layout="below"
-                        onClick={() => {
-                            Router.CloseSideMenus();
-                            Router.Navigate("/deck-ds/settings/profiles");
-                        }}
-                    >
-                        Configuration
-                    </ButtonItem>
-                </PanelSectionRow>
-            </PanelSection>
-            {appDetails ?
+    return appDetails ?
+        <HandleLoading
+            value={appProfile}
+            onOk={(appProfile) =>
                 <Fragment>
-                    <HandleLoading
-                        value={appProfile}
-                        onOk={(appProfile) =>
-                            <Fragment>
-                                < AppDefaultProfileDropdown
-                                    appDetails={appDetails}
-                                    appProfile={appProfile}
-                                    launchActions={launchActions}
-                                />
-                                <DeckDSProfilesForApp launchActions={launchActions} />
-                            </Fragment>
-                        }
-                        onErr={(err) => <p>{err.err}</p>}
+                    < AppDefaultProfileDropdown
+                        appDetails={appDetails}
+                        appProfile={appProfile}
+                        launchActions={launchActions}
+                    />
+                    <DeckDSProfilesForApp
+                        appDetails={appDetails}
+                        launchActions={launchActions}
                     />
                 </Fragment>
-                : <div />
             }
-        </Fragment>
-    )
+            onErr={(err) => <p>{err.err}</p>}
+        />
+        : <PanelSection >
+            <p>Welcome to DeckDS!</p>
+            <p>To set up profiles or edit settings, go to settings (top right).</p>
+            <p>Launch actions and per-app settings will appear here on the app page of configured titles.</p>
+        </PanelSection>
 }
 
-function DeckDSProfilesForApp({ launchActions }: { launchActions: LaunchActions[] }): ReactElement {
-    return <Fragment >
-        {
-            launchActions.map((a) => {
-                return (
-                    <ProfileContext.Provider value={a.profile.id}>
-                        <AppProfileSection launchActions={a} />
-                    </ProfileContext.Provider>
-                )
-            })
-        }
-    </Fragment >
-    // TODO::horizonal line at end of fragment
+
+
+function DeckDSProfilesForApp({ appDetails, launchActions }: { appDetails: ShortAppDetails, launchActions: LaunchActions[] }): ReactElement {
+
+    return launchActions.length > 0
+        ? <Fragment >
+            {
+                launchActions.map((a) => {
+                    return (
+                        <ProfileContext.Provider value={a.profile.id}>
+                            <AppProfileSection launchActions={a} />
+                        </ProfileContext.Provider>
+                    )
+                })
+            }
+        </Fragment >
+        // TODO::horizonal line at end of fragment
+        : <PanelSection >
+            <p>No profiles configured for this title.</p>
+            <p>To set one, add one of the following collections to an existing profile: </p>
+            {
+                collectionStore
+                    .userCollections
+                    .filter((uc) => uc.apps.get(appDetails.appId))
+                    .map((c) => <li>{c.displayName}</li>)
+            }
+        </PanelSection>
 }
 
 function AppProfileSection({ launchActions }: { launchActions: LaunchActions }): ReactElement {

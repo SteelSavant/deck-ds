@@ -351,7 +351,7 @@ impl PipelineActionRegistarBuilder {
                     })
                     .with_action("flatpak_source", None, PipelineActionDefinitionBuilder {
                         name: "Flatpak".to_string(),
-                        description: Some("Sets the settings INI file location to the default Flatpak location.".to_string()),
+                        description: Some("Sets the settings XML file location to the default Flatpak location.".to_string()),
                         enabled: None,
                         is_visible_on_qam: true,
                         profile_override: None,
@@ -362,7 +362,7 @@ impl PipelineActionRegistarBuilder {
                     })
                     .with_action("emudeck_proton_source", None, PipelineActionDefinitionBuilder {
                         name: "EmuDeck (Proton)".to_string(),
-                        description: Some("Sets the settings INI file location to the default EmuDeck (Proton) location.".to_string()),
+                        description: Some("Sets the settings XML file location to the location of EmuDeck's Cemu (Proton).".to_string()),
                         enabled: None,
                         is_visible_on_qam: true,
                         profile_override: None,

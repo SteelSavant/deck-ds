@@ -8,6 +8,7 @@ use usdpl_back::core::serdes::Primitive;
 
 use self::{
     autostart::AutoStartRequest,
+    general::{GetSettingsResponse, SetSettingsRequest},
     profile::{
         CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, GetAppProfileRequest,
         GetAppProfileResponse, GetDefaultAppOverrideForProfileRequest,
@@ -91,6 +92,10 @@ pub struct Api {
     pub reify_pipeline_request: ReifyPipelineRequest,
     pub reify_pipeline_response: ReifyPipelineResponse,
     pub get_templates_response: GetTemplatesResponse,
+
+    // settings
+    pub get_settings_response: GetSettingsResponse,
+    pub set_settings_request: SetSettingsRequest,
 
     // autostart
     pub autostart_request: AutoStartRequest,

@@ -1,4 +1,4 @@
-import { AutoStartRequest, CategoryProfile, CitraLayoutOption, CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, GetAppProfileRequest, GetAppProfileResponse, GetDefaultAppOverrideForProfileRequest, GetDefaultAppOverrideForProfileResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineActionFor_Action, PipelineActionSettingsFor_Action, PipelineDefinitionFor_Action, PipelineFor_Action, ReifyPipelineRequest, ReifyPipelineResponse, SelectionFor_ActionAnd_PipelineActionFor_Action, SelectionFor_ActionAnd_String, SetAppProfileOverrideRequest, SetAppProfileSettingsRequest, SetProfileRequest, Template } from "./types/backend_api";
+import { AutoStartRequest, CategoryProfile, CitraLayoutOption, CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, GetAppProfileRequest, GetAppProfileResponse, GetDefaultAppOverrideForProfileRequest, GetDefaultAppOverrideForProfileResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetSettingsResponse, GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineActionFor_Action, PipelineActionSettingsFor_Action, PipelineDefinitionFor_Action, PipelineFor_Action, ReifyPipelineRequest, ReifyPipelineResponse, SelectionFor_ActionAnd_PipelineActionFor_Action, SelectionFor_ActionAnd_String, SetAppProfileOverrideRequest, SetAppProfileSettingsRequest, SetProfileRequest, SetSettingsRequest, Template } from "./types/backend_api";
 import { call_backend, init_embedded, init_usdpl, target_usdpl } from "./usdpl_front";
 import { Err, Ok, Result } from "./util/result";
 
@@ -44,8 +44,6 @@ export function isCategoryProfile(container: PipelineContainer): container is Ca
 export const citraLayoutOptions: CitraLayoutOption[] = [{ type: "Default" }, { type: "SingleScreen" }, { type: "LargeScreen" }, { type: "SideBySide" }, { type: "SeparateWindows" }, { type: "HybridScreen" }];
 export const melonDSLayoutOptions: MelonDSLayoutOption[] = ['Natural', 'Vertical', 'Horizontal', 'Hybrid', 'Single'];
 export const melonDSSizingOptions: MelonDSSizingOption[] = ['Even', 'Auto', 'EmphasizeTop', 'EmphasizeBottom'];
-
-
 
 // Utility
 
@@ -236,4 +234,12 @@ export async function reifyPipeline(request: ReifyPipelineRequest): Response<Rei
     return await call_backend_typed('reify_pipeline', request);
 }
 
+// Settings
 
+export async function getSettings(): Response<GetSettingsResponse> {
+    return await call_backend_typed("get_settings", null)
+}
+
+export async function setSettings(request: SetSettingsRequest): Response<void> {
+    return await call_backend_typed("set_settings", request)
+}
