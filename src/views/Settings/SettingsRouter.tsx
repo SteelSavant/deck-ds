@@ -28,7 +28,7 @@ const SettingsRouter: VFC = () => {
             title: 'Settings',
             content: <div> <GlobalSettingsPage /> </div>,
             icon: <FaGears />,
-            hideTitle: false,
+            hideTitle: true,
             identifier: 'global',
         },
     ].map((p) => {

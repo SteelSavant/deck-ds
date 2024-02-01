@@ -1,4 +1,4 @@
-import { Field, Toggle } from "decky-frontend-lib";
+import { Dropdown, Field, Toggle } from "decky-frontend-lib";
 import { Fragment, VFC } from "react";
 import EditAction from "../../../components/EditAction";
 import HandleLoading from "../../../components/HandleLoading";
@@ -32,6 +32,7 @@ export const GlobalSettingsPage: VFC = () => {
                         }} />
                     <Field
                         focusable={false}
+                        indentLevel={1}
                         label="Apply Display Settings When Opening Desktop"
                         description="Apply display settings when opening the desktop for any reason, not just when restoring the displays from an app launch."
                     >
@@ -42,6 +43,47 @@ export const GlobalSettingsPage: VFC = () => {
                                     restore_displays_if_not_executing_pipeline: value
                                 })
                             }}
+                        />
+                    </Field>
+                    <Field label="Deck UI"></Field>
+                    <Field
+                        focusable={false}
+                        indentLevel={1}
+                        label="Enable UI Patching"
+                        description="Allow patching game pages to have custom buttons to launch DeckDS profiles, instead of having to launch from the Quick Acess Menu."
+                    >
+                        <Toggle value={settings.enable_ui_inject}
+                            onChange={(value) => {
+                                updateSettings({
+                                    ...settings,
+                                    enable_ui_inject: value
+                                })
+                            }}
+                        />
+                    </Field>
+                    <Field
+                        focusable={false}
+                        indentLevel={1}
+                        label="Primary Target"
+                        description="Determines which target is used by the primary 'Play' button when patching the UI"
+                    >
+                        <Dropdown
+                            selectedOption={settings.primary_ui_target}
+                            rgOptions={['Gamemode', 'Desktop'].map((t) => {
+                                return {
+                                    label: t,
+                                    data: t
+                                }
+                            })}
+                            onChange={settings.enable_ui_inject
+                                ? (data) => {
+                                    updateSettings({
+                                        ...settings,
+                                        primary_ui_target: data.data
+                                    })
+                                }
+                                : undefined
+                            }
                         />
                     </Field>
                 </Fragment>

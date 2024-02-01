@@ -8,8 +8,8 @@ import {
 } from 'decky-frontend-lib';
 import { ReactElement } from 'react';
 import { ShortAppDetailsState, ShortAppDetailsStateContextProvider } from '../context/appContext';
-import DesktopPlayButton from './DesktopPlayButton';
-import GameModePlayButton from './GameModePlayButton';
+import PrimaryPlayButton from './components/PrimaryPlayButton';
+import SecondaryPlayButton from './components/SecondaryPlayButton';
 
 // TODO::don't patch if appid doesn't have pipeline
 // TODO::patch in real button
@@ -86,7 +86,7 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                                     if (!children.find((c: any) => c?.props?.children?.props?.deckDSDesktopSentinel === 'sentinel')) {
                                         children?.splice(0, 0,
                                             <ShortAppDetailsStateContextProvider ShortAppDetailsStateClass={appDetailsState}>
-                                                <DesktopPlayButton
+                                                <SecondaryPlayButton
                                                     deckDSDesktopSentinel='sentinel'
                                                 />
                                             </ShortAppDetailsStateContextProvider>
@@ -101,7 +101,7 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                                         const actualPlayButton = children[0];
                                         children?.splice(0, 1,
                                             <ShortAppDetailsStateContextProvider ShortAppDetailsStateClass={appDetailsState}>
-                                                <GameModePlayButton
+                                                <PrimaryPlayButton
                                                     playButton={actualPlayButton}
                                                     deckDSGameModeSentinel='sentinel'
                                                 />
