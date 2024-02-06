@@ -13,8 +13,11 @@ use crate::{
     asset::AssetManager,
     db::ProfileDb,
     pipeline::{
+        action::{Action, ErasedPipelineAction},
         action_registar::PipelineActionRegistrar,
-        data::{Pipeline, PipelineActionId, PipelineDefinition, Template},
+        data::{
+            Pipeline, PipelineAction, PipelineActionId, PipelineDefinition, Selection, Template,
+        },
         dependency::DependencyError,
         executor::PipelineContext,
     },
@@ -412,13 +415,12 @@ pub fn reify_pipeline(
                         (*home_dir).clone(),
                         (*config_dir).clone(),
                     );
-                    let config_errors = args.pipeline.check_config(ctx);
                     let res = args.pipeline.reify(&profiles, &registrar);
 
                     match res {
                         Ok(pipeline) => ReifyPipelineResponse {
+                            config_errors: check_config_errors(&pipeline, ctx),
                             pipeline,
-                            config_errors,
                         }
                         .to_response(),
                         Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
@@ -429,6 +431,61 @@ pub fn reify_pipeline(
             Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
         }
     }
+}
+
+fn check_config_errors(
+    pipeline: &Pipeline,
+    ctx: &mut PipelineContext,
+) -> HashMap<PipelineActionId, Vec<DependencyError>> {
+    fn collect_actions<'a>(
+        selection: &'a Selection<PipelineAction>,
+        parent_id: &PipelineActionId,
+    ) -> Vec<(PipelineActionId, &'a Action)> {
+        match selection {
+            crate::pipeline::data::generic::Selection::Action(action) => {
+                vec![(parent_id.clone(), action)]
+            }
+            crate::pipeline::data::generic::Selection::OneOf { selection, actions } => {
+                let action = actions
+                    .iter()
+                    .find(|a| a.id == *selection)
+                    .expect("selected action should exist");
+
+                collect_actions(&action.selection, &action.id)
+            }
+            crate::pipeline::data::generic::Selection::AllOf(actions) => actions
+                .iter()
+                .flat_map(|a| collect_actions(&a.selection, &a.id))
+                .collect(),
+        }
+    }
+
+    let deps: HashMap<_, _> = pipeline
+        .targets
+        .iter()
+        .flat_map(|(_target, selection)| {
+            let actions = collect_actions(selection, &PipelineActionId::new("root"));
+
+            let mut kv = vec![];
+            for a in actions.into_iter() {
+                kv.push((a.0, a.1.get_dependencies(ctx)));
+            }
+
+            kv
+        })
+        .filter(|v| !v.1.is_empty())
+        .collect();
+
+    deps.into_iter()
+        .map(|(id, dep)| {
+            (
+                id,
+                dep.into_iter()
+                    .filter_map(|d| d.verify_config(ctx).err())
+                    .collect(),
+            )
+        })
+        .collect()
 }
 
 // Templates

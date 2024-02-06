@@ -364,10 +364,15 @@ impl AppProfile {
 
         for (profile_id, o) in overrides.iter_mut() {
             for (action_id, action) in o.actions.actions.iter_mut() {
-                // override the visibility with the profile visibility, since the QAM can't actually set it
+                // override the visibility with the profile visibility, since the QAM can't actually set it;
+                // same with name && exit hooks
+
                 let profile = ro.get().primary::<DbCategoryProfile>(*profile_id)?;
 
                 if let Some(profile) = profile {
+                    o.register_exit_hooks = profile.pipeline.register_exit_hooks;
+                    o.name = profile.pipeline.name;
+
                     action.is_visible_on_qam = profile
                         .pipeline
                         .actions

@@ -1,7 +1,9 @@
+import { showModal } from "decky-frontend-lib";
 import { CategoryProfile, PipelineTarget, autoStart, reifyPipeline } from "../backend";
+import ConfigErrorModal from "../components/ConfigErrorModal";
 import { ShortAppDetails } from "../context/appContext";
+import { DependencyError } from "../types/backend_api";
 import useProfiles from "./useProfiles";
-
 
 export interface LaunchActions {
     profile: CategoryProfile,
@@ -25,7 +27,6 @@ const useLaunchActions = (appDetails: ShortAppDetails | null): LaunchActions[] =
         const includedProfiles = new Set<string>();
         const validProfiles = collectionStore.userCollections.flatMap((uc) => {
             const containsApp = uc.apps.get(appDetails.appId);
-
 
             if (containsApp) {
                 const matchedProfiles = loadedProfiles
@@ -54,15 +55,27 @@ const useLaunchActions = (appDetails: ShortAppDetails | null): LaunchActions[] =
 
 
                     if (reified.isOk) {
-                        const res = await autoStart({
-                            game_id: appDetails.gameId,
-                            app_id: appDetails.appId.toString(),
-                            profile_id: p.id,
-                            target: key as PipelineTarget
-                        });
+                        const configErrors = reified.data.config_errors;
+                        const errors: DependencyError[] = [];
+                        for (const key in configErrors) {
+                            errors.push(...configErrors[key])
+                        }
 
-                        if (!res.isOk) {
-                            // TODO::handle error
+                        if (errors.length > 0) {
+                            showModal(
+                                <ConfigErrorModal errors={errors} />
+                            );
+                        } else {
+                            const res = await autoStart({
+                                game_id: appDetails.gameId,
+                                app_id: appDetails.appId.toString(),
+                                profile_id: p.id,
+                                target: key as PipelineTarget
+                            });
+
+                            if (!res.isOk) {
+                                // TODO::handle error
+                            }
                         }
                     } else {
                         // TODO::handle error

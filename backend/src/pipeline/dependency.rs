@@ -1,16 +1,12 @@
 use schemars::JsonSchema;
 use serde::Serialize;
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 use thiserror::Error;
 
 use anyhow::Result;
 use which::which;
 
-use super::{
-    action::ErasedPipelineAction,
-    data::{PipelineActionId, PipelineDefinition, Selection},
-    executor::PipelineContext,
-};
+use super::executor::PipelineContext;
 
 #[derive(Error, Debug, Clone, Serialize, JsonSchema)]
 #[serde(tag = "type", content = "value")]
@@ -79,35 +75,5 @@ impl Dependency {
                 Ok(())
             }
         })
-    }
-}
-
-impl PipelineDefinition {
-    pub fn check_config(
-        &self,
-        ctx: &mut PipelineContext,
-    ) -> HashMap<PipelineActionId, Vec<DependencyError>> {
-        // TODO::this impl is technically incorrect, as it doesn't filter by enabled actions.
-        // However, as it is only used to display errors to the UI, that isn't currently a problem.
-        self.actions
-            .actions
-            .iter()
-            .filter_map(|(id, a)| {
-                if let Selection::Action(a) = &a.selection {
-                    let errors = a
-                        .get_dependencies(ctx)
-                        .into_iter()
-                        .filter_map(|d| d.verify_config(ctx).err())
-                        .collect::<Vec<_>>();
-                    if errors.is_empty() {
-                        None
-                    } else {
-                        Some((id.clone(), errors))
-                    }
-                } else {
-                    None
-                }
-            })
-            .collect()
     }
 }

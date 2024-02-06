@@ -48,7 +48,7 @@ interface PublicAppStateContext
 
 // This class creates the getter and setter functions for all of the global state data.
 export class ShortAppDetailsState {
-    private delayMs = 1000
+    private readonly delayMs = 1000
     private appDetails: ShortAppDetails | null = null;
     private appProfile: Loading<AppProfile>;
     private reifiedPipelines: { [k: string]: Result<ReifyPipelineResponse, ApiError> } = {};
@@ -56,7 +56,7 @@ export class ShortAppDetailsState {
     private lastOnAppPageTime: number = 0
 
     // You can listen to this eventBus' 'stateUpdate' event and use that to trigger a useState or other function that causes a re-render
-    public eventBus = new EventTarget()
+    public readonly eventBus = new EventTarget()
 
     getPublicState(): PublicAppState {
         return {
@@ -258,9 +258,12 @@ export class ShortAppDetailsState {
 
     private setOnAppPageInternal(appDetails: ShortAppDetails | null, time: number) {
         const areEqual = _.isEqual(appDetails, this.appDetails);
+        console.log('trying to set app to', appDetails?.displayName);
         if (time < this.lastOnAppPageTime || areEqual) {
             return;
         }
+
+        console.log('setting app to ', appDetails?.displayName)
 
         this.appDetails = appDetails;
         this.appProfile = null;
