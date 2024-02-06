@@ -7,8 +7,8 @@ use anyhow::Result;
 use which::which;
 
 use super::{
-    action::{ActionId, ErasedPipelineAction},
-    data::{PipelineDefinition, Selection},
+    action::ErasedPipelineAction,
+    data::{PipelineActionId, PipelineDefinition, Selection},
     executor::PipelineContext,
 };
 
@@ -86,13 +86,13 @@ impl PipelineDefinition {
     pub fn check_config(
         &self,
         ctx: &mut PipelineContext,
-    ) -> HashMap<ActionId, Vec<DependencyError>> {
+    ) -> HashMap<PipelineActionId, Vec<DependencyError>> {
         // TODO::this impl is technically incorrect, as it doesn't filter by enabled actions.
         // However, as it is only used to display errors to the UI, that isn't currently a problem.
         self.actions
             .actions
             .iter()
-            .filter_map(|(_, a)| {
+            .filter_map(|(id, a)| {
                 if let Selection::Action(a) = &a.selection {
                     let errors = a
                         .get_dependencies(ctx)
@@ -102,7 +102,7 @@ impl PipelineDefinition {
                     if errors.is_empty() {
                         None
                     } else {
-                        Some((a.get_id(), errors))
+                        Some((id.clone(), errors))
                     }
                 } else {
                     None

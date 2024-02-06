@@ -13,9 +13,8 @@ use crate::{
     asset::AssetManager,
     db::ProfileDb,
     pipeline::{
-        action::ActionId,
         action_registar::PipelineActionRegistrar,
-        data::{Pipeline, PipelineDefinition, Template},
+        data::{Pipeline, PipelineActionId, PipelineDefinition, Template},
         dependency::DependencyError,
         executor::PipelineContext,
     },
@@ -339,14 +338,26 @@ pub fn get_default_app_override_pipeline_for_profile(
 
                             let mut lookup = registrar.make_lookup(&pipeline.targets);
 
-                            for action in lookup.actions.values_mut() {
-                                action.profile_override = Some(args.profile_id)
+                            for (id, action) in lookup.actions.iter_mut() {
+                                action.profile_override = Some(args.profile_id);
+                                // override the visibility with the profile visibility, since the QAM can't actually set it
+                                action.is_visible_on_qam = pipeline
+                                    .actions
+                                    .actions
+                                    .get(id)
+                                    .unwrap_or_else(|| {
+                                        panic!(
+                                            "action {id:?} should exist on profile {:?}",
+                                            profile.id
+                                        )
+                                    })
+                                    .is_visible_on_qam;
                             }
 
-                            return PipelineDefinition {
+                            PipelineDefinition {
                                 actions: lookup,
                                 ..pipeline
-                            };
+                            }
                         }),
                     }
                     .to_response(),
@@ -368,7 +379,7 @@ pub struct ReifyPipelineRequest {
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct ReifyPipelineResponse {
     pipeline: Pipeline,
-    config_errors: HashMap<ActionId, Vec<DependencyError>>,
+    config_errors: HashMap<PipelineActionId, Vec<DependencyError>>,
 }
 
 pub fn reify_pipeline(

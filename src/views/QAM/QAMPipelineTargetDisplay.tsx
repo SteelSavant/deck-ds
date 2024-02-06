@@ -3,7 +3,10 @@ import { Fragment, ReactElement, useContext } from "react";
 import { ProfileContext } from ".";
 import { Action, ActionOneOf, ActionSelection, PipelineAction } from "../../backend";
 import ActionIcon from "../../components/ActionIcon";
+import ConfigErrorWarning from "../../components/ConfigErrorWarning";
 import { useAppState } from "../../context/appContext";
+import { ConfigErrorContext } from "../../context/configErrorContext";
+import { DependencyError } from "../../types/backend_api";
 import { MaybeString } from "../../types/short";
 import QAMEditAction from "./QAMEditAction";
 
@@ -78,6 +81,7 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
     const { dispatchUpdate } = useAppState();
 
     const profileBeingOverridden = useContext(ProfileContext);
+    const configErrors = useContext(ConfigErrorContext);
 
     if (!action.is_visible_on_qam) {
         return <div />
@@ -92,7 +96,8 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
     const props: HeaderProps = {
         isEnabled,
         forcedEnabled,
-        action
+        action,
+        configErrors: configErrors[action.id]
     }
 
     switch (type) {
@@ -165,7 +170,12 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
     }
 }
 
-interface HeaderProps { isEnabled: boolean, forcedEnabled: boolean, action: PipelineAction }
+interface HeaderProps {
+    isEnabled: boolean,
+    forcedEnabled: boolean,
+    action: PipelineAction,
+    configErrors?: DependencyError[] | undefined
+}
 
 
 function FromProfileComponent({ action }: { action: any }) {
@@ -215,6 +225,9 @@ function EnabledComponent({ isEnabled, forcedEnabled, action }: HeaderProps): Re
 function Header(props: HeaderProps): ReactElement {
     const action = props.action;
     const displayName = action.name.toLocaleUpperCase();
+    const errors = props.configErrors ?? [];
+
+    console.log('QAM Header got errors:', errors);
 
     return (
         <Fragment>
@@ -222,7 +235,13 @@ function Header(props: HeaderProps): ReactElement {
                 focusable={false}
                 label={displayName}
                 icon={<ActionIcon action={action} />}
-            />
+            >
+                {
+                    errors.length === 0
+                        ? <div />
+                        : <ConfigErrorWarning errors={errors} />
+                }
+            </Field>
             <FromProfileComponent action={action} />
             <EnabledComponent {...props} />
         </Fragment>

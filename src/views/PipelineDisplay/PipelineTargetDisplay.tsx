@@ -1,11 +1,11 @@
 import { DialogBody, DialogButton, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
 import { Fragment, ReactElement, useContext } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { ConfigErrorContext } from ".";
 import { Action, ActionOneOf, ActionSelection, PipelineAction, } from "../../backend";
 import ActionIcon from "../../components/ActionIcon";
 import ConfigErrorWarning from "../../components/ConfigErrorWarning";
 import EditAction from "../../components/EditAction";
+import { ConfigErrorContext } from "../../context/configErrorContext";
 import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
 
 export default function PipelineTargetDisplay({ root, description }: {
@@ -97,7 +97,7 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
         <Fragment>
             <Field
                 indentLevel={indentLevel}
-                focusable={(!built && forcedEnabled) || (selection.type !== 'AllOf' && forcedEnabled && qamHiddenByParent && !(selection.type === 'Action' && configErrors[selection.value.value.id]))}
+                focusable={(!built && forcedEnabled) || (selection.type !== 'AllOf' && forcedEnabled && qamHiddenByParent && !configErrors[action.id])}
                 label={action.name}
                 description={action.description}
                 icon={<ActionIcon action={action} />}
@@ -105,9 +105,7 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
                 <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', }}>
                     {
                         [
-                            selection.type === 'Action' && (isEnabled || forcedEnabled) ?
-                                <ConfigErrorWarning errors={configErrors[selection.value.value.id]} />
-                                : null,
+                            <ConfigErrorWarning errors={configErrors[action.id]} />,
                             forcedEnabled ? null
                                 : <Focusable>
                                     <Toggle value={isEnabled} onChange={(value) =>

@@ -91,7 +91,7 @@ impl DeckDsUi {
             primary_position,
             secondary_position,
             primary_text: "starting up...".to_string(),
-            secondary_text: secondary_text,
+            secondary_text,
             custom_frame,
             rx,
             tx,

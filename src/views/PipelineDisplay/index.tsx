@@ -1,18 +1,14 @@
 import { Focusable, Tabs } from "decky-frontend-lib";
-import { ReactElement, createContext, useEffect, useRef, useState } from "react";
+import { ReactElement, useEffect, useRef, useState } from "react";
 import { ActionSelection, PipelineContainer, PipelineTarget } from "../../backend";
 import HandleLoading from "../../components/HandleLoading";
 import { IconForTarget } from "../../components/IconForTarget";
+import { ConfigErrorContext } from "../../context/configErrorContext";
 import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
 import useReifiedPipeline from "../../hooks/useReifiedPipeline";
-import { DependencyError } from "../../types/backend_api";
 import PipelineHeader from "./PipelineHeader";
 import PipelineTargetDisplay from "./PipelineTargetDisplay";
 
-type ConfigErrors = {
-    [k: string]: DependencyError[];
-};
-export const ConfigErrorContext = createContext<ConfigErrors>({});
 
 interface PipelineDisplayProps {
     header: (container: PipelineContainer) => ReactElement,
@@ -92,9 +88,11 @@ export default function PipelineDisplay({ header, general, secondaryAction, seco
                         ...allTargets.map((kv) => {
                             return {
                                 title: kv.target,
-                                content: <ConfigErrorContext.Provider value={config_errors} >
-                                    <PipelineTargetDisplay root={kv.root} description={kv.description} />
-                                </ConfigErrorContext.Provider>,
+                                content: (
+                                    <ConfigErrorContext.Provider value={config_errors} >
+                                        <PipelineTargetDisplay root={kv.root} description={kv.description} />
+                                    </ConfigErrorContext.Provider>
+                                ),
                                 id: kv.target.toLowerCase(),
                             };
                         }),

@@ -104,10 +104,10 @@ impl SettingsSource for EmuDeckSource {
                             EmuDeckSource::CemuProton => cemu_proton_path,
                         }
                     }
-                    None => return emudeck_settings_file, // if this is missing, nothing works, so we return it as the path for deps to tell us its missing/wrong
+                    None => emudeck_settings_file, // if this is missing, nothing works, so we return it as the path for deps to tell us its missing/wrong
                 }
             }
-            Err(_) => return emudeck_settings_file, // same reasoning as previous return
+            Err(_) => emudeck_settings_file, // same reasoning as previous return
         }
     }
 }
