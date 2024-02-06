@@ -364,12 +364,8 @@ impl AppProfile {
 
         for (profile_id, o) in overrides.iter_mut() {
             for (action_id, action) in o.actions.actions.iter_mut() {
-                log::debug!("loading override {profile_id:?}");
                 // override the visibility with the profile visibility, since the QAM can't actually set it
                 let profile = ro.get().primary::<DbCategoryProfile>(*profile_id)?;
-                let profile = profile.map(|p| p.reconstruct(ro)).transpose()?;
-
-                log::debug!("loaded profile for {profile_id:?}; {profile:?}");
 
                 if let Some(profile) = profile {
                     action.is_visible_on_qam = profile
