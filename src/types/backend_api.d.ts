@@ -138,7 +138,7 @@ export type AppImageSource = "Cemu";
 export type EmuDeckSource = "CemuProton";
 export type DependencyError =
   | {
-      type: "System";
+      type: "SystemCmdNotFound";
       value: string;
     }
   | {
@@ -150,7 +150,7 @@ export type DependencyError =
       value: string;
     }
   | {
-      type: "PathShouldExist";
+      type: "PathNotFound";
       value: string;
     }
   | {

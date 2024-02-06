@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { Pipeline, PipelineDefinition, reifyPipeline } from "../backend";
+import { PipelineDefinition, ReifyPipelineResponse, reifyPipeline } from "../backend";
 import { Loading } from "../util/loading";
 
 
-const useReifiedPipeline = (definition: PipelineDefinition): Loading<Pipeline> => {
-    const [result, setResult] = useState<Loading<Pipeline>>(null);
+const useReifiedPipeline = (definition: PipelineDefinition): Loading<ReifyPipelineResponse> => {
+    const [result, setResult] = useState<Loading<ReifyPipelineResponse>>(null);
 
     useEffect(() => {
         let active = true;
@@ -18,7 +18,7 @@ const useReifiedPipeline = (definition: PipelineDefinition): Loading<Pipeline> =
                 return;
             }
 
-            setResult(res.map((r) => r.pipeline));
+            setResult(res);
         })();
 
         return () => { active = false; };

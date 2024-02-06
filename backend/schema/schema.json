@@ -559,7 +559,7 @@
             "type": {
               "type": "string",
               "enum": [
-                "System"
+                "SystemCmdNotFound"
               ]
             },
             "value": {
@@ -613,7 +613,7 @@
             "type": {
               "type": "string",
               "enum": [
-                "PathShouldExist"
+                "PathNotFound"
               ]
             },
             "value": {

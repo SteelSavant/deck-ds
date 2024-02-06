@@ -21,7 +21,6 @@ export default function EditAction({
     const type = cloned.type;
 
     const serverApi = useServerApi();
-
     const notConfigurable = null;
 
     switch (type) {

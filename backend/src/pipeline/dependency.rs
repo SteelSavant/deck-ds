@@ -16,13 +16,13 @@ use super::{
 #[serde(tag = "type", content = "value")]
 pub enum DependencyError {
     #[error("unable to find system command `{0}`")]
-    System(String),
+    SystemCmdNotFound(String),
     #[error("required path `{0}` should be a file, not a directory")]
     PathIsNotFile(PathBuf),
     #[error("required path `{0}` should be a directory, not a file")]
     PathIsNotDir(PathBuf),
     #[error("required path `{0}` does not exist")]
-    PathShouldExist(PathBuf),
+    PathNotFound(PathBuf),
     #[error("required kwin script `{0}` does not exist")]
     KwinScriptNotFound(String),
     #[error("required kwin script `{0}` failed to install")]
@@ -43,7 +43,7 @@ impl Dependency {
         match self {
             Dependency::System(program) => which(program)
                 .map(|_| ())
-                .map_err(|_| DependencyError::System(program.clone())),
+                .map_err(|_| DependencyError::SystemCmdNotFound(program.clone())),
             Dependency::Path { path, is_file } => {
                 if path.exists() {
                     if *is_file && path.is_file() {
@@ -54,7 +54,7 @@ impl Dependency {
                         Err(DependencyError::PathIsNotDir(path.clone()))
                     }
                 } else {
-                    Err(DependencyError::PathShouldExist(path.clone()))
+                    Err(DependencyError::PathNotFound(path.clone()))
                 }
             }
             Dependency::KwinScript(bundle_name) => ctx
@@ -87,6 +87,8 @@ impl PipelineDefinition {
         &self,
         ctx: &mut PipelineContext,
     ) -> HashMap<ActionId, Vec<DependencyError>> {
+        // TODO::this impl is technically incorrect, as it doesn't filter by enabled actions.
+        // However, as it is only used to display errors to the UI, that isn't currently a problem.
         self.actions
             .actions
             .iter()
