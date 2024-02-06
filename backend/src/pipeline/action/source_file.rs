@@ -184,7 +184,7 @@ impl ActionImpl for SourceFile {
                 is_file: true,
             },
             FileSource::Custom(CustomFileOptions { path: None, .. }) => {
-                Dependency::FieldNotSet("Custom File".to_string())
+                Dependency::ConfigField("Custom File".to_string())
             }
         };
         vec![dep]

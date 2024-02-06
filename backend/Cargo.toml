@@ -61,6 +61,7 @@ egui = "0.25.0"
 eframe = "0.25.0"
 winit = "0.29.9"
 type_reg = { version = "0.7.0", features = ["untagged"] }
+thiserror = "1.0.56"
 
 [features]
 default = ["online", "decky"]

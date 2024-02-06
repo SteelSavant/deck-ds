@@ -136,6 +136,35 @@ export type FileSource =
 export type FlatpakSource = "Cemu" | "Citra" | "MelonDS";
 export type AppImageSource = "Cemu";
 export type EmuDeckSource = "CemuProton";
+export type DependencyError =
+  | {
+      type: "System";
+      value: string;
+    }
+  | {
+      type: "PathIsNotFile";
+      value: string;
+    }
+  | {
+      type: "PathIsNotDir";
+      value: string;
+    }
+  | {
+      type: "PathShouldExist";
+      value: string;
+    }
+  | {
+      type: "KwinScriptNotFound";
+      value: string;
+    }
+  | {
+      type: "KwinScriptFailedInstall";
+      value: string;
+    }
+  | {
+      type: "FieldNotSet";
+      value: string;
+    };
 export type SelectionFor_ActionAnd_PipelineActionFor_Action =
   | {
       type: "Action";
@@ -341,6 +370,9 @@ export interface ReifyPipelineRequest {
   pipeline: PipelineDefinitionFor_Action;
 }
 export interface ReifyPipelineResponse {
+  config_errors: {
+    [k: string]: DependencyError[];
+  };
   pipeline: PipelineFor_Action;
 }
 export interface PipelineFor_Action {

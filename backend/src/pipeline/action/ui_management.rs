@@ -8,7 +8,10 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use xrandr::{Relation, XId};
 
-use crate::{pipeline::executor::PipelineContext, sys::x_display::ModePreference};
+use crate::{
+    pipeline::{dependency::Dependency, executor::PipelineContext},
+    sys::x_display::ModePreference,
+};
 
 use self::ui::DeckDsUi;
 
@@ -339,6 +342,17 @@ impl ActionImpl for UIManagement {
         ctx.display = Some(display);
 
         res
+    }
+
+    fn get_dependencies(
+        &self,
+        _ctx: &mut PipelineContext,
+    ) -> Vec<crate::pipeline::dependency::Dependency> {
+        vec![
+            // Display dependencies
+            Dependency::System("xrandr".to_string()),
+            Dependency::System("cvt".to_string()),
+        ]
     }
 
     #[inline]

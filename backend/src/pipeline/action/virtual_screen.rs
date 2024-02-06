@@ -80,9 +80,12 @@ impl ActionImpl for VirtualScreen {
     }
 
     fn get_dependencies(&self, _ctx: &mut PipelineContext) -> Vec<Dependency> {
-        vec![Dependency::KwinScript(
-            "truevideowall-v1.0.kwinscript".to_string(),
-        )]
+        vec![
+            Dependency::KwinScript("truevideowall-v1.0.kwinscript".to_string()),
+            // Display dependencies
+            Dependency::System("xrandr".to_string()),
+            Dependency::System("cvt".to_string()),
+        ]
     }
 
     #[inline]
