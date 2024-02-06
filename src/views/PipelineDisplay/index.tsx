@@ -3,10 +3,12 @@ import { ReactElement, useEffect, useRef, useState } from "react";
 import { ActionSelection, PipelineContainer, PipelineTarget } from "../../backend";
 import HandleLoading from "../../components/HandleLoading";
 import { IconForTarget } from "../../components/IconForTarget";
+import { ConfigErrorContext } from "../../context/configErrorContext";
 import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
 import useReifiedPipeline from "../../hooks/useReifiedPipeline";
 import PipelineHeader from "./PipelineHeader";
 import PipelineTargetDisplay from "./PipelineTargetDisplay";
+
 
 interface PipelineDisplayProps {
     header: (container: PipelineContainer) => ReactElement,
@@ -30,7 +32,7 @@ export default function PipelineDisplay({ header, general, secondaryAction, seco
         <HandleLoading
             value={result}
             onOk={
-                (pipeline) => {
+                ({ pipeline, config_errors }) => {
                     interface TargetDescriptor {
                         target: string,
                         root: ActionSelection,
@@ -74,6 +76,8 @@ export default function PipelineDisplay({ header, general, secondaryAction, seco
 
                     const allTargets = defaultTargets.concat(extraTargets);
 
+                    console.log('config errors to pass: ', config_errors);
+
                     const tabs = [
                         {
                             title: 'General',
@@ -84,7 +88,11 @@ export default function PipelineDisplay({ header, general, secondaryAction, seco
                         ...allTargets.map((kv) => {
                             return {
                                 title: kv.target,
-                                content: <PipelineTargetDisplay root={kv.root} description={kv.description} />,
+                                content: (
+                                    <ConfigErrorContext.Provider value={config_errors} >
+                                        <PipelineTargetDisplay root={kv.root} description={kv.description} />
+                                    </ConfigErrorContext.Provider>
+                                ),
                                 id: kv.target.toLowerCase(),
                             };
                         }),

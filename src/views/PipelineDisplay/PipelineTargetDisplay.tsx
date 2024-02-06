@@ -1,9 +1,11 @@
 import { DialogBody, DialogButton, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
-import { Fragment, ReactElement } from "react";
+import { Fragment, ReactElement, useContext } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Action, ActionOneOf, ActionSelection, PipelineAction, } from "../../backend";
 import ActionIcon from "../../components/ActionIcon";
+import ConfigErrorWarning from "../../components/ConfigErrorWarning";
 import EditAction from "../../components/EditAction";
+import { ConfigErrorContext } from "../../context/configErrorContext";
 import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
 
 export default function PipelineTargetDisplay({ root, description }: {
@@ -45,8 +47,7 @@ function buildAction(id: string, action: Action, indentLevel: number): ReactElem
                     }
                 });
         }
-    }
-    )
+    })
 }
 
 function buildOneOf(oneOf: ActionOneOf, indentLevel: number, qamHiddenByParent: boolean): ReactElement {
@@ -64,6 +65,10 @@ function buildAllOf(allOf: PipelineAction[], indentLevel: number, qamHiddenByPar
 
 function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHiddenByParent: boolean): ReactElement {
     const { dispatch } = useModifiablePipelineContainer();
+    const configErrors = useContext(ConfigErrorContext);
+
+    console.log('recieved config errors: ', configErrors);
+
 
     const selection = action.selection;
     const isEnabled = action.enabled;
@@ -87,11 +92,12 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
     const built = forcedEnabled || isEnabled
         ? buildSelection(action.id, action.selection, newIndentLevel, hideQamForChildren) : <div />;
     console.log(built?.props);
+
     return (
         <Fragment>
             <Field
                 indentLevel={indentLevel}
-                focusable={(!built && forcedEnabled) || (selection.type !== 'AllOf' && forcedEnabled && qamHiddenByParent)}
+                focusable={(!built && forcedEnabled) || (selection.type !== 'AllOf' && forcedEnabled && qamHiddenByParent && !configErrors[action.id])}
                 label={action.name}
                 description={action.description}
                 icon={<ActionIcon action={action} />}
@@ -99,6 +105,7 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
                 <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', }}>
                     {
                         [
+                            <ConfigErrorWarning errors={configErrors[action.id]} />,
                             forcedEnabled ? null
                                 : <Focusable>
                                     <Toggle value={isEnabled} onChange={(value) =>

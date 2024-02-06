@@ -77,7 +77,7 @@ pub fn autostart(
 
                         let res = lock.set_autostart_cfg(&settings::AutoStart {
                             game_id: args.game_id,
-                            pipeline: pipeline,
+                            pipeline,
                         });
                         match res {
                             Ok(_) => match steamos_session_select(Session::Plasma) {
@@ -96,7 +96,7 @@ pub fn autostart(
                         let executor = LoadedAutoStart::new(
                             settings::AutoStart {
                                 game_id: args.game_id,
-                                pipeline: pipeline,
+                                pipeline,
                             },
                             PipelineTarget::Gamemode,
                         )

@@ -353,7 +353,7 @@ impl DbCategoryProfile {
 impl AppProfile {
     pub fn load(app_id: &AppId, ro: &RTransaction) -> Result<Self> {
         // TODO::figure out if/how native_db supports multiple primary keys, so this can be done more efficiently
-        let overrides = HashMap::from_iter(
+        let mut overrides = HashMap::from_iter(
             ro.scan()
                 .primary()?
                 .all()
@@ -361,6 +361,31 @@ impl AppProfile {
                 .map(|app: DbAppOverride| Ok((app.id.1, app.pipeline.transform(ro)?)))
                 .collect::<Result<Vec<_>>>()?,
         );
+
+        for (profile_id, o) in overrides.iter_mut() {
+            let profile = ro.get().primary::<DbCategoryProfile>(*profile_id)?;
+
+            if let Some(profile) = profile {
+                // override the visibility with the profile visibility, since the QAM can't actually set it;
+                // same with name && exit hooks
+
+                o.register_exit_hooks = profile.pipeline.register_exit_hooks;
+                o.name = profile.pipeline.name;
+                o.description = profile.pipeline.description;
+
+                for (action_id, action) in o.actions.actions.iter_mut() {
+                    action.is_visible_on_qam = profile
+                        .pipeline
+                        .actions
+                        .actions
+                        .get(action_id)
+                        .unwrap_or_else(|| {
+                            panic!("action {action_id:?} should exist on profile {profile_id:?}")
+                        })
+                        .is_visible_on_qam;
+                }
+            }
+        }
 
         let default_profile = ro
             .get()

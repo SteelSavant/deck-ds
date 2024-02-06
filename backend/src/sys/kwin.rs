@@ -71,7 +71,7 @@ impl<'a> KWin<'a> {
         }
     }
 
-    fn get_bundle<P: AsRef<Path>>(&self, bundle_name: P) -> Option<Asset> {
+    pub fn get_bundle<P: AsRef<Path>>(&self, bundle_name: P) -> Option<Asset> {
         self.assets_manager.get(self.bundles_dir.join(bundle_name))
     }
 

@@ -8,8 +8,8 @@ import {
     useEffect,
     useState
 } from 'react';
-import { ApiError, getAppProfile, getDefaultAppOverrideForProfileRequest, getProfile, Pipeline, PipelineDefinition, reifyPipeline, setAppProfileOverride, setAppProfileSettings, setProfile } from '../backend';
-import { AppProfile, PipelineTarget } from '../types/backend_api';
+import { ApiError, getAppProfile, getDefaultAppOverrideForProfileRequest, getProfile, PipelineDefinition, reifyPipeline, setAppProfileOverride, setAppProfileSettings, setProfile } from '../backend';
+import { AppProfile, PipelineTarget, ReifyPipelineResponse } from '../types/backend_api';
 import { MaybeString } from '../types/short';
 import { Loading } from '../util/loading';
 import { patchPipeline, PipelineUpdate } from '../util/patch';
@@ -31,7 +31,7 @@ export type ShortAppDetails = {
 interface PublicAppState {
     appDetails: ShortAppDetails | null
     appProfile: Loading<AppProfile>
-    reifiedPipelines: { [k: string]: Result<Pipeline, ApiError> }
+    reifiedPipelines: { [k: string]: Result<ReifyPipelineResponse, ApiError> }
     openViews: { [k: string]: { [k: string]: boolean } },
 }
 
@@ -48,15 +48,15 @@ interface PublicAppStateContext
 
 // This class creates the getter and setter functions for all of the global state data.
 export class ShortAppDetailsState {
-    private delayMs = 1000
+    private readonly delayMs = 1000
     private appDetails: ShortAppDetails | null = null;
     private appProfile: Loading<AppProfile>;
-    private reifiedPipelines: { [k: string]: Result<Pipeline, ApiError> } = {};
+    private reifiedPipelines: { [k: string]: Result<ReifyPipelineResponse, ApiError> } = {};
     private openViews: { [k: string]: { [k: string]: boolean } } = {};
     private lastOnAppPageTime: number = 0
 
     // You can listen to this eventBus' 'stateUpdate' event and use that to trigger a useState or other function that causes a re-render
-    public eventBus = new EventTarget()
+    public readonly eventBus = new EventTarget()
 
     getPublicState(): PublicAppState {
         return {
@@ -151,8 +151,7 @@ export class ShortAppDetailsState {
             }
 
             if (overrides[profileId]) {
-                this.reifiedPipelines[profileId] = (await reifyPipeline({ pipeline: overrides[profileId] }))
-                    .map((r) => r.pipeline);
+                this.reifiedPipelines[profileId] = (await reifyPipeline({ pipeline: overrides[profileId] }));
 
                 console.log('load reified to:', this.reifiedPipelines[profileId]);
                 shouldUpdate = true;
@@ -244,12 +243,11 @@ export class ShortAppDetailsState {
                     for (const k in overrides) {
                         this.reifiedPipelines[k] = (await reifyPipeline({
                             pipeline: overrides[k]
-                        })).map((p) => p.pipeline);
+                        }));
                     }
 
                     console.log('refetched; updating to', this.appProfile.data?.overrides);
                 }
-
 
                 this.forceUpdate();
             }
@@ -260,9 +258,12 @@ export class ShortAppDetailsState {
 
     private setOnAppPageInternal(appDetails: ShortAppDetails | null, time: number) {
         const areEqual = _.isEqual(appDetails, this.appDetails);
+        console.log('trying to set app to', appDetails?.displayName);
         if (time < this.lastOnAppPageTime || areEqual) {
             return;
         }
+
+        console.log('setting app to ', appDetails?.displayName)
 
         this.appDetails = appDetails;
         this.appProfile = null;

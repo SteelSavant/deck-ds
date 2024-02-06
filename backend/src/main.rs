@@ -181,12 +181,12 @@ fn main() -> Result<()> {
     let settings = Arc::new(Mutex::new(settings));
 
     let assets_dir = config_dir.join("assets"); // TODO::keep assets with decky plugin, not config
-    let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir.clone());
+    let assets_manager = AssetManager::new(&ASSETS_DIR, assets_dir.clone());
     let request_handler = Arc::new(Mutex::new(RequestHandler::new()));
 
     // teardown persisted state, ignore errors for now
     if let Some(loaded) =
-        PipelineContext::load(asset_manager.clone(), home_dir.clone(), config_dir.clone())
+        PipelineContext::load(assets_manager.clone(), home_dir.clone(), config_dir.clone())
     {
         log::info!("Tearing down last executed pipeline");
         // TODO::this will cause display-dependent actions to automatically fail, but
@@ -199,7 +199,7 @@ fn main() -> Result<()> {
             // build the executor
             let executor = AutoStart::new(settings.clone())
                 .load()
-                .map(|l| l.build_executor(asset_manager, home_dir.clone(), config_dir.clone()));
+                .map(|l| l.build_executor(assets_manager, home_dir.clone(), config_dir.clone()));
 
             let thread_settings = settings.clone();
             std::thread::spawn(move || loop {
@@ -328,6 +328,9 @@ fn main() -> Result<()> {
                         request_handler.clone(),
                         profiles_db,
                         registrar.clone(),
+                        assets_manager.clone(),
+                        home_dir.clone(),
+                        config_dir.clone(),
                     ),
                 )
                 .register(
@@ -351,7 +354,7 @@ fn main() -> Result<()> {
                         profiles_db,
                         registrar.clone(),
                         settings.clone(),
-                        asset_manager,
+                        assets_manager,
                         home_dir,
                         config_dir,
                     ),

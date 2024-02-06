@@ -5,6 +5,7 @@ import { PipelineTarget } from "../../backend";
 import HandleLoading from "../../components/HandleLoading";
 import { IconForTarget } from "../../components/IconForTarget";
 import { ShortAppDetails, useAppState } from "../../context/appContext";
+import { ConfigErrorContext } from "../../context/configErrorContext";
 import useEnsureAppOverridePipeline from "../../hooks/useEnsureAppOverridePipeline";
 import useLaunchActions, { LaunchActions } from "../../hooks/useLaunchActions";
 import AppDefaultProfileDropdown from "./AppDefaultProfileDropdown";
@@ -153,8 +154,13 @@ function QAMTarget({ profileId, target }: { profileId: string, target: PipelineT
     return <HandleLoading
         value={reified}
         onOk={(reified) => {
-            const selection = reified.targets[target];
-            return <QAMPipelineTargetDisplay root={selection} />
+            const selection = reified.pipeline.targets[target];
+            console.log('setting QAM errors:', reified.config_errors);
+            return (
+                <ConfigErrorContext.Provider value={reified.config_errors} >
+                    <QAMPipelineTargetDisplay root={selection} />
+                </ConfigErrorContext.Provider>
+            )
         }}
     />
 

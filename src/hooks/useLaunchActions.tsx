@@ -1,7 +1,9 @@
-import { CategoryProfile, PipelineTarget, autoStart, reifyPipeline } from "../backend";
+import { showModal } from "decky-frontend-lib";
+import { CategoryProfile, PipelineTarget, autoStart, getProfile, reifyPipeline } from "../backend";
+import ConfigErrorModal from "../components/ConfigErrorModal";
 import { ShortAppDetails } from "../context/appContext";
+import { DependencyError } from "../types/backend_api";
 import useProfiles from "./useProfiles";
-
 
 export interface LaunchActions {
     profile: CategoryProfile,
@@ -16,16 +18,11 @@ type LaunchTarget = {
 const useLaunchActions = (appDetails: ShortAppDetails | null): LaunchActions[] => {
     let { profiles } = useProfiles();
 
-    if (!appDetails) {
-        return [];
-    }
-
-    if (profiles?.isOk) {
+    if (appDetails && profiles?.isOk) {
         const loadedProfiles = profiles.data;
         const includedProfiles = new Set<string>();
         const validProfiles = collectionStore.userCollections.flatMap((uc) => {
             const containsApp = uc.apps.get(appDetails.appId);
-
 
             if (containsApp) {
                 const matchedProfiles = loadedProfiles
@@ -48,21 +45,46 @@ const useLaunchActions = (appDetails: ShortAppDetails | null): LaunchActions[] =
 
             for (const key in targets) {
                 const action = async () => {
+
+                    // HACK: QAM does weird caching that means the profile can be outdated, 
+                    // so we reload the profile in the action to ensure it is current
+                    const currentPipeline = await getProfile({
+                        profile_id: p.id
+                    });
+
+                    p = (currentPipeline?.isOk
+                        ? currentPipeline.data.profile
+                        : null
+                    ) ?? p;
+
+                    // Reify pipeline and run autostart procedure for target
+
                     const reified = (await reifyPipeline({
                         pipeline: p.pipeline
                     }));
 
-
                     if (reified.isOk) {
-                        const res = await autoStart({
-                            game_id: appDetails.gameId,
-                            app_id: appDetails.appId.toString(),
-                            profile_id: p.id,
-                            target: key as PipelineTarget
-                        });
+                        const configErrors = reified.data.config_errors;
+                        const errors: DependencyError[] = [];
+                        for (const key in configErrors) {
+                            errors.push(...configErrors[key])
+                        }
 
-                        if (!res.isOk) {
-                            // TODO::handle error
+                        if (errors.length > 0) {
+                            showModal(
+                                <ConfigErrorModal errors={errors} />
+                            );
+                        } else {
+                            const res = await autoStart({
+                                game_id: appDetails.gameId,
+                                app_id: appDetails.appId.toString(),
+                                profile_id: p.id,
+                                target: key as PipelineTarget
+                            });
+
+                            if (!res.isOk) {
+                                // TODO::handle error
+                            }
                         }
                     } else {
                         // TODO::handle error

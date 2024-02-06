@@ -1,4 +1,8 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -6,10 +10,16 @@ use serde::{Deserialize, Serialize};
 use anyhow::Result;
 
 use crate::{
+    asset::AssetManager,
     db::ProfileDb,
     pipeline::{
+        action::{Action, ErasedPipelineAction},
         action_registar::PipelineActionRegistrar,
-        data::{Pipeline, PipelineDefinition, Template},
+        data::{
+            Pipeline, PipelineAction, PipelineActionId, PipelineDefinition, Selection, Template,
+        },
+        dependency::DependencyError,
+        executor::PipelineContext,
     },
     settings::{AppId, AppProfile, CategoryProfile, ProfileId},
 };
@@ -331,14 +341,26 @@ pub fn get_default_app_override_pipeline_for_profile(
 
                             let mut lookup = registrar.make_lookup(&pipeline.targets);
 
-                            for action in lookup.actions.values_mut() {
-                                action.profile_override = Some(args.profile_id)
+                            for (id, action) in lookup.actions.iter_mut() {
+                                action.profile_override = Some(args.profile_id);
+                                // override the visibility with the profile visibility, since the QAM can't actually set it
+                                action.is_visible_on_qam = pipeline
+                                    .actions
+                                    .actions
+                                    .get(id)
+                                    .unwrap_or_else(|| {
+                                        panic!(
+                                            "action {id:?} should exist on profile {:?}",
+                                            profile.id
+                                        )
+                                    })
+                                    .is_visible_on_qam;
                             }
 
-                            return PipelineDefinition {
+                            PipelineDefinition {
                                 actions: lookup,
                                 ..pipeline
-                            };
+                            }
                         }),
                     }
                     .to_response(),
@@ -360,13 +382,21 @@ pub struct ReifyPipelineRequest {
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct ReifyPipelineResponse {
     pipeline: Pipeline,
+    config_errors: HashMap<PipelineActionId, Vec<DependencyError>>,
 }
 
 pub fn reify_pipeline(
     request_handler: Arc<Mutex<RequestHandler>>,
     profiles: &'static ProfileDb,
     registrar: PipelineActionRegistrar,
+    assets_manager: AssetManager<'static>,
+    home_dir: PathBuf,
+    config_dir: PathBuf,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+    let assets_manager = Arc::new(assets_manager);
+    let home_dir = Arc::new(home_dir);
+    let config_dir = Arc::new(config_dir);
+
     move |args: super::ApiParameterType| {
         log_invoke("reify_pipeline", &args);
 
@@ -380,9 +410,19 @@ pub fn reify_pipeline(
         match args {
             Ok(args) => match profiles.get_profiles() {
                 Ok(profiles) => {
+                    let ctx = &mut PipelineContext::new(
+                        (*assets_manager).clone(),
+                        (*home_dir).clone(),
+                        (*config_dir).clone(),
+                    );
                     let res = args.pipeline.reify(&profiles, &registrar);
+
                     match res {
-                        Ok(pipeline) => ReifyPipelineResponse { pipeline }.to_response(),
+                        Ok(pipeline) => ReifyPipelineResponse {
+                            config_errors: check_config_errors(&pipeline, ctx),
+                            pipeline,
+                        }
+                        .to_response(),
                         Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
                     }
                 }
@@ -391,6 +431,61 @@ pub fn reify_pipeline(
             Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
         }
     }
+}
+
+fn check_config_errors(
+    pipeline: &Pipeline,
+    ctx: &mut PipelineContext,
+) -> HashMap<PipelineActionId, Vec<DependencyError>> {
+    fn collect_actions<'a>(
+        selection: &'a Selection<PipelineAction>,
+        parent_id: &PipelineActionId,
+    ) -> Vec<(PipelineActionId, &'a Action)> {
+        match selection {
+            crate::pipeline::data::generic::Selection::Action(action) => {
+                vec![(parent_id.clone(), action)]
+            }
+            crate::pipeline::data::generic::Selection::OneOf { selection, actions } => {
+                let action = actions
+                    .iter()
+                    .find(|a| a.id == *selection)
+                    .expect("selected action should exist");
+
+                collect_actions(&action.selection, &action.id)
+            }
+            crate::pipeline::data::generic::Selection::AllOf(actions) => actions
+                .iter()
+                .flat_map(|a| collect_actions(&a.selection, &a.id))
+                .collect(),
+        }
+    }
+
+    let deps: HashMap<_, _> = pipeline
+        .targets
+        .iter()
+        .flat_map(|(_target, selection)| {
+            let actions = collect_actions(selection, &PipelineActionId::new("root"));
+
+            let mut kv = vec![];
+            for a in actions.into_iter() {
+                kv.push((a.0, a.1.get_dependencies(ctx)));
+            }
+
+            kv
+        })
+        .filter(|v| !v.1.is_empty())
+        .collect();
+
+    deps.into_iter()
+        .map(|(id, dep)| {
+            (
+                id,
+                dep.into_iter()
+                    .filter_map(|d| d.verify_config(ctx).err())
+                    .collect(),
+            )
+        })
+        .collect()
 }
 
 // Templates

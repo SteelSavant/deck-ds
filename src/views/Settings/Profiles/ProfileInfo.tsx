@@ -23,7 +23,6 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
         })
     }
 
-
     function addTag() {
         showModal(<AddProfileTagModal onSave={(tag) => {
             const unique = new Set(profile.tags);
