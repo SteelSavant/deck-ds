@@ -9,7 +9,7 @@ use crate::{
 };
 
 use super::{
-    desktop_session_handler::{Pos, Size},
+    session_handler::{Pos, Size},
     ActionId, ActionImpl,
 };
 
@@ -71,7 +71,7 @@ impl ActionImpl for VirtualScreen {
 
         let res = display.set_output_position(&deck, &Relation::Below, &external);
 
-        ctx.send_ui_event(super::desktop_session_handler::UiEvent::UpdateViewports {
+        ctx.send_ui_event(super::session_handler::UiEvent::UpdateViewports {
             primary_size: Size(resolution.w, resolution.h),
             secondary_size: Size(resolution.w, resolution.h),
             primary_position: Pos(0, 0),

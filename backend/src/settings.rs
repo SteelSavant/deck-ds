@@ -15,7 +15,7 @@ newtype_strid!("", GameId);
 use crate::{
     macros::{newtype_strid, newtype_uuid},
     pipeline::{
-        action::desktop_session_handler::DesktopSessionHandler,
+        action::session_handler::DesktopSessionHandler,
         data::{Pipeline, PipelineDefinition, PipelineTarget},
     },
     util::create_dir_all,

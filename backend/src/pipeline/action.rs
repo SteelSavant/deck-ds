@@ -5,10 +5,11 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::macros::newtype_uuid;
 
+use self::display_config::DisplayConfig;
 use self::{
-    cemu_layout::CemuLayout, citra_layout::CitraLayout,
-    desktop_session_handler::DesktopSessionHandler, melonds_layout::MelonDSLayout,
-    multi_window::MultiWindow, source_file::SourceFile, virtual_screen::VirtualScreen,
+    cemu_layout::CemuLayout, citra_layout::CitraLayout, melonds_layout::MelonDSLayout,
+    multi_window::MultiWindow, session_handler::DesktopSessionHandler, source_file::SourceFile,
+    virtual_screen::VirtualScreen,
 };
 
 use super::{data::Selection, dependency::Dependency, executor::PipelineContext};
@@ -16,11 +17,14 @@ use anyhow::Result;
 
 pub mod cemu_layout;
 pub mod citra_layout;
-pub mod desktop_session_handler;
+mod desktop;
 pub mod melonds_layout;
 pub mod multi_window;
 pub mod source_file;
 pub mod virtual_screen;
+
+pub use desktop::display_config;
+pub use desktop::session_handler;
 
 pub trait ActionImpl: DeserializeOwned + Serialize {
     /// Type of runtime state of the action
@@ -102,6 +106,7 @@ newtype_uuid!(ActionId);
 #[serde(tag = "type", content = "value")]
 pub enum Action {
     DesktopSessionHandler(DesktopSessionHandler),
+    DisplayConfig(DisplayConfig),
     VirtualScreen(VirtualScreen),
     MultiWindow(MultiWindow),
     CitraLayout(CitraLayout),
@@ -122,6 +127,7 @@ impl Action {
             Action::DesktopSessionHandler(a) => {
                 Action::DesktopSessionHandler(DesktopSessionHandler { id, ..*a })
             }
+            Action::DisplayConfig(a) => Action::DisplayConfig(DisplayConfig { id, ..a.clone() }),
             Action::VirtualScreen(_) => Action::VirtualScreen(VirtualScreen { id }),
             Action::MultiWindow(_) => Action::MultiWindow(MultiWindow { id }),
             Action::CitraLayout(a) => Action::CitraLayout(CitraLayout { id, ..*a }),

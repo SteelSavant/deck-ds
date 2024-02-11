@@ -6,9 +6,9 @@ use native_db::transaction::{RTransaction, RwTransaction};
 
 use crate::{
     db::model::{
-        DbAction, DbCategoryProfile, DbCemuLayout, DbCitraLayout, DbMelonDSLayout, DbMultiWindow,
-        DbPipelineActionLookup, DbPipelineActionSettings, DbPipelineDefinition, DbSelection,
-        DbSourceFile, DbVirtualScreen,
+        v1::DbDisplayConfig, DbAction, DbCategoryProfile, DbCemuLayout, DbCitraLayout,
+        DbDesktopConfig, DbMelonDSLayout, DbMultiWindow, DbPipelineActionLookup,
+        DbPipelineActionSettings, DbPipelineDefinition, DbSelection, DbSourceFile, DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionId, ErasedPipelineAction},
@@ -46,6 +46,10 @@ impl CategoryProfile {
                     Action::DesktopSessionHandler(action) => {
                         rw.insert::<DbDesktopSessionHandler>(action.into())?;
                         DbAction::DesktopSessionHandler(id)
+                    }
+                    Action::DisplayConfig(action) => {
+                        rw.insert::<DbDesktopConfig>(action.into())?;
+                        DbAction::DisplayConfig(id)
                     }
                     Action::VirtualScreen(action) => {
                         rw.insert::<DbVirtualScreen>(action.into())?;
@@ -173,6 +177,10 @@ impl DbCategoryProfile {
                         let action = ro.get().primary::<DbDesktopSessionHandler>(id)?;
                         action.map(|a| Action::DesktopSessionHandler(a.into()))
                     }
+                    DbAction::DisplayConfig(id) => {
+                        let action = ro.get().primary::<DbDisplayConfig>(id)?;
+                        action.map(|a| Action::DisplayConfig(a.into()))
+                    }
                     DbAction::VirtualScreen(id) => {
                         let action = ro.get().primary::<DbVirtualScreen>(id)?;
                         action.map(|a| Action::VirtualScreen(a.into()))
@@ -281,6 +289,10 @@ impl DbCategoryProfile {
                 let transformed = match *self {
                     DbAction::DesktopSessionHandler(id) => {
                         let action = rw.get().primary::<DbDesktopSessionHandler>(id)?;
+                        action.map(|a| rw.remove(a))
+                    }
+                    DbAction::DisplayConfig(id) => {
+                        let action = rw.get().primary::<DbDesktopConfig>(id)?;
                         action.map(|a| rw.remove(a))
                     }
                     DbAction::VirtualScreen(id) => {

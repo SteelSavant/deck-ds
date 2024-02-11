@@ -10,8 +10,9 @@ use crate::{
         action::{
             cemu_layout::{CemuLayout, CemuLayoutState},
             citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
-            desktop_session_handler::DesktopSessionHandler,
+            display_config::DisplayConfig,
             melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
+            session_handler::DesktopSessionHandler,
             ActionId,
         },
         data::generic,
@@ -37,14 +38,15 @@ pub type DbDesktopSessionHandler = v1::DbDesktopSessionHandler;
 pub type DbMultiWindow = v1::DbMultiWindow;
 pub type DbSourceFile = v1::DbSourceFile;
 pub type DbVirtualScreen = v1::DbVirtualScreen;
+pub type DbDesktopConfig = v1::DbDisplayConfig;
 
 pub mod v1 {
     // Core
 
     use crate::{
         pipeline::action::{
-            desktop_session_handler::{RelativeLocation, TeardownExternalSettings},
             multi_window::MultiWindow,
+            session_handler::{ExternalDisplaySettings, RelativeLocation},
             source_file::{
                 AppImageSource, CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource,
                 SourceFile,
@@ -92,6 +94,7 @@ pub mod v1 {
     #[derive(Debug, Clone, Deserialize, Serialize)]
     pub enum DbAction {
         DesktopSessionHandler(ActionId),
+        DisplayConfig(ActionId),
         VirtualScreen(ActionId),
         MultiWindow(ActionId),
         CitraLayout(ActionId),
@@ -278,7 +281,7 @@ pub mod v1 {
     pub struct DbDesktopSessionHandler {
         #[primary_key]
         pub id: ActionId,
-        pub teardown_external_settings: DbTeardownExternalSettings,
+        pub teardown_external_settings: DbExternalDisplaySettings,
         pub teardown_deck_location: DbRelativeLocation,
     }
 
@@ -286,17 +289,7 @@ pub mod v1 {
         fn from(value: DesktopSessionHandler) -> Self {
             Self {
                 id: value.id,
-                teardown_external_settings: match value.teardown_external_settings {
-                    TeardownExternalSettings::Previous => DbTeardownExternalSettings::Previous,
-                    TeardownExternalSettings::Native => DbTeardownExternalSettings::Native,
-                    TeardownExternalSettings::Preference(v) => {
-                        DbTeardownExternalSettings::Preference(DbModePreference {
-                            resolution: v.resolution.into(),
-                            aspect_ratio: v.aspect_ratio.into(),
-                            refresh: v.refresh.into(),
-                        })
-                    }
-                },
+                teardown_external_settings: value.teardown_external_settings.into(),
                 teardown_deck_location: match value.teardown_deck_location {
                     RelativeLocation::Above => DbRelativeLocation::Above,
                     RelativeLocation::Below => DbRelativeLocation::Below,
@@ -304,6 +297,62 @@ pub mod v1 {
                     RelativeLocation::RightOf => DbRelativeLocation::RightOf,
                     RelativeLocation::SameAs => DbRelativeLocation::SameAs,
                 },
+            }
+        }
+    }
+
+    impl From<ExternalDisplaySettings> for DbExternalDisplaySettings {
+        fn from(value: ExternalDisplaySettings) -> Self {
+            match value {
+                ExternalDisplaySettings::Previous => DbExternalDisplaySettings::Previous,
+                ExternalDisplaySettings::Native => DbExternalDisplaySettings::Native,
+                ExternalDisplaySettings::Preference(v) => {
+                    DbExternalDisplaySettings::Preference(DbModePreference {
+                        resolution: v.resolution.into(),
+                        aspect_ratio: v.aspect_ratio.into(),
+                        refresh: v.refresh.into(),
+                    })
+                }
+            }
+        }
+    }
+
+    impl From<DbExternalDisplaySettings> for ExternalDisplaySettings {
+        fn from(value: DbExternalDisplaySettings) -> Self {
+            match value {
+                DbExternalDisplaySettings::Previous => ExternalDisplaySettings::Previous,
+                DbExternalDisplaySettings::Native => ExternalDisplaySettings::Native,
+                DbExternalDisplaySettings::Preference(v) => {
+                    ExternalDisplaySettings::Preference(ModePreference {
+                        resolution: v.resolution.into(),
+                        aspect_ratio: v.aspect_ratio.into(),
+                        refresh: v.refresh.into(),
+                    })
+                }
+            }
+        }
+    }
+
+    impl From<RelativeLocation> for DbRelativeLocation {
+        fn from(value: RelativeLocation) -> Self {
+            match value {
+                RelativeLocation::Above => DbRelativeLocation::Above,
+                RelativeLocation::Below => DbRelativeLocation::Below,
+                RelativeLocation::LeftOf => DbRelativeLocation::LeftOf,
+                RelativeLocation::RightOf => DbRelativeLocation::RightOf,
+                RelativeLocation::SameAs => DbRelativeLocation::SameAs,
+            }
+        }
+    }
+
+    impl From<DbRelativeLocation> for RelativeLocation {
+        fn from(value: DbRelativeLocation) -> Self {
+            match value {
+                DbRelativeLocation::Above => RelativeLocation::Above,
+                DbRelativeLocation::Below => RelativeLocation::Below,
+                DbRelativeLocation::LeftOf => RelativeLocation::LeftOf,
+                DbRelativeLocation::RightOf => RelativeLocation::RightOf,
+                DbRelativeLocation::SameAs => RelativeLocation::SameAs,
             }
         }
     }
@@ -345,10 +394,10 @@ pub mod v1 {
             Self {
                 id: value.id,
                 teardown_external_settings: match value.teardown_external_settings {
-                    DbTeardownExternalSettings::Previous => TeardownExternalSettings::Previous,
-                    DbTeardownExternalSettings::Native => TeardownExternalSettings::Native,
-                    DbTeardownExternalSettings::Preference(v) => {
-                        TeardownExternalSettings::Preference(ModePreference {
+                    DbExternalDisplaySettings::Previous => ExternalDisplaySettings::Previous,
+                    DbExternalDisplaySettings::Native => ExternalDisplaySettings::Native,
+                    DbExternalDisplaySettings::Preference(v) => {
+                        ExternalDisplaySettings::Preference(ModePreference {
                             resolution: v.resolution.into(),
                             aspect_ratio: v.aspect_ratio.into(),
                             refresh: v.refresh.into(),
@@ -410,7 +459,7 @@ pub mod v1 {
 
     #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
     #[serde(tag = "type", content = "value")]
-    pub enum DbTeardownExternalSettings {
+    pub enum DbExternalDisplaySettings {
         /// Previous resolution, before setup
         #[default]
         Previous,
@@ -579,12 +628,43 @@ pub mod v1 {
             Self { id: value.id }
         }
     }
+
+    #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
+    #[native_db]
+    #[native_model(id = 8, version = 1, with = NativeModelJSON)]
+    pub struct DbDisplayConfig {
+        #[primary_key]
+        pub id: ActionId,
+        pub external_display_settings: DbExternalDisplaySettings,
+        pub deck_location: Option<DbRelativeLocation>,
+    }
+
+    impl From<DisplayConfig> for DbDisplayConfig {
+        fn from(value: DisplayConfig) -> Self {
+            Self {
+                id: value.id,
+                external_display_settings: value.external_display_settings.into(),
+                deck_location: value.deck_location.map(|v| v.into()),
+            }
+        }
+    }
+
+    impl From<DbDisplayConfig> for DisplayConfig {
+        fn from(value: DbDisplayConfig) -> Self {
+            Self {
+                id: value.id,
+                external_display_settings: value.external_display_settings.into(),
+                deck_location: value.deck_location.map(|v| v.into()),
+            }
+        }
+    }
 }
 
 impl DbAction {
     pub fn get_id(&self) -> ActionId {
         match *self {
             v1::DbAction::DesktopSessionHandler(id) => id,
+            v1::DbAction::DisplayConfig(id) => id,
             v1::DbAction::VirtualScreen(id) => id,
             v1::DbAction::MultiWindow(id) => id,
             v1::DbAction::CitraLayout(id) => id,

@@ -6,16 +6,15 @@ use std::{
 use anyhow::{Context, Ok, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use xrandr::{Relation, XId};
+use xrandr::XId;
 
-use crate::{
-    pipeline::{dependency::Dependency, executor::PipelineContext},
-    sys::x_display::ModePreference,
-};
+use crate::pipeline::{dependency::Dependency, executor::PipelineContext};
 
 use self::ui::DeckDsUi;
 
-use super::{ActionId, ActionImpl};
+use super::super::{ActionId, ActionImpl};
+
+pub use super::common::{ExternalDisplaySettings, RelativeLocation};
 
 mod ui;
 
@@ -27,7 +26,7 @@ pub use ui::UiEvent;
 pub struct DesktopSessionHandler {
     pub id: ActionId,
 
-    pub teardown_external_settings: TeardownExternalSettings,
+    pub teardown_external_settings: ExternalDisplaySettings,
     pub teardown_deck_location: RelativeLocation,
 }
 impl DesktopSessionHandler {
@@ -38,8 +37,8 @@ impl DesktopSessionHandler {
             .with_context(|| "DesktopSessionHandler requires x11 to be running")?;
         if let Some(current_output) = display.get_preferred_external_output()? {
             match self.teardown_external_settings {
-                TeardownExternalSettings::Previous => Ok(()),
-                TeardownExternalSettings::Native => {
+                ExternalDisplaySettings::Previous => Ok(()),
+                ExternalDisplaySettings::Native => {
                     let mode = current_output
                         .preferred_modes
                         .iter()
@@ -64,7 +63,7 @@ impl DesktopSessionHandler {
                         Ok(())
                     }
                 }
-                TeardownExternalSettings::Preference(preference) => {
+                ExternalDisplaySettings::Preference(preference) => {
                     display.set_or_create_preferred_mode(&current_output, &preference)
                 }
             }?;
@@ -151,40 +150,6 @@ impl<'de> Deserialize<'de> for DisplayState {
     {
         SerialiableDisplayState::deserialize(deserializer).map(|de| de.into())
     }
-}
-
-#[derive(Debug, Default, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-pub enum RelativeLocation {
-    Above,
-    #[default]
-    Below,
-    LeftOf,
-    RightOf,
-    SameAs,
-}
-
-impl From<RelativeLocation> for Relation {
-    fn from(value: RelativeLocation) -> Self {
-        match value {
-            RelativeLocation::Above => Relation::Above,
-            RelativeLocation::Below => Relation::Below,
-            RelativeLocation::LeftOf => Relation::LeftOf,
-            RelativeLocation::RightOf => Relation::RightOf,
-            RelativeLocation::SameAs => Relation::SameAs,
-        }
-    }
-}
-
-#[derive(Debug, Default, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "type", content = "value")]
-pub enum TeardownExternalSettings {
-    /// Previous resolution, before setup
-    #[default]
-    Previous,
-    /// Native resolution
-    Native,
-    /// Resolution based on specific settings
-    Preference(ModePreference),
 }
 
 impl DisplayState {
@@ -286,18 +251,18 @@ impl ActionImpl for DesktopSessionHandler {
                 };
 
                 match self.teardown_external_settings {
-                    TeardownExternalSettings::Previous => match state.previous_output_mode {
+                    ExternalDisplaySettings::Previous => match state.previous_output_mode {
                         Some(mode) => {
                             let mode = display.get_mode(mode)?;
                             display.set_output_mode(&current_output, &mode)
                         }
                         None => DesktopSessionHandler {
-                            teardown_external_settings: TeardownExternalSettings::Native,
+                            teardown_external_settings: ExternalDisplaySettings::Native,
                             ..*self
                         }
                         .teardown(ctx),
                     },
-                    TeardownExternalSettings::Native => {
+                    ExternalDisplaySettings::Native => {
                         let mode = current_output
                             .preferred_modes
                             .iter()
@@ -322,7 +287,7 @@ impl ActionImpl for DesktopSessionHandler {
                             Ok(())
                         }
                     }
-                    TeardownExternalSettings::Preference(preference) => {
+                    ExternalDisplaySettings::Preference(preference) => {
                         display.set_or_create_preferred_mode(&current_output, &preference)
                     }
                 }?;

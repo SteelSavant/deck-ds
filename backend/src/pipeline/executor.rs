@@ -12,9 +12,9 @@ use typemap::{Key, TypeMap};
 use crate::asset::AssetManager;
 use crate::pipeline::action::cemu_layout::CemuLayout;
 use crate::pipeline::action::citra_layout::CitraLayout;
-use crate::pipeline::action::desktop_session_handler::DesktopSessionHandler;
 use crate::pipeline::action::melonds_layout::MelonDSLayout;
 use crate::pipeline::action::multi_window::MultiWindow;
+use crate::pipeline::action::session_handler::DesktopSessionHandler;
 use crate::pipeline::action::source_file::SourceFile;
 use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::data::{PipelineAction, Selection};
@@ -23,7 +23,7 @@ use crate::sys::app_process::AppProcess;
 use crate::sys::kwin::KWin;
 use crate::sys::x_display::XDisplay;
 
-use super::action::desktop_session_handler::UiEvent;
+use super::action::session_handler::UiEvent;
 use super::action::{Action, ErasedPipelineAction};
 use super::data::{Pipeline, PipelineTarget};
 
@@ -167,6 +167,7 @@ impl<'a> PipelineContext<'a> {
         for action in self.have_run.iter() {
             match action {
                 Action::DesktopSessionHandler(a) => insert_action(self, &mut map, a),
+                Action::DisplayConfig(a) => insert_action(self, &mut map, a),
                 Action::VirtualScreen(a) => insert_action(self, &mut map, a),
                 Action::MultiWindow(a) => insert_action(self, &mut map, a),
                 Action::CitraLayout(a) => insert_action(self, &mut map, a),
@@ -516,8 +517,9 @@ mod tests {
         pipeline::action::{
             cemu_layout::CemuLayoutState,
             citra_layout::{CitraLayoutOption, CitraLayoutState, CitraState},
-            desktop_session_handler::{DisplayState, RelativeLocation, TeardownExternalSettings},
+            display_config::DisplayConfig,
             melonds_layout::{MelonDSLayoutOption, MelonDSLayoutState, MelonDSSizingOption},
+            session_handler::{DisplayState, ExternalDisplaySettings, RelativeLocation},
             source_file::{FileSource, FlatpakSource},
             ActionId,
         },
@@ -546,7 +548,7 @@ mod tests {
         ctx.have_run = vec![
             DesktopSessionHandler {
                 id: ActionId::nil(),
-                teardown_external_settings: TeardownExternalSettings::Native,
+                teardown_external_settings: ExternalDisplaySettings::Native,
                 teardown_deck_location: RelativeLocation::Below,
             }
             .clone()
@@ -593,8 +595,8 @@ mod tests {
         ];
 
         ctx.set_state::<DesktopSessionHandler>(DisplayState::default());
-        // ctx.set_state::<VirtualScreen>(());
-        // ctx.set_state::<MultiWindow>(());
+        ctx.set_state::<VirtualScreen>(false);
+        ctx.set_state::<MultiWindow>(false);
         ctx.set_state::<SourceFile>("some_random_path".into());
         ctx.set_state::<CemuLayout>(CemuLayoutState {
             separate_gamepad_view: true,
@@ -628,6 +630,7 @@ mod tests {
         }
 
         check_state::<DesktopSessionHandler>(&ctx, &loaded);
+        check_state::<DisplayConfig>(&ctx, &loaded);
         check_state::<VirtualScreen>(&ctx, &loaded);
         check_state::<MultiWindow>(&ctx, &loaded);
         check_state::<SourceFile>(&ctx, &loaded);

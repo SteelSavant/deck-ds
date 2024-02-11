@@ -5,14 +5,14 @@ use xrandr::{Output, Relation};
 
 use crate::{
     pipeline::{
-        action::desktop_session_handler::{Pos, Size},
+        action::session_handler::{Pos, Size},
         dependency::Dependency,
         executor::PipelineContext,
     },
     sys::x_display::XDisplay,
 };
 
-use super::{desktop_session_handler::UiEvent, ActionId, ActionImpl};
+use super::{session_handler::UiEvent, ActionId, ActionImpl};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct MultiWindow {

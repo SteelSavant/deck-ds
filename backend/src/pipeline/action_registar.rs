@@ -6,11 +6,9 @@ use super::{
     action::{
         cemu_layout::{CemuLayout, CemuLayoutState},
         citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
-        desktop_session_handler::{
-            DesktopSessionHandler, RelativeLocation, TeardownExternalSettings,
-        },
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
         multi_window::MultiWindow,
+        session_handler::{DesktopSessionHandler, ExternalDisplaySettings, RelativeLocation},
         source_file::{CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile},
         virtual_screen::VirtualScreen,
         ActionId,
@@ -226,7 +224,7 @@ impl PipelineActionRegistarBuilder {
                             profile_override: None,
                             selection: DesktopSessionHandler {
                                 id: ActionId::nil(),
-                                teardown_external_settings: TeardownExternalSettings::Previous,
+                                teardown_external_settings: ExternalDisplaySettings::Previous,
                                 teardown_deck_location: RelativeLocation::Below,
                             } .into(),
                         },
