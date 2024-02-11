@@ -23,7 +23,7 @@ export default function QAMEditAction({
     const notConfigurable = null;
 
     switch (type) {
-        case 'UIManagement':
+        case 'DesktopSessionHandler':
             const display = cloned.value;
             const locations: RelativeLocation[] = ['Above', 'Below', 'LeftOf', 'RightOf']; // SameAs excluded because it doesn't really make sense
             const externalSettings: TeardownExternalSettings[] = [{ type: 'Previous' }, { type: 'Native' }] // Preference excluded because its a pain to configure, and I'm pretty sure doesn't work

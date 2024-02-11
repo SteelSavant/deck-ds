@@ -6,9 +6,9 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use crate::macros::newtype_uuid;
 
 use self::{
-    cemu_layout::CemuLayout, citra_layout::CitraLayout, melonds_layout::MelonDSLayout,
-    multi_window::MultiWindow, source_file::SourceFile, ui_management::UIManagement,
-    virtual_screen::VirtualScreen,
+    cemu_layout::CemuLayout, citra_layout::CitraLayout,
+    desktop_session_handler::DesktopSessionHandler, melonds_layout::MelonDSLayout,
+    multi_window::MultiWindow, source_file::SourceFile, virtual_screen::VirtualScreen,
 };
 
 use super::{data::Selection, dependency::Dependency, executor::PipelineContext};
@@ -16,10 +16,10 @@ use anyhow::Result;
 
 pub mod cemu_layout;
 pub mod citra_layout;
+pub mod desktop_session_handler;
 pub mod melonds_layout;
 pub mod multi_window;
 pub mod source_file;
-pub mod ui_management;
 pub mod virtual_screen;
 
 pub trait ActionImpl: DeserializeOwned + Serialize {
@@ -101,7 +101,7 @@ newtype_uuid!(ActionId);
 #[enum_delegate::implement(ErasedPipelineAction)]
 #[serde(tag = "type", content = "value")]
 pub enum Action {
-    UIManagement(UIManagement),
+    DesktopSessionHandler(DesktopSessionHandler),
     VirtualScreen(VirtualScreen),
     MultiWindow(MultiWindow),
     CitraLayout(CitraLayout),
@@ -119,7 +119,9 @@ impl<T: Into<Action>, R> From<T> for Selection<R> {
 impl Action {
     pub fn cloned_with_id(&self, id: ActionId) -> Self {
         match self {
-            Action::UIManagement(a) => Action::UIManagement(UIManagement { id, ..*a }),
+            Action::DesktopSessionHandler(a) => {
+                Action::DesktopSessionHandler(DesktopSessionHandler { id, ..*a })
+            }
             Action::VirtualScreen(_) => Action::VirtualScreen(VirtualScreen { id }),
             Action::MultiWindow(_) => Action::MultiWindow(MultiWindow { id }),
             Action::CitraLayout(a) => Action::CitraLayout(CitraLayout { id, ..*a }),

@@ -24,18 +24,18 @@ pub use ui::Size;
 pub use ui::UiEvent;
 
 #[derive(Debug, Default, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-pub struct UIManagement {
+pub struct DesktopSessionHandler {
     pub id: ActionId,
 
     pub teardown_external_settings: TeardownExternalSettings,
     pub teardown_deck_location: RelativeLocation,
 }
-impl UIManagement {
+impl DesktopSessionHandler {
     pub(crate) fn desktop_only(&self, ctx: &mut PipelineContext<'_>) -> Result<()> {
         let mut display = ctx
             .display
             .take()
-            .with_context(|| "UIManagement requires x11 to be running")?;
+            .with_context(|| "DesktopSessionHandler requires x11 to be running")?;
         if let Some(current_output) = display.get_preferred_external_output()? {
             match self.teardown_external_settings {
                 TeardownExternalSettings::Previous => Ok(()),
@@ -196,16 +196,16 @@ impl DisplayState {
     }
 }
 
-impl ActionImpl for UIManagement {
+impl ActionImpl for DesktopSessionHandler {
     type State = DisplayState;
 
-    const NAME: &'static str = "UIManagement";
+    const NAME: &'static str = "DesktopSessionHandler";
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let display = ctx
             .display
             .as_mut()
-            .with_context(|| "UIManagement requires x11 to be running")?;
+            .with_context(|| "DesktopSessionHandler requires x11 to be running")?;
 
         let preferred = display.get_preferred_external_output()?;
 
@@ -258,7 +258,7 @@ impl ActionImpl for UIManagement {
         let mut display = ctx
             .display
             .take()
-            .with_context(|| "UIManagement requires x11 to be running")?;
+            .with_context(|| "DesktopSessionHandler requires x11 to be running")?;
         let current_output = display.get_preferred_external_output()?;
 
         let res = match ctx.get_state::<Self>() {
@@ -291,7 +291,7 @@ impl ActionImpl for UIManagement {
                             let mode = display.get_mode(mode)?;
                             display.set_output_mode(&current_output, &mode)
                         }
-                        None => UIManagement {
+                        None => DesktopSessionHandler {
                             teardown_external_settings: TeardownExternalSettings::Native,
                             ..*self
                         }

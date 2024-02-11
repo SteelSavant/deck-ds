@@ -24,8 +24,8 @@ export type SelectionFor_ActionAnd_String =
     };
 export type Action =
   | {
-      type: "UIManagement";
-      value: UIManagement;
+      type: "DesktopSessionHandler";
+      value: DesktopSessionHandler;
     }
   | {
       type: "VirtualScreen";
@@ -247,7 +247,7 @@ export interface PipelineActionSettingsFor_Action {
    */
   selection: SelectionFor_ActionAnd_String;
 }
-export interface UIManagement {
+export interface DesktopSessionHandler {
   id: string;
   teardown_deck_location: RelativeLocation;
   teardown_external_settings: TeardownExternalSettings;
@@ -348,7 +348,7 @@ export interface GetSettingsResponse {
   global_settings: GlobalConfig;
 }
 export interface GlobalConfig {
-  display_restoration: UIManagement;
+  display_restoration: DesktopSessionHandler;
   /**
    * If true, inject buttons onto app action bar
    */

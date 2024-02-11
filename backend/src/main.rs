@@ -75,14 +75,14 @@ static ASSETS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/assets");
 //     let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
 //     let mut ctx = &mut PipelineContext::new(asset_manager, home_dir, config_dir);
 
-//     let ui = UIManagement {
+//     let ui = DesktopSessionHandler {
 //         id: ActionId::nil(),
 //         teardown_external_settings: TeardownExternalSettings::Preference(ModePreference {
 //             resolution: sys::x_display::ModeOption::Exact(Resolution { w: 1920, h: 1080 }),
 //             aspect_ratio: sys::x_display::AspectRatioOption::Any,
 //             refresh: sys::x_display::ModeOption::AtLeast(60.),
 //         }),
-//         teardown_deck_location: pipeline::action::ui_management::RelativeLocation::Below,
+//         teardown_deck_location: pipeline::action::desktop_session_handler::RelativeLocation::Below,
 //     };
 
 //     let vscreen = MultiWindow {

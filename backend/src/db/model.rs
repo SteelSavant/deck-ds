@@ -10,8 +10,8 @@ use crate::{
         action::{
             cemu_layout::{CemuLayout, CemuLayoutState},
             citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
+            desktop_session_handler::DesktopSessionHandler,
             melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
-            ui_management::UIManagement,
             ActionId,
         },
         data::generic,
@@ -33,7 +33,7 @@ pub type DbPipelineActionSettings = v1::DbPipelineActionSettings;
 pub type DbCemuLayout = v1::DbCemuLayout;
 pub type DbCitraLayout = v1::DbCitraLayout;
 pub type DbMelonDSLayout = v1::DbMelonDSLayout;
-pub type DbUIManagement = v1::DbUIManagement;
+pub type DbDesktopSessionHandler = v1::DbDesktopSessionHandler;
 pub type DbMultiWindow = v1::DbMultiWindow;
 pub type DbSourceFile = v1::DbSourceFile;
 pub type DbVirtualScreen = v1::DbVirtualScreen;
@@ -43,12 +43,12 @@ pub mod v1 {
 
     use crate::{
         pipeline::action::{
+            desktop_session_handler::{RelativeLocation, TeardownExternalSettings},
             multi_window::MultiWindow,
             source_file::{
                 AppImageSource, CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource,
                 SourceFile,
             },
-            ui_management::{RelativeLocation, TeardownExternalSettings},
             virtual_screen::VirtualScreen,
         },
         sys::x_display::{AspectRatioOption, ModeOption, ModePreference, Resolution},
@@ -91,7 +91,7 @@ pub mod v1 {
 
     #[derive(Debug, Clone, Deserialize, Serialize)]
     pub enum DbAction {
-        UIManagement(ActionId),
+        DesktopSessionHandler(ActionId),
         VirtualScreen(ActionId),
         MultiWindow(ActionId),
         CitraLayout(ActionId),
@@ -275,15 +275,15 @@ pub mod v1 {
     #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
     #[native_db]
     #[native_model(id = 7, version = 1, with = NativeModelJSON)]
-    pub struct DbUIManagement {
+    pub struct DbDesktopSessionHandler {
         #[primary_key]
         pub id: ActionId,
         pub teardown_external_settings: DbTeardownExternalSettings,
         pub teardown_deck_location: DbRelativeLocation,
     }
 
-    impl From<UIManagement> for DbUIManagement {
-        fn from(value: UIManagement) -> Self {
+    impl From<DesktopSessionHandler> for DbDesktopSessionHandler {
+        fn from(value: DesktopSessionHandler) -> Self {
             Self {
                 id: value.id,
                 teardown_external_settings: match value.teardown_external_settings {
@@ -340,8 +340,8 @@ pub mod v1 {
         }
     }
 
-    impl From<DbUIManagement> for UIManagement {
-        fn from(value: DbUIManagement) -> Self {
+    impl From<DbDesktopSessionHandler> for DesktopSessionHandler {
+        fn from(value: DbDesktopSessionHandler) -> Self {
             Self {
                 id: value.id,
                 teardown_external_settings: match value.teardown_external_settings {
@@ -584,7 +584,7 @@ pub mod v1 {
 impl DbAction {
     pub fn get_id(&self) -> ActionId {
         match *self {
-            v1::DbAction::UIManagement(id) => id,
+            v1::DbAction::DesktopSessionHandler(id) => id,
             v1::DbAction::VirtualScreen(id) => id,
             v1::DbAction::MultiWindow(id) => id,
             v1::DbAction::CitraLayout(id) => id,

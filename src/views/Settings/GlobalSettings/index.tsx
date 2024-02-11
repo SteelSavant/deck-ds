@@ -19,10 +19,10 @@ export const GlobalSettingsPage: VFC = () => {
                         description="Settings to apply when restoring the desktop displays after an app launch."
                     />
                     <EditAction
-                        action={{ type: 'UIManagement', value: settings.display_restoration }}
+                        action={{ type: 'DesktopSessionHandler', value: settings.display_restoration }}
                         indentLevel={1}
                         onChange={(action) => {
-                            if (action.type !== 'UIManagement') {
+                            if (action.type !== 'DesktopSessionHandler') {
                                 throw 'display settings are incorrect type; something has gone terribly wrong...'
                             }
                             updateSettings({

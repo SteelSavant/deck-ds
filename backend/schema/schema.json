@@ -96,11 +96,11 @@
             "type": {
               "type": "string",
               "enum": [
-                "UIManagement"
+                "DesktopSessionHandler"
               ]
             },
             "value": {
-              "$ref": "#/definitions/UIManagement"
+              "$ref": "#/definitions/DesktopSessionHandler"
             }
           }
         },
@@ -677,6 +677,26 @@
         }
       ]
     },
+    "DesktopSessionHandler": {
+      "type": "object",
+      "required": [
+        "id",
+        "teardown_deck_location",
+        "teardown_external_settings"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "teardown_deck_location": {
+          "$ref": "#/definitions/RelativeLocation"
+        },
+        "teardown_external_settings": {
+          "$ref": "#/definitions/TeardownExternalSettings"
+        }
+      }
+    },
     "EmuDeckSource": {
       "type": "string",
       "enum": [
@@ -892,7 +912,7 @@
       ],
       "properties": {
         "display_restoration": {
-          "$ref": "#/definitions/UIManagement"
+          "$ref": "#/definitions/DesktopSessionHandler"
         },
         "enable_ui_inject": {
           "description": "If true, inject buttons onto app action bar",
@@ -1591,26 +1611,6 @@
         },
         "pipeline": {
           "$ref": "#/definitions/PipelineDefinition_for_Action"
-        }
-      }
-    },
-    "UIManagement": {
-      "type": "object",
-      "required": [
-        "id",
-        "teardown_deck_location",
-        "teardown_external_settings"
-      ],
-      "properties": {
-        "id": {
-          "type": "string",
-          "format": "uuid"
-        },
-        "teardown_deck_location": {
-          "$ref": "#/definitions/RelativeLocation"
-        },
-        "teardown_external_settings": {
-          "$ref": "#/definitions/TeardownExternalSettings"
         }
       }
     },

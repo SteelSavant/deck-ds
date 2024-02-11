@@ -12,10 +12,10 @@ use typemap::{Key, TypeMap};
 use crate::asset::AssetManager;
 use crate::pipeline::action::cemu_layout::CemuLayout;
 use crate::pipeline::action::citra_layout::CitraLayout;
+use crate::pipeline::action::desktop_session_handler::DesktopSessionHandler;
 use crate::pipeline::action::melonds_layout::MelonDSLayout;
 use crate::pipeline::action::multi_window::MultiWindow;
 use crate::pipeline::action::source_file::SourceFile;
-use crate::pipeline::action::ui_management::UIManagement;
 use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::data::{PipelineAction, Selection};
 use crate::settings::GameId;
@@ -23,7 +23,7 @@ use crate::sys::app_process::AppProcess;
 use crate::sys::kwin::KWin;
 use crate::sys::x_display::XDisplay;
 
-use super::action::ui_management::UiEvent;
+use super::action::desktop_session_handler::UiEvent;
 use super::action::{Action, ErasedPipelineAction};
 use super::data::{Pipeline, PipelineTarget};
 
@@ -100,7 +100,7 @@ impl<'a> PipelineContext<'a> {
 
         type_reg.register::<Vec<String>>("__actions__".to_string());
 
-        register_type::<UIManagement>(&mut type_reg);
+        register_type::<DesktopSessionHandler>(&mut type_reg);
         register_type::<VirtualScreen>(&mut type_reg);
         register_type::<MultiWindow>(&mut type_reg);
         register_type::<SourceFile>(&mut type_reg);
@@ -118,7 +118,9 @@ impl<'a> PipelineContext<'a> {
 
         for action in actions {
             match action {
-                UIManagement::NAME => load_state::<UIManagement>(&mut default, &type_map),
+                DesktopSessionHandler::NAME => {
+                    load_state::<DesktopSessionHandler>(&mut default, &type_map)
+                }
                 VirtualScreen::NAME => load_state::<VirtualScreen>(&mut default, &type_map),
                 MultiWindow::NAME => load_state::<MultiWindow>(&mut default, &type_map),
                 SourceFile::NAME => load_state::<SourceFile>(&mut default, &type_map),
@@ -164,7 +166,7 @@ impl<'a> PipelineContext<'a> {
         // TODO::clone less things
         for action in self.have_run.iter() {
             match action {
-                Action::UIManagement(a) => insert_action(self, &mut map, a),
+                Action::DesktopSessionHandler(a) => insert_action(self, &mut map, a),
                 Action::VirtualScreen(a) => insert_action(self, &mut map, a),
                 Action::MultiWindow(a) => insert_action(self, &mut map, a),
                 Action::CitraLayout(a) => insert_action(self, &mut map, a),
@@ -200,7 +202,7 @@ impl<'a> PipelineContext<'a> {
     }
 
     pub fn send_ui_event(&self, event: UiEvent) {
-        let ui_state = self.get_state::<UIManagement>();
+        let ui_state = self.get_state::<DesktopSessionHandler>();
         if let Some(ui_state) = ui_state {
             ui_state.send_ui_event(event);
         }
@@ -514,9 +516,9 @@ mod tests {
         pipeline::action::{
             cemu_layout::CemuLayoutState,
             citra_layout::{CitraLayoutOption, CitraLayoutState, CitraState},
+            desktop_session_handler::{DisplayState, RelativeLocation, TeardownExternalSettings},
             melonds_layout::{MelonDSLayoutOption, MelonDSLayoutState, MelonDSSizingOption},
             source_file::{FileSource, FlatpakSource},
-            ui_management::{DisplayState, RelativeLocation, TeardownExternalSettings},
             ActionId,
         },
         util::create_dir_all,
@@ -542,7 +544,7 @@ mod tests {
         );
 
         ctx.have_run = vec![
-            UIManagement {
+            DesktopSessionHandler {
                 id: ActionId::nil(),
                 teardown_external_settings: TeardownExternalSettings::Native,
                 teardown_deck_location: RelativeLocation::Below,
@@ -590,7 +592,7 @@ mod tests {
             .into(),
         ];
 
-        ctx.set_state::<UIManagement>(DisplayState::default());
+        ctx.set_state::<DesktopSessionHandler>(DisplayState::default());
         // ctx.set_state::<VirtualScreen>(());
         // ctx.set_state::<MultiWindow>(());
         ctx.set_state::<SourceFile>("some_random_path".into());
@@ -625,7 +627,7 @@ mod tests {
             assert_eq!(expected, actual, "{} failed to match", T::NAME);
         }
 
-        check_state::<UIManagement>(&ctx, &loaded);
+        check_state::<DesktopSessionHandler>(&ctx, &loaded);
         check_state::<VirtualScreen>(&ctx, &loaded);
         check_state::<MultiWindow>(&ctx, &loaded);
         check_state::<SourceFile>(&ctx, &loaded);

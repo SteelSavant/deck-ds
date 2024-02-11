@@ -15,7 +15,7 @@ newtype_strid!("", GameId);
 use crate::{
     macros::{newtype_strid, newtype_uuid},
     pipeline::{
-        action::ui_management::UIManagement,
+        action::desktop_session_handler::DesktopSessionHandler,
         data::{Pipeline, PipelineDefinition, PipelineTarget},
     },
     util::create_dir_all,
@@ -32,7 +32,7 @@ pub struct Settings {
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct GlobalConfig {
-    pub display_restoration: UIManagement,
+    pub display_restoration: DesktopSessionHandler,
     pub restore_displays_if_not_executing_pipeline: bool,
     /// If true, inject buttons onto app action bar
     pub enable_ui_inject: bool,

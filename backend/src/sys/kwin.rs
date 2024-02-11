@@ -1,11 +1,6 @@
-use anyhow::{Context, Result};
-use regex::Regex;
-use std::{
-    ffi::OsStr,
-    path::PathBuf,
-    process::{Command, ExitStatus},
-    str::FromStr,
-};
+use anyhow::Result;
+
+use std::{ffi::OsStr, path::PathBuf, process::Command, str::FromStr};
 
 use crate::asset::{Asset, AssetManager};
 
@@ -37,26 +32,24 @@ impl<'a> KWin<'a> {
 
         if output.status.success() && !stdout.contains("kpackagetool5 [options]") {
             Ok(())
-        } else {
-            if stdout.contains("already exists") || stderr.contains("already exists") {
-                let status = Command::new("kpackagetool5")
-                    .args([&OsStr::new("-u"), bundle_path.as_os_str()])
-                    .status()
-                    .ok()
-                    .map(|s| s.success());
+        } else if stdout.contains("already exists") || stderr.contains("already exists") {
+            let status = Command::new("kpackagetool5")
+                .args([&OsStr::new("-u"), bundle_path.as_os_str()])
+                .status()
+                .ok()
+                .map(|s| s.success());
 
-                if matches!(status, Some(true)) {
-                    Ok(())
-                } else {
-                    Err(anyhow::anyhow!(
-                        "failed to update kwin script bundle {script_name}"
-                    ))
-                }
+            if matches!(status, Some(true)) {
+                Ok(())
             } else {
                 Err(anyhow::anyhow!(
-                    "failed to install kwin script bundle {script_name}"
+                    "failed to update kwin script bundle {script_name}"
                 ))
             }
+        } else {
+            Err(anyhow::anyhow!(
+                "failed to install kwin script bundle {script_name}"
+            ))
         }
     }
 

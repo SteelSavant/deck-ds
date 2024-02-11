@@ -5,21 +5,21 @@ use xrandr::{Output, Relation};
 
 use crate::{
     pipeline::{
-        action::ui_management::{Pos, Size},
+        action::desktop_session_handler::{Pos, Size},
         dependency::Dependency,
         executor::PipelineContext,
     },
     sys::x_display::XDisplay,
 };
 
-use super::{ui_management::UiEvent, ActionId, ActionImpl};
+use super::{desktop_session_handler::UiEvent, ActionId, ActionImpl};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct MultiWindow {
     pub id: ActionId,
 }
 
-const SCRIPT: &'static str = "emulatorwindowing";
+const SCRIPT: &str = "emulatorwindowing";
 
 // TODO::restore kwin script settings
 

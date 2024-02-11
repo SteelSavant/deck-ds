@@ -9,7 +9,7 @@ use crate::{
 };
 
 use super::{
-    ui_management::{Pos, Size},
+    desktop_session_handler::{Pos, Size},
     ActionId, ActionImpl,
 };
 
@@ -18,7 +18,7 @@ pub struct VirtualScreen {
     pub id: ActionId,
 }
 
-const SCRIPT: &'static str = "truevideowall";
+const SCRIPT: &str = "truevideowall";
 
 // TODO::restore kwin script settings
 
@@ -71,7 +71,7 @@ impl ActionImpl for VirtualScreen {
 
         let res = display.set_output_position(&deck, &Relation::Below, &external);
 
-        ctx.send_ui_event(super::ui_management::UiEvent::UpdateViewports {
+        ctx.send_ui_event(super::desktop_session_handler::UiEvent::UpdateViewports {
             primary_size: Size(resolution.w, resolution.h),
             secondary_size: Size(resolution.w, resolution.h),
             primary_position: Pos(0, 0),

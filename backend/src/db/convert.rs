@@ -23,7 +23,7 @@ use anyhow::{Context, Result};
 
 use super::model::{
     v1::{DbAppOverride, DbAppSettings},
-    DbUIManagement,
+    DbDesktopSessionHandler,
 };
 
 impl CategoryProfile {
@@ -43,9 +43,9 @@ impl CategoryProfile {
                 let id = cloned.get_id();
 
                 let transformed = match cloned {
-                    Action::UIManagement(action) => {
-                        rw.insert::<DbUIManagement>(action.into())?;
-                        DbAction::UIManagement(id)
+                    Action::DesktopSessionHandler(action) => {
+                        rw.insert::<DbDesktopSessionHandler>(action.into())?;
+                        DbAction::DesktopSessionHandler(id)
                     }
                     Action::VirtualScreen(action) => {
                         rw.insert::<DbVirtualScreen>(action.into())?;
@@ -169,9 +169,9 @@ impl DbCategoryProfile {
                 let id = self.get_id();
 
                 let transformed = match *self {
-                    DbAction::UIManagement(id) => {
-                        let action = ro.get().primary::<DbUIManagement>(id)?;
-                        action.map(|a| Action::UIManagement(a.into()))
+                    DbAction::DesktopSessionHandler(id) => {
+                        let action = ro.get().primary::<DbDesktopSessionHandler>(id)?;
+                        action.map(|a| Action::DesktopSessionHandler(a.into()))
                     }
                     DbAction::VirtualScreen(id) => {
                         let action = ro.get().primary::<DbVirtualScreen>(id)?;
@@ -279,8 +279,8 @@ impl DbCategoryProfile {
                 let id = self.get_id();
 
                 let transformed = match *self {
-                    DbAction::UIManagement(id) => {
-                        let action = rw.get().primary::<DbUIManagement>(id)?;
+                    DbAction::DesktopSessionHandler(id) => {
+                        let action = rw.get().primary::<DbDesktopSessionHandler>(id)?;
                         action.map(|a| rw.remove(a))
                     }
                     DbAction::VirtualScreen(id) => {
