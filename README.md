@@ -1,22 +1,17 @@
 # DeckDS 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/S6S7U6S4P)
 
-A Steam Deck plugin for easily configuring and launching dual-screen applications from Game mode.
+DeckDS is a Steam Deck plugin for easily configuring and launching desktop and dual-screen applications from Game mode.
+The 'DS' in the name is of dual significance, and stands for both Dual-Screen, and Desktop-Start.
 
 ## What Does it Do?
 
-This plugin allows specific applications (currently just emulators) to be launched in Desktop mode, from Game mode,
-configured as best as possible to use an external monitor as a second screen for a near-native dual-screen experience.
+This plugin allows applications to be launched in Desktop mode, from Game mode. DeckDS has specialized support for emulators for systems with multiple screens, configured as best as possible to use an external monitor as a second screen for a near-native dual-screen experience.
 
 ### Emulator Support
 
-A small selection of emulators are supported. 
+A small selection of emulators are currently supported. The following table lists the support status of supported emulators by install source:
 
-The following table lists the support status of supported emulators by install source:
-- ✅ : Supported
-- ☑️  : If it exists, should work if the emulator settings location is configured
-- 🚧 : Planned/In-Progress
-- ❌ : Not Supported/Not Planned
 
 |              | Flatpak  | AppImage | Emudeck (Proton) | Other Portable/Binary | RetroArch 
 |--------------|----------|----------|------------------|-----------------------|-----------
@@ -25,6 +20,10 @@ The following table lists the support status of supported emulators by install s
 | Citra        | ✅       | ☑️        | ➖               | ☑️                    | ❌        
 | MelonDS      | ✅       | ☑️        | ➖               | ☑️                    | ❌        
 
+- ✅ : Supported
+- ☑️  : If it exists, should work if the emulator settings location is configured
+- 🚧 : Planned/In-Progress
+- ❌ : Not Supported/Not Planned
 
 ### Configuration 
 

@@ -86,6 +86,18 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                         PipelineActionId::new("core:cemu:config")
                 ]))
             ]),
+        },
+
+        // Simple Desktop
+        TemplateBuilder {
+            id: TemplateId::parse("84f870e9-9491-41a9-8837-d5a6f591f687"),
+            name: "Simple Desktop".to_string(),
+            description: "Launches an application in desktop mode.".to_string(),
+            targets: HashMap::from_iter([
+                (PipelineTarget::Desktop,
+                    Selection::AllOf(vec![])
+                )
+            ]),
         }
     ];
 
