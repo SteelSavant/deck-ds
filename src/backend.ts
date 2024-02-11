@@ -5,7 +5,7 @@ import { Err, Ok, Result } from "./util/result";
 export {
     Action,
     AutoStartRequest, CategoryProfile, CreateProfileRequest,
-    CreateProfileResponse, DeleteProfileRequest, GetProfileRequest,
+    CreateProfileResponse, DeleteProfileRequest, ExternalDisplaySettings, GetProfileRequest,
     GetProfileResponse,
     GetProfilesResponse,
     GetTemplatesResponse,

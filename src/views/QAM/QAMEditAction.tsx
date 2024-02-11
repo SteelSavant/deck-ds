@@ -2,7 +2,7 @@ import { DialogButton, Dropdown, Field, FileSelectionType, Focusable, Toggle } f
 import _ from "lodash";
 import { ReactElement } from "react";
 import { FaFile } from "react-icons/fa";
-import { Action, RelativeLocation, TeardownExternalSettings, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../../backend";
+import { Action, ExternalDisplaySettings, RelativeLocation, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../../backend";
 import { useServerApi } from "../../context/serverApiContext";
 
 
@@ -23,10 +23,10 @@ export default function QAMEditAction({
     const notConfigurable = null;
 
     switch (type) {
-        case 'DesktopSessionHandler':
+        case 'DesktopSessionHandler': {
             const display = cloned.value;
             const locations: RelativeLocation[] = ['Above', 'Below', 'LeftOf', 'RightOf']; // SameAs excluded because it doesn't really make sense
-            const externalSettings: TeardownExternalSettings[] = [{ type: 'Previous' }, { type: 'Native' }] // Preference excluded because its a pain to configure, and I'm pretty sure doesn't work
+            const externalSettings: ExternalDisplaySettings[] = [{ type: 'Previous' }, { type: 'Native' }] // Preference excluded because its a pain to configure, and I'm pretty sure doesn't work
             return (
                 <div>
                     <ActionChild label="External Display Settings" description="External display settings after executing pipeline.">
@@ -57,6 +57,49 @@ export default function QAMEditAction({
                     </ActionChild>
                 </div>
             );
+        }
+        case 'DisplayConfig': {
+            // TODO::This is largely a duplicate of the above; refactor when Preference gets configured in UI.
+            const display = cloned.value;
+            const locations: RelativeLocation[] = ['Above', 'Below', 'LeftOf', 'RightOf']; // SameAs excluded because it doesn't really make sense
+            const externalSettings: ExternalDisplaySettings[] = [{ type: 'Previous' }, { type: 'Native' }] // Preference excluded because its a pain to configure, and I'm pretty sure doesn't work
+            return (
+                <div>
+                    <ActionChild label="External Display Settings" description="External display settings.">
+                        <Dropdown selectedOption={display.external_display_settings.type} rgOptions={externalSettings.map((setting) => {
+                            return {
+                                label: setting.type,
+                                data: setting.type
+                            };
+                        })}
+                            onChange={(settings) => {
+                                cloned.value.external_display_settings.type = settings.data;
+                                onChange(cloned)
+                            }}
+                        />
+                    </ActionChild>
+                    <ActionChild label="Deck Screen Location" description="Location of the Deck screen on the desktop.">
+                        <Dropdown selectedOption={display.deck_location} rgOptions={
+                            [
+                                {
+                                    label: 'Disabled',
+                                    data: null,
+                                },
+                                ...locations.map((location) => {
+                                    return {
+                                        label: location,
+                                        data: location,
+                                    }
+                                })]}
+                            onChange={(settings) => {
+                                cloned.value.deck_location = settings.data;
+                                onChange(cloned)
+                            }}
+                        />
+                    </ActionChild>
+                </div>
+            );
+        }
         case 'CemuLayout':
             return (
                 <div>
