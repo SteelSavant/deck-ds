@@ -29,10 +29,7 @@ impl<'a> AssetManager<'a> {
     /// ```
     /// let asset = manager.get(PathBuf::from("kwin/emulatorwindowing.kwinscript"))
     /// ```
-    pub fn get<'b, P: AsRef<Path> + std::fmt::Debug>(
-        &'b self,
-        asset_path: P,
-    ) -> Option<Asset<'a, 'b>> {
+    pub fn get<'b, P: AsRef<Path> + std::fmt::Debug>(&'b self, asset_path: P) -> Option<Asset<'a>> {
         let external = self.external_asset_path.join(&asset_path);
 
         fn get_external(external: PathBuf) -> Result<Option<AssetType<'static>>> {
@@ -51,16 +48,12 @@ impl<'a> AssetManager<'a> {
                     .get_file(&asset_path)
                     .map(AssetType::Internal)
             })
-            .map(|a| Asset {
-                asset_impl: a,
-                external_asset_path: &self.external_asset_path,
-            })
+            .map(|a| Asset { asset_impl: a })
     }
 }
 
-pub struct Asset<'a, 'b> {
+pub struct Asset<'a> {
     asset_impl: AssetType<'a>,
-    external_asset_path: &'b Path,
 }
 
 enum AssetType<'a> {
@@ -68,16 +61,17 @@ enum AssetType<'a> {
     External(PathBuf),
 }
 
-impl<'a, 'b> Asset<'a, 'b> {
-    pub fn external_file_path(&self) -> Result<PathBuf> {
+impl<'a> Asset<'a> {
+    pub fn file_path(&self) -> Result<PathBuf> {
         match &self.asset_impl {
             AssetType::Internal(file) => {
                 // Since embedded files aren't "real" to the filesystem,
-                // we copy the embedded file out to the external assets directory
+                // we copy the embedded file out to the tmp directory
                 // so that the path may be used by external programs.
                 let internal_path = file.path();
+                let tmp_dir = std::env::temp_dir().join("DeckDS");
 
-                let external_path = self.external_asset_path.join(internal_path);
+                let external_path = tmp_dir.join(internal_path);
 
                 create_dir_all(
                     external_path

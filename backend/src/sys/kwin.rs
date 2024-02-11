@@ -27,7 +27,7 @@ impl<'a> KWin<'a> {
         let bundle = self.get_bundle(script_name).ok_or(anyhow::anyhow!(
             "could not find bundle {script_name} to install"
         ))?;
-        let bundle_path = bundle.external_file_path()?;
+        let bundle_path = bundle.file_path()?;
 
         let output = Command::new("kpackagetool5")
             .args([&OsStr::new("-i"), bundle_path.as_os_str()])
