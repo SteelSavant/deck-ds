@@ -18,13 +18,20 @@ pub struct VirtualScreen {
     pub id: ActionId,
 }
 
+const SCRIPT: &'static str = "truevideowall";
+
+// TODO::restore kwin script settings
+
 impl ActionImpl for VirtualScreen {
-    type State = ();
+    type State = bool;
 
     const NAME: &'static str = "VirtualScreen";
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
-        ctx.kwin.set_script_enabled("truevideowall", true)?;
+        let enabled = ctx.kwin.get_script_enabled(SCRIPT);
+        ctx.set_state::<Self>(matches!(enabled, Ok(true)));
+
+        ctx.kwin.set_script_enabled(SCRIPT, true)?;
         let display = ctx
             .display
             .as_mut()
@@ -75,13 +82,16 @@ impl ActionImpl for VirtualScreen {
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {
-        ctx.kwin.set_script_enabled("truevideowall", false)?;
+        let state = ctx.get_state::<Self>();
+        ctx.kwin
+            .set_script_enabled(SCRIPT, matches!(state, Some(true)))?;
+
         Ok(())
     }
 
     fn get_dependencies(&self, _ctx: &mut PipelineContext) -> Vec<Dependency> {
         vec![
-            Dependency::KwinScript("truevideowall-v1.0.kwinscript".to_string()),
+            Dependency::KwinScript(SCRIPT.to_string()),
             // Display dependencies
             Dependency::System("xrandr".to_string()),
             Dependency::System("cvt".to_string()),

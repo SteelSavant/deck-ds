@@ -27,7 +27,7 @@ impl<'a> AssetManager<'a> {
     ///
     /// # Example
     /// ```
-    /// let asset = manager.get(PathBuf::from("kwin/emulatorwindowing-v1.0.kwinscript"))
+    /// let asset = manager.get(PathBuf::from("kwin/emulatorwindowing.kwinscript"))
     /// ```
     pub fn get<'b, P: AsRef<Path> + std::fmt::Debug>(
         &'b self,

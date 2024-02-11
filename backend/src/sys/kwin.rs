@@ -1,8 +1,9 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
+use regex::Regex;
 use std::{
     ffi::OsStr,
-    path::{Path, PathBuf},
-    process::Command,
+    path::PathBuf,
+    process::{Command, ExitStatus},
     str::FromStr,
 };
 
@@ -22,9 +23,9 @@ impl<'a> KWin<'a> {
         }
     }
 
-    pub fn install_script(&self, bundle_name: &str) -> Result<()> {
-        let bundle = self.get_bundle(bundle_name).ok_or(anyhow::anyhow!(
-            "could not find bundle {bundle_name} to install"
+    pub fn install_script(&self, script_name: &str) -> Result<()> {
+        let bundle = self.get_bundle(script_name).ok_or(anyhow::anyhow!(
+            "could not find bundle {script_name} to install"
         ))?;
         let bundle_path = bundle.external_file_path()?;
 
@@ -34,17 +35,44 @@ impl<'a> KWin<'a> {
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
 
-        if !stdout.contains("kpackagetool5 [options]")
-            && (output.status.success()
-                || stdout.contains("already exists")
-                || stderr.contains("already exists"))
-        {
+        if output.status.success() && !stdout.contains("kpackagetool5 [options]") {
             Ok(())
         } else {
-            Err(anyhow::anyhow!(
-                "failed to install kwin script bundle {bundle_name}"
-            ))
+            if stdout.contains("already exists") || stderr.contains("already exists") {
+                let status = Command::new("kpackagetool5")
+                    .args([&OsStr::new("-u"), bundle_path.as_os_str()])
+                    .status()
+                    .ok()
+                    .map(|s| s.success());
+
+                if matches!(status, Some(true)) {
+                    Ok(())
+                } else {
+                    Err(anyhow::anyhow!(
+                        "failed to update kwin script bundle {script_name}"
+                    ))
+                }
+            } else {
+                Err(anyhow::anyhow!(
+                    "failed to install kwin script bundle {script_name}"
+                ))
+            }
         }
+    }
+
+    pub fn get_script_enabled(&self, script_name: &str) -> Result<bool> {
+        let output = Command::new("kreadconfig5")
+            .args([
+                "--file",
+                "kwinrc",
+                "--group",
+                "Plugins",
+                "--key",
+                &format!("{script_name}Enabled"),
+            ])
+            .output()?;
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        Ok(stdout == "true")
     }
 
     pub fn set_script_enabled(&self, script_name: &str, is_enabled: bool) -> Result<()> {
@@ -71,8 +99,12 @@ impl<'a> KWin<'a> {
         }
     }
 
-    pub fn get_bundle<P: AsRef<Path>>(&self, bundle_name: P) -> Option<Asset> {
-        self.assets_manager.get(self.bundles_dir.join(bundle_name))
+    pub fn get_bundle(&self, script_name: &str) -> Option<Asset> {
+        self.assets_manager.get(
+            self.bundles_dir
+                .join(script_name)
+                .with_extension("kwinscript"),
+        )
     }
 
     fn reconfigure(&self) -> Result<()> {

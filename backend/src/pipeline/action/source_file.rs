@@ -80,8 +80,6 @@ impl SettingsSource for EmuDeckSource {
 
         match emudeck_settings {
             Ok(emudeck_settings) => {
-                log::debug!("emudeck settings: {emudeck_settings}");
-
                 let rxp = Regex::new(r"emulationPath=(.*)")
                     .expect("emudeck emulation path regex should be valid");
                 let found = rxp.captures(&emudeck_settings);

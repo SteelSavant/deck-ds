@@ -53,11 +53,11 @@ impl Dependency {
                     Err(DependencyError::PathNotFound(path.clone()))
                 }
             }
-            Dependency::KwinScript(bundle_name) => ctx
+            Dependency::KwinScript(script_name) => ctx
                 .kwin
-                .get_bundle(bundle_name)
+                .get_bundle(script_name)
                 .map(|_| ())
-                .ok_or_else(|| DependencyError::KwinScriptNotFound(bundle_name.clone())),
+                .ok_or_else(|| DependencyError::KwinScriptNotFound(script_name.clone())),
             Dependency::ConfigField(field) => Err(DependencyError::FieldNotSet(field.clone())),
         }
     }
@@ -66,10 +66,10 @@ impl Dependency {
         let res = self.verify_config(ctx);
 
         res.and_then(|_| {
-            if let Dependency::KwinScript(bundle_name) = self {
-                ctx.kwin.install_script(bundle_name).map_err(|err| {
+            if let Dependency::KwinScript(script_name) = self {
+                ctx.kwin.install_script(script_name).map_err(|err| {
                     log::error!("{err}");
-                    DependencyError::KwinScriptFailedInstall(bundle_name.clone())
+                    DependencyError::KwinScriptFailedInstall(script_name.clone())
                 })
             } else {
                 Ok(())
