@@ -12,7 +12,7 @@ Profiles are stored in a local database using [native_db](https://github.com/vin
 
 Launch profiles are separated into 
 - Category profiles, which apply to all apps with any configured tags
-- App profiles, which configure an existing category profile for a specific app (not implemented)
+- App profiles, which configure an existing category profile for a specific app
 
 ### State
 
