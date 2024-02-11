@@ -114,6 +114,24 @@
             "type": {
               "type": "string",
               "enum": [
+                "DisplayConfig"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/DisplayConfig"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
                 "VirtualScreen"
               ]
             },
@@ -693,7 +711,37 @@
           "$ref": "#/definitions/RelativeLocation"
         },
         "teardown_external_settings": {
-          "$ref": "#/definitions/TeardownExternalSettings"
+          "$ref": "#/definitions/ExternalDisplaySettings"
+        }
+      }
+    },
+    "DisplayConfig": {
+      "type": "object",
+      "required": [
+        "disable_splash",
+        "external_display_settings",
+        "id"
+      ],
+      "properties": {
+        "deck_location": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RelativeLocation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "disable_splash": {
+          "type": "boolean"
+        },
+        "external_display_settings": {
+          "$ref": "#/definitions/ExternalDisplaySettings"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
         }
       }
     },
@@ -701,6 +749,59 @@
       "type": "string",
       "enum": [
         "CemuProton"
+      ]
+    },
+    "ExternalDisplaySettings": {
+      "oneOf": [
+        {
+          "description": "Previous resolution, before setup",
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Previous"
+              ]
+            }
+          }
+        },
+        {
+          "description": "Native resolution",
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Native"
+              ]
+            }
+          }
+        },
+        {
+          "description": "Resolution based on specific settings",
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Preference"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/ModePreference"
+            }
+          }
+        }
       ]
     },
     "FileSource": {
@@ -1212,6 +1313,16 @@
         "name": {
           "type": "string"
         },
+        "primary_target_override": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PipelineTarget"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "register_exit_hooks": {
           "type": "boolean"
         },
@@ -1244,6 +1355,16 @@
         },
         "name": {
           "type": "string"
+        },
+        "primary_target_override": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PipelineTarget"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "register_exit_hooks": {
           "type": "boolean"
@@ -1544,59 +1665,6 @@
           "$ref": "#/definitions/FileSource"
         }
       }
-    },
-    "TeardownExternalSettings": {
-      "oneOf": [
-        {
-          "description": "Previous resolution, before setup",
-          "type": "object",
-          "required": [
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Previous"
-              ]
-            }
-          }
-        },
-        {
-          "description": "Native resolution",
-          "type": "object",
-          "required": [
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Native"
-              ]
-            }
-          }
-        },
-        {
-          "description": "Resolution based on specific settings",
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Preference"
-              ]
-            },
-            "value": {
-              "$ref": "#/definitions/ModePreference"
-            }
-          }
-        }
-      ]
     },
     "Template": {
       "type": "object",

@@ -62,6 +62,7 @@ pub mod generic {
         pub name: String,
         pub description: String,
         pub register_exit_hooks: bool,
+        pub primary_target_override: Option<PipelineTarget>,
         pub targets: HashMap<PipelineTarget, Selection<A, PipelineActionId>>,
         pub actions: PipelineActionLookup<A>,
     }
@@ -71,6 +72,7 @@ pub mod generic {
         pub name: String,
         pub description: String,
         pub register_exit_hooks: bool,
+        pub primary_target_override: Option<PipelineTarget>,
         pub targets: HashMap<PipelineTarget, Selection<A, PipelineAction<A>>>,
     }
 
@@ -169,6 +171,7 @@ impl PipelineDefinition {
             name: self.name.clone(),
             description: self.description.clone(),
             register_exit_hooks: self.register_exit_hooks,
+            primary_target_override: self.primary_target_override,
             targets,
         })
     }

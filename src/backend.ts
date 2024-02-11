@@ -10,7 +10,7 @@ export {
     GetProfilesResponse,
     GetTemplatesResponse,
     PipelineTarget, ReifyPipelineRequest,
-    ReifyPipelineResponse, RelativeLocation, SetProfileRequest, TeardownExternalSettings, Template
+    ReifyPipelineResponse, RelativeLocation, SetProfileRequest, Template
 } from "./types/backend_api";
 
 

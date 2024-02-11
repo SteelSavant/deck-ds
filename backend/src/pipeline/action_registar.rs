@@ -6,6 +6,7 @@ use super::{
     action::{
         cemu_layout::{CemuLayout, CemuLayoutState},
         citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
+        display_config::DisplayConfig,
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
         multi_window::MultiWindow,
         session_handler::{DesktopSessionHandler, ExternalDisplaySettings, RelativeLocation},
@@ -214,10 +215,10 @@ impl PipelineActionRegistarBuilder {
             scope
                 .with_group("display", |group| {
                     group.with_action(
-                        "display_config",
+                        "desktop_session",
                         Some(PipelineTarget::Desktop),
                         PipelineActionDefinitionBuilder {
-                            name: "Display Restoration".to_string(),
+                            name: "Desktop Session".to_string(),
                             description: Some("Ensures the display resolution and layout are correctly configured before and after executing pipeline actions.".into()),
                             enabled: None,
                             is_visible_on_qam: false,
@@ -228,7 +229,22 @@ impl PipelineActionRegistarBuilder {
                                 teardown_deck_location: RelativeLocation::Below,
                             } .into(),
                         },
-                    ).with_action("virtual_screen",      
+                    )
+                    .with_action("display_config", Some(PipelineTarget::Desktop), 
+                PipelineActionDefinitionBuilder {
+                            name: "Display Config".to_string(),
+                            description: Some("Configures displays in desktop mode.".to_string()),
+                            enabled: Some(true),
+                            is_visible_on_qam: true,
+                            profile_override: None,
+                            selection: DisplayConfig {
+                                id: ActionId::nil(),
+                                external_display_settings: ExternalDisplaySettings::Previous,
+                                deck_location: Some(RelativeLocation::Below),
+                                disable_splash: false,
+                            }.into()
+                        })
+                    .with_action("virtual_screen",      
                     Some(PipelineTarget::Desktop),
                     PipelineActionDefinitionBuilder {
                         name: "Virtual Screen".to_string(),
@@ -239,7 +255,7 @@ impl PipelineActionRegistarBuilder {
                         selection: VirtualScreen {
                             id: ActionId::nil(),
                         }.into(),
-                    },).with_action("multi_window",    Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                    }).with_action("multi_window",    Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
                         name: "Multi-Window Emulation".to_string(),
                         description: Some("Manages windows for known emulators configurations with multiple display windows.".into()),
                         enabled: None,

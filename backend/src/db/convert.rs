@@ -146,6 +146,7 @@ impl CategoryProfile {
                     name: self.name.clone(),
                     description: self.description.clone(),
                     register_exit_hooks: self.register_exit_hooks,
+                    primary_target_override: self.primary_target_override,
                     targets,
                     actions,
                 };
@@ -264,6 +265,7 @@ impl DbCategoryProfile {
                     name: self.name.clone(),
                     description: self.description.clone(),
                     register_exit_hooks: self.register_exit_hooks,
+                    primary_target_override: self.primary_target_override,
                     targets,
                     actions,
                 })

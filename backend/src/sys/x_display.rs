@@ -150,16 +150,44 @@ impl XDisplay {
         }
     }
 
+    pub fn get_native_mode(&mut self, output: &Output) -> Result<Option<Mode>> {
+        let mode = output
+            .preferred_modes
+            .iter()
+            .map(|mode| self.get_mode(*mode))
+            .collect::<Result<Vec<_>, _>>()?;
+        let native_mode = mode.into_iter().reduce(|acc, e| {
+            match (acc.width * acc.height).cmp(&(e.width * e.height)) {
+                std::cmp::Ordering::Less => e,
+                std::cmp::Ordering::Greater => acc,
+                std::cmp::Ordering::Equal => {
+                    if acc.rate > e.rate {
+                        acc
+                    } else {
+                        e
+                    }
+                }
+            }
+        });
+        Ok(native_mode)
+    }
+
+    pub fn set_output_enabled(&mut self, output: &Output, is_enabled: bool) -> Result<()> {
+        Ok(if is_enabled {
+            self.xhandle.enable(output)?
+        } else {
+            self.xhandle.disable(output)?
+        })
+    }
+
     /// Sets the position of one output relative to another.
     pub fn set_output_position(
         &mut self,
         output: &Output,
-        relation: &Relation,
-        relative_output: &Output,
+        relative: &Relation,
+        to_output: &Output,
     ) -> Result<()> {
-        Ok(self
-            .xhandle
-            .set_position(output, relation, relative_output)?)
+        Ok(self.xhandle.set_position(output, relative, to_output)?)
     }
 
     /// Finds a mode matching the preference, or creates one if none matching are found, and sets the output to that mode.

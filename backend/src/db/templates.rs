@@ -30,7 +30,8 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                     name: self.name,
                     description: self.description,
                     targets: self.targets,
-                    register_exit_hooks: true, // For now, default exit hooks to true, since no configs won't use them.
+                    primary_target_override: None,
+                    register_exit_hooks: true,
                     actions,
                 },
             }
@@ -95,7 +96,9 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
             description: "Launches an application in desktop mode.".to_string(),
             targets: HashMap::from_iter([
                 (PipelineTarget::Desktop,
-                    Selection::AllOf(vec![])
+                    Selection::AllOf(vec![
+                        PipelineActionId::new("core:display:display_config"),
+                    ])
                 )
             ]),
         }

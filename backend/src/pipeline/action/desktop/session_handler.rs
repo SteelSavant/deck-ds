@@ -39,26 +39,9 @@ impl DesktopSessionHandler {
             match self.teardown_external_settings {
                 ExternalDisplaySettings::Previous => Ok(()),
                 ExternalDisplaySettings::Native => {
-                    let mode = current_output
-                        .preferred_modes
-                        .iter()
-                        .map(|mode| display.get_mode(*mode))
-                        .collect::<Result<Vec<_>, _>>()?;
-                    let native_mode = mode.iter().reduce(|acc, e| {
-                        match (acc.width * acc.height).cmp(&(e.width * e.height)) {
-                            std::cmp::Ordering::Less => e,
-                            std::cmp::Ordering::Greater => acc,
-                            std::cmp::Ordering::Equal => {
-                                if acc.rate > e.rate {
-                                    acc
-                                } else {
-                                    e
-                                }
-                            }
-                        }
-                    });
+                    let native_mode = display.get_native_mode(&current_output)?;
                     if let Some(mode) = native_mode {
-                        display.set_output_mode(&current_output, mode)
+                        display.set_output_mode(&current_output, &mode)
                     } else {
                         Ok(())
                     }
@@ -79,8 +62,8 @@ impl DesktopSessionHandler {
 #[cfg_attr(test, derive(Default))]
 #[derive(Debug, PartialEq)]
 pub struct DisplayState {
-    previous_output_id: XId,
-    previous_output_mode: Option<XId>,
+    previous_external_output_id: XId,
+    previous_external_output_mode: Option<XId>,
     runtime_state: Option<RuntimeDisplayState>,
 }
 
@@ -96,8 +79,8 @@ impl Clone for DisplayState {
 impl From<&DisplayState> for SerialiableDisplayState {
     fn from(value: &DisplayState) -> Self {
         Self {
-            previous_output_id: value.previous_output_id,
-            previous_output_mode: value.previous_output_mode,
+            previous_output_id: value.previous_external_output_id,
+            previous_output_mode: value.previous_external_output_mode,
         }
     }
 }
@@ -105,8 +88,8 @@ impl From<&DisplayState> for SerialiableDisplayState {
 impl From<SerialiableDisplayState> for DisplayState {
     fn from(value: SerialiableDisplayState) -> Self {
         DisplayState {
-            previous_output_id: value.previous_output_id,
-            previous_output_mode: value.previous_output_mode,
+            previous_external_output_id: value.previous_output_id,
+            previous_external_output_mode: value.previous_output_mode,
             runtime_state: None,
         }
     }
@@ -136,8 +119,8 @@ impl Serialize for DisplayState {
         S: serde::Serializer,
     {
         SerialiableDisplayState {
-            previous_output_id: self.previous_output_id,
-            previous_output_mode: self.previous_output_mode,
+            previous_output_id: self.previous_external_output_id,
+            previous_output_mode: self.previous_external_output_mode,
         }
         .serialize(serializer)
     }
@@ -174,49 +157,45 @@ impl ActionImpl for DesktopSessionHandler {
 
         let preferred = display.get_preferred_external_output()?;
 
-        match preferred {
-            Some(primary) => {
-                let (ui_tx, ui_rx): (Sender<UiEvent>, Receiver<UiEvent>) = mpsc::channel();
-                let (main_tx, main_rx): (Sender<egui::Context>, Receiver<egui::Context>) =
-                    mpsc::channel();
+        if let Some(primary) = preferred {
+            let (ui_tx, ui_rx): (Sender<UiEvent>, Receiver<UiEvent>) = mpsc::channel();
+            let (main_tx, main_rx): (Sender<egui::Context>, Receiver<egui::Context>) =
+                mpsc::channel();
 
-                let main_tx = main_tx.clone();
-                let should_register_exit_hooks = ctx.should_register_exit_hooks;
-                let secondary_text = if should_register_exit_hooks {
+            let main_tx = main_tx.clone();
+            let should_register_exit_hooks = ctx.should_register_exit_hooks;
+            let secondary_text = if should_register_exit_hooks {
                     "hold (select) + (start) to exit\ngame after launch"
                 } else {
-                    "exit hooks not registered;\nuse Steam Input mapping or press (Alt+F) to exit\ngame after launch"
+                    "exit hooks not registered;\nuse Steam Input mapping or press (Alt+F4) to exit\ngame after launch"
                 }
                 .to_string();
 
-                std::thread::spawn(move || {
-                    // TODO::caluculate current sizes + positions; mostly don't care as it will be immediately reset
-                    DeckDsUi::new(
-                        Size(1920, 1080),
-                        Size(1280, 800),
-                        Pos(0, 0),
-                        Pos(0, 1920),
-                        secondary_text,
-                        ui_rx,
-                        main_tx,
-                    )
-                    .run()
-                    .map_err(|err| format!("{err:?}"))
-                });
+            std::thread::spawn(move || {
+                // TODO::caluculate current sizes + positions; mostly don't care as it will be immediately reset
+                DeckDsUi::new(
+                    Size(1920, 1080),
+                    Size(1280, 800),
+                    Pos(0, 0),
+                    Pos(0, 1920),
+                    secondary_text,
+                    ui_rx,
+                    main_tx,
+                )
+                .run()
+                .map_err(|err| format!("{err:?}"))
+            });
 
-                let ui_ctx = main_rx.recv().expect("UI thread should send ctx");
+            let ui_ctx = main_rx.recv().expect("UI thread should send ctx");
 
-                ctx.set_state::<Self>(DisplayState {
-                    previous_output_id: primary.xid,
-                    previous_output_mode: primary.current_mode,
-                    runtime_state: Some(RuntimeDisplayState { ui_ctx, ui_tx }),
-                });
-                Ok(())
-            }
-            None => Err(anyhow::anyhow!(
-                "Unable to find external display for dual screen"
-            )),
+            ctx.set_state::<Self>(DisplayState {
+                previous_external_output_id: primary.xid,
+                previous_external_output_mode: primary.current_mode,
+                runtime_state: Some(RuntimeDisplayState { ui_ctx, ui_tx }),
+            });
         }
+
+        Ok(())
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {
@@ -234,7 +213,7 @@ impl ActionImpl for DesktopSessionHandler {
 
                 // let _ = state.ui_tx.send(UiEvent::Close);
 
-                let output = state.previous_output_id;
+                let output = state.previous_external_output_id;
 
                 // Gets the current output. If it matches the saved, return it,
                 // otherwise exit teardown to avoid changing current monitor to
@@ -251,17 +230,19 @@ impl ActionImpl for DesktopSessionHandler {
                 };
 
                 match self.teardown_external_settings {
-                    ExternalDisplaySettings::Previous => match state.previous_output_mode {
-                        Some(mode) => {
-                            let mode = display.get_mode(mode)?;
-                            display.set_output_mode(&current_output, &mode)
+                    ExternalDisplaySettings::Previous => {
+                        match state.previous_external_output_mode {
+                            Some(mode) => {
+                                let mode = display.get_mode(mode)?;
+                                display.set_output_mode(&current_output, &mode)
+                            }
+                            None => DesktopSessionHandler {
+                                teardown_external_settings: ExternalDisplaySettings::Native,
+                                ..*self
+                            }
+                            .teardown(ctx),
                         }
-                        None => DesktopSessionHandler {
-                            teardown_external_settings: ExternalDisplaySettings::Native,
-                            ..*self
-                        }
-                        .teardown(ctx),
-                    },
+                    }
                     ExternalDisplaySettings::Native => {
                         let mode = current_output
                             .preferred_modes

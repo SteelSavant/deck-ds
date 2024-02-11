@@ -28,6 +28,10 @@ export type Action =
       value: DesktopSessionHandler;
     }
   | {
+      type: "DisplayConfig";
+      value: DisplayConfig;
+    }
+  | {
       type: "VirtualScreen";
       value: VirtualScreen;
     }
@@ -52,7 +56,7 @@ export type Action =
       value: SourceFile;
     };
 export type RelativeLocation = "Above" | "Below" | "LeftOf" | "RightOf" | "SameAs";
-export type TeardownExternalSettings =
+export type ExternalDisplaySettings =
   | {
       type: "Previous";
     }
@@ -219,6 +223,7 @@ export interface PipelineDefinitionFor_Action {
   actions: PipelineActionLookupFor_Action;
   description: string;
   name: string;
+  primary_target_override?: PipelineTarget | null;
   register_exit_hooks: boolean;
   targets: {
     [k: string]: SelectionFor_ActionAnd_String;
@@ -250,7 +255,7 @@ export interface PipelineActionSettingsFor_Action {
 export interface DesktopSessionHandler {
   id: string;
   teardown_deck_location: RelativeLocation;
-  teardown_external_settings: TeardownExternalSettings;
+  teardown_external_settings: ExternalDisplaySettings;
 }
 export interface ModePreference {
   aspect_ratio: AspectRatioOption;
@@ -260,6 +265,12 @@ export interface ModePreference {
 export interface Resolution {
   h: number;
   w: number;
+}
+export interface DisplayConfig {
+  deck_location?: RelativeLocation | null;
+  disable_splash: boolean;
+  external_display_settings: ExternalDisplaySettings;
+  id: string;
 }
 export interface VirtualScreen {
   id: string;
@@ -378,6 +389,7 @@ export interface ReifyPipelineResponse {
 export interface PipelineFor_Action {
   description: string;
   name: string;
+  primary_target_override?: PipelineTarget | null;
   register_exit_hooks: boolean;
   targets: {
     [k: string]: SelectionFor_ActionAnd_PipelineActionFor_Action;
