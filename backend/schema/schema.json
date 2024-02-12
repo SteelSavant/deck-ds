@@ -698,10 +698,14 @@
     "DesktopSessionHandler": {
       "type": "object",
       "required": [
+        "deck_is_primary_display",
         "id",
         "teardown_external_settings"
       ],
       "properties": {
+        "deck_is_primary_display": {
+          "type": "boolean"
+        },
         "id": {
           "type": "string",
           "format": "uuid"
@@ -724,11 +728,14 @@
     "DisplayConfig": {
       "type": "object",
       "required": [
-        "disable_splash",
+        "deck_is_primary_display",
         "external_display_settings",
         "id"
       ],
       "properties": {
+        "deck_is_primary_display": {
+          "type": "boolean"
+        },
         "deck_location": {
           "anyOf": [
             {
@@ -738,9 +745,6 @@
               "type": "null"
             }
           ]
-        },
-        "disable_splash": {
-          "type": "boolean"
         },
         "external_display_settings": {
           "$ref": "#/definitions/ExternalDisplaySettings"

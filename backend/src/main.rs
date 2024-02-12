@@ -1,3 +1,5 @@
+#![feature(exit_status_error)]
+
 use anyhow::Result;
 use include_dir::{include_dir, Dir};
 use std::{

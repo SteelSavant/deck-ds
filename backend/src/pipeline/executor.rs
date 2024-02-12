@@ -551,6 +551,7 @@ mod tests {
                 id: ActionId::nil(),
                 teardown_external_settings: ExternalDisplaySettings::Native,
                 teardown_deck_location: Some(RelativeLocation::Below),
+                deck_is_primary_display: true,
             }
             .clone()
             .into(),

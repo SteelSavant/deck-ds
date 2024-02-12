@@ -72,6 +72,16 @@ export function InternalEditAction({
                             }}
                         />
                     </ActionChild>
+                    {
+                        cloned.value.teardown_deck_location
+                            ? <ActionChild indentLevel={indentLevel} label="Deck is Primary Display" description="If enabled, the Deck's embedded display will be the primary desktop in KDE (the one with the taskbar).">
+                                <Toggle value={cloned.value.deck_is_primary_display} onChange={(isEnabled) => {
+                                    cloned.value.deck_is_primary_display = isEnabled;
+                                    onChange(cloned);
+                                }} />
+                            </ActionChild>
+                            : <div />
+                    }
                 </div>
             );
         case 'DisplayConfig': {
@@ -113,6 +123,16 @@ export function InternalEditAction({
                             }}
                         />
                     </ActionChild>
+                    {
+                        cloned.value.deck_location
+                            ? <ActionChild indentLevel={indentLevel} label="Deck is Primary Display" description="If enabled, the Deck's embedded display will be the primary desktop in KDE (the one with the taskbar).">
+                                <Toggle value={cloned.value.deck_is_primary_display} onChange={(isEnabled) => {
+                                    cloned.value.deck_is_primary_display = isEnabled;
+                                    onChange(cloned);
+                                }} />
+                            </ActionChild>
+                            : <div />
+                    }
                 </div>
             );
         }

@@ -22,20 +22,37 @@ pub use ui::Pos;
 pub use ui::Size;
 pub use ui::UiEvent;
 
-#[derive(Debug, Default, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct DesktopSessionHandler {
     pub id: ActionId,
-
+    pub deck_is_primary_display: bool,
     pub teardown_external_settings: ExternalDisplaySettings,
     pub teardown_deck_location: Option<RelativeLocation>,
 }
+
+impl Default for DesktopSessionHandler {
+    fn default() -> Self {
+        Self {
+            id: Default::default(),
+            teardown_external_settings: Default::default(),
+            teardown_deck_location: Some(Default::default()),
+            deck_is_primary_display: true,
+        }
+    }
+}
+
 impl DesktopSessionHandler {
     pub(crate) fn desktop_only(&self, ctx: &mut PipelineContext<'_>) -> Result<()> {
         let mut display = ctx
             .display
             .take()
             .with_context(|| "DesktopSessionHandler requires x11 to be running")?;
-        if let Some(current_output) = display.get_preferred_external_output()? {
+
+        let mut deck = display.get_embedded_output()?.unwrap();
+
+        let current_output = display.get_preferred_external_output()?;
+
+        if let Some(current_output) = current_output.as_ref() {
             match self.teardown_external_settings {
                 ExternalDisplaySettings::Previous => Ok(()),
                 ExternalDisplaySettings::Native => {
@@ -50,16 +67,20 @@ impl DesktopSessionHandler {
                     display.set_or_create_preferred_mode(&current_output, &preference)
                 }
             }?;
-
-            let deck = display.get_embedded_output()?.unwrap();
-            if let Some(location) = self.teardown_deck_location {
-                display.set_output_position(&deck, &location.into(), &current_output)
-            } else {
-                display.set_output_enabled(&deck, false)
-            }
-        } else {
-            Ok(())
         }
+
+        if let Some(location) = self.teardown_deck_location {
+            display.reconfigure_embedded(
+                &mut deck,
+                &location.into(),
+                current_output.as_ref(),
+                self.deck_is_primary_display,
+            )?;
+        } else {
+            display.set_output_enabled(&mut deck, false)?;
+        }
+
+        Ok(())
     }
 }
 
@@ -161,7 +182,7 @@ impl ActionImpl for DesktopSessionHandler {
 
         let preferred = display.get_preferred_external_output()?;
 
-        if let Some(primary) = preferred {
+        if let Some(primary) = preferred.as_ref() {
             let (ui_tx, ui_rx): (Sender<UiEvent>, Receiver<UiEvent>) = mpsc::channel();
             let (main_tx, main_rx): (Sender<egui::Context>, Receiver<egui::Context>) =
                 mpsc::channel();
@@ -277,12 +298,20 @@ impl ActionImpl for DesktopSessionHandler {
                     }
                 }?;
 
-                let deck = display.get_embedded_output()?.unwrap();
+                let mut deck = display.get_embedded_output()?.unwrap();
+
                 if let Some(location) = self.teardown_deck_location {
-                    display.set_output_position(&deck, &location.into(), &current_output)
+                    display.reconfigure_embedded(
+                        &mut deck,
+                        &location.into(),
+                        Some(&current_output),
+                        self.deck_is_primary_display,
+                    )?;
                 } else {
-                    display.set_output_enabled(&deck, true)
+                    display.set_output_enabled(&mut deck, false)?;
                 }
+
+                Ok(())
             }
 
             // No state, nothing to tear down

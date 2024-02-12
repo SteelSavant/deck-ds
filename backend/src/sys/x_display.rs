@@ -4,10 +4,10 @@ use float_cmp::approx_eq;
 use regex::Regex;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::thread::sleep;
+use std::thread;
 use xrandr::{Mode, Output, Relation, ScreenResources, XHandle, XId};
 
-use anyhow::{Ok, Result};
+use anyhow::{Context, Ok, Result};
 
 /// Thin wrapper around xrandr for common display operations.
 #[derive(Debug)]
@@ -88,7 +88,7 @@ impl XDisplay {
                     }
 
                     fail_count += 1;
-                    sleep(Duration::from_secs(1));
+                    thread::sleep(Duration::from_secs(1));
                     maybe_external = self.get_preferred_external_output_maybe_disconnected()?;
                 }
             }
@@ -122,6 +122,45 @@ impl XDisplay {
             .into_iter()
             .filter_map(|o| if o.name == "eDP" { None } else { Some(o) })
             .next())
+    }
+
+    pub fn reconfigure_embedded(
+        &mut self,
+        embedded: &mut Output,
+        relative: &Relation,
+        to_output: Option<&mut Output>,
+        is_primary: bool,
+    ) -> Result<()> {
+        log::debug!(
+            "reconfiguring {} relative to {:?}; is primary: {}",
+            embedded.xid,
+            to_output.map(|v| v.xid),
+            is_primary
+        );
+        self.set_output_enabled(embedded, true)?;
+
+        let primary = if is_primary {
+            Some(embedded)
+        } else {
+            to_output
+        };
+
+        if let Some(primary) = primary {
+            self.set_primary(primary)
+                .with_context(|| "failed to set display as primary")?;
+            log::debug!("set {} as primary display", embedded.xid);
+        }
+
+        self.xhandle
+            .set_rotation(embedded, &xrandr::Rotation::Right)
+            .with_context(|| "reset rotation failed")?;
+
+        if let Some(to_output) = to_output {
+            self.set_output_position(embedded, relative, to_output)
+                .with_context(|| "reset position failed")?;
+        }
+
+        Ok(())
     }
 
     /// Gets the current mode of an output
@@ -172,18 +211,54 @@ impl XDisplay {
         Ok(native_mode)
     }
 
-    pub fn set_output_enabled(&mut self, output: &Output, is_enabled: bool) -> Result<()> {
+    pub fn set_output_enabled(&mut self, output: &mut Output, is_enabled: bool) -> Result<()> {
+        log::trace!("setting output {} enabled: {}", output.xid, is_enabled);
+
         if is_enabled {
-            self.xhandle.enable(output)?
+            self.xhandle
+                .enable(output)
+                .with_context(|| "enable output failed")?;
         } else {
-            self.xhandle.disable(output)?
+            self.xhandle
+                .disable(output)
+                .with_context(|| "disable output failed")?;
         }
+
+        thread::sleep(Duration::from_millis(200));
+
+        self.reconfigure_output(output)
+    }
+
+    fn reconfigure_output(&mut self, output: &mut Output) -> Result<()> {
+        let mut updated = self
+            .xhandle
+            .all_outputs()?
+            .into_iter()
+            .find(|v| v.xid == output.xid)
+            .with_context(|| "unable to find updated output")?;
+
+        std::mem::swap(&mut updated, output);
 
         Ok(())
     }
 
+    fn set_primary(&mut self, output: &mut Output) -> Result<()> {
+        // xrandr lib setprimary doesn't work, so we use the cli
+
+        // let status = Command::new("xrandr")
+        //     .args(["--output", &output.name, "--primary"])
+        //     .status()?;
+
+        // Ok(status.exit_ok()?)
+
+        self.xhandle.set_primary(output);
+        self.set_output_enabled(output, false);
+        self.set_output_enabled(output, true);
+        Ok(())
+    }
+
     /// Sets the position of one output relative to another.
-    pub fn set_output_position(
+    fn set_output_position(
         &mut self,
         output: &Output,
         relative: &Relation,

@@ -255,6 +255,7 @@ export interface PipelineActionSettingsFor_Action {
   selection: SelectionFor_ActionAnd_String;
 }
 export interface DesktopSessionHandler {
+  deck_is_primary_display: boolean;
   id: string;
   teardown_deck_location?: RelativeLocation | null;
   teardown_external_settings: ExternalDisplaySettings;
@@ -269,8 +270,8 @@ export interface Resolution {
   w: number;
 }
 export interface DisplayConfig {
+  deck_is_primary_display: boolean;
   deck_location?: RelativeLocation | null;
-  disable_splash: boolean;
   external_display_settings: ExternalDisplaySettings;
   id: string;
 }
