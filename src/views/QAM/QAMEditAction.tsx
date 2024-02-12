@@ -16,15 +16,16 @@ export default function QAMEditAction({
     action,
     onChange,
 }: QAMEditActionProps): ReactElement | null {
-    return <InternalEditAction
-        action={action}
-        onChange={onChange}
-        indentLevel={0}
-        ActionChild={QAMActionChild}
-    />
+    const props = {
+        action,
+        onChange,
+        indentLevel: 0,
+        actionChildBuilder: QAMActionChild
+    }
+    return <InternalEditAction {...props} />
 }
 
-function QAMActionChild({ children, label, }: ActionChildProps): ReactElement {
+function QAMActionChild({ children, label }: ActionChildProps): ReactElement {
     return (
         <Field label={label} focusable={false} >
             <div style={{ paddingRight: '10px' }}>

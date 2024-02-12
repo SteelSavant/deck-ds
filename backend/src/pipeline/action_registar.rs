@@ -263,7 +263,6 @@ impl PipelineActionRegistarBuilder {
                         profile_override: None,
                         selection: MultiWindow {
                             id: ActionId::nil(),
-                            disable_embedded_display: false,
                         } .into(),
                     })
                 })

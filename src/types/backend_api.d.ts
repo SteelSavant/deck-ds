@@ -276,7 +276,6 @@ export interface VirtualScreen {
   id: string;
 }
 export interface MultiWindow {
-  disable_embedded_display: boolean;
   id: string;
 }
 export interface CitraLayout {

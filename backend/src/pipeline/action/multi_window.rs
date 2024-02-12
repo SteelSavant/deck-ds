@@ -17,7 +17,6 @@ use super::{session_handler::UiEvent, ActionId, ActionImpl};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct MultiWindow {
     pub id: ActionId,
-    pub disable_embedded_display: bool,
 }
 
 const SCRIPT: &str = "emulatorwindowing";
@@ -46,38 +45,6 @@ impl ActionImpl for MultiWindow {
             .ok_or(anyhow::anyhow!("Failed to find embedded display"))?;
 
         let res = display.set_output_position(&deck, &Relation::Below, &external);
-
-        fn viewport_update(
-            display: &mut XDisplay,
-            external: &Output,
-            deck: &Output,
-        ) -> Result<UiEvent> {
-            let external_mode = display
-                .get_current_mode(external)
-                .with_context(|| "failed to get mode for external display")?
-                .with_context(|| "failed to get mode for external display")?;
-
-            let deck_mode = display
-                .get_current_mode(deck)
-                .with_context(|| "failed to get mode for embedded display")?
-                .with_context(|| "failed to get mode for embedded display")?;
-
-            Ok(UiEvent::UpdateViewports {
-                primary_size: Size(external_mode.height, external_mode.width),
-                secondary_size: Size(deck_mode.height, deck_mode.width),
-                primary_position: Pos(0, 0),
-                secondary_position: Pos(0, external_mode.height),
-            })
-        }
-
-        if self.disable_embedded_display {
-            display.set_output_enabled(&deck, false)?;
-        } else {
-            let update = viewport_update(display, &external, &deck);
-            if let Ok(event) = update {
-                ctx.send_ui_event(event);
-            }
-        }
 
         res
     }

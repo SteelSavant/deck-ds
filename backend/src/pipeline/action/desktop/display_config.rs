@@ -1,10 +1,17 @@
-use anyhow::Context;
+use anyhow::{Context, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use xrandr::Output;
 
-use crate::pipeline::{
-    action::{ActionId, ActionImpl},
-    dependency::Dependency,
+use crate::{
+    pipeline::{
+        action::{
+            session_handler::{Pos, Size},
+            ActionId, ActionImpl,
+        },
+        dependency::Dependency,
+    },
+    sys::x_display::XDisplay,
 };
 
 pub use super::common::{ExternalDisplaySettings, RelativeLocation};
@@ -51,12 +58,42 @@ impl ActionImpl for DisplayConfig {
             }?;
 
             let embedded = display.get_embedded_output()?;
+
+            fn viewport_update(
+                display: &mut XDisplay,
+                external: &Output,
+                deck: &Output,
+            ) -> Result<UiEvent> {
+                let external_mode = display
+                    .get_current_mode(external)
+                    .with_context(|| "failed to get mode for external display")?
+                    .with_context(|| "failed to get mode for external display")?;
+
+                let deck_mode = display
+                    .get_current_mode(deck)
+                    .with_context(|| "failed to get mode for embedded display")?
+                    .with_context(|| "failed to get mode for embedded display")?;
+
+                Ok(UiEvent::UpdateViewports {
+                    primary_size: Size(external_mode.height, external_mode.width),
+                    secondary_size: Size(deck_mode.height, deck_mode.width),
+                    primary_position: Pos(0, 0),
+                    secondary_position: Pos(0, external_mode.height),
+                })
+            }
+
             if let Some(embedded) = embedded {
                 match self.deck_location {
                     Some(location) => {
                         display.set_output_position(&embedded, &location.into(), &preferred)?;
+
+                        let update = viewport_update(display, &preferred, &embedded);
+                        if let Ok(event) = update {
+                            ctx.send_ui_event(event);
+                        }
                     }
                     None => {
+                        // TODO:: viewport update for the remaining display
                         display.set_output_enabled(&embedded, false)?;
                     }
                 }

@@ -1191,13 +1191,9 @@
     "MultiWindow": {
       "type": "object",
       "required": [
-        "disable_embedded_display",
         "id"
       ],
       "properties": {
-        "disable_embedded_display": {
-          "type": "boolean"
-        },
         "id": {
           "type": "string",
           "format": "uuid"

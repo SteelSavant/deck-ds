@@ -4,26 +4,29 @@ import { ReactElement } from "react";
 import { FaFile } from "react-icons/fa";
 import { Action, ExternalDisplaySettings, RelativeLocation, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../backend";
 import { useServerApi } from "../context/serverApiContext";
-import { ActionChildBuilder } from "./ActionChild";
+import { ActionChild, ActionChildBuilder } from "./ActionChild";
 
 
 interface EditActionProps {
     action: Action,
     indentLevel: number,
     onChange: (action: Action) => void,
-    ActionChild: ActionChildBuilder,
 }
 
 export default function EditAction(props: EditActionProps): ReactElement | null {
-    return <InternalEditAction {...props} />
+    const internalProps = {
+        ...props,
+        actionChildBuilder: ActionChild
+    };
+    return <InternalEditAction {...internalProps} />
 }
 
 export function InternalEditAction({
     action,
     indentLevel,
     onChange,
-    ActionChild,
-}: EditActionProps): ReactElement | null {
+    actionChildBuilder: ActionChild,
+}: { actionChildBuilder: ActionChildBuilder } & EditActionProps): ReactElement | null {
     const cloned = _.cloneDeep(action);
     const type = cloned.type;
 
@@ -219,15 +222,7 @@ export function InternalEditAction({
                 default:
                     return notConfigurable;
             }
-        case 'MultiWindow':
-            return (
-                <ActionChild indentLevel={indentLevel} label="Disable Embedded Display" description="Disables the embedded display. Useful for emulators that don't have a combined window mode.">
-                    <Toggle value={cloned.value.disable_embedded_display} onChange={(isEnabled) => {
-                        cloned.value.disable_embedded_display = isEnabled;
-                        onChange(cloned);
-                    }} />
-                </ActionChild>
-            );
+        case 'MultiWindow': // fallthrough
         case 'VirtualScreen':
             return notConfigurable;
         default:
