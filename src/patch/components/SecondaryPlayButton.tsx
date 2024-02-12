@@ -14,10 +14,11 @@ export default function SecondaryPlayButton({ }: SecondaryPlayButtonProps): Reac
     const { appDetails, appProfile } = useAppState();
     const launchActions = useLaunchActions(appDetails);
 
-    const action = launchActions.find((a) => appProfile?.isOk
-        ? a.profile.id == appProfile.data.default_profile
-        : false
-    );
+    const action = appProfile?.isOk
+        ? launchActions.find((a) =>
+            a.profile.id == appProfile.data.default_profile)
+        ?? launchActions[0]
+        : null;
 
     const vPadding = 14;
     const wPadding = 17;
@@ -28,6 +29,13 @@ export default function SecondaryPlayButton({ }: SecondaryPlayButtonProps): Reac
     if (target === 'Gamemode') {
         onLaunch ??= () => SteamClient.Apps.RunGame(appDetails?.gameId);
     }
+
+    console.log('DeckDS: patching secondary button with target: ',
+        target, 'action:',
+        action,
+        'onLaunch:',
+        onLaunch
+    );
 
     return target && onLaunch
         ? <DialogButton
