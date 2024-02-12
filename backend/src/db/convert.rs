@@ -145,6 +145,7 @@ impl CategoryProfile {
                 let db_pipeline = DbPipelineDefinition {
                     name: self.name.clone(),
                     description: self.description.clone(),
+                    source_template: self.source_template.clone(),
                     register_exit_hooks: self.register_exit_hooks,
                     primary_target_override: self.primary_target_override,
                     targets,
@@ -264,6 +265,7 @@ impl DbCategoryProfile {
                 Ok(PipelineDefinition {
                     name: self.name.clone(),
                     description: self.description.clone(),
+                    source_template: self.source_template.clone(),
                     register_exit_hooks: self.register_exit_hooks,
                     primary_target_override: self.primary_target_override,
                     targets,

@@ -39,9 +39,19 @@ pub enum PipelineTarget {
     Gamemode,
 }
 
+#[cfg_attr(test, derive(Default))]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct TemplateInfo {
+    pub id: TemplateId,
+    /// The template's version; should be updated each time an action is moved, added, or removed
+    pub version: u32,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Template {
     pub id: TemplateId,
+    /// The template's version; should be updated each time an action is moved, added, or removed
+    pub version: u32,
     pub pipeline: PipelineDefinition,
 }
 
@@ -60,6 +70,7 @@ pub mod generic {
     #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
     pub struct PipelineDefinition<A> {
         pub name: String,
+        pub source_template: TemplateInfo,
         pub description: String,
         pub register_exit_hooks: bool,
         pub primary_target_override: Option<PipelineTarget>,

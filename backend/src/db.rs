@@ -224,7 +224,7 @@ mod tests {
     use crate::{
         pipeline::{
             action_registar::PipelineActionRegistrar,
-            data::{PipelineActionId, PipelineTarget, Selection},
+            data::{PipelineActionId, PipelineTarget, Selection, TemplateInfo},
         },
         util::create_dir_all,
     };
@@ -258,6 +258,7 @@ mod tests {
             pipeline: PipelineDefinition {
                 name: "Test Pipeline".to_string(),
                 description: "Test Description".to_string(),
+                source_template: Default::default(),
                 register_exit_hooks: true,
                 primary_target_override: None,
                 targets,
@@ -328,6 +329,7 @@ mod tests {
                 PipelineDefinition {
                     name: "Profile 1".into(),
                     description: "Profile 1".into(),
+                    source_template: Default::default(),
                     register_exit_hooks: true,
                     primary_target_override: None,
                     targets: targets1,
@@ -339,6 +341,7 @@ mod tests {
                 PipelineDefinition {
                     name: "Profile 2".into(),
                     description: "Profile 2".into(),
+                    source_template: Default::default(),
                     register_exit_hooks: true,
                     primary_target_override: None,
                     targets: targets2,
