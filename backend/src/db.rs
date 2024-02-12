@@ -66,6 +66,9 @@ static DATABASE_BUILDER: Lazy<native_db::DatabaseBuilder> = Lazy::new(|| {
         builder
             .define::<v1::DbSourceFile>()
             .expect("failed to define SourceDbSourceFile v1");
+        builder
+            .define::<v1::DbDisplayConfig>()
+            .expect("failed to define DbDisplayConfig v1");
     }
 
     builder

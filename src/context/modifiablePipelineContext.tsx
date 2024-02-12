@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { PipelineContainer } from '../backend';
-import { PipelineUpdate, patchPipeline } from '../util/patch';
+import { PipelineUpdate, patchPipeline } from '../util/patch_pipeline';
 
 interface PipelineContainerState {
     container: PipelineContainer,

@@ -1,17 +1,19 @@
 import { PipelineTarget } from "../backend";
 import useGlobalSettings from "./useGlobalSettings";
+import useProfile from "./useProfile";
 
 export interface AppTargets {
     primaryTarget?: PipelineTarget | null | undefined
     secondaryTarget?: PipelineTarget | null | undefined
 }
 
-export default function useAppTarget({ isPrimary }: { isPrimary: boolean }): PipelineTarget | undefined {
+export default function useAppTarget({ isPrimary, profileId }: { isPrimary: boolean, profileId: string | undefined }): PipelineTarget | undefined {
     const { settings } = useGlobalSettings();
+    const profile = useProfile(profileId ?? null);
 
-    if (settings?.isOk && settings.data.enable_ui_inject) {
+    if (profile?.isOk && settings?.isOk && settings.data.enable_ui_inject) {
         // TODO::may need to consider logic where only one target exists
-        const primaryTarget = settings.data.primary_ui_target;
+        const primaryTarget = profile.data?.pipeline.primary_target_override ?? settings.data.primary_ui_target;
         const secondaryTarget: PipelineTarget = primaryTarget === 'Desktop'
             ? 'Gamemode'
             : 'Desktop';

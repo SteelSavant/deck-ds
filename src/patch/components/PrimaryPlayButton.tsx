@@ -17,7 +17,12 @@ export default function PrimaryPlayButton({
 }: PrimaryPlayButtonProps): ReactElement {
     const { appDetails, appProfile } = useAppState();
     const launchActions = useLaunchActions(appDetails);
-    const target = useAppTarget({ isPrimary: true });
+
+    const action = launchActions.find((a) => appProfile?.isOk
+        ? a.profile.id == appProfile.data.default_profile
+        : false
+    );
+    const target = useAppTarget({ isPrimary: true, profileId: action?.profile.id });
 
     return <HandleLoading
         value={appProfile}

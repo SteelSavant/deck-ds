@@ -12,7 +12,7 @@ import { ApiError, getAppProfile, getDefaultAppOverrideForProfileRequest, getPro
 import { AppProfile, PipelineTarget, ReifyPipelineResponse } from '../types/backend_api';
 import { MaybeString } from '../types/short';
 import { Loading } from '../util/loading';
-import { patchPipeline, PipelineUpdate } from '../util/patch';
+import { patchPipeline, PipelineUpdate } from '../util/patch_pipeline';
 import { Result } from '../util/result';
 
 

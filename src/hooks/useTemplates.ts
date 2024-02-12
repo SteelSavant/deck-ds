@@ -17,11 +17,15 @@ const useTemplates = (): Loading<Array<Template>> => {
                 }
 
                 setResult(res.map((v) => {
-                    v.templates.sort((a, b) =>
-                        a.pipeline.name < b.pipeline.name ? -1
-                            : a.pipeline.name > b.pipeline.name ? 1
+                    v.templates.sort((a, b) => {
+                        const aName = a.pipeline.name.toLowerCase();
+                        const bName = b.pipeline.name.toLowerCase();
+
+                        return aName < bName ? -1
+                            : aName > bName ? 1
                                 : a.id < b.id ? -1
-                                    : 1);
+                                    : 1
+                    });
                     return v.templates;
                 }));
             })();

@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { Action, PipelineActionSettings, PipelineDefinition } from "../backend";
+import { Action, PipelineActionSettings, PipelineDefinition, PipelineTarget } from "../backend";
 import { MaybeString } from "../types/short";
 
 export type PipelineUpdate = {
@@ -31,6 +31,7 @@ export interface PipelineInfo {
     description?: string | undefined;
     name?: string | undefined;
     register_exit_hooks?: boolean | undefined;
+    primary_target_override?: PipelineTarget | null | undefined;
 }
 
 
@@ -42,7 +43,10 @@ export function patchPipeline(pipeline: PipelineDefinition, update: PipelineUpda
             ...pipeline,
             description: info.description ?? pipeline.description,
             name: info.name ?? pipeline.name,
-            register_exit_hooks: info.register_exit_hooks ?? pipeline.register_exit_hooks
+            register_exit_hooks: info.register_exit_hooks ?? pipeline.register_exit_hooks,
+            primary_target_override: info.primary_target_override === undefined
+                ? pipeline.primary_target_override
+                : info.primary_target_override
         };
     } else {
         let updatedActions: { [k: string]: PipelineActionSettings } = {};

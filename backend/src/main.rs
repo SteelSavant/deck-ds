@@ -160,17 +160,21 @@ fn main() -> Result<()> {
         std::env::current_dir().unwrap().display()
     );
 
-    log::info!("Config dir `{}`", config_dir.display());
-    println!("Config dir `{}`", config_dir.display());
-
     log::info!("home dir: {:?}", home_dir);
     println!("home dir `{}`", config_dir.display());
+
+    log::info!("Config dir `{}`", config_dir.display());
+    println!("Config dir `{}`", config_dir.display());
 
     log::info!("Last version file: {}", crate::util::read_version_file());
     if let Err(e) = crate::util::save_version_file() {
         log::error!("Error storing version: {}", e);
     } else {
         log::info!("Updated version file succesfully");
+    }
+
+    if let Err(err) = create_dir_all(&config_dir) {
+        log::error!("Error setting up config dir: {err}");
     }
 
     let registrar = PipelineActionRegistrar::builder().with_core().build();
