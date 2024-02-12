@@ -226,7 +226,7 @@ impl PipelineActionRegistarBuilder {
                             selection: DesktopSessionHandler {
                                 id: ActionId::nil(),
                                 teardown_external_settings: ExternalDisplaySettings::Previous,
-                                teardown_deck_location: RelativeLocation::Below,
+                                teardown_deck_location: Some(RelativeLocation::Below),
                             } .into(),
                         },
                     )
@@ -546,7 +546,7 @@ mod tests {
                 .build()
                 .actions
                 .len(),
-            22
+            23
         );
     }
 

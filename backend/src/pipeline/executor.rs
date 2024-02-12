@@ -549,7 +549,7 @@ mod tests {
             DesktopSessionHandler {
                 id: ActionId::nil(),
                 teardown_external_settings: ExternalDisplaySettings::Native,
-                teardown_deck_location: RelativeLocation::Below,
+                teardown_deck_location: Some(RelativeLocation::Below),
             }
             .clone()
             .into(),

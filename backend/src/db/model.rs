@@ -282,7 +282,7 @@ pub mod v1 {
         #[primary_key]
         pub id: ActionId,
         pub teardown_external_settings: DbExternalDisplaySettings,
-        pub teardown_deck_location: DbRelativeLocation,
+        pub teardown_deck_location: Option<DbRelativeLocation>,
     }
 
     impl From<DesktopSessionHandler> for DbDesktopSessionHandler {
@@ -290,13 +290,13 @@ pub mod v1 {
             Self {
                 id: value.id,
                 teardown_external_settings: value.teardown_external_settings.into(),
-                teardown_deck_location: match value.teardown_deck_location {
+                teardown_deck_location: value.teardown_deck_location.map(|v| match v {
                     RelativeLocation::Above => DbRelativeLocation::Above,
                     RelativeLocation::Below => DbRelativeLocation::Below,
                     RelativeLocation::LeftOf => DbRelativeLocation::LeftOf,
                     RelativeLocation::RightOf => DbRelativeLocation::RightOf,
                     RelativeLocation::SameAs => DbRelativeLocation::SameAs,
-                },
+                }),
             }
         }
     }
@@ -404,13 +404,13 @@ pub mod v1 {
                         })
                     }
                 },
-                teardown_deck_location: match value.teardown_deck_location {
+                teardown_deck_location: value.teardown_deck_location.map(|v| match v {
                     DbRelativeLocation::Above => RelativeLocation::Above,
                     DbRelativeLocation::Below => RelativeLocation::Below,
                     DbRelativeLocation::LeftOf => RelativeLocation::LeftOf,
                     DbRelativeLocation::RightOf => RelativeLocation::RightOf,
                     DbRelativeLocation::SameAs => RelativeLocation::SameAs,
-                },
+                }),
             }
         }
     }
@@ -631,7 +631,7 @@ pub mod v1 {
 
     #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
     #[native_db]
-    #[native_model(id = 8, version = 1, with = NativeModelJSON)]
+    #[native_model(id = 11, version = 1, with = NativeModelJSON)]
     pub struct DbDisplayConfig {
         #[primary_key]
         pub id: ActionId,

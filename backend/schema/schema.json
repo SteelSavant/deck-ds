@@ -699,7 +699,6 @@
       "type": "object",
       "required": [
         "id",
-        "teardown_deck_location",
         "teardown_external_settings"
       ],
       "properties": {
@@ -708,7 +707,14 @@
           "format": "uuid"
         },
         "teardown_deck_location": {
-          "$ref": "#/definitions/RelativeLocation"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RelativeLocation"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "teardown_external_settings": {
           "$ref": "#/definitions/ExternalDisplaySettings"

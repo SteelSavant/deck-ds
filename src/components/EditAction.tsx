@@ -44,12 +44,18 @@ export default function EditAction({
                         />
                     </ActionChild>
                     <ActionChild indentLevel={indentLevel} label="Deck Screen Location" description="Location of the Deck screen on the desktop relative to the external screen.">
-                        <Dropdown selectedOption={display.teardown_deck_location} rgOptions={locations.map((location) => {
-                            return {
-                                label: location,
-                                data: location,
-                            }
-                        })}
+                        <Dropdown selectedOption={display.teardown_deck_location} rgOptions={[
+                            {
+                                label: 'Disabled',
+                                data: null,
+                            },
+                            ...locations.map((location) => {
+                                return {
+                                    label: location,
+                                    data: location,
+                                }
+                            })
+                        ]}
                             onChange={(settings) => {
                                 cloned.value.teardown_deck_location = settings.data;
                                 onChange(cloned)
@@ -79,18 +85,18 @@ export default function EditAction({
                         />
                     </ActionChild>
                     <ActionChild indentLevel={indentLevel} label="Deck Screen Location" description="Location of the Deck screen on the desktop.">
-                        <Dropdown selectedOption={display.deck_location} rgOptions={
-                            [
-                                {
-                                    label: 'Disabled',
-                                    data: null,
-                                },
-                                ...locations.map((location) => {
-                                    return {
-                                        label: location,
-                                        data: location,
-                                    }
-                                })]}
+                        <Dropdown selectedOption={display.deck_location} rgOptions={[
+                            {
+                                label: 'Disabled',
+                                data: null,
+                            },
+                            ...locations.map((location) => {
+                                return {
+                                    label: location,
+                                    data: location,
+                                }
+                            })
+                        ]}
                             onChange={(settings) => {
                                 cloned.value.deck_location = settings.data;
                                 onChange(cloned)

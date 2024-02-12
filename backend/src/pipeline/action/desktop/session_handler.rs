@@ -27,7 +27,7 @@ pub struct DesktopSessionHandler {
     pub id: ActionId,
 
     pub teardown_external_settings: ExternalDisplaySettings,
-    pub teardown_deck_location: RelativeLocation,
+    pub teardown_deck_location: Option<RelativeLocation>,
 }
 impl DesktopSessionHandler {
     pub(crate) fn desktop_only(&self, ctx: &mut PipelineContext<'_>) -> Result<()> {
@@ -52,7 +52,11 @@ impl DesktopSessionHandler {
             }?;
 
             let deck = display.get_embedded_output()?.unwrap();
-            display.set_output_position(&deck, &self.teardown_deck_location.into(), &current_output)
+            if let Some(location) = self.teardown_deck_location {
+                display.set_output_position(&deck, &location.into(), &current_output)
+            } else {
+                display.set_output_enabled(&deck, false)
+            }
         } else {
             Ok(())
         }
@@ -274,11 +278,11 @@ impl ActionImpl for DesktopSessionHandler {
                 }?;
 
                 let deck = display.get_embedded_output()?.unwrap();
-                display.set_output_position(
-                    &deck,
-                    &self.teardown_deck_location.into(),
-                    &current_output,
-                )
+                if let Some(location) = self.teardown_deck_location {
+                    display.set_output_position(&deck, &location.into(), &current_output)
+                } else {
+                    display.set_output_enabled(&deck, true)
+                }
             }
 
             // No state, nothing to tear down

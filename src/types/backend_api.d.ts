@@ -254,7 +254,7 @@ export interface PipelineActionSettingsFor_Action {
 }
 export interface DesktopSessionHandler {
   id: string;
-  teardown_deck_location: RelativeLocation;
+  teardown_deck_location?: RelativeLocation | null;
   teardown_external_settings: ExternalDisplaySettings;
 }
 export interface ModePreference {

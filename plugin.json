@@ -1,7 +1,9 @@
 {
   "name": "DeckDS",
   "author": "SteelSavant",
-  "flags": [],
+  "flags": [
+    "debug"
+  ],
   "publish": {
     "tags": [
       "emulation, dual-screen, ds"
