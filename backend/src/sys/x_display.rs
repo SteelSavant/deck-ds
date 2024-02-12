@@ -173,11 +173,13 @@ impl XDisplay {
     }
 
     pub fn set_output_enabled(&mut self, output: &Output, is_enabled: bool) -> Result<()> {
-        Ok(if is_enabled {
+        if is_enabled {
             self.xhandle.enable(output)?
         } else {
             self.xhandle.disable(output)?
-        })
+        }
+
+        Ok(())
     }
 
     /// Sets the position of one output relative to another.

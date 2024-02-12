@@ -519,6 +519,7 @@ mod tests {
             citra_layout::{CitraLayoutOption, CitraLayoutState, CitraState},
             display_config::DisplayConfig,
             melonds_layout::{MelonDSLayoutOption, MelonDSLayoutState, MelonDSSizingOption},
+            multi_window::MultiWindowTarget,
             session_handler::{DisplayState, ExternalDisplaySettings, RelativeLocation},
             source_file::{FileSource, FlatpakSource},
             ActionId,
@@ -560,6 +561,7 @@ mod tests {
             .into(),
             MultiWindow {
                 id: ActionId::nil(),
+                targets: vec![MultiWindowTarget::Cemu],
             }
             .into(),
             SourceFile {

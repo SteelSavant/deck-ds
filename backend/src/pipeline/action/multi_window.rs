@@ -1,27 +1,28 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use xrandr::{Output, Relation};
 
-use crate::{
-    pipeline::{
-        action::session_handler::{Pos, Size},
-        dependency::Dependency,
-        executor::PipelineContext,
-    },
-    sys::x_display::XDisplay,
-};
+use crate::pipeline::{dependency::Dependency, executor::PipelineContext};
 
-use super::{session_handler::UiEvent, ActionId, ActionImpl};
+use super::{ActionId, ActionImpl};
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub enum MultiWindowTarget {
+    Cemu,
+    Citra,
+    Dolphin,
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct MultiWindow {
     pub id: ActionId,
+    /// Which applications are the intended targets;
+    /// will eventually be used to choose which UI
+    /// to display to configure the KWin script
+    pub targets: Vec<MultiWindowTarget>,
 }
 
 const SCRIPT: &str = "emulatorwindowing";
-
-// TODO::restore kwin script settings
 
 impl ActionImpl for MultiWindow {
     type State = bool;
@@ -32,33 +33,17 @@ impl ActionImpl for MultiWindow {
         let enabled = ctx.kwin.get_script_enabled(SCRIPT);
         ctx.set_state::<Self>(matches!(enabled, Ok(true)));
 
-        ctx.kwin.set_script_enabled(SCRIPT, true)?;
-        let display = ctx
-            .display
-            .as_mut()
-            .with_context(|| "MultiWindow requires x11 to be running")?;
-        let external = display
-            .get_preferred_external_output()?
-            .ok_or(anyhow::anyhow!("Failed to find external display"))?;
-        let deck = display
-            .get_embedded_output()?
-            .ok_or(anyhow::anyhow!("Failed to find embedded display"))?;
-
-        let res = display.set_output_position(&deck, &Relation::Below, &external);
-
-        res
+        ctx.kwin.set_script_enabled(SCRIPT, true)
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {
-        ctx.kwin.set_script_enabled(SCRIPT, false)?;
-        Ok(())
+        let state = ctx.get_state::<Self>();
+        ctx.kwin
+            .set_script_enabled(SCRIPT, matches!(state, Some(true)))
     }
 
     fn get_dependencies(&self, _ctx: &mut PipelineContext) -> Vec<Dependency> {
-        vec![
-            Dependency::KwinScript(SCRIPT.to_string()),
-            Dependency::Display,
-        ]
+        vec![Dependency::KwinScript(SCRIPT.to_string())]
     }
 
     #[inline]

@@ -33,7 +33,7 @@ impl ActionImpl for DisplayConfig {
 
     fn setup(&self, ctx: &mut crate::pipeline::executor::PipelineContext) -> anyhow::Result<()> {
         if self.disable_splash {
-            let _ = ctx.send_ui_event(UiEvent::Close);
+            ctx.send_ui_event(UiEvent::Close);
         }
 
         let display = ctx

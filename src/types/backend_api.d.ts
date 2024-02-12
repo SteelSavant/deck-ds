@@ -92,6 +92,7 @@ export type ModeOptionFor_Resolution =
   | {
       AtMost: Resolution;
     };
+export type MultiWindowTarget = "Cemu" | "Citra" | "Dolphin";
 export type CitraLayoutOption =
   | {
       type: "Default";
@@ -225,6 +226,7 @@ export interface PipelineDefinitionFor_Action {
   name: string;
   primary_target_override?: PipelineTarget | null;
   register_exit_hooks: boolean;
+  source_template: TemplateInfo;
   targets: {
     [k: string]: SelectionFor_ActionAnd_String;
   };
@@ -277,6 +279,10 @@ export interface VirtualScreen {
 }
 export interface MultiWindow {
   id: string;
+  /**
+   * Which applications are the intended targets; will eventually be used to choose which UI to display to configure the KWin script
+   */
+  targets: MultiWindowTarget[];
 }
 export interface CitraLayout {
   id: string;
@@ -315,6 +321,13 @@ export interface CustomFileOptions {
    * valid file extensions for source file
    */
   valid_ext: string[];
+}
+export interface TemplateInfo {
+  id: string;
+  /**
+   * The template's version; should be updated each time an action is moved, added, or removed
+   */
+  version: number;
 }
 export interface CreateProfileResponse {
   profile_id: string;
@@ -376,6 +389,10 @@ export interface GetTemplatesResponse {
 export interface Template {
   id: string;
   pipeline: PipelineDefinitionFor_Action;
+  /**
+   * The template's version; should be updated each time an action is moved, added, or removed
+   */
+  version: number;
 }
 export interface ReifyPipelineRequest {
   pipeline: PipelineDefinitionFor_Action;

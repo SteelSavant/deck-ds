@@ -45,7 +45,7 @@ pub mod v1 {
 
     use crate::{
         pipeline::action::{
-            multi_window::MultiWindow,
+            multi_window::{MultiWindow, MultiWindowTarget},
             session_handler::{ExternalDisplaySettings, RelativeLocation},
             source_file::{
                 AppImageSource, CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource,
@@ -502,17 +502,47 @@ pub mod v1 {
     pub struct DbMultiWindow {
         #[primary_key]
         pub id: ActionId,
+        pub targets: Vec<DbMultiWindowTarget>,
+    }
+
+    #[derive(Debug, Copy, Clone, Serialize, PartialEq, Eq, Deserialize)]
+    pub enum DbMultiWindowTarget {
+        Cemu,
+        Citra,
+        Dolphin,
     }
 
     impl From<MultiWindow> for DbMultiWindow {
         fn from(value: MultiWindow) -> Self {
-            Self { id: value.id }
+            Self {
+                id: value.id,
+                targets: value
+                    .targets
+                    .into_iter()
+                    .map(|t| match t {
+                        MultiWindowTarget::Cemu => DbMultiWindowTarget::Cemu,
+                        MultiWindowTarget::Citra => DbMultiWindowTarget::Citra,
+                        MultiWindowTarget::Dolphin => DbMultiWindowTarget::Dolphin,
+                    })
+                    .collect(),
+            }
         }
     }
 
     impl From<DbMultiWindow> for MultiWindow {
         fn from(value: DbMultiWindow) -> Self {
-            Self { id: value.id }
+            Self {
+                id: value.id,
+                targets: value
+                    .targets
+                    .into_iter()
+                    .map(|t| match t {
+                        DbMultiWindowTarget::Cemu => MultiWindowTarget::Cemu,
+                        DbMultiWindowTarget::Citra => MultiWindowTarget::Citra,
+                        DbMultiWindowTarget::Dolphin => MultiWindowTarget::Dolphin,
+                    })
+                    .collect(),
+            }
         }
     }
 

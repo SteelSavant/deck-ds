@@ -224,7 +224,7 @@ mod tests {
     use crate::{
         pipeline::{
             action_registar::PipelineActionRegistrar,
-            data::{PipelineActionId, PipelineTarget, Selection, TemplateInfo},
+            data::{PipelineActionId, PipelineTarget, Selection},
         },
         util::create_dir_all,
     };
