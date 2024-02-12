@@ -502,17 +502,24 @@ pub mod v1 {
     pub struct DbMultiWindow {
         #[primary_key]
         pub id: ActionId,
+        pub disable_embedded_display: bool,
     }
 
     impl From<MultiWindow> for DbMultiWindow {
         fn from(value: MultiWindow) -> Self {
-            Self { id: value.id }
+            Self {
+                id: value.id,
+                disable_embedded_display: value.disable_embedded_display,
+            }
         }
     }
 
     impl From<DbMultiWindow> for MultiWindow {
         fn from(value: DbMultiWindow) -> Self {
-            Self { id: value.id }
+            Self {
+                id: value.id,
+                disable_embedded_display: value.disable_embedded_display,
+            }
         }
     }
 

@@ -560,6 +560,7 @@ mod tests {
             .into(),
             MultiWindow {
                 id: ActionId::nil(),
+                disable_embedded_display: false,
             }
             .into(),
             SourceFile {

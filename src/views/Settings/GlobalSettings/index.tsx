@@ -1,6 +1,6 @@
 import { Dropdown, Field, Toggle } from "decky-frontend-lib";
 import { Fragment, VFC } from "react";
-import EditAction from "../../../components/EditAction";
+import InternalEditAction from "../../../components/EditAction";
 import HandleLoading from "../../../components/HandleLoading";
 import useGlobalSettings from "../../../hooks/useGlobalSettings";
 
@@ -18,7 +18,7 @@ export const GlobalSettingsPage: VFC = () => {
                         label="Display Settings"
                         description="Settings to apply when restoring the desktop displays after an app launch."
                     />
-                    <EditAction
+                    <InternalEditAction
                         action={{ type: 'DesktopSessionHandler', value: settings.display_restoration }}
                         indentLevel={1}
                         onChange={(action) => {

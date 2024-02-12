@@ -17,6 +17,7 @@ use super::{session_handler::UiEvent, ActionId, ActionImpl};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct MultiWindow {
     pub id: ActionId,
+    pub disable_embedded_display: bool,
 }
 
 const SCRIPT: &str = "emulatorwindowing";
@@ -69,9 +70,13 @@ impl ActionImpl for MultiWindow {
             })
         }
 
-        let update = viewport_update(display, &external, &deck);
-        if let Ok(event) = update {
-            ctx.send_ui_event(event);
+        if self.disable_embedded_display {
+            display.set_output_enabled(&deck, false)?;
+        } else {
+            let update = viewport_update(display, &external, &deck);
+            if let Ok(event) = update {
+                ctx.send_ui_event(event);
+            }
         }
 
         res
@@ -85,9 +90,7 @@ impl ActionImpl for MultiWindow {
     fn get_dependencies(&self, _ctx: &mut PipelineContext) -> Vec<Dependency> {
         vec![
             Dependency::KwinScript(SCRIPT.to_string()),
-            // Display dependencies
-            Dependency::System("xrandr".to_string()),
-            Dependency::System("cvt".to_string()),
+            Dependency::Display,
         ]
     }
 

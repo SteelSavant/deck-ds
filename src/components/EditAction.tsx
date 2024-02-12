@@ -1,21 +1,28 @@
-import { DialogButton, Dropdown, Field, FileSelectionType, Focusable, Toggle } from "decky-frontend-lib";
+import { DialogButton, Dropdown, FileSelectionType, Toggle } from "decky-frontend-lib";
 import _ from "lodash";
 import { ReactElement } from "react";
 import { FaFile } from "react-icons/fa";
 import { Action, ExternalDisplaySettings, RelativeLocation, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../backend";
 import { useServerApi } from "../context/serverApiContext";
+import { ActionChildBuilder } from "./ActionChild";
 
 
 interface EditActionProps {
     action: Action,
     indentLevel: number,
     onChange: (action: Action) => void,
+    ActionChild: ActionChildBuilder,
 }
 
-export default function EditAction({
+export default function EditAction(props: EditActionProps): ReactElement | null {
+    return <InternalEditAction {...props} />
+}
+
+export function InternalEditAction({
     action,
     indentLevel,
     onChange,
+    ActionChild,
 }: EditActionProps): ReactElement | null {
     const cloned = _.cloneDeep(action);
     const type = cloned.type;
@@ -212,7 +219,15 @@ export default function EditAction({
                 default:
                     return notConfigurable;
             }
-        case 'MultiWindow': // fallthrough
+        case 'MultiWindow':
+            return (
+                <ActionChild indentLevel={indentLevel} label="Disable Embedded Display" description="Disables the embedded display. Useful for emulators that don't have a combined window mode.">
+                    <Toggle value={cloned.value.disable_embedded_display} onChange={(isEnabled) => {
+                        cloned.value.disable_embedded_display = isEnabled;
+                        onChange(cloned);
+                    }} />
+                </ActionChild>
+            );
         case 'VirtualScreen':
             return notConfigurable;
         default:
@@ -221,14 +236,3 @@ export default function EditAction({
     }
 }
 
-function ActionChild({ children, label, description, indentLevel }: { children: ReactElement, label: string, description?: string | undefined, indentLevel: number }): ReactElement {
-    return (
-        <Field label={label} focusable={false} description={description} indentLevel={indentLevel} >
-            <div style={{ paddingRight: '10px' }}>
-                <Focusable >
-                    {children}
-                </Focusable>
-            </div>
-        </Field>
-    );
-}

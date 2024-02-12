@@ -92,9 +92,7 @@ impl ActionImpl for VirtualScreen {
     fn get_dependencies(&self, _ctx: &mut PipelineContext) -> Vec<Dependency> {
         vec![
             Dependency::KwinScript(SCRIPT.to_string()),
-            // Display dependencies
-            Dependency::System("xrandr".to_string()),
-            Dependency::System("cvt".to_string()),
+            Dependency::Display,
         ]
     }
 

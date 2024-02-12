@@ -129,7 +129,7 @@ impl Action {
             }
             Action::DisplayConfig(a) => Action::DisplayConfig(DisplayConfig { id, ..a.clone() }),
             Action::VirtualScreen(_) => Action::VirtualScreen(VirtualScreen { id }),
-            Action::MultiWindow(_) => Action::MultiWindow(MultiWindow { id }),
+            Action::MultiWindow(a) => Action::MultiWindow(MultiWindow { id, ..*a }),
             Action::CitraLayout(a) => Action::CitraLayout(CitraLayout { id, ..*a }),
             Action::CemuLayout(a) => Action::CemuLayout(CemuLayout { id, ..*a }),
             Action::MelonDSLayout(a) => Action::MelonDSLayout(MelonDSLayout { id, ..*a }),

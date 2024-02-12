@@ -298,11 +298,7 @@ impl ActionImpl for DesktopSessionHandler {
         &self,
         _ctx: &mut PipelineContext,
     ) -> Vec<crate::pipeline::dependency::Dependency> {
-        vec![
-            // Display dependencies
-            Dependency::System("xrandr".to_string()),
-            Dependency::System("cvt".to_string()),
-        ]
+        vec![Dependency::Display]
     }
 
     #[inline]

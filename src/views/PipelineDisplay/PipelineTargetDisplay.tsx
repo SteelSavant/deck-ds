@@ -4,7 +4,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Action, ActionOneOf, ActionSelection, PipelineAction, } from "../../backend";
 import ActionIcon from "../../components/ActionIcon";
 import ConfigErrorWarning from "../../components/ConfigErrorWarning";
-import EditAction from "../../components/EditAction";
+import InternalEditAction from "../../components/EditAction";
 import { ConfigErrorContext } from "../../context/configErrorContext";
 import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
 
@@ -36,7 +36,7 @@ function buildSelection(id: string, selection: ActionSelection, indentLevel: num
 function buildAction(id: string, action: Action, indentLevel: number): ReactElement | null {
     const { dispatch } = useModifiablePipelineContainer();
 
-    return EditAction({
+    return InternalEditAction({
         action: action, indentLevel: indentLevel + 1, onChange: (updatedAction) => {
             dispatch(
                 {

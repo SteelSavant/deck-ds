@@ -2,7 +2,10 @@ use anyhow::Context;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::pipeline::action::{ActionId, ActionImpl};
+use crate::pipeline::{
+    action::{ActionId, ActionImpl},
+    dependency::Dependency,
+};
 
 pub use super::common::{ExternalDisplaySettings, RelativeLocation};
 use super::session_handler::UiEvent;
@@ -80,5 +83,12 @@ impl ActionImpl for DisplayConfig {
 
     fn get_id(&self) -> ActionId {
         self.id
+    }
+
+    fn get_dependencies(
+        &self,
+        _ctx: &mut crate::pipeline::executor::PipelineContext,
+    ) -> Vec<crate::pipeline::dependency::Dependency> {
+        vec![Dependency::Display]
     }
 }

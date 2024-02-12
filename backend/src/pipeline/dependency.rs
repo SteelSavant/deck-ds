@@ -32,6 +32,7 @@ pub enum Dependency {
     Path { path: PathBuf, is_file: bool },
     KwinScript(String),
     ConfigField(String),
+    Display,
 }
 
 impl Dependency {
@@ -53,12 +54,19 @@ impl Dependency {
                     Err(DependencyError::PathNotFound(path.clone()))
                 }
             }
-            Dependency::KwinScript(script_name) => ctx
-                .kwin
-                .get_bundle(script_name)
-                .map(|_| ())
-                .ok_or_else(|| DependencyError::KwinScriptNotFound(script_name.clone())),
+            Dependency::KwinScript(script_name) => {
+                verify_system_deps(
+                    &["kpackagetool5", "kreadconfig5", "kwriteconfig5", "qdbus"],
+                    ctx,
+                )?;
+
+                ctx.kwin
+                    .get_bundle(script_name)
+                    .map(|_| ())
+                    .ok_or_else(|| DependencyError::KwinScriptNotFound(script_name.clone()))
+            }
             Dependency::ConfigField(field) => Err(DependencyError::FieldNotSet(field.clone())),
+            Dependency::Display => verify_system_deps(&["xrandr", "cvt"], ctx),
         }
     }
 
@@ -76,4 +84,12 @@ impl Dependency {
             }
         })
     }
+}
+
+fn verify_system_deps(deps: &[&str], ctx: &PipelineContext) -> Result<(), DependencyError> {
+    for dep in deps.iter() {
+        Dependency::System(dep.to_string()).verify_config(ctx)?
+    }
+
+    Ok(())
 }
