@@ -128,28 +128,24 @@ impl XDisplay {
         &mut self,
         embedded: &mut Output,
         relative: &Relation,
-        to_output: Option<&mut Output>,
+        to_output: Option<&Output>,
         is_primary: bool,
     ) -> Result<()> {
         log::debug!(
             "reconfiguring {} relative to {:?}; is primary: {}",
             embedded.xid,
-            to_output.map(|v| v.xid),
+            to_output.as_ref().map(|v| v.xid),
             is_primary
         );
         self.set_output_enabled(embedded, true)?;
 
-        let primary = if is_primary {
-            Some(embedded)
-        } else {
-            to_output
-        };
-
-        if let Some(primary) = primary {
-            self.set_primary(primary)
-                .with_context(|| "failed to set display as primary")?;
+        if is_primary {
+            self.set_primary(embedded)?;
             log::debug!("set {} as primary display", embedded.xid);
-        }
+        } else if let Some(output) = to_output {
+            self.set_primary(output)?;
+            log::debug!("set {} as primary display", output.xid);
+        };
 
         self.xhandle
             .set_rotation(embedded, &xrandr::Rotation::Right)
@@ -242,19 +238,14 @@ impl XDisplay {
         Ok(())
     }
 
-    fn set_primary(&mut self, output: &mut Output) -> Result<()> {
+    fn set_primary(&mut self, output: &Output) -> Result<()> {
         // xrandr lib setprimary doesn't work, so we use the cli
 
-        // let status = Command::new("xrandr")
-        //     .args(["--output", &output.name, "--primary"])
-        //     .status()?;
+        let status = Command::new("kscreen-doctor")
+            .args([&format!("output.{}.primary", output.name)])
+            .status()?;
 
-        // Ok(status.exit_ok()?)
-
-        self.xhandle.set_primary(output);
-        self.set_output_enabled(output, false);
-        self.set_output_enabled(output, true);
-        Ok(())
+        Ok(status.exit_ok()?)
     }
 
     /// Sets the position of one output relative to another.
