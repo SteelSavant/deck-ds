@@ -43,6 +43,8 @@ impl ActionImpl for VirtualScreen {
             .get_embedded_output()?
             .ok_or(anyhow::anyhow!("Failed to find embedded display"))?;
 
+        display.reconfigure_embedded(&mut deck, &Relation::Below, Some(&external), true)?;
+
         let deck_mode = display
             .get_current_mode(&deck)?
             .expect("Deck screen should have active mode");
@@ -66,8 +68,6 @@ impl ActionImpl for VirtualScreen {
                 refresh: ModeOption::Exact(deck_mode.rate),
             },
         )?;
-
-        display.reconfigure_embedded(&mut deck, &Relation::Below, Some(&external), true)?;
 
         ctx.send_ui_event(super::session_handler::UiEvent::UpdateViewports {
             primary_size: Size(resolution.w, resolution.h),
