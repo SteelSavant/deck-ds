@@ -12,9 +12,9 @@ use winit::platform::x11::EventLoopBuilderExtX11;
 pub enum UiEvent {
     UpdateViewports {
         primary_size: Size,
-        secondary_size: Size,
+        secondary_size: Option<Size>,
         primary_position: Pos,
-        secondary_position: Pos,
+        secondary_position: Option<Pos>,
     },
     UpdateWindowLevel(WindowLevel),
     UpdateStatusMsg(String),
@@ -24,9 +24,9 @@ pub enum UiEvent {
 
 pub struct DeckDsUi {
     primary_size: Size,
-    secondary_size: Size,
+    secondary_size: Option<Size>,
     primary_position: Pos,
-    secondary_position: Pos,
+    secondary_position: Option<Pos>,
     primary_text: String,
     secondary_text: String,
     custom_frame: Frame,
@@ -56,9 +56,9 @@ pub struct Size(pub u32, pub u32);
 impl DeckDsUi {
     pub fn new(
         primary_size: Size,
-        secondary_size: Size,
+        secondary_size: Option<Size>,
         primary_position: Pos,
-        secondary_position: Pos,
+        secondary_position: Option<Pos>,
         secondary_text: String,
         rx: Receiver<UiEvent>,
         tx: Sender<egui::Context>,
@@ -167,35 +167,35 @@ impl eframe::App for DeckDsUi {
                     );
                 })
             });
+        match (self.secondary_position, self.secondary_size) {
+            (Some(pos), Some(size)) => {
+                ctx.show_viewport_immediate(
+                    egui::ViewportId::from_hash_of("DeckDS Secondary"),
+                    build_viewport(pos, size, self.window_level),
+                    |ctx, class| {
+                        assert!(
+                            class == egui::ViewportClass::Immediate,
+                            "This egui backend doesn't support multiple viewports"
+                        );
 
-        ctx.show_viewport_immediate(
-            egui::ViewportId::from_hash_of("DeckDS Secondary"),
-            build_viewport(
-                self.secondary_position,
-                self.secondary_size,
-                self.window_level,
-            ),
-            |ctx, class| {
-                assert!(
-                    class == egui::ViewportClass::Immediate,
-                    "This egui backend doesn't support multiple viewports"
+                        egui::CentralPanel::default()
+                            .frame(self.custom_frame)
+                            .show(ctx, |ui| {
+                                ui.visuals_mut().override_text_color = Some(Color32::WHITE);
+
+                                ui.centered_and_justified(|ui| {
+                                    create_deckds_label(
+                                        ui,
+                                        RichText::new(&self.secondary_text),
+                                        ui.available_height(),
+                                    );
+                                });
+                            });
+                    },
                 );
-
-                egui::CentralPanel::default()
-                    .frame(self.custom_frame)
-                    .show(ctx, |ui| {
-                        ui.visuals_mut().override_text_color = Some(Color32::WHITE);
-
-                        ui.centered_and_justified(|ui| {
-                            create_deckds_label(
-                                ui,
-                                RichText::new(&self.secondary_text),
-                                ui.available_height(),
-                            );
-                        });
-                    });
-            },
-        );
+            }
+            _ => (),
+        }
     }
 }
 

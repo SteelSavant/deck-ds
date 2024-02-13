@@ -71,9 +71,9 @@ impl ActionImpl for VirtualScreen {
 
         ctx.send_ui_event(super::session_handler::UiEvent::UpdateViewports {
             primary_size: Size(resolution.w, resolution.h),
-            secondary_size: Size(resolution.w, resolution.h),
+            secondary_size: Some(Size(resolution.w, resolution.h)),
             primary_position: Pos(0, 0),
-            secondary_position: Pos(0, resolution.h),
+            secondary_position: Some(Pos(0, resolution.h)),
         });
 
         Ok(())

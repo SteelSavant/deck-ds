@@ -56,15 +56,15 @@ impl DesktopSessionHandler {
             match self.teardown_external_settings {
                 ExternalDisplaySettings::Previous => Ok(()),
                 ExternalDisplaySettings::Native => {
-                    let native_mode = display.get_native_mode(&current_output)?;
+                    let native_mode = display.get_native_mode(current_output)?;
                     if let Some(mode) = native_mode {
-                        display.set_output_mode(&current_output, &mode)
+                        display.set_output_mode(current_output, &mode)
                     } else {
                         Ok(())
                     }
                 }
                 ExternalDisplaySettings::Preference(preference) => {
-                    display.set_or_create_preferred_mode(&current_output, &preference)
+                    display.set_or_create_preferred_mode(current_output, &preference)
                 }
             }?;
         }
@@ -181,28 +181,38 @@ impl ActionImpl for DesktopSessionHandler {
             .with_context(|| "DesktopSessionHandler requires x11 to be running")?;
 
         let preferred = display.get_preferred_external_output()?;
+        let embedded = display.get_embedded_output()?;
 
-        if let Some(primary) = preferred.as_ref() {
-            let (ui_tx, ui_rx): (Sender<UiEvent>, Receiver<UiEvent>) = mpsc::channel();
-            let (main_tx, main_rx): (Sender<egui::Context>, Receiver<egui::Context>) =
-                mpsc::channel();
+        let (ui_tx, ui_rx): (Sender<UiEvent>, Receiver<UiEvent>) = mpsc::channel();
+        let (main_tx, main_rx): (Sender<egui::Context>, Receiver<egui::Context>) = mpsc::channel();
 
-            let main_tx = main_tx.clone();
-            let should_register_exit_hooks = ctx.should_register_exit_hooks;
-            let secondary_text = if should_register_exit_hooks {
+        let main_tx = main_tx.clone();
+        let should_register_exit_hooks = ctx.should_register_exit_hooks;
+        let secondary_text = if should_register_exit_hooks {
                     "hold (select) + (start) to exit\ngame after launch"
                 } else {
                     "exit hooks not registered;\nuse Steam Input mapping or press (Alt+F4) to exit\ngame after launch"
                 }
                 .to_string();
 
+        let ui_ctx = main_rx.recv().expect("UI thread should send ctx");
+
+        let update = display.calc_ui_viewport_event(embedded.as_ref(), preferred.as_ref());
+
+        if let std::result::Result::Ok(UiEvent::UpdateViewports {
+            primary_size,
+            secondary_size,
+            primary_position,
+            secondary_position,
+        }) = update
+        {
             std::thread::spawn(move || {
                 // TODO::caluculate current sizes + positions; mostly don't care as it will be immediately reset
                 DeckDsUi::new(
-                    Size(1920, 1080),
-                    Size(1280, 800),
-                    Pos(0, 0),
-                    Pos(0, 1920),
+                    primary_size,
+                    secondary_size,
+                    primary_position,
+                    secondary_position,
                     secondary_text,
                     ui_rx,
                     main_tx,
@@ -210,9 +220,9 @@ impl ActionImpl for DesktopSessionHandler {
                 .run()
                 .map_err(|err| format!("{err:?}"))
             });
+        }
 
-            let ui_ctx = main_rx.recv().expect("UI thread should send ctx");
-
+        if let Some(primary) = preferred.as_ref() {
             ctx.set_state::<Self>(DisplayState {
                 previous_external_output_id: primary.xid,
                 previous_external_output_mode: primary.current_mode,

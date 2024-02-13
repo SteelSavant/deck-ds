@@ -7,7 +7,9 @@ use serde::{Deserialize, Serialize};
 use std::thread;
 use xrandr::{Mode, Output, Relation, ScreenResources, XHandle, XId};
 
-use anyhow::{Context, Ok, Result};
+use anyhow::{Context, Result};
+
+use crate::pipeline::action::session_handler::{Pos, Size, UiEvent};
 
 /// Thin wrapper around xrandr for common display operations.
 #[derive(Debug)]
@@ -122,6 +124,51 @@ impl XDisplay {
             .into_iter()
             .filter_map(|o| if o.name == "eDP" { None } else { Some(o) })
             .next())
+    }
+
+    pub fn calc_ui_viewport_event(
+        &mut self,
+        embedded: Option<&Output>,
+        external: Option<&Output>,
+    ) -> Result<UiEvent> {
+        let external_mode = external
+            .map(|external| {
+                self.get_current_mode(external)
+                    .with_context(|| "failed to get mode for external display")?
+                    .with_context(|| "failed to get mode for external display")
+            })
+            .transpose()?;
+
+        let deck_mode = embedded
+            .map(|embedded| {
+                self.get_current_mode(embedded)
+                    .with_context(|| "failed to get mode for embedded display")?
+                    .with_context(|| "failed to get mode for embedded display")
+            })
+            .transpose()?;
+
+        let event = match (deck_mode, external_mode) {
+            (None, None) => UiEvent::UpdateViewports {
+                primary_size: Size(0, 0),
+                secondary_size: None,
+                primary_position: Pos(0, 0),
+                secondary_position: None,
+            },
+            (None, Some(mode)) | (Some(mode), None) => UiEvent::UpdateViewports {
+                primary_size: Size(mode.width, mode.height),
+                secondary_size: None,
+                primary_position: Pos(0, 0),
+                secondary_position: None,
+            },
+            (Some(deck), Some(external)) => UiEvent::UpdateViewports {
+                primary_size: Size(external.width, external.height),
+                secondary_size: Some(Size(deck.width, deck.height)),
+                primary_position: Pos(0, 0),
+                secondary_position: Some(Pos(0, external.height)),
+            },
+        };
+
+        Ok(event)
     }
 
     pub fn reconfigure_embedded(
