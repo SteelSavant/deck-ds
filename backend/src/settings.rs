@@ -1,8 +1,11 @@
 use std::{
     collections::HashMap,
+    default,
     fmt::Debug,
     path::{Path, PathBuf},
 };
+
+use smart_default::SmartDefault;
 
 use anyhow::{Context, Result};
 use schemars::JsonSchema;
@@ -30,25 +33,16 @@ pub struct Settings {
     exe_path: PathBuf,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+#[derive(Debug, SmartDefault, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct GlobalConfig {
     pub display_restoration: DesktopSessionHandler,
     pub restore_displays_if_not_executing_pipeline: bool,
     /// If true, inject buttons onto app action bar
+    #[default(true)]
     pub enable_ui_inject: bool,
     /// If `enable_ui_inject` is true, set the "Play" button to this target
+    #[default(PipelineTarget::Gamemode)]
     pub primary_ui_target: PipelineTarget,
-}
-
-impl Default for GlobalConfig {
-    fn default() -> Self {
-        Self {
-            display_restoration: Default::default(),
-            restore_displays_if_not_executing_pipeline: false,
-            enable_ui_inject: true,
-            primary_ui_target: PipelineTarget::Gamemode,
-        }
-    }
 }
 
 impl Settings {

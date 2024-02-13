@@ -519,7 +519,6 @@ mod tests {
             citra_layout::{CitraLayoutOption, CitraLayoutState, CitraState},
             display_config::DisplayConfig,
             melonds_layout::{MelonDSLayoutOption, MelonDSLayoutState, MelonDSSizingOption},
-            multi_window::MultiWindowTarget,
             session_handler::{DisplayState, ExternalDisplaySettings, RelativeLocation},
             source_file::{FileSource, FlatpakSource},
             ActionId,
@@ -546,6 +545,8 @@ mod tests {
             config_dir.clone(),
         );
 
+        todo!();
+
         ctx.have_run = vec![
             DesktopSessionHandler {
                 id: ActionId::nil(),
@@ -560,11 +561,11 @@ mod tests {
             }
             .clone()
             .into(),
-            MultiWindow {
-                id: ActionId::nil(),
-                targets: vec![MultiWindowTarget::Cemu],
-            }
-            .into(),
+            // MultiWindow {
+            //     id: ActionId::nil(),
+            //     // targets: vec![MultiWindowTarget::Cemu],
+            // }
+            // .into(),
             SourceFile {
                 id: ActionId::nil(),
                 source: FileSource::Flatpak(FlatpakSource::Cemu),
@@ -599,7 +600,7 @@ mod tests {
 
         ctx.set_state::<DesktopSessionHandler>(DisplayState::default());
         ctx.set_state::<VirtualScreen>(false);
-        ctx.set_state::<MultiWindow>(false);
+        todo!(); // ctx.set_state::<MultiWindow>(false);
         ctx.set_state::<SourceFile>("some_random_path".into());
         ctx.set_state::<CemuLayout>(CemuLayoutState {
             separate_gamepad_view: true,

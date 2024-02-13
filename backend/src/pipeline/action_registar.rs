@@ -8,7 +8,7 @@ use super::{
         citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
         display_config::DisplayConfig,
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
-        multi_window::{MultiWindow, MultiWindowTarget},
+        multi_window::MultiWindow,
         session_handler::{DesktopSessionHandler, ExternalDisplaySettings, RelativeLocation},
         source_file::{CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile},
         virtual_screen::VirtualScreen,
@@ -256,17 +256,18 @@ impl PipelineActionRegistarBuilder {
                         selection: VirtualScreen {
                             id: ActionId::nil(),
                         }.into(),
-                    }).with_action("multi_window",    Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
-                        name: "Multi-Window Emulation".to_string(),
-                        description: Some("Manages windows for known emulators configurations with multiple display windows.".into()),
-                        enabled: None,
-                        is_visible_on_qam: true,
-                        profile_override: None,
-                        selection: MultiWindow {
-                            id: ActionId::nil(),
-                            targets: vec![MultiWindowTarget::Cemu, MultiWindowTarget::Citra, MultiWindowTarget::Dolphin]
-                        } .into(),
                     })
+                    // .with_action("multi_window",    Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                    //     name: "Multi-Window Emulation".to_string(),
+                    //     description: Some("Manages windows for known emulators configurations with multiple display windows.".into()),
+                    //     enabled: None,
+                    //     is_visible_on_qam: true,
+                    //     profile_override: None,
+                    //     selection: MultiWindow {
+                    //         id: ActionId::nil(),
+                    //         targets: vec![MultiWindowTarget::Cemu, MultiWindowTarget::Citra, MultiWindowTarget::Dolphin]
+                    //     } .into(),
+                    // })
                 })
                 .with_group("citra", |group| {
                     group.with_action("config", None, PipelineActionDefinitionBuilder {
@@ -341,17 +342,18 @@ impl PipelineActionRegistarBuilder {
                                 fullscreen: true,
                             }
                         }.into(),
-                    }).with_action("multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
-                        name: "Multi-Window Emulation".to_string(),
-                        description: Some("Manages windows for known emulators configurations with multiple display windows.".into()),
-                        enabled: None,
-                        is_visible_on_qam: true,
-                        profile_override: None,
-                        selection: MultiWindow {
-                            id: ActionId::nil(),
-                            targets: vec![MultiWindowTarget::Citra]
-                        } .into(),
                     })
+                    // .with_action("multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                    //     name: "Multi-Window Emulation".to_string(),
+                    //     description: Some("Manages windows for known emulators configurations with multiple display windows.".into()),
+                    //     enabled: None,
+                    //     is_visible_on_qam: true,
+                    //     profile_override: None,
+                    //     selection: MultiWindow {
+                    //         id: ActionId::nil(),
+                    //         targets: vec![MultiWindowTarget::Citra]
+                    //     } .into(),
+                    // })
                 })
                 .with_group("cemu", |group| {
                     group.with_action("config", None, PipelineActionDefinitionBuilder {
@@ -435,17 +437,18 @@ impl PipelineActionRegistarBuilder {
                                 fullscreen: true
                             }
                         }.into(),
-                    }).with_action("multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
-                        name: "Multi-Window Emulation".to_string(),
-                        description: Some("Manages windows for known emulators configurations with multiple display windows.".into()),
-                        enabled: None,
-                        is_visible_on_qam: true,
-                        profile_override: None,
-                        selection: MultiWindow {
-                            id: ActionId::nil(),
-                            targets: vec![MultiWindowTarget::Cemu]
-                        } .into(),
                     })
+                    // .with_action("multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                    //     name: "Multi-Window Emulation".to_string(),
+                    //     description: Some("Manages windows for known emulators configurations with multiple display windows.".into()),
+                    //     enabled: None,
+                    //     is_visible_on_qam: true,
+                    //     profile_override: None,
+                    //     selection: MultiWindow {
+                    //         id: ActionId::nil(),
+                    //         targets: vec![MultiWindowTarget::Cemu]
+                    //     } .into(),
+                    // })
                 })
                 .with_group("melonds", |group| {
                     group.with_action("config", None, PipelineActionDefinitionBuilder {

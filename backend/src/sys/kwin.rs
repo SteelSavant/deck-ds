@@ -92,6 +92,81 @@ impl<'a> KWin<'a> {
         }
     }
 
+    pub fn get_script_bool_setting(&self, script_name: &str, key: &str) -> Result<Option<bool>> {
+        // TODO::maybe try_parse instead of parse
+        self.get_script_setting(script_name, key)
+            .and_then(|v| v.map(|s: String| Ok(str::parse(&s)?)).transpose())
+    }
+
+    pub fn get_script_uint_setting(&self, script_name: &str, key: &str) -> Result<Option<u32>> {
+        // TODO::maybe try_parse instead of parse
+        self.get_script_setting(script_name, key)
+            .and_then(|v| v.map(|s: String| Ok(str::parse(&s)?)).transpose())
+    }
+
+    pub fn get_script_string_setting(
+        &self,
+        script_name: &str,
+        key: &str,
+    ) -> Result<Option<String>> {
+        self.get_script_setting(script_name, key)
+    }
+
+    fn get_script_setting(&self, script_name: &str, key: &str) -> Result<Option<String>> {
+        let output = Command::new("kreadconfig5")
+            .args([
+                "--file",
+                "kwinrc",
+                "--group",
+                &format!("Script-{script_name}"),
+                "--key",
+                key,
+            ])
+            .output()?;
+
+        output.status.exit_ok()?;
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let trimmed = stdout.trim();
+        if trimmed.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(trimmed.to_string()))
+        }
+    }
+
+    pub fn set_script_bool_setting(&self, script_name: &str, key: &str, value: bool) -> Result<()> {
+        self.set_script_setting(script_name, key, &value.to_string())
+    }
+
+    pub fn set_script_uint_setting(&self, script_name: &str, key: &str, value: u32) -> Result<()> {
+        self.set_script_setting(script_name, key, &value.to_string())
+    }
+
+    pub fn set_script_string_setting(
+        &self,
+        script_name: &str,
+        key: &str,
+        value: &str,
+    ) -> Result<()> {
+        self.set_script_setting(script_name, key, value)
+    }
+
+    fn set_script_setting(&self, script_name: &str, key: &str, value: &str) -> Result<()> {
+        Ok(Command::new("kwriteconfig5")
+            .args([
+                "--file",
+                "kwinrc",
+                "--group",
+                &format!("Script-{script_name}"),
+                "--key",
+                key,
+                value,
+            ])
+            .status()?
+            .exit_ok()?)
+    }
+
     pub fn get_bundle(&self, script_name: &str) -> Option<Asset> {
         self.assets_manager.get(
             self.bundles_dir

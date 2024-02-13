@@ -56,8 +56,9 @@ impl CategoryProfile {
                         DbAction::VirtualScreen(id)
                     }
                     Action::MultiWindow(action) => {
-                        rw.insert::<DbMultiWindow>(action.into())?;
-                        DbAction::MultiWindow(id)
+                        todo!();
+                        // rw.insert::<DbMultiWindow>(action.into())?;
+                        // DbAction::MultiWindow(id)
                     }
                     Action::CitraLayout(action) => {
                         rw.insert::<DbCitraLayout>(action.into())?;
@@ -188,8 +189,9 @@ impl DbCategoryProfile {
                         action.map(|a| Action::VirtualScreen(a.into()))
                     }
                     DbAction::MultiWindow(id) => {
-                        let action = ro.get().primary::<DbMultiWindow>(id)?;
-                        action.map(|a| Action::MultiWindow(a.into()))
+                        todo!();
+                        // let action = ro.get().primary::<DbMultiWindow>(id)?;
+                        // action.map(|a| Action::MultiWindow(a.into()))
                     }
                     DbAction::CitraLayout(id) => {
                         let action = ro.get().primary::<DbCitraLayout>(id)?;

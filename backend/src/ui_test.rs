@@ -41,28 +41,29 @@ pub fn ui_test() -> Result<()> {
         deck_is_primary_display: true,
     };
 
-    let vscreen = MultiWindow {
-        id: ActionId::nil(),
-        targets: vec![],
-    };
+    todo!()
 
-    let duration = Duration::from_secs(10);
-    println!("setting up ui...");
-    ui.setup(ctx)?;
-    println!("waiting");
-    std::thread::sleep(duration);
-    println!("setting up vscreen");
-    vscreen.setup(ctx)?;
-    println!("waiting");
-    std::thread::sleep(duration);
-    println!("tearing down vscreen");
-    vscreen.teardown(ctx)?;
-    println!("waiting");
-    std::thread::sleep(duration);
-    println!("tearing down ui");
-    ui.teardown(ctx)?;
-    println!("waiting");
-    std::thread::sleep(duration);
-    println!("done");
-    Ok(())
+    // let vscreen = MultiWindow {
+    //     id: ActionId::nil(),
+    // };
+
+    // let duration = Duration::from_secs(10);
+    // println!("setting up ui...");
+    // ui.setup(ctx)?;
+    // println!("waiting");
+    // std::thread::sleep(duration);
+    // println!("setting up vscreen");
+    // vscreen.setup(ctx)?;
+    // println!("waiting");
+    // std::thread::sleep(duration);
+    // println!("tearing down vscreen");
+    // vscreen.teardown(ctx)?;
+    // println!("waiting");
+    // std::thread::sleep(duration);
+    // println!("tearing down ui");
+    // ui.teardown(ctx)?;
+    // println!("waiting");
+    // std::thread::sleep(duration);
+    // println!("done");
+    // Ok(())
 }

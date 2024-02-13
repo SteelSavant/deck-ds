@@ -62,6 +62,7 @@ eframe = "0.25.0"
 winit = "0.29.9"
 type_reg = { version = "0.7.0", features = ["untagged"] }
 thiserror = "1.0.56"
+smart-default = "0.7.1"
 
 [features]
 default = ["online", "decky"]
