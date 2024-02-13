@@ -130,22 +130,20 @@ impl XDisplay {
         &mut self,
         embedded: Option<&Output>,
         external: Option<&Output>,
-    ) -> Result<UiEvent> {
+    ) -> UiEvent {
+        // TODO::this is technically wrong, since it ignores the screen relation (above, below, etc.),
+        // but I'm not going to worry until someone complains, since 99% of the time,
+        // the embedded display will be below or disabled, and it doesn't affect usability.
+
         let external_mode = external
-            .map(|external| {
-                self.get_current_mode(external)
-                    .with_context(|| "failed to get mode for external display")?
-                    .with_context(|| "failed to get mode for external display")
-            })
-            .transpose()?;
+            .map(|external| self.get_current_mode(external).ok())
+            .flatten()
+            .flatten();
 
         let deck_mode = embedded
-            .map(|embedded| {
-                self.get_current_mode(embedded)
-                    .with_context(|| "failed to get mode for embedded display")?
-                    .with_context(|| "failed to get mode for embedded display")
-            })
-            .transpose()?;
+            .map(|external| self.get_current_mode(external).ok())
+            .flatten()
+            .flatten();
 
         let event = match (deck_mode, external_mode) {
             (None, None) => UiEvent::UpdateViewports {
@@ -155,20 +153,20 @@ impl XDisplay {
                 secondary_position: None,
             },
             (None, Some(mode)) | (Some(mode), None) => UiEvent::UpdateViewports {
-                primary_size: Size(mode.width, mode.height),
+                primary_size: Size(mode.width, mode.height).normalized(),
                 secondary_size: None,
                 primary_position: Pos(0, 0),
                 secondary_position: None,
             },
             (Some(deck), Some(external)) => UiEvent::UpdateViewports {
-                primary_size: Size(external.width, external.height),
-                secondary_size: Some(Size(deck.width, deck.height)),
+                primary_size: Size(external.width, external.height).normalized(),
+                secondary_size: Some(Size(deck.width, deck.height).normalized()),
                 primary_position: Pos(0, 0),
                 secondary_position: Some(Pos(0, external.height)),
             },
         };
 
-        Ok(event)
+        event
     }
 
     pub fn reconfigure_embedded(

@@ -1,9 +1,10 @@
 use std::{
     sync::mpsc::{self, Receiver, Sender},
+    thread,
     time::Duration,
 };
 
-use anyhow::{Context, Ok, Result};
+use anyhow::{Context, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use xrandr::XId;
@@ -48,8 +49,9 @@ impl DesktopSessionHandler {
             .take()
             .with_context(|| "DesktopSessionHandler requires x11 to be running")?;
 
-        let mut deck = display.get_embedded_output()?.unwrap();
-
+        let mut deck = display
+            .get_embedded_output()?
+            .with_context(|| "unable to find embedded display")?;
         let current_output = display.get_preferred_external_output()?;
 
         if let Some(current_output) = current_output.as_ref() {
@@ -183,10 +185,15 @@ impl ActionImpl for DesktopSessionHandler {
         let preferred = display.get_preferred_external_output()?;
         let embedded = display.get_embedded_output()?;
 
+        log::debug!(
+            "session handler found outputs: {:?}, {:?}",
+            embedded,
+            preferred
+        );
+
         let (ui_tx, ui_rx): (Sender<UiEvent>, Receiver<UiEvent>) = mpsc::channel();
         let (main_tx, main_rx): (Sender<egui::Context>, Receiver<egui::Context>) = mpsc::channel();
 
-        let main_tx = main_tx.clone();
         let should_register_exit_hooks = ctx.should_register_exit_hooks;
         let secondary_text = if should_register_exit_hooks {
                     "hold (select) + (start) to exit\ngame after launch"
@@ -195,19 +202,17 @@ impl ActionImpl for DesktopSessionHandler {
                 }
                 .to_string();
 
-        let ui_ctx = main_rx.recv().expect("UI thread should send ctx");
-
         let update = display.calc_ui_viewport_event(embedded.as_ref(), preferred.as_ref());
 
-        if let std::result::Result::Ok(UiEvent::UpdateViewports {
+        if let UiEvent::UpdateViewports {
             primary_size,
             secondary_size,
             primary_position,
             secondary_position,
-        }) = update
+        } = update
         {
+            log::debug!("session handler starting UI");
             std::thread::spawn(move || {
-                // TODO::caluculate current sizes + positions; mostly don't care as it will be immediately reset
                 DeckDsUi::new(
                     primary_size,
                     secondary_size,
@@ -218,9 +223,13 @@ impl ActionImpl for DesktopSessionHandler {
                     main_tx,
                 )
                 .run()
-                .map_err(|err| format!("{err:?}"))
+                .map_err(|err| log::error!("{err:?}"))
             });
         }
+
+        log::debug!("session handler waiting for UI ctx");
+
+        let ui_ctx = main_rx.recv().expect("UI thread should send ctx");
 
         if let Some(primary) = preferred.as_ref() {
             ctx.set_state::<Self>(DisplayState {
@@ -229,6 +238,8 @@ impl ActionImpl for DesktopSessionHandler {
                 runtime_state: Some(RuntimeDisplayState { ui_ctx, ui_tx }),
             });
         }
+
+        log::debug!("session handler setup complete");
 
         Ok(())
     }
@@ -245,8 +256,6 @@ impl ActionImpl for DesktopSessionHandler {
                 if let Some(runtime) = state.runtime_state.as_ref() {
                     runtime.ui_ctx.request_repaint_after(Duration::from_secs(1))
                 }
-
-                // let _ = state.ui_tx.send(UiEvent::Close);
 
                 let output = state.previous_external_output_id;
 
@@ -320,6 +329,9 @@ impl ActionImpl for DesktopSessionHandler {
                 } else {
                     display.set_output_enabled(&mut deck, false)?;
                 }
+
+                let update = display.calc_ui_viewport_event(Some(&deck), Some(&current_output));
+                ctx.send_ui_event(update);
 
                 Ok(())
             }

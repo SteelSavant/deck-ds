@@ -1,12 +1,16 @@
 // #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
-use std::sync::mpsc::{Receiver, Sender};
+use std::{
+    sync::mpsc::{Receiver, Sender},
+    time::Duration,
+};
 
 use eframe::egui;
 use egui::{
     Color32, Frame, Label, Pos2, RichText, Style, Ui, Vec2, ViewportBuilder, ViewportCommand,
     WindowLevel,
 };
+use nix::libc::sleep;
 use winit::platform::x11::EventLoopBuilderExtX11;
 
 pub enum UiEvent {
@@ -52,6 +56,16 @@ impl From<Size> for Vec2 {
 
 #[derive(Debug, Copy, Clone)]
 pub struct Size(pub u32, pub u32);
+
+impl Size {
+    pub fn normalized(self) -> Self {
+        if self.0 < self.1 {
+            Size(self.1, self.0)
+        } else {
+            self
+        }
+    }
+}
 
 impl DeckDsUi {
     pub fn new(
@@ -123,8 +137,6 @@ impl DeckDsUi {
 
 impl eframe::App for DeckDsUi {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        println!("repaint");
-
         if let Ok(event) = self.rx.try_recv() {
             match event {
                 UiEvent::UpdateViewports {
@@ -137,6 +149,8 @@ impl eframe::App for DeckDsUi {
                     self.primary_position = primary_position;
                     self.secondary_position = secondary_position;
                     self.secondary_size = secondary_size;
+
+                    log::debug!("setting viewports to Primary: {primary_size:?}, {primary_position:?} -- Secondary: {secondary_size:?}, {secondary_position:?}");
 
                     ctx.send_viewport_cmd(ViewportCommand::OuterPosition(primary_position.into()));
                     ctx.send_viewport_cmd(ViewportCommand::InnerSize(primary_size.into()))
