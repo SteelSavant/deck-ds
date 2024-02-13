@@ -7,7 +7,7 @@ use crate::{
     pipeline::{
         self,
         action::{
-            multi_window::MultiWindow,
+            multi_window::{GeneralOptions, MultiWindow},
             session_handler::{DesktopSessionHandler, ExternalDisplaySettings},
             ActionId, ActionImpl,
         },
@@ -41,29 +41,31 @@ pub fn ui_test() -> Result<()> {
         deck_is_primary_display: true,
     };
 
-    todo!()
+    let vscreen = MultiWindow {
+        id: ActionId::nil(),
+        general: GeneralOptions::default(),
+        cemu: None,
+        citra: None,
+        dolphin: None,
+    };
 
-    // let vscreen = MultiWindow {
-    //     id: ActionId::nil(),
-    // };
-
-    // let duration = Duration::from_secs(10);
-    // println!("setting up ui...");
-    // ui.setup(ctx)?;
-    // println!("waiting");
-    // std::thread::sleep(duration);
-    // println!("setting up vscreen");
-    // vscreen.setup(ctx)?;
-    // println!("waiting");
-    // std::thread::sleep(duration);
-    // println!("tearing down vscreen");
-    // vscreen.teardown(ctx)?;
-    // println!("waiting");
-    // std::thread::sleep(duration);
-    // println!("tearing down ui");
-    // ui.teardown(ctx)?;
-    // println!("waiting");
-    // std::thread::sleep(duration);
-    // println!("done");
-    // Ok(())
+    let duration = Duration::from_secs(10);
+    println!("setting up ui...");
+    ui.setup(ctx)?;
+    println!("waiting");
+    std::thread::sleep(duration);
+    println!("setting up vscreen");
+    vscreen.setup(ctx)?;
+    println!("waiting");
+    std::thread::sleep(duration);
+    println!("tearing down vscreen");
+    vscreen.teardown(ctx)?;
+    println!("waiting");
+    std::thread::sleep(duration);
+    println!("tearing down ui");
+    ui.teardown(ctx)?;
+    println!("waiting");
+    std::thread::sleep(duration);
+    println!("done");
+    Ok(())
 }

@@ -31,22 +31,24 @@ trait OptionsRW {
     fn write(&self, kwin: &KWin) -> Result<()>;
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "kebab-case")]
 pub enum LimitedMultiWindowLayout {
+    #[default]
     ColumnRight,
     ColumnLeft,
     SquareRight,
     SquareLeft,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "kebab-case")]
 pub enum MultiWindowLayout {
     ColumnRight,
     ColumnLeft,
     SquareRight,
     SquareLeft,
+    #[default]
     Separate,
 }
 
@@ -86,9 +88,9 @@ impl OptionsRW for MultiWindowOptions {
 
 #[derive(Debug, Clone, SmartDefault, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct GeneralOptions {
-    swap_screens: bool,
+    pub swap_screens: bool,
     #[default(true)]
-    keep_above: bool,
+    pub keep_above: bool,
 }
 
 impl OptionsRW for GeneralOptions {
@@ -115,10 +117,10 @@ impl OptionsRW for GeneralOptions {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct CemuOptions {
-    single_screen_layout: LimitedMultiWindowLayout,
-    multi_screen_layout: MultiWindowLayout,
+    pub single_screen_layout: LimitedMultiWindowLayout,
+    pub multi_screen_layout: MultiWindowLayout,
 }
 
 impl OptionsRW for CemuOptions {
@@ -158,10 +160,10 @@ impl OptionsRW for CemuOptions {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct CitraOptions {
-    single_screen_layout: LimitedMultiWindowLayout,
-    multi_screen_layout: MultiWindowLayout,
+    pub single_screen_layout: LimitedMultiWindowLayout,
+    pub multi_screen_layout: MultiWindowLayout,
 }
 
 impl OptionsRW for CitraOptions {
@@ -201,12 +203,14 @@ impl OptionsRW for CitraOptions {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, SmartDefault, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct DolphinOptions {
-    single_screen_layout: LimitedMultiWindowLayout,
-    multi_screen_single_secondary_layout: MultiWindowLayout,
-    multi_screen_multi_secondary_layout: MultiWindowLayout,
-    gba_blacklist: Vec<u8>,
+    pub single_screen_layout: LimitedMultiWindowLayout,
+    pub multi_screen_single_secondary_layout: MultiWindowLayout,
+    #[default(MultiWindowLayout::ColumnRight)]
+    pub multi_screen_multi_secondary_layout: MultiWindowLayout,
+    // GBA ids to blacklist, 1,2,3 or 4
+    pub gba_blacklist: Vec<u8>,
 }
 
 impl OptionsRW for DolphinOptions {

@@ -519,6 +519,10 @@ mod tests {
             citra_layout::{CitraLayoutOption, CitraLayoutState, CitraState},
             display_config::DisplayConfig,
             melonds_layout::{MelonDSLayoutOption, MelonDSLayoutState, MelonDSSizingOption},
+            multi_window::{
+                CemuOptions, CitraOptions, DolphinOptions, GeneralOptions,
+                LimitedMultiWindowLayout, MultiWindowLayout, MultiWindowOptions,
+            },
             session_handler::{DisplayState, ExternalDisplaySettings, RelativeLocation},
             source_file::{FileSource, FlatpakSource},
             ActionId,
@@ -545,8 +549,6 @@ mod tests {
             config_dir.clone(),
         );
 
-        todo!();
-
         ctx.have_run = vec![
             DesktopSessionHandler {
                 id: ActionId::nil(),
@@ -561,11 +563,14 @@ mod tests {
             }
             .clone()
             .into(),
-            // MultiWindow {
-            //     id: ActionId::nil(),
-            //     // targets: vec![MultiWindowTarget::Cemu],
-            // }
-            // .into(),
+            MultiWindow {
+                id: ActionId::nil(),
+                general: GeneralOptions::default(),
+                cemu: None,
+                citra: None,
+                dolphin: None,
+            }
+            .into(),
             SourceFile {
                 id: ActionId::nil(),
                 source: FileSource::Flatpak(FlatpakSource::Cemu),
@@ -600,7 +605,24 @@ mod tests {
 
         ctx.set_state::<DesktopSessionHandler>(DisplayState::default());
         ctx.set_state::<VirtualScreen>(false);
-        todo!(); // ctx.set_state::<MultiWindow>(false);
+        ctx.set_state::<MultiWindow>(MultiWindowOptions {
+            enabled: true,
+            general: GeneralOptions::default(),
+            cemu: CemuOptions {
+                single_screen_layout: LimitedMultiWindowLayout::ColumnLeft,
+                multi_screen_layout: MultiWindowLayout::Separate,
+            },
+            citra: CitraOptions {
+                single_screen_layout: LimitedMultiWindowLayout::ColumnRight,
+                multi_screen_layout: MultiWindowLayout::Separate,
+            },
+            dolphin: DolphinOptions {
+                single_screen_layout: LimitedMultiWindowLayout::SquareLeft,
+                multi_screen_single_secondary_layout: MultiWindowLayout::SquareRight,
+                multi_screen_multi_secondary_layout: MultiWindowLayout::Separate,
+                gba_blacklist: vec![1, 2, 3, 4],
+            },
+        });
         ctx.set_state::<SourceFile>("some_random_path".into());
         ctx.set_state::<CemuLayout>(CemuLayoutState {
             separate_gamepad_view: true,

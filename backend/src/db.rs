@@ -1,8 +1,7 @@
 use std::path::PathBuf;
 
 use native_db::transaction::{RTransaction, RwTransaction};
-use native_db::{Database, DatabaseBuilder};
-use once_cell::sync::Lazy;
+use native_db::Database;
 
 use crate::pipeline::action_registar::PipelineActionRegistrar;
 use crate::pipeline::data::PipelineDefinition;
@@ -11,7 +10,7 @@ use crate::pipeline::data::TemplateId;
 use crate::settings::AppId;
 use crate::settings::AppProfile;
 
-use self::model::v1::{DbAppOverride, DbAppSettings};
+use self::model::{DbAppOverride, DbAppSettings, DATABASE_BUILDER};
 use self::templates::build_templates;
 use self::{migrate::Migrate, model::DbCategoryProfile};
 
@@ -24,55 +23,6 @@ mod convert;
 mod migrate;
 mod model;
 mod templates;
-
-use model::v1;
-
-static DATABASE_BUILDER: Lazy<native_db::DatabaseBuilder> = Lazy::new(|| {
-    let mut builder = DatabaseBuilder::new();
-    // V1
-    {
-        // Profiles
-
-        builder
-            .define::<v1::DbCategoryProfile>()
-            .expect("failed to define CategoryProfile v1");
-        builder
-            .define::<v1::DbAppOverride>()
-            .expect("failed to define AppProfile v1");
-        builder
-            .define::<v1::DbAppSettings>()
-            .expect("failed to define AppProfile v1");
-
-        // Actions
-
-        builder
-            .define::<v1::DbCemuLayout>()
-            .expect("failed to define CemuLayout v1");
-        builder
-            .define::<v1::DbCitraLayout>()
-            .expect("failed to define CitraLayout v1");
-        builder
-            .define::<v1::DbMelonDSLayout>()
-            .expect("failed to define MelonDSLayout v1");
-        builder
-            .define::<v1::DbDesktopSessionHandler>()
-            .expect("failed to define DesktopSessionHandler v1");
-        builder
-            .define::<v1::DbMultiWindow>()
-            .expect("failed to define MultiWindow v1");
-        builder
-            .define::<v1::DbVirtualScreen>()
-            .expect("failed to define VirtualScreen v1");
-        builder
-            .define::<v1::DbSourceFile>()
-            .expect("failed to define SourceDbSourceFile v1");
-        builder
-            .define::<v1::DbDisplayConfig>()
-            .expect("failed to define DbDisplayConfig v1");
-    }
-
-    builder
-});
 
 pub struct ProfileDb {
     db: Database<'static>,
