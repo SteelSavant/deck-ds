@@ -167,34 +167,31 @@ impl eframe::App for DeckDsUi {
                     );
                 })
             });
-        match (self.secondary_position, self.secondary_size) {
-            (Some(pos), Some(size)) => {
-                ctx.show_viewport_immediate(
-                    egui::ViewportId::from_hash_of("DeckDS Secondary"),
-                    build_viewport(pos, size, self.window_level),
-                    |ctx, class| {
-                        assert!(
-                            class == egui::ViewportClass::Immediate,
-                            "This egui backend doesn't support multiple viewports"
-                        );
+        if let (Some(pos), Some(size)) = (self.secondary_position, self.secondary_size) {
+            ctx.show_viewport_immediate(
+                egui::ViewportId::from_hash_of("DeckDS Secondary"),
+                build_viewport(pos, size, self.window_level),
+                |ctx, class| {
+                    assert!(
+                        class == egui::ViewportClass::Immediate,
+                        "This egui backend doesn't support multiple viewports"
+                    );
 
-                        egui::CentralPanel::default()
-                            .frame(self.custom_frame)
-                            .show(ctx, |ui| {
-                                ui.visuals_mut().override_text_color = Some(Color32::WHITE);
+                    egui::CentralPanel::default()
+                        .frame(self.custom_frame)
+                        .show(ctx, |ui| {
+                            ui.visuals_mut().override_text_color = Some(Color32::WHITE);
 
-                                ui.centered_and_justified(|ui| {
-                                    create_deckds_label(
-                                        ui,
-                                        RichText::new(&self.secondary_text),
-                                        ui.available_height(),
-                                    );
-                                });
+                            ui.centered_and_justified(|ui| {
+                                create_deckds_label(
+                                    ui,
+                                    RichText::new(&self.secondary_text),
+                                    ui.available_height(),
+                                );
                             });
-                    },
-                );
-            }
-            _ => (),
+                        });
+                },
+            );
         }
     }
 }

@@ -1,21 +1,13 @@
-use anyhow::{Context, Result};
+use anyhow::Context;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use xrandr::Output;
 
-use crate::{
-    pipeline::{
-        action::{
-            session_handler::{Pos, Size},
-            ActionId, ActionImpl,
-        },
-        dependency::Dependency,
-    },
-    sys::x_display::XDisplay,
+use crate::pipeline::{
+    action::{ActionId, ActionImpl},
+    dependency::Dependency,
 };
 
 pub use super::common::{ExternalDisplaySettings, RelativeLocation};
-use super::session_handler::UiEvent;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct DisplayConfig {
@@ -44,9 +36,9 @@ impl ActionImpl for DisplayConfig {
             match self.external_display_settings {
                 ExternalDisplaySettings::Previous => Ok(()),
                 ExternalDisplaySettings::Native => {
-                    let native_mode = display.get_native_mode(&preferred)?;
+                    let native_mode = display.get_native_mode(preferred)?;
                     if let Some(mode) = native_mode {
-                        display.set_output_mode(&preferred, &mode)
+                        display.set_output_mode(preferred, &mode)
                     } else {
                         Ok(())
                     }
@@ -56,12 +48,12 @@ impl ActionImpl for DisplayConfig {
                 }
             }?;
 
-            if let Some(mut embedded) = embedded.as_mut() {
+            if let Some(embedded) = embedded.as_mut() {
                 match self.deck_location {
                     Some(location) => {
                         display
                             .reconfigure_embedded(
-                                &mut embedded,
+                                embedded,
                                 &location.into(),
                                 Some(preferred),
                                 self.deck_is_primary_display,
