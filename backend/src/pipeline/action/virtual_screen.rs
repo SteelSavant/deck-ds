@@ -39,7 +39,7 @@ impl ActionImpl for VirtualScreen {
             .get_preferred_external_output()?
             .ok_or(anyhow::anyhow!("Failed to find external display"))?;
 
-        let deck = display
+        let mut deck = display
             .get_embedded_output()?
             .ok_or(anyhow::anyhow!("Failed to find embedded display"))?;
 
@@ -67,16 +67,16 @@ impl ActionImpl for VirtualScreen {
             },
         )?;
 
-        let res = display.set_output_position(&deck, &Relation::Below, &external);
+        display.reconfigure_embedded(&mut deck, &Relation::Below, Some(&external), true)?;
 
         ctx.send_ui_event(super::session_handler::UiEvent::UpdateViewports {
             primary_size: Size(resolution.w, resolution.h),
-            secondary_size: Size(resolution.w, resolution.h),
+            secondary_size: Some(Size(resolution.w, resolution.h)),
             primary_position: Pos(0, 0),
-            secondary_position: Pos(0, resolution.h),
+            secondary_position: Some(Pos(0, resolution.h)),
         });
 
-        res
+        Ok(())
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {

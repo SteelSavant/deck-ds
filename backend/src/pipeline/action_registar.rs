@@ -227,6 +227,7 @@ impl PipelineActionRegistarBuilder {
                                 id: ActionId::nil(),
                                 teardown_external_settings: ExternalDisplaySettings::Previous,
                                 teardown_deck_location: Some(RelativeLocation::Below),
+                                deck_is_primary_display: true,
                             } .into(),
                         },
                     )
@@ -235,13 +236,13 @@ impl PipelineActionRegistarBuilder {
                             name: "Display Config".to_string(),
                             description: Some("Configures displays in desktop mode.".to_string()),
                             enabled: Some(true),
-                            is_visible_on_qam: true,
+                            is_visible_on_qam: false,
                             profile_override: None,
                             selection: DisplayConfig {
                                 id: ActionId::nil(),
                                 external_display_settings: ExternalDisplaySettings::Previous,
                                 deck_location: Some(RelativeLocation::Below),
-                                disable_splash: false,
+                                deck_is_primary_display: true,
                             }.into()
                         })
                     .with_action("virtual_screen",      

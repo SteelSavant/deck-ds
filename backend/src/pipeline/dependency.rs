@@ -66,7 +66,7 @@ impl Dependency {
                     .ok_or_else(|| DependencyError::KwinScriptNotFound(script_name.clone()))
             }
             Dependency::ConfigField(field) => Err(DependencyError::FieldNotSet(field.clone())),
-            Dependency::Display => verify_system_deps(&["xrandr", "cvt"], ctx),
+            Dependency::Display => verify_system_deps(&["xrandr", "cvt", "kscreen-doctor"], ctx),
         }
     }
 

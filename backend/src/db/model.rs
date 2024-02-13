@@ -283,6 +283,7 @@ pub mod v1 {
         pub id: ActionId,
         pub teardown_external_settings: DbExternalDisplaySettings,
         pub teardown_deck_location: Option<DbRelativeLocation>,
+        pub deck_is_primary_display: bool,
     }
 
     impl From<DesktopSessionHandler> for DbDesktopSessionHandler {
@@ -297,6 +298,7 @@ pub mod v1 {
                     RelativeLocation::RightOf => DbRelativeLocation::RightOf,
                     RelativeLocation::SameAs => DbRelativeLocation::SameAs,
                 }),
+                deck_is_primary_display: value.deck_is_primary_display,
             }
         }
     }
@@ -411,6 +413,7 @@ pub mod v1 {
                     DbRelativeLocation::RightOf => RelativeLocation::RightOf,
                     DbRelativeLocation::SameAs => RelativeLocation::SameAs,
                 }),
+                deck_is_primary_display: value.deck_is_primary_display,
             }
         }
     }
@@ -667,7 +670,7 @@ pub mod v1 {
         pub id: ActionId,
         pub external_display_settings: DbExternalDisplaySettings,
         pub deck_location: Option<DbRelativeLocation>,
-        pub disable_splash: bool,
+        pub deck_is_primary_display: bool,
     }
 
     impl From<DisplayConfig> for DbDisplayConfig {
@@ -676,7 +679,7 @@ pub mod v1 {
                 id: value.id,
                 external_display_settings: value.external_display_settings.into(),
                 deck_location: value.deck_location.map(|v| v.into()),
-                disable_splash: value.disable_splash,
+                deck_is_primary_display: value.deck_is_primary_display,
             }
         }
     }
@@ -687,7 +690,7 @@ pub mod v1 {
                 id: value.id,
                 external_display_settings: value.external_display_settings.into(),
                 deck_location: value.deck_location.map(|v| v.into()),
-                disable_splash: value.disable_splash,
+                deck_is_primary_display: value.deck_is_primary_display,
             }
         }
     }

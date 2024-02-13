@@ -1,3 +1,5 @@
+#![feature(exit_status_error)]
+
 use anyhow::Result;
 use include_dir::{include_dir, Dir};
 use std::{
@@ -38,6 +40,8 @@ pub mod util;
 pub mod autostart;
 pub mod settings;
 
+mod ui_test;
+
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
@@ -61,49 +65,10 @@ enum Modes {
 
 static ASSETS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/assets");
 
-// fn ui_test() -> Result<()> {
-//  use     sys::x_display::{ModePreference, Resolution},
-// use    mpsc::{self, Receiver, Sender},
-
-//     let home_dir = usdpl_back::api::dirs::home()
-//         .or_else(dirs::home_dir)
-//         .expect("home dir must exist");
-
-//     let config_dir = home_dir.join(".config").join(PACKAGE_NAME);
-//     let assets_dir = config_dir.join("assets"); // TODO::keep assets with decky plugin, not config
-
-//     let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
-//     let mut ctx = &mut PipelineContext::new(asset_manager, home_dir, config_dir);
-
-//     let ui = DesktopSessionHandler {
-//         id: ActionId::nil(),
-//         teardown_external_settings: TeardownExternalSettings::Preference(ModePreference {
-//             resolution: sys::x_display::ModeOption::Exact(Resolution { w: 1920, h: 1080 }),
-//             aspect_ratio: sys::x_display::AspectRatioOption::Any,
-//             refresh: sys::x_display::ModeOption::AtLeast(60.),
-//         }),
-//         teardown_deck_location: pipeline::action::desktop_session_handler::RelativeLocation::Below,
-//     };
-
-//     let vscreen = MultiWindow {
-//         id: ActionId::nil(),
-//     };
-
-//     let duration = Duration::from_secs(10);
-//     ui.setup(&mut ctx);
-//     std::thread::sleep(duration);
-//     vscreen.setup(ctx);
-//     std::thread::sleep(duration);
-//     vscreen.teardown(ctx);
-//     std::thread::sleep(duration);
-//     ui.teardown(&mut ctx);
-//     std::thread::sleep(duration);
-//     println!("done");
-//     return Ok(());
-// }
-
 fn main() -> Result<()> {
-    // return ui_test();
+    // simple fn to sanity check ui
+    // return ui_test::ui_test();
+
     let args = Cli::parse();
     let mode = args.mode.unwrap_or_default();
 

@@ -6,6 +6,7 @@ use type_reg::untagged::{TypeMap as SerdeMap, TypeReg};
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::process::Command;
+use std::thread;
 use std::time::{Duration, Instant, SystemTime};
 use typemap::{Key, TypeMap};
 
@@ -551,6 +552,7 @@ mod tests {
                 id: ActionId::nil(),
                 teardown_external_settings: ExternalDisplaySettings::Native,
                 teardown_deck_location: Some(RelativeLocation::Below),
+                deck_is_primary_display: true,
             }
             .clone()
             .into(),
