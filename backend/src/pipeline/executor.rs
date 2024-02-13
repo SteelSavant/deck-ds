@@ -6,7 +6,6 @@ use type_reg::untagged::{TypeMap as SerdeMap, TypeReg};
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::process::Command;
-use std::thread;
 use std::time::{Duration, Instant, SystemTime};
 use typemap::{Key, TypeMap};
 

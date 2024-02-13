@@ -16,6 +16,7 @@ use crate::{
     sys, ASSETS_DIR,
 };
 
+#[allow(dead_code)]
 pub fn ui_test() -> Result<()> {
     use sys::x_display::{ModePreference, Resolution};
 
@@ -27,7 +28,7 @@ pub fn ui_test() -> Result<()> {
     let assets_dir = config_dir.join("assets"); // TODO::keep assets with decky plugin, not config
 
     let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
-    let mut ctx = &mut PipelineContext::new(asset_manager, home_dir, config_dir);
+    let ctx = &mut PipelineContext::new(asset_manager, home_dir, config_dir);
 
     let ui = DesktopSessionHandler {
         id: ActionId::nil(),
@@ -47,7 +48,7 @@ pub fn ui_test() -> Result<()> {
 
     let duration = Duration::from_secs(10);
     println!("setting up ui...");
-    ui.setup(&mut ctx)?;
+    ui.setup(ctx)?;
     println!("waiting");
     std::thread::sleep(duration);
     println!("setting up vscreen");
@@ -59,9 +60,9 @@ pub fn ui_test() -> Result<()> {
     println!("waiting");
     std::thread::sleep(duration);
     println!("tearing down ui");
-    ui.teardown(&mut ctx)?;
+    ui.teardown(ctx)?;
     println!("waiting");
     std::thread::sleep(duration);
     println!("done");
-    return Ok(());
+    Ok(())
 }

@@ -136,16 +136,14 @@ impl XDisplay {
         // the embedded display will be below or disabled, and it doesn't affect usability.
 
         let external_mode = external
-            .map(|external| self.get_current_mode(external).ok())
-            .flatten()
+            .and_then(|external| self.get_current_mode(external).ok())
             .flatten();
 
         let deck_mode = embedded
-            .map(|external| self.get_current_mode(external).ok())
-            .flatten()
+            .and_then(|external| self.get_current_mode(external).ok())
             .flatten();
 
-        let event = match (deck_mode, external_mode) {
+        match (deck_mode, external_mode) {
             (None, None) => UiEvent::UpdateViewports {
                 primary_size: Size(0, 0),
                 secondary_size: None,
@@ -164,9 +162,7 @@ impl XDisplay {
                 primary_position: Pos(0, 0),
                 secondary_position: Some(Pos(0, external.height)),
             },
-        };
-
-        event
+        }
     }
 
     pub fn reconfigure_embedded(

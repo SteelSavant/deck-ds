@@ -1,16 +1,12 @@
 // #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
-use std::{
-    sync::mpsc::{Receiver, Sender},
-    time::Duration,
-};
+use std::sync::mpsc::{Receiver, Sender};
 
 use eframe::egui;
 use egui::{
     Color32, Frame, Label, Pos2, RichText, Style, Ui, Vec2, ViewportBuilder, ViewportCommand,
     WindowLevel,
 };
-use nix::libc::sleep;
 use winit::platform::x11::EventLoopBuilderExtX11;
 
 pub enum UiEvent {

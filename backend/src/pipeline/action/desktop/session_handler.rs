@@ -1,6 +1,5 @@
 use std::{
     sync::mpsc::{self, Receiver, Sender},
-    thread,
     time::Duration,
 };
 
