@@ -73,9 +73,10 @@ impl ProfileDb {
     pub fn delete_profile(&self, id: &ProfileId) -> Result<()> {
         let rw = self.read_write();
         let profile = rw.get().primary::<DbCategoryProfile>(*id)?;
-        profile
-            .map(|p| p.remove_all(&rw).and_then(|_| Ok(rw.commit()?)))
-            .transpose()?;
+        if let Some(profile) = profile {
+            profile.remove_all(&rw)?;
+            rw.commit()?;
+        }
 
         Ok(())
     }

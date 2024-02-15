@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{borrow::Borrow, collections::HashMap};
 
 /// Data transforms between working data and the database format
 //
@@ -17,7 +17,7 @@ use crate::{
             Selection,
         },
     },
-    settings::{AppId, AppProfile, CategoryProfile},
+    settings::{AppId, AppProfile, CategoryProfile, ProfileId},
 };
 use anyhow::{Context, Result};
 
@@ -287,7 +287,7 @@ impl DbCategoryProfile {
             fn remove(&self, rw: &RwTransaction) -> Result<()> {
                 let id = self.get_id();
 
-                let transformed = match *self {
+                match *self {
                     DbAction::DesktopSessionHandler(id) => {
                         let action = rw.get().primary::<DbDesktopSessionHandler>(id)?;
                         action.map(|a| rw.remove(a))
@@ -321,9 +321,10 @@ impl DbCategoryProfile {
                         action.map(|a| rw.remove(a))
                     }
                 }
-                .transpose()?;
+                .transpose()
+                .with_context(|| format!("failed to remove action {id:?}"))?;
 
-                transformed.with_context(|| format!("failed to recover action {id:?}"))
+                Ok(())
             }
         }
 
@@ -359,7 +360,26 @@ impl DbCategoryProfile {
             }
         }
 
-        pipeline.actions.remove(rw)
+        pipeline.actions.remove(rw)?;
+        self.remove_app_overrides(rw)?;
+
+        Ok(rw.remove(self)?)
+    }
+
+    fn remove_app_overrides(&self, rw: &RwTransaction) -> Result<()> {
+        let overrides = rw
+            .scan()
+            .primary()?
+            .all()
+            .filter(|app: &DbAppOverride| app.id.1 == self.id)
+            .map(|app: DbAppOverride| app)
+            .collect::<Vec<_>>();
+
+        for o in overrides {
+            rw.remove(o)?;
+        }
+
+        Ok(())
     }
 }
 
