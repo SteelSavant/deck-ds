@@ -262,7 +262,11 @@ export function InternalEditAction({
 
             const option = options[0];
             const layoutOptions: MultiWindowLayout[] = ['column-right', 'column-left', 'square-right', 'square-left', 'separate'];
-            const limitedLayoutOptions: LimitedMultiWindowLayout[] = ['column-right', 'column-left', 'square-right', 'square-left']
+            const dolphinLimitedLayoutOptions: LimitedMultiWindowLayout[] = ['column-right', 'column-left', 'square-right', 'square-left']
+            const dsLimitedLayoutOptions: MultiWindowLayout[] = ['column-right', 'column-left'];
+            const limitedLayoutOptions = isDolphin(option)
+                ? dolphinLimitedLayoutOptions
+                : dsLimitedLayoutOptions;
 
             function DolphinAction(option: DolphinOptions): ReactElement {
                 return (
