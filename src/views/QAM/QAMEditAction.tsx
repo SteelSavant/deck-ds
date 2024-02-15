@@ -2,7 +2,7 @@ import { Field, Focusable } from "decky-frontend-lib";
 import { ReactElement } from "react";
 import { Action } from "../../backend";
 import { ActionChildProps } from "../../components/ActionChild";
-import InternalEditAction from "../../components/EditAction";
+import { InternalEditAction } from "../../components/EditAction";
 
 
 interface QAMEditActionProps {
@@ -16,18 +16,18 @@ export default function QAMEditAction({
     action,
     onChange,
 }: QAMEditActionProps): ReactElement | null {
-    const props = {
+    const internalProps = {
         action,
         onChange,
         indentLevel: 0,
         actionChildBuilder: QAMActionChild
-    }
-    return <InternalEditAction {...props} />
+    };
+    return InternalEditAction(internalProps);
 }
 
 function QAMActionChild({ children, label }: ActionChildProps): ReactElement {
     return (
-        <Field label={label} focusable={false} >
+        <Field label={label} focusable={false} inlineWrap="keep-inline">
             <div style={{ paddingRight: '10px' }}>
                 <Focusable >
                     {children}

@@ -336,7 +336,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Multi-Window Emulation".to_string(),
                         description: Some("Manages windows for known emulators configurations with multiple display windows.".into()),
                         enabled: None,
-                        is_visible_on_qam: true,
+                        is_visible_on_qam: false,
                         profile_override: None,
                         selection: MultiWindow {
                             id: ActionId::nil(),
@@ -434,7 +434,7 @@ impl PipelineActionRegistarBuilder {
                         name: "Multi-Window Emulation".to_string(),
                         description: Some("Manages windows for known emulators configurations with multiple display windows.".into()),
                         enabled: None,
-                        is_visible_on_qam: true,
+                        is_visible_on_qam: false,
                         profile_override: None,
                         selection: MultiWindow {
                             id: ActionId::nil(),
