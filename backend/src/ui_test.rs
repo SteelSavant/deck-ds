@@ -7,7 +7,7 @@ use crate::{
     pipeline::{
         self,
         action::{
-            multi_window::MultiWindow,
+            multi_window::{GeneralOptions, MultiWindow},
             session_handler::{DesktopSessionHandler, ExternalDisplaySettings},
             ActionId, ActionImpl,
         },
@@ -43,7 +43,10 @@ pub fn ui_test() -> Result<()> {
 
     let vscreen = MultiWindow {
         id: ActionId::nil(),
-        targets: vec![],
+        general: GeneralOptions::default(),
+        cemu: None,
+        citra: None,
+        dolphin: None,
     };
 
     let duration = Duration::from_secs(10);

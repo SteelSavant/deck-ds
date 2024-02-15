@@ -13,6 +13,7 @@ use crate::pipeline::{dependency::Dependency, executor::PipelineContext};
 use self::ui::DeckDsUi;
 
 use super::super::{ActionId, ActionImpl};
+use smart_default::SmartDefault;
 
 pub use super::common::{ExternalDisplaySettings, RelativeLocation};
 
@@ -22,23 +23,14 @@ pub use ui::Pos;
 pub use ui::Size;
 pub use ui::UiEvent;
 
-#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Copy, Clone, SmartDefault, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct DesktopSessionHandler {
     pub id: ActionId,
+    #[default(true)]
     pub deck_is_primary_display: bool,
     pub teardown_external_settings: ExternalDisplaySettings,
+    #[default(Some(Default::default()))]
     pub teardown_deck_location: Option<RelativeLocation>,
-}
-
-impl Default for DesktopSessionHandler {
-    fn default() -> Self {
-        Self {
-            id: Default::default(),
-            teardown_external_settings: Default::default(),
-            teardown_deck_location: Some(Default::default()),
-            deck_is_primary_display: true,
-        }
-    }
 }
 
 impl DesktopSessionHandler {

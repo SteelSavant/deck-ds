@@ -6,8 +6,8 @@ use native_db::transaction::{RTransaction, RwTransaction};
 
 use crate::{
     db::model::{
-        v1::DbDisplayConfig, DbAction, DbCategoryProfile, DbCemuLayout, DbCitraLayout,
-        DbDesktopConfig, DbMelonDSLayout, DbMultiWindow, DbPipelineActionLookup,
+        DbAction, DbAppOverride, DbAppSettings, DbCategoryProfile, DbCemuLayout, DbCitraLayout,
+        DbDisplayConfig, DbMelonDSLayout, DbMultiWindow, DbPipelineActionLookup,
         DbPipelineActionSettings, DbPipelineDefinition, DbSelection, DbSourceFile, DbVirtualScreen,
     },
     pipeline::{
@@ -21,10 +21,7 @@ use crate::{
 };
 use anyhow::{Context, Result};
 
-use super::model::{
-    v1::{DbAppOverride, DbAppSettings},
-    DbDesktopSessionHandler,
-};
+use super::model::DbDesktopSessionHandler;
 
 impl CategoryProfile {
     pub fn save_all(&self, rw: &RwTransaction) -> Result<()> {
@@ -48,7 +45,7 @@ impl CategoryProfile {
                         DbAction::DesktopSessionHandler(id)
                     }
                     Action::DisplayConfig(action) => {
-                        rw.insert::<DbDesktopConfig>(action.into())?;
+                        rw.insert::<DbDisplayConfig>(action.into())?;
                         DbAction::DisplayConfig(id)
                     }
                     Action::VirtualScreen(action) => {
@@ -296,7 +293,7 @@ impl DbCategoryProfile {
                         action.map(|a| rw.remove(a))
                     }
                     DbAction::DisplayConfig(id) => {
-                        let action = rw.get().primary::<DbDesktopConfig>(id)?;
+                        let action = rw.get().primary::<DbDisplayConfig>(id)?;
                         action.map(|a| rw.remove(a))
                     }
                     DbAction::VirtualScreen(id) => {

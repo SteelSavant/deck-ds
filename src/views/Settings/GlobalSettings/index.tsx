@@ -1,6 +1,6 @@
 import { Dropdown, Field, Toggle } from "decky-frontend-lib";
 import { Fragment, VFC } from "react";
-import EditAction from "../../../components/EditAction";
+import { EditAction } from "../../../components/EditAction";
 import HandleLoading from "../../../components/HandleLoading";
 import useGlobalSettings from "../../../hooks/useGlobalSettings";
 

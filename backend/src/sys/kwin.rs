@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 use std::{ffi::OsStr, path::PathBuf, process::Command, str::FromStr};
 
@@ -90,6 +90,104 @@ impl<'a> KWin<'a> {
                 String::from_utf8_lossy(&set_cmd_out.stderr)
             ))
         }
+    }
+
+    pub fn get_script_bool_setting(&self, script_name: &str, key: &str) -> Result<Option<bool>> {
+        self.get_script_setting(script_name, key)
+            .and_then(|v| v.map(|s: String| Ok(str::parse(&s)?)).transpose())
+            .with_context(|| {
+                format!(
+                    "failed to get kwin bool setting: {} for {}",
+                    key, script_name
+                )
+            })
+    }
+
+    pub fn get_script_string_setting(
+        &self,
+        script_name: &str,
+        key: &str,
+    ) -> Result<Option<String>> {
+        self.get_script_setting(script_name, key).with_context(|| {
+            format!(
+                "failed to get kwin string setting: {} for {}",
+                key, script_name
+            )
+        })
+    }
+
+    fn get_script_setting(&self, script_name: &str, key: &str) -> Result<Option<String>> {
+        let output = Command::new("kreadconfig5")
+            .args([
+                "--file",
+                "kwinrc",
+                "--group",
+                &format!("Script-{script_name}"),
+                "--key",
+                key,
+            ])
+            .output()?;
+
+        output.status.exit_ok()?;
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let trimmed = stdout.trim();
+        if trimmed.is_empty() {
+            Ok(None)
+        } else {
+            log::debug!("got kwinrc {script_name} {key} as {trimmed}");
+
+            Ok(Some(trimmed.to_string()))
+        }
+    }
+
+    pub fn set_script_bool_setting(&self, script_name: &str, key: &str, value: bool) -> Result<()> {
+        self.set_script_setting(script_name, key, &value.to_string(), Some("bool"))
+            .with_context(|| {
+                format!(
+                    "failed to set kwin bool setting: {} for {}",
+                    key, script_name
+                )
+            })
+    }
+
+    pub fn set_script_string_setting(
+        &self,
+        script_name: &str,
+        key: &str,
+        value: &str,
+    ) -> Result<()> {
+        self.set_script_setting(script_name, key, value, None)
+            .with_context(|| {
+                format!(
+                    "failed to set kwin string setting: {} for {}",
+                    key, script_name
+                )
+            })
+    }
+
+    fn set_script_setting(
+        &self,
+        script_name: &str,
+        key: &str,
+        value: &str,
+        ktype: Option<&str>,
+    ) -> Result<()> {
+        log::debug!("setting kwinrc {script_name} {key} to {value}");
+        Ok(Command::new("kwriteconfig5")
+            .args([
+                "--file",
+                "kwinrc",
+                "--group",
+                &format!("Script-{script_name}"),
+                "--key",
+                key,
+                "--type",
+                ktype.unwrap_or("string"),
+                value,
+            ])
+            .status()?
+            .exit_ok()?)
     }
 
     pub fn get_bundle(&self, script_name: &str) -> Option<Asset> {

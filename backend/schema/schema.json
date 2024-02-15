@@ -365,6 +365,21 @@
         }
       }
     },
+    "CemuOptions": {
+      "type": "object",
+      "required": [
+        "multi_screen_layout",
+        "single_screen_layout"
+      ],
+      "properties": {
+        "multi_screen_layout": {
+          "$ref": "#/definitions/MultiWindowLayout"
+        },
+        "single_screen_layout": {
+          "$ref": "#/definitions/LimitedMultiWindowLayout"
+        }
+      }
+    },
     "CitraLayout": {
       "type": "object",
       "required": [
@@ -505,6 +520,21 @@
         },
         "swap_screens": {
           "type": "boolean"
+        }
+      }
+    },
+    "CitraOptions": {
+      "type": "object",
+      "required": [
+        "multi_screen_layout",
+        "single_screen_layout"
+      ],
+      "properties": {
+        "multi_screen_layout": {
+          "$ref": "#/definitions/MultiWindowLayout"
+        },
+        "single_screen_layout": {
+          "$ref": "#/definitions/LimitedMultiWindowLayout"
         }
       }
     },
@@ -755,6 +785,34 @@
         }
       }
     },
+    "DolphinOptions": {
+      "type": "object",
+      "required": [
+        "gba_blacklist",
+        "multi_screen_multi_secondary_layout",
+        "multi_screen_single_secondary_layout",
+        "single_screen_layout"
+      ],
+      "properties": {
+        "gba_blacklist": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint8",
+            "minimum": 0.0
+          }
+        },
+        "multi_screen_multi_secondary_layout": {
+          "$ref": "#/definitions/MultiWindowLayout"
+        },
+        "multi_screen_single_secondary_layout": {
+          "$ref": "#/definitions/MultiWindowLayout"
+        },
+        "single_screen_layout": {
+          "$ref": "#/definitions/LimitedMultiWindowLayout"
+        }
+      }
+    },
     "EmuDeckSource": {
       "type": "string",
       "enum": [
@@ -897,6 +955,21 @@
         "Citra",
         "MelonDS"
       ]
+    },
+    "GeneralOptions": {
+      "type": "object",
+      "required": [
+        "keep_above",
+        "swap_screens"
+      ],
+      "properties": {
+        "keep_above": {
+          "type": "boolean"
+        },
+        "swap_screens": {
+          "type": "boolean"
+        }
+      }
     },
     "GetAppProfileRequest": {
       "type": "object",
@@ -1041,6 +1114,15 @@
           "type": "boolean"
         }
       }
+    },
+    "LimitedMultiWindowLayout": {
+      "type": "string",
+      "enum": [
+        "column-right",
+        "column-left",
+        "square-right",
+        "square-left"
+      ]
     },
     "MelonDSLayout": {
       "type": "object",
@@ -1195,29 +1277,60 @@
     "MultiWindow": {
       "type": "object",
       "required": [
-        "id",
-        "targets"
+        "general",
+        "id"
       ],
       "properties": {
+        "cemu": {
+          "description": "Some(options) if Cemu is configurable, None otherwise",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CemuOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "citra": {
+          "description": "Some(options) if Citra is configurable, None otherwise",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CitraOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dolphin": {
+          "description": "Some(options) if Dolphin is configurable, None otherwise",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DolphinOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "general": {
+          "$ref": "#/definitions/GeneralOptions"
+        },
         "id": {
           "type": "string",
           "format": "uuid"
-        },
-        "targets": {
-          "description": "Which applications are the intended targets; will eventually be used to choose which UI to display to configure the KWin script",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/MultiWindowTarget"
-          }
         }
       }
     },
-    "MultiWindowTarget": {
+    "MultiWindowLayout": {
       "type": "string",
       "enum": [
-        "Cemu",
-        "Citra",
-        "Dolphin"
+        "column-right",
+        "column-left",
+        "square-right",
+        "square-left",
+        "separate"
       ]
     },
     "PipelineActionLookup_for_Action": {

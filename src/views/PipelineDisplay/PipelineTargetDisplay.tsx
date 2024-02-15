@@ -4,7 +4,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Action, ActionOneOf, ActionSelection, PipelineAction, } from "../../backend";
 import ActionIcon from "../../components/ActionIcon";
 import ConfigErrorWarning from "../../components/ConfigErrorWarning";
-import InternalEditAction from "../../components/EditAction";
+import { EditAction } from "../../components/EditAction";
 import { ConfigErrorContext } from "../../context/configErrorContext";
 import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
 
@@ -36,7 +36,7 @@ function buildSelection(id: string, selection: ActionSelection, indentLevel: num
 function buildAction(id: string, action: Action, indentLevel: number): ReactElement | null {
     const { dispatch } = useModifiablePipelineContainer();
 
-    return InternalEditAction({
+    return EditAction({
         action: action, indentLevel: indentLevel + 1, onChange: (updatedAction) => {
             dispatch(
                 {
@@ -90,7 +90,8 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
         ? indentLevel = + 1
         : indentLevel;
     const built = forcedEnabled || isEnabled
-        ? buildSelection(action.id, action.selection, newIndentLevel, hideQamForChildren) : <div />;
+        ? buildSelection(action.id, action.selection, newIndentLevel, hideQamForChildren)
+        : null;
     console.log(built?.props);
 
     return (
@@ -160,9 +161,11 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
                                             : 'show on QAM'}
                                 >
                                     {
-                                        action.is_visible_on_qam && !qamHiddenByParent
-                                            ? <FaEye />
-                                            : <FaEyeSlash />
+                                        built !== null ?
+                                            action.is_visible_on_qam && !qamHiddenByParent
+                                                ? <FaEye />
+                                                : <FaEyeSlash />
+                                            : null
                                     }
                                 </DialogButton>
                                 : null,
