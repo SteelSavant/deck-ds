@@ -1,9 +1,10 @@
 import { DialogButton, Dropdown, FileSelectionType, Toggle } from "decky-frontend-lib";
 import _ from "lodash";
-import { ReactElement } from "react";
+import { Fragment, ReactElement } from "react";
 import { FaFile } from "react-icons/fa";
 import { Action, ExternalDisplaySettings, RelativeLocation, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../backend";
 import { useServerApi } from "../context/serverApiContext";
+import { CemuOptions, CitraOptions, DolphinOptions, LimitedMultiWindowLayout, MultiWindowLayout } from "../types/backend_api";
 import { ActionChild, ActionChildBuilder } from "./ActionChild";
 
 
@@ -205,7 +206,6 @@ export function InternalEditAction({
                             cloned.value.book_mode = isEnabled;
                             onChange(cloned);
                         }} />
-
                     </ActionChild>
                 </div >
             );
@@ -242,7 +242,103 @@ export function InternalEditAction({
                 default:
                     return notConfigurable;
             }
-        case 'MultiWindow': // fallthrough
+        case 'MultiWindow':
+            const options = [cloned.value.cemu, cloned.value.citra, cloned.value.dolphin]
+                .filter((v) => v)
+                .map((v) => v!);
+
+            if (options.length !== 1) {
+                // TODO::properly handle multi-emu config if required
+                return <p> invalid multi-window configuration; must have exactly one option</p>
+            }
+
+            function isDolphin(o: DolphinOptions | CemuOptions | CitraOptions): o is DolphinOptions {
+                return !!(o as DolphinOptions).gba_blacklist;
+            }
+
+            const option = options[0];
+            const layoutOptions: MultiWindowLayout[] = ['column-right', 'column-left', 'square-right', 'square-left', 'separate'];
+            const limitedLayoutOptions: LimitedMultiWindowLayout[] = ['column-right', 'column-left', 'square-right', 'square-left']
+
+            function DolphinAction(option: DolphinOptions): ReactElement {
+                return (
+                    <ActionChild indentLevel={indentLevel} label="Multi-Screen Layout" description="Layout when the Deck's embedded display is enabled and an external display is connected." >
+                        <Fragment>
+                            <ActionChild indentLevel={indentLevel + 1} label="Single-GBA Layout" description="Layout when a single GBA window is visible.">
+                                <Dropdown selectedOption={option.multi_screen_single_secondary_layout} rgOptions={layoutOptions.map((a) => {
+                                    return {
+                                        label: a,
+                                        data: a
+                                    }
+                                })} onChange={(value) => {
+                                    option.multi_screen_single_secondary_layout = value.data;
+                                    onChange(cloned);
+                                }} />
+                            </ActionChild>
+                            <ActionChild indentLevel={indentLevel + 1} label="Multi-GBA Layout" description="Layout when multiple GBA windows are visible.">
+                                <Dropdown selectedOption={option.multi_screen_multi_secondary_layout} rgOptions={layoutOptions.map((a) => {
+                                    return {
+                                        label: a,
+                                        data: a
+                                    }
+                                })} onChange={(value) => {
+                                    option.multi_screen_multi_secondary_layout = value.data;
+                                    onChange(cloned);
+                                }} />
+                            </ActionChild>
+                        </Fragment>
+                    </ActionChild>
+                );
+            }
+
+            function DsAction(option: CemuOptions | CitraOptions): ReactElement {
+                return (
+                    <ActionChild indentLevel={indentLevel} label="Multi-Screen Layout" description="Layout when the Deck's embedded display is enabled and an external display is connected.">
+                        <Dropdown selectedOption={option.multi_screen_layout} rgOptions={layoutOptions.map((a) => {
+                            return {
+                                label: a,
+                                data: a
+                            }
+                        })} onChange={(value) => {
+                            option.multi_screen_layout = value.data;
+                            onChange(cloned);
+                        }} />
+                    </ActionChild>
+                );
+            }
+
+            return <Fragment>
+                <ActionChild indentLevel={indentLevel} label="Keep Above" description="Keep emulator windows above others.">
+                    <Toggle value={cloned.value.general.keep_above} onChange={(isEnabled) => {
+                        cloned.value.general.keep_above = isEnabled;
+                        onChange(cloned);
+                    }} />
+                </ActionChild>
+                <ActionChild indentLevel={indentLevel} label="Swap Screens" description="Use the Deck's embedded display as the main display, instead of as the secondary display.">
+                    <Toggle value={cloned.value.general.swap_screens} onChange={(isEnabled) => {
+                        cloned.value.general.swap_screens = isEnabled;
+                        onChange(cloned);
+                    }} />
+                </ActionChild>
+                <ActionChild indentLevel={indentLevel} label="Single Screen Layout" description="Layout when only the Deck's embedded display is available, or when an external display is connected while the Deck's embedded display is disabled.">
+                    <Dropdown selectedOption={option.single_screen_layout} rgOptions={limitedLayoutOptions.map((a) => {
+                        return {
+                            label: a,
+                            data: a
+                        }
+                    })} onChange={(value) => {
+                        option.single_screen_layout = value.data;
+                        onChange(cloned);
+                    }} />
+                </ActionChild>
+                {
+                    isDolphin(option)
+                        ? DolphinAction(option)
+                        : DsAction(option)
+                }
+
+
+            </Fragment>
         case 'VirtualScreen':
             return notConfigurable;
         default:

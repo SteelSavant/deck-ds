@@ -72,8 +72,8 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
             targets: HashMap::from_iter([
                 (PipelineTarget::Desktop, Selection::AllOf(vec![
                     PipelineActionId::new("core:citra:config"),
-                    PipelineActionId::new("core:display:display_config"),
                     PipelineActionId::new("core:citra:multi_window"),
+                    PipelineActionId::new("core:display:display_config"),
                 ])),
                 (PipelineTarget::Gamemode, Selection::AllOf(vec![
                     PipelineActionId::new("core:citra:config"),
@@ -91,8 +91,8 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                 (PipelineTarget::Desktop,
                     Selection::AllOf(vec![
                         PipelineActionId::new("core:cemu:config"),
-                        PipelineActionId::new("core:display:display_config"),
                         PipelineActionId::new("core:cemu:multi_window"),
+                        PipelineActionId::new("core:display:display_config"),
                 ])),
                 (PipelineTarget::Gamemode,
                     Selection::AllOf(vec![

@@ -92,7 +92,8 @@ export type ModeOptionFor_Resolution =
   | {
       AtMost: Resolution;
     };
-export type MultiWindowTarget = "Cemu" | "Citra" | "Dolphin";
+export type MultiWindowLayout = "column-right" | "column-left" | "square-right" | "square-left" | "separate";
+export type LimitedMultiWindowLayout = "column-right" | "column-left" | "square-right" | "square-left";
 export type CitraLayoutOption =
   | {
       type: "Default";
@@ -279,11 +280,38 @@ export interface VirtualScreen {
   id: string;
 }
 export interface MultiWindow {
-  id: string;
   /**
-   * Which applications are the intended targets; will eventually be used to choose which UI to display to configure the KWin script
+   * Some(options) if Cemu is configurable, None otherwise
    */
-  targets: MultiWindowTarget[];
+  cemu?: CemuOptions | null;
+  /**
+   * Some(options) if Citra is configurable, None otherwise
+   */
+  citra?: CitraOptions | null;
+  /**
+   * Some(options) if Dolphin is configurable, None otherwise
+   */
+  dolphin?: DolphinOptions | null;
+  general: GeneralOptions;
+  id: string;
+}
+export interface CemuOptions {
+  multi_screen_layout: MultiWindowLayout;
+  single_screen_layout: LimitedMultiWindowLayout;
+}
+export interface CitraOptions {
+  multi_screen_layout: MultiWindowLayout;
+  single_screen_layout: LimitedMultiWindowLayout;
+}
+export interface DolphinOptions {
+  gba_blacklist: number[];
+  multi_screen_multi_secondary_layout: MultiWindowLayout;
+  multi_screen_single_secondary_layout: MultiWindowLayout;
+  single_screen_layout: LimitedMultiWindowLayout;
+}
+export interface GeneralOptions {
+  keep_above: boolean;
+  swap_screens: boolean;
 }
 export interface CitraLayout {
   id: string;
