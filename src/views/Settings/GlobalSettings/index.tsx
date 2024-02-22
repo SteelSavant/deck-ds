@@ -34,7 +34,7 @@ export const GlobalSettingsPage: VFC = () => {
                         focusable={false}
                         indentLevel={1}
                         label="Apply Display Settings When Opening Desktop"
-                        description="Apply display settings when opening the desktop for any reason, not just when restoring the displays from an app launch."
+                        description="Apply display settings when switching to desktop normally, not just when restoring the displays from an app launch."
                     >
                         <Toggle value={settings.restore_displays_if_not_executing_pipeline}
                             onChange={(value) => {

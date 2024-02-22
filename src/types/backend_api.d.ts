@@ -214,7 +214,7 @@ export interface Api {
 }
 export interface AutoStartRequest {
   app_id: string;
-  game_id: string;
+  game_id?: string | null;
   profile_id: string;
   target: PipelineTarget;
 }

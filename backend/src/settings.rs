@@ -4,6 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use either::Either;
 use smart_default::SmartDefault;
 
 use anyhow::{Context, Result};
@@ -35,6 +36,7 @@ pub struct Settings {
 #[derive(Debug, SmartDefault, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct GlobalConfig {
     pub display_restoration: DesktopSessionHandler,
+    #[default(true)]
     pub restore_displays_if_not_executing_pipeline: bool,
     /// If true, inject buttons onto app action bar
     #[default(true)]
@@ -169,7 +171,7 @@ Type=Application"
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AutoStart {
-    pub game_id: GameId,
+    pub game_id: Either<AppId, GameId>,
     pub pipeline: Pipeline,
 }
 

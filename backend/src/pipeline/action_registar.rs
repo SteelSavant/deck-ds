@@ -235,7 +235,7 @@ impl PipelineActionRegistarBuilder {
                 PipelineActionDefinitionBuilder {
                             name: "Display Config".to_string(),
                             description: Some("Configures displays in desktop mode.".to_string()),
-                            enabled: Some(true),
+                            enabled: None,
                             is_visible_on_qam: false,
                             profile_override: None,
                             selection: DisplayConfig {

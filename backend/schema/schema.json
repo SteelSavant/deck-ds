@@ -291,7 +291,6 @@
       "type": "object",
       "required": [
         "app_id",
-        "game_id",
         "profile_id",
         "target"
       ],
@@ -300,7 +299,10 @@
           "type": "string"
         },
         "game_id": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "profile_id": {
           "type": "string",

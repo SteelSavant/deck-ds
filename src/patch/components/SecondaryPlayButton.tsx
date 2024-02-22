@@ -26,8 +26,8 @@ export default function SecondaryPlayButton({ }: SecondaryPlayButtonProps): Reac
     const target = useAppTarget({ isPrimary: false, profileId: action?.profile.id });
 
     let onLaunch = launchActions[0]?.targets?.find((t) => t.target === target)?.action;
-    if (target === 'Gamemode') {
-        onLaunch ??= () => SteamClient.Apps.RunGame(appDetails?.gameId);
+    if (target === 'Gamemode' && appDetails) {
+        onLaunch ??= () => SteamClient.Apps.RunGame(appDetails.gameId ?? (appDetails.appId.toString()), "", -1, 100);
     }
 
     console.log('DeckDS: patching secondary button with target: ',

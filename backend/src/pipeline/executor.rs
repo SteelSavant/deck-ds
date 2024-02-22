@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Context, Result};
+use either::Either;
 use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
 use type_reg::untagged::{TypeMap as SerdeMap, TypeReg};
@@ -18,7 +19,7 @@ use crate::pipeline::action::session_handler::DesktopSessionHandler;
 use crate::pipeline::action::source_file::SourceFile;
 use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::data::{PipelineAction, Selection};
-use crate::settings::GameId;
+use crate::settings::{AppId, GameId};
 use crate::sys::app_process::AppProcess;
 use crate::sys::kwin::KWin;
 use crate::sys::x_display::XDisplay;
@@ -30,7 +31,7 @@ use super::data::{Pipeline, PipelineTarget};
 use super::action::ActionImpl;
 
 pub struct PipelineExecutor<'a> {
-    game_id: GameId,
+    game_id: Either<AppId, GameId>,
     pipeline: Option<Pipeline>,
     target: PipelineTarget,
     ctx: PipelineContext<'a>,
@@ -252,7 +253,7 @@ impl<'a> PipelineContext<'a> {
 
 impl<'a> PipelineExecutor<'a> {
     pub fn new(
-        game_id: GameId,
+        game_id: Either<AppId, GameId>,
         pipeline: Pipeline,
         target: PipelineTarget,
         assets_manager: AssetManager<'a>,
@@ -340,10 +341,10 @@ impl<'a> PipelineExecutor<'a> {
     }
 
     fn run_app(&self, should_register_exit_hooks: bool) -> Result<()> {
-        let app_id = self.game_id.raw();
-        let launch_type = match self.target {
-            PipelineTarget::Desktop => "rungameid",
-            PipelineTarget::Gamemode => "launch",
+        let (app_id, launch_type) = match (self.game_id.as_ref(), self.target) {
+            (Either::Right(id), PipelineTarget::Desktop) => (id.raw(), "rungameid"),
+            (Either::Right(id), _) => (id.raw(), "launch"),
+            (Either::Left(id), _) => (id.raw(), "launch"),
         };
 
         let status = Command::new("steam")

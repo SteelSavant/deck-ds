@@ -4,6 +4,7 @@ use std::{
 };
 
 use anyhow::Result;
+use either::Either;
 use schemars::JsonSchema;
 use serde::Deserialize;
 
@@ -23,7 +24,7 @@ use super::{
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct AutoStartRequest {
-    game_id: GameId,
+    game_id: Option<GameId>,
     app_id: AppId,
     profile_id: ProfileId,
     target: PipelineTarget,
@@ -71,12 +72,17 @@ pub fn autostart(
 
                 let pipeline = definition.reify(&profiles, &registrar).unwrap();
 
+                let id = args
+                    .game_id
+                    .map(|v| Either::Right(v))
+                    .unwrap_or(Either::Left(args.app_id));
+
                 match args.target {
                     PipelineTarget::Desktop => {
                         let lock = settings.lock().expect("settings mutex should be lockable");
 
                         let res = lock.set_autostart_cfg(&settings::AutoStart {
-                            game_id: args.game_id,
+                            game_id: id,
                             pipeline,
                         });
                         match res {
@@ -95,7 +101,7 @@ pub fn autostart(
                     PipelineTarget::Gamemode => {
                         let executor = LoadedAutoStart::new(
                             settings::AutoStart {
-                                game_id: args.game_id,
+                                game_id: id,
                                 pipeline,
                             },
                             PipelineTarget::Gamemode,
