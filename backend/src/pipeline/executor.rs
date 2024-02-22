@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Context, Result};
+use either::Either;
 use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
 use type_reg::untagged::{TypeMap as SerdeMap, TypeReg};
@@ -12,13 +13,14 @@ use typemap::{Key, TypeMap};
 use crate::asset::AssetManager;
 use crate::pipeline::action::cemu_layout::CemuLayout;
 use crate::pipeline::action::citra_layout::CitraLayout;
+use crate::pipeline::action::display_config::DisplayConfig;
 use crate::pipeline::action::melonds_layout::MelonDSLayout;
 use crate::pipeline::action::multi_window::MultiWindow;
 use crate::pipeline::action::session_handler::DesktopSessionHandler;
 use crate::pipeline::action::source_file::SourceFile;
 use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::data::{PipelineAction, Selection};
-use crate::settings::GameId;
+use crate::settings::{AppId, GameId};
 use crate::sys::app_process::AppProcess;
 use crate::sys::kwin::KWin;
 use crate::sys::x_display::XDisplay;
@@ -30,7 +32,7 @@ use super::data::{Pipeline, PipelineTarget};
 use super::action::ActionImpl;
 
 pub struct PipelineExecutor<'a> {
-    game_id: GameId,
+    game_id: Either<AppId, GameId>,
     pipeline: Option<Pipeline>,
     target: PipelineTarget,
     ctx: PipelineContext<'a>,
@@ -81,11 +83,17 @@ impl<'a> PipelineContext<'a> {
         assets_manager: AssetManager<'a>,
         home_dir: PathBuf,
         config_dir: PathBuf,
-    ) -> Option<Self> {
+    ) -> Result<Option<Self>> {
         let mut default: PipelineContext<'_> =
             PipelineContext::new(assets_manager, home_dir, config_dir);
 
-        let persisted = std::fs::read_to_string(default.get_state_path()).ok()?;
+        let persisted = std::fs::read_to_string(default.get_state_path()).ok();
+        let persisted = match persisted {
+            Some(p) => p,
+            None => {
+                return Ok(None);
+            }
+        };
 
         log::info!("Pipeline context exists; loading");
 
@@ -107,12 +115,16 @@ impl<'a> PipelineContext<'a> {
         register_type::<CemuLayout>(&mut type_reg);
         register_type::<CitraLayout>(&mut type_reg);
         register_type::<MelonDSLayout>(&mut type_reg);
+        register_type::<DisplayConfig>(&mut type_reg);
 
         let mut deserializer = serde_json::Deserializer::from_str(&persisted);
-        let type_map: SerdeMap<String> = type_reg.deserialize_map(&mut deserializer).unwrap();
+        let type_map: SerdeMap<String> = type_reg
+            .deserialize_map(&mut deserializer)
+            .with_context(|| format!("failed to deserialize persisted context state"))?;
 
         let actions = type_map
-            .get::<Vec<String>, _>("__actions__")?
+            .get::<Vec<String>, _>("__actions__")
+            .with_context(|| "could not find key '__actions__' while loading context state")?
             .iter()
             .map(|v| v.as_str());
 
@@ -127,7 +139,10 @@ impl<'a> PipelineContext<'a> {
                 CemuLayout::NAME => load_state::<CemuLayout>(&mut default, &type_map),
                 CitraLayout::NAME => load_state::<CitraLayout>(&mut default, &type_map),
                 MelonDSLayout::NAME => load_state::<MelonDSLayout>(&mut default, &type_map),
-                _ => {}
+                DisplayConfig::NAME => load_state::<DisplayConfig>(&mut default, &type_map),
+                unknown => {
+                    log::warn!("cannot load unknown type named {unknown}")
+                }
             }
         }
 
@@ -146,7 +161,7 @@ impl<'a> PipelineContext<'a> {
             }
         }
 
-        Some(default)
+        Ok(Some(default))
     }
 
     fn persist(&self) -> Result<()> {
@@ -252,7 +267,7 @@ impl<'a> PipelineContext<'a> {
 
 impl<'a> PipelineExecutor<'a> {
     pub fn new(
-        game_id: GameId,
+        game_id: Either<AppId, GameId>,
         pipeline: Pipeline,
         target: PipelineTarget,
         assets_manager: AssetManager<'a>,
@@ -340,10 +355,10 @@ impl<'a> PipelineExecutor<'a> {
     }
 
     fn run_app(&self, should_register_exit_hooks: bool) -> Result<()> {
-        let app_id = self.game_id.raw();
-        let launch_type = match self.target {
-            PipelineTarget::Desktop => "rungameid",
-            PipelineTarget::Gamemode => "launch",
+        let (app_id, launch_type) = match (self.game_id.as_ref(), self.target) {
+            (Either::Right(id), PipelineTarget::Desktop) => (id.raw(), "rungameid"),
+            (Either::Right(id), _) => (id.raw(), "launch"),
+            (Either::Left(id), _) => (id.raw(), "launch"),
         };
 
         let status = Command::new("steam")
@@ -638,7 +653,8 @@ mod tests {
             home_dir,
             config_dir,
         )
-        .with_context(|| "Persisted context should load")?;
+        .with_context(|| "Persisted context should load")?
+        .with_context(|| "Persisted context should exist")?;
 
         for (expected_action, actual_action) in ctx.have_run.iter().zip(loaded.have_run.iter()) {
             assert_eq!(expected_action, actual_action);

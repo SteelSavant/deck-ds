@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, collections::HashMap};
+use std::collections::HashMap;
 
 /// Data transforms between working data and the database format
 //
@@ -17,7 +17,7 @@ use crate::{
             Selection,
         },
     },
-    settings::{AppId, AppProfile, CategoryProfile, ProfileId},
+    settings::{AppId, AppProfile, CategoryProfile},
 };
 use anyhow::{Context, Result};
 

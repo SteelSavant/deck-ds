@@ -152,14 +152,16 @@ fn main() -> Result<()> {
     let assets_manager = AssetManager::new(&ASSETS_DIR, assets_dir.clone());
     let request_handler = Arc::new(Mutex::new(RequestHandler::new()));
 
-    // teardown persisted state, ignore errors for now
-    if let Some(loaded) =
-        PipelineContext::load(assets_manager.clone(), home_dir.clone(), config_dir.clone())
-    {
-        log::info!("Tearing down last executed pipeline");
-        // TODO::this will cause display-dependent actions to automatically fail, but
-        // this (hopefully) isn't a major problem because xrandr isn't persistent across reboots
-        loaded.teardown(&mut vec![]);
+    // teardown persisted state
+    match PipelineContext::load(assets_manager.clone(), home_dir.clone(), config_dir.clone()) {
+        Ok(Some(loaded)) => {
+            log::info!("Tearing down last executed pipeline");
+            // TODO::this will cause display-dependent actions to automatically fail, but
+            // this (hopefully) isn't a major problem because xrandr isn't persistent across reboots
+            loaded.teardown(&mut vec![]);
+        }
+        Ok(None) => (),
+        Err(err) => log::warn!("failed to load persisted context state: {err}"),
     }
 
     match mode {

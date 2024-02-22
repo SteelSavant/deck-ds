@@ -74,16 +74,13 @@ const History = findModuleChild((m) => {
 
 
 export default definePlugin((serverApi: ServerAPI) => {
-  let currentRoute = '/home'; // TODO::handle this better
-
-  const unlistenHistory = History.listen(async (info: any) => {
-    currentRoute = info.pathname;
-
+  function updateAppDetails(currentRoute: string): void {
     const re = /^\/library\/app\/(\d+)(\/?.*)/
 
-    if (re.test(currentRoute)) {
-      const appIdStr = re.exec(currentRoute)![1]!;
 
+    if (re.test(currentRoute)) {
+
+      const appIdStr = re.exec(currentRoute)![1]!;
       const appId = Number.parseInt(appIdStr);
       let overview = appStore.GetAppOverviewByAppID(appId);
       appDetailsState.setOnAppPage({
@@ -92,8 +89,16 @@ export default definePlugin((serverApi: ServerAPI) => {
         displayName: overview.display_name
       });
     } else {
-      appDetailsState.setOnAppPage(null);
+      appDetailsState.setOnAppPage(null); appDetailsState.setOnAppPage(null);
     }
+  }
+
+  // @ts-ignore
+  const initialRoute = Router?.WindowStore?.GamepadUIMainWindowInstance?.m_history?.location?.pathname ?? '/library/home';
+  updateAppDetails(initialRoute);
+
+  const unlistenHistory = History.listen(async (info: any) => {
+    updateAppDetails(info.pathname);
   });
 
   const libraryPatch = patchLibraryApp(serverApi, appDetailsState);
