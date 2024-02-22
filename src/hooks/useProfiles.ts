@@ -25,11 +25,15 @@ const useProfiles = (): Profiles => {
                 }
 
                 setResult(res.map((v) => {
-                    v.profiles.sort((a, b) =>
-                        a.pipeline.name < b.pipeline.name ? -1
-                            : a.pipeline.name > b.pipeline.name ? 1
+                    v.profiles.sort((a, b) => {
+                        const aname = a.pipeline.name.toLowerCase();
+                        const bname = b.pipeline.name.toLowerCase();
+                        return aname < bname ? -1
+                            : aname > bname ? 1
                                 : a.id < b.id ? -1
-                                    : 1);
+                                    : 1
+                    });
+
                     return v.profiles;
                 }));
             })();
