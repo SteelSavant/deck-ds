@@ -7,7 +7,7 @@ use std::{
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 use crate::{
     asset::AssetManager,
@@ -344,17 +344,9 @@ pub fn get_default_app_override_pipeline_for_profile(
                             for (id, action) in lookup.actions.iter_mut() {
                                 action.profile_override = Some(args.profile_id);
                                 // override the visibility with the profile visibility, since the QAM can't actually set it
-                                action.is_visible_on_qam = pipeline
-                                    .actions
-                                    .actions
-                                    .get(id)
-                                    .unwrap_or_else(|| {
-                                        panic!(
-                                            "action {id:?} should exist on profile {:?}",
-                                            profile.id
-                                        )
-                                    })
-                                    .is_visible_on_qam;
+                                if let Some(profile_action) = pipeline.actions.actions.get(id) {
+                                    action.is_visible_on_qam = profile_action.is_visible_on_qam;
+                                }
                             }
 
                             PipelineDefinition {

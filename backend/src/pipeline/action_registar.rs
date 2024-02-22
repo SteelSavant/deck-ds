@@ -69,6 +69,7 @@ impl PipelineActionRegistrar {
                             registrar
                                 .get(id, target)
                                 .with_context(|| format!("action {id:?} should exist"))
+                                .inspect_err(|err| log::error!("{err}"))
                                 .unwrap()
                         })
                         .flat_map(|def| get_ids(registrar, &def.settings.selection, target))
@@ -580,7 +581,7 @@ mod tests {
                 .build()
                 .actions
                 .len(),
-            24
+            25
         );
     }
 
