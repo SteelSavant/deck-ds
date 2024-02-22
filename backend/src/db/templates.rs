@@ -6,6 +6,10 @@ newtype_strid!("", AppId);
 use crate::{
     macros::{newtype_strid, newtype_uuid},
     pipeline::{
+        action::{
+            display_config::DisplayConfig, session_handler::ExternalDisplaySettings, Action,
+            ActionId,
+        },
         action_registar::PipelineActionRegistrar,
         data::{
             PipelineActionId, PipelineDefinition, PipelineTarget, Selection, Template, TemplateId,
@@ -21,11 +25,35 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
         name: String,
         description: String,
         targets: HashMap<PipelineTarget, Selection<PipelineActionId>>,
+        action_overrides: HashMap<PipelineActionId, Action>,
+        enabled_overrides: HashMap<PipelineActionId, Option<bool>>,
+        is_visible_on_qam_overrides: HashMap<PipelineActionId, bool>,
     }
 
     impl TemplateBuilder {
         fn build(self, registrar: &PipelineActionRegistrar) -> Template {
-            let actions = registrar.make_lookup(&self.targets);
+            let mut actions = registrar.make_lookup(&self.targets);
+            for (id, action) in self.action_overrides {
+                actions
+                    .actions
+                    .entry(id)
+                    .and_modify(|v| v.selection = action.into());
+            }
+
+            for (id, enabled) in self.enabled_overrides {
+                actions
+                    .actions
+                    .entry(id)
+                    .and_modify(|v| v.enabled = enabled);
+            }
+
+            for (id, enabled) in self.is_visible_on_qam_overrides {
+                actions
+                    .actions
+                    .entry(id)
+                    .and_modify(|v| v.is_visible_on_qam = enabled);
+            }
+
             Template {
                 id: self.id,
                 version: self.version,
@@ -61,6 +89,9 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                     PipelineActionId::new("core:melonds:config"),
                 ]))
             ]),
+            action_overrides: Default::default(),
+            enabled_overrides: Default::default(),
+            is_visible_on_qam_overrides: Default::default(),
         },
 
         // Citra
@@ -79,6 +110,9 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                     PipelineActionId::new("core:citra:config"),
                 ]))
             ]),
+            action_overrides: Default::default(),
+            enabled_overrides: Default::default(),
+            is_visible_on_qam_overrides: Default::default(),
         },
 
         // Cemu
@@ -99,6 +133,9 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                         PipelineActionId::new("core:cemu:config")
                 ]))
             ]),
+            action_overrides: Default::default(),
+            enabled_overrides: Default::default(),
+            is_visible_on_qam_overrides: Default::default(),
         },
 
         // Simple Desktop
@@ -113,6 +150,18 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                         PipelineActionId::new("core:display:display_config"),
                     ])
                 )
+            ]),
+            action_overrides: HashMap::from_iter([
+                (PipelineActionId::new("core:display:display_config:desktop"), Action::DisplayConfig(DisplayConfig{
+                    id: ActionId::nil(),
+                    external_display_settings: ExternalDisplaySettings::Previous,
+                    deck_location: None,
+                    deck_is_primary_display: false
+                }))
+            ]),
+            enabled_overrides: Default::default(),
+            is_visible_on_qam_overrides: HashMap::from_iter([
+                (PipelineActionId::new("core:display:display_config:desktop"), true)
             ]),
         }
     ];
