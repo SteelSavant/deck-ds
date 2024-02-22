@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::pipeline::executor::PipelineContext;
 
-use super::{source_file::SourceFile, ActionId, ActionImpl};
+use super::{source_file::SourceFile, ActionId, ActionImpl, ActionType};
 use anyhow::{anyhow, Context, Result};
 use configparser::ini::{Ini, IniDefault};
 use regex::Regex;
@@ -164,7 +164,7 @@ mod internal {
 impl ActionImpl for CitraLayout {
     type State = internal::CitraState;
 
-    const NAME: &'static str = "CitraLayout";
+    const TYPE: ActionType = ActionType::CitraLayout;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let (ini_path, layout) = {

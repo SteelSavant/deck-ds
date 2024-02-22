@@ -8,7 +8,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use xrandr::XId;
 
-use crate::pipeline::{dependency::Dependency, executor::PipelineContext};
+use crate::pipeline::{action::ActionType, dependency::Dependency, executor::PipelineContext};
 
 use self::ui::DeckDsUi;
 
@@ -165,7 +165,7 @@ impl DisplayState {
 impl ActionImpl for DesktopSessionHandler {
     type State = DisplayState;
 
-    const NAME: &'static str = "DesktopSessionHandler";
+    const TYPE: ActionType = ActionType::DesktopSessionHandler;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let display = ctx

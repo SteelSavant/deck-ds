@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::pipeline::{dependency::Dependency, executor::PipelineContext};
 
-use super::{ActionId, ActionImpl};
+use super::{ActionId, ActionImpl, ActionType};
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
 pub struct SourceFile {
@@ -126,7 +126,7 @@ impl SettingsSource for AppImageSource {
 impl ActionImpl for SourceFile {
     type State = PathBuf;
 
-    const NAME: &'static str = "SourceFile";
+    const TYPE: ActionType = ActionType::SourceFile;
 
     fn setup(&self, ctx: &mut PipelineContext) -> anyhow::Result<()> {
         match &self.source {

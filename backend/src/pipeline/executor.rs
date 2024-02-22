@@ -19,6 +19,7 @@ use crate::pipeline::action::multi_window::MultiWindow;
 use crate::pipeline::action::session_handler::DesktopSessionHandler;
 use crate::pipeline::action::source_file::SourceFile;
 use crate::pipeline::action::virtual_screen::VirtualScreen;
+use crate::pipeline::action::ActionType;
 use crate::pipeline::data::{PipelineAction, Selection};
 use crate::settings::{AppId, GameId};
 use crate::sys::app_process::AppProcess;
@@ -103,7 +104,9 @@ impl<'a> PipelineContext<'a> {
             T: ActionImpl + Clone + Send + Sync + 'static,
             <T as ActionImpl>::State: Clone + Send + Sync,
         {
-            type_reg.register::<(T, Option<<T as ActionImpl>::State>)>(T::NAME.to_string());
+            type_reg.register::<(T, Option<<T as ActionImpl>::State>)>(
+                serde_json::to_string(&T::TYPE).expect("ActionType should serialize in type map"),
+            );
         }
 
         type_reg.register::<Vec<String>>("__actions__".to_string());
@@ -129,19 +132,27 @@ impl<'a> PipelineContext<'a> {
             .map(|v| v.as_str());
 
         for action in actions {
-            match action {
-                DesktopSessionHandler::NAME => {
-                    load_state::<DesktopSessionHandler>(&mut default, &type_map)
-                }
-                VirtualScreen::NAME => load_state::<VirtualScreen>(&mut default, &type_map),
-                MultiWindow::NAME => load_state::<MultiWindow>(&mut default, &type_map),
-                SourceFile::NAME => load_state::<SourceFile>(&mut default, &type_map),
-                CemuLayout::NAME => load_state::<CemuLayout>(&mut default, &type_map),
-                CitraLayout::NAME => load_state::<CitraLayout>(&mut default, &type_map),
-                MelonDSLayout::NAME => load_state::<MelonDSLayout>(&mut default, &type_map),
-                DisplayConfig::NAME => load_state::<DisplayConfig>(&mut default, &type_map),
-                unknown => {
-                    log::warn!("cannot load unknown type named {unknown}")
+            match serde_json::from_str(action) {
+                Ok(action) => match action {
+                    ActionType::DesktopSessionHandler => {
+                        load_state::<DesktopSessionHandler>(&mut default, &type_map)
+                    }
+                    ActionType::VirtualScreen => {
+                        load_state::<VirtualScreen>(&mut default, &type_map)
+                    }
+                    ActionType::MultiWindow => load_state::<MultiWindow>(&mut default, &type_map),
+                    ActionType::SourceFile => load_state::<SourceFile>(&mut default, &type_map),
+                    ActionType::CemuLayout => load_state::<CemuLayout>(&mut default, &type_map),
+                    ActionType::CitraLayout => load_state::<CitraLayout>(&mut default, &type_map),
+                    ActionType::MelonDSLayout => {
+                        load_state::<MelonDSLayout>(&mut default, &type_map)
+                    }
+                    ActionType::DisplayConfig => {
+                        load_state::<DisplayConfig>(&mut default, &type_map)
+                    }
+                },
+                Err(err) => {
+                    log::warn!("failed to parse action {action} from type reg: {err}")
                 }
             }
         }
@@ -152,7 +163,8 @@ impl<'a> PipelineContext<'a> {
             <T as ActionImpl>::State: Clone + Send + Sync,
             Action: From<T>,
         {
-            if let Some(value) = serde_map.get::<(T, Option<<T as ActionImpl>::State>), _>(T::NAME)
+            if let Some(value) =
+                serde_map.get::<(T, Option<<T as ActionImpl>::State>), _>(&T::TYPE.to_string())
             {
                 ctx.have_run.push(value.0.clone().into());
                 if let Some(state) = value.1.as_ref() {
@@ -173,7 +185,7 @@ impl<'a> PipelineContext<'a> {
             <T as ActionImpl>::State: Clone + Send + Sync,
         {
             map.insert(
-                T::NAME.to_string(),
+                T::TYPE.to_string(),
                 (action.clone(), ctx.get_state::<T>().cloned()),
             );
         }
@@ -195,7 +207,7 @@ impl<'a> PipelineContext<'a> {
         let actions = self
             .have_run
             .iter()
-            .map(|a| a.get_name())
+            .map(|a| a.get_type())
             .collect::<Vec<_>>();
         map.insert("__actions__".to_string(), actions);
 
@@ -228,7 +240,7 @@ impl<'a> PipelineContext<'a> {
         while let Some(action) = self.have_run.pop() {
             let ctx: &mut PipelineContext<'_> = &mut self;
 
-            let msg = format!("tearing down {}...", action.get_name());
+            let msg = format!("tearing down {}...", action.get_type());
 
             log::info!("{msg}");
 
@@ -251,16 +263,16 @@ impl<'a> PipelineContext<'a> {
 
     fn setup_action(&mut self, action: Action) -> Result<()> {
         let res = action
-            .exec(self, ActionType::Setup)
-            .with_context(|| format!("failed to execute setup for {}", action.get_name()));
+            .exec(self, ExecActionType::Setup)
+            .with_context(|| format!("failed to execute setup for {}", action.get_type()));
         self.have_run.push(action);
         self.persist().and(res)
     }
 
     fn teardown_action(&mut self, action: Action) -> Result<()> {
         let res = action
-            .exec(self, ActionType::Teardown)
-            .with_context(|| format!("failed to execute teardown for {}", action.get_name()));
+            .exec(self, ExecActionType::Teardown)
+            .with_context(|| format!("failed to execute teardown for {}", action.get_type()));
         self.persist().and(res)
     }
 }
@@ -307,10 +319,10 @@ impl<'a> PipelineExecutor<'a> {
         for action in pipeline.iter() {
             self.ctx.send_ui_event(UiEvent::UpdateStatusMsg(format!(
                 "checking dependencies for {}...",
-                action.get_name()
+                action.get_type()
             )));
 
-            if let Err(err) = action.exec(&mut self.ctx, ActionType::Dependencies) {
+            if let Err(err) = action.exec(&mut self.ctx, ExecActionType::Dependencies) {
                 return Err(err).with_context(|| "Error installing dependencies");
             }
         }
@@ -319,7 +331,7 @@ impl<'a> PipelineExecutor<'a> {
         for action in pipeline {
             self.ctx.send_ui_event(UiEvent::UpdateStatusMsg(format!(
                 "setting up {}...",
-                action.get_name()
+                action.get_type()
             )));
 
             if let Err(err) = self.ctx.setup_action(action) {
@@ -469,7 +481,7 @@ impl<'a> PipelineExecutor<'a> {
     }
 }
 
-enum ActionType {
+enum ExecActionType {
     Dependencies,
     Setup,
     Teardown,
@@ -508,9 +520,9 @@ impl Pipeline {
 }
 
 impl Action {
-    fn exec(&self, ctx: &mut PipelineContext, action: ActionType) -> Result<()> {
+    fn exec(&self, ctx: &mut PipelineContext, action: ExecActionType) -> Result<()> {
         match action {
-            ActionType::Dependencies => {
+            ExecActionType::Dependencies => {
                 let deps = self.get_dependencies(ctx);
 
                 for d in deps {
@@ -519,8 +531,8 @@ impl Action {
 
                 Ok(())
             }
-            ActionType::Setup => self.setup(ctx),
-            ActionType::Teardown => self.teardown(ctx),
+            ExecActionType::Setup => self.setup(ctx),
+            ExecActionType::Teardown => self.teardown(ctx),
         }
     }
 }
@@ -668,7 +680,7 @@ mod tests {
             let expected = ctx.get_state::<T>();
             let actual = loaded.get_state::<T>();
 
-            assert_eq!(expected, actual, "{} failed to match", T::NAME);
+            assert_eq!(expected, actual, "{} failed to match", T::TYPE);
         }
 
         check_state::<DesktopSessionHandler>(&ctx, &loaded);

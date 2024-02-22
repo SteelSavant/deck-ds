@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::pipeline::executor::PipelineContext;
 
-use super::{source_file::SourceFile, ActionId, ActionImpl};
+use super::{source_file::SourceFile, ActionId, ActionImpl, ActionType};
 use anyhow::{Context, Result};
 use regex::Regex;
 use schemars::JsonSchema;
@@ -63,7 +63,7 @@ impl CemuLayoutState {
 impl ActionImpl for CemuLayout {
     type State = CemuLayoutState;
 
-    const NAME: &'static str = "CemuLayout";
+    const TYPE: ActionType = ActionType::CemuLayout;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let (xml_path, layout) = {

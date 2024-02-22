@@ -10,7 +10,7 @@ use crate::{
 
 use super::{
     session_handler::{Pos, Size},
-    ActionId, ActionImpl,
+    ActionId, ActionImpl, ActionType,
 };
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
@@ -23,7 +23,7 @@ const SCRIPT: &str = "truevideowall";
 impl ActionImpl for VirtualScreen {
     type State = bool;
 
-    const NAME: &'static str = "VirtualScreen";
+    const TYPE: ActionType = ActionType::VirtualScreen;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let enabled = ctx.kwin.get_script_enabled(SCRIPT);
