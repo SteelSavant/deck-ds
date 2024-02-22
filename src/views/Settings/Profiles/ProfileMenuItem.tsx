@@ -1,7 +1,8 @@
-import { ConfirmModal, DialogButton, Field, Focusable, Navigation, showModal } from "decky-frontend-lib";
+import { ConfirmModal, DialogButton, Field, Navigation, showModal } from "decky-frontend-lib";
 import { ReactElement } from "react";
 import { FaGear, FaTrash } from "react-icons/fa6";
 import { CategoryProfile, DeleteProfileRequest, Response, } from "../../../backend";
+import FocusableRow from "../../../components/FocusableRow";
 import { useServerApi } from "../../../context/serverApiContext";
 
 export default function ProfileMenuItem({ profile, deleteProfile }: { profile: CategoryProfile, deleteProfile: (request: DeleteProfileRequest) => Response<void> }): ReactElement {
@@ -38,39 +39,33 @@ export default function ProfileMenuItem({ profile, deleteProfile }: { profile: C
             label={profile.pipeline.name}
             description={profile.pipeline.description}
         >
-            <div style={{ display: 'flex', width: '100%', position: 'relative' }}>
-
-                <Focusable >
-                    <DialogButton
-                        style={{ height: '40px', minWidth: '40px', marginRight: '10px' }}
-                        onClick={viewProfile}
-                        onOKButton={viewProfile}
-                    >
-                        <div style={{ display: 'flex', minWidth: '100px', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <FaGear style={{ paddingRight: '1rem' }} />
-                            Edit
-                        </div>
-                    </DialogButton>
-                </ Focusable>
-                <Focusable>
-                    <DialogButton style={{
-                        backgroundColor: 'red',
-                        height: '40px',
-                        width: '40px',
-                        padding: '10px 12px',
-                        minWidth: '40px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        marginLeft: '10px'
-                    }}
-                        onOKButton={deleteProfileWithConfirmation}
-                        onClick={deleteProfileWithConfirmation}
-                    >
-                        <FaTrash />
-                    </DialogButton>
-                </Focusable>
-            </div>
+            <FocusableRow>
+                <DialogButton
+                    style={{ height: '40px', minWidth: '60px', marginRight: '10px' }}
+                    onClick={viewProfile}
+                    onOKButton={viewProfile}
+                >
+                    <div style={{ display: 'flex', minWidth: '100px', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <FaGear style={{ paddingRight: '1rem' }} />
+                        Edit
+                    </div>
+                </DialogButton>
+                <DialogButton style={{
+                    backgroundColor: 'red',
+                    height: '40px',
+                    width: '40px',
+                    padding: '10px 12px',
+                    minWidth: '40px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                }}
+                    onOKButton={deleteProfileWithConfirmation}
+                    onClick={deleteProfileWithConfirmation}
+                >
+                    <FaTrash />
+                </DialogButton>
+            </FocusableRow>
         </Field>
     );
 }

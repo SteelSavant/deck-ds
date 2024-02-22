@@ -105,7 +105,7 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
                 description={action.description}
                 icon={<ActionIcon action={action} />}
             >
-                <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', }}>
+                <Focusable style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', }}>
                     {
                         [
                             <ConfigErrorWarning errors={configErrors[action.id]} />,
@@ -177,7 +177,7 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
                                 {x}
                             </div>)
                     }
-                </div>
+                </Focusable>
             </Field>
             {built}
         </Fragment >
