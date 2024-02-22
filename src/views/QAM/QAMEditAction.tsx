@@ -28,11 +28,9 @@ export default function QAMEditAction({
 function QAMActionChild({ children, label }: ActionChildProps): ReactElement {
     return (
         <Field label={label} focusable={false} inlineWrap="keep-inline">
-            <div style={{ paddingRight: '10px' }}>
-                <Focusable >
-                    {children}
-                </Focusable>
-            </div>
+            <Focusable style={{ paddingRight: '10px' }}>
+                {children}
+            </Focusable>
         </Field>
     );
 }

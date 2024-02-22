@@ -74,7 +74,7 @@ pub fn autostart(
 
                 let id = args
                     .game_id
-                    .map(|v| Either::Right(v))
+                    .map(Either::Right)
                     .unwrap_or(Either::Left(args.app_id));
 
                 match args.target {

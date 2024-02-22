@@ -7,7 +7,7 @@ use std::{
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 
 use crate::{
     asset::AssetManager,
