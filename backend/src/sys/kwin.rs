@@ -30,7 +30,7 @@ impl<'a> KWin<'a> {
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
 
-        if output.status.success() && !stdout.contains("kpackagetool5 [options]") {
+        let out = if output.status.success() && !stdout.contains("kpackagetool5 [options]") {
             Ok(())
         } else if stdout.contains("already exists") || stderr.contains("already exists") {
             let status = Command::new("kpackagetool5")
@@ -50,7 +50,12 @@ impl<'a> KWin<'a> {
             Err(anyhow::anyhow!(
                 "failed to install kwin script bundle {script_name}"
             ))
+        };
+
+        if out.is_ok() {
+            self.reconfigure()?;
         }
+        out
     }
 
     pub fn get_script_enabled(&self, script_name: &str) -> Result<bool> {
@@ -174,7 +179,7 @@ impl<'a> KWin<'a> {
         ktype: Option<&str>,
     ) -> Result<()> {
         log::debug!("setting kwinrc {script_name} {key} to {value}");
-        Ok(Command::new("kwriteconfig5")
+        Command::new("kwriteconfig5")
             .args([
                 "--file",
                 "kwinrc",
@@ -187,7 +192,9 @@ impl<'a> KWin<'a> {
                 value,
             ])
             .status()?
-            .exit_ok()?)
+            .exit_ok()?;
+
+        Ok(self.reconfigure()?)
     }
 
     pub fn get_bundle(&self, script_name: &str) -> Option<Asset> {
