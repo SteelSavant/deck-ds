@@ -118,7 +118,7 @@ pub enum AppImageSource {
 impl SettingsSource for AppImageSource {
     fn settings_file(&self, ctx: &PipelineContext) -> PathBuf {
         match self {
-            AppImageSource::Cemu => ctx.config_dir.join("Cemu/settings.xml"),
+            AppImageSource::Cemu => ctx.home_dir.join(".config/Cemu/settings.xml"),
         }
     }
 }

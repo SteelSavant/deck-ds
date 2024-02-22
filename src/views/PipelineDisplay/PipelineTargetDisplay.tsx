@@ -94,11 +94,13 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
         : null;
     console.log(built?.props);
 
+    const hasError = configErrors[action.id]?.length ?? 0 > 0;
+
     return (
         <Fragment>
             <Field
                 indentLevel={indentLevel}
-                focusable={(!built && forcedEnabled) || (selection.type !== 'AllOf' && forcedEnabled && qamHiddenByParent && !configErrors[action.id])}
+                focusable={!hasError && ((!built && forcedEnabled) || (selection.type !== 'AllOf' && forcedEnabled && qamHiddenByParent && !configErrors[action.id]))}
                 label={action.name}
                 description={action.description}
                 icon={<ActionIcon action={action} />}

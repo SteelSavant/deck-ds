@@ -10,7 +10,9 @@ use super::{
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
         multi_window::{CemuOptions, CitraOptions, GeneralOptions, MultiWindow},
         session_handler::{DesktopSessionHandler, ExternalDisplaySettings, RelativeLocation},
-        source_file::{CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile},
+        source_file::{
+            AppImageSource, CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile,
+        },
         virtual_screen::VirtualScreen,
         ActionId,
     },
@@ -367,6 +369,7 @@ impl PipelineActionRegistarBuilder {
                         profile_override: None,
                         selection:  Selection::OneOf {selection: PipelineActionId::new("core:cemu:flatpak_source"), actions: vec![
                             PipelineActionId::new("core:cemu:flatpak_source"),
+                            PipelineActionId::new("core:cemu:appimage_source"),
                             PipelineActionId::new("core:cemu:emudeck_proton_source"),
                             PipelineActionId::new("core:cemu:custom_source")
                         ]},
@@ -381,6 +384,17 @@ impl PipelineActionRegistarBuilder {
                             id: ActionId::nil(),
                             source: FileSource::Flatpak(FlatpakSource::Cemu)
                         }.into(),
+                    })
+                    .with_action("appimage_source", None,PipelineActionDefinitionBuilder {
+                        name: "AppImage".to_string(),
+                        description: Some("Sets the settings XML file location to the default AppImage location.".to_string()),
+                        enabled: None,
+                        is_visible_on_qam: true,
+                        profile_override: None,
+                        selection: SourceFile {
+                            id: ActionId::nil(),
+                            source: FileSource::AppImage(AppImageSource::Cemu)
+                        }.into(), 
                     })
                     .with_action("emudeck_proton_source", None, PipelineActionDefinitionBuilder {
                         name: "EmuDeck (Proton)".to_string(),
