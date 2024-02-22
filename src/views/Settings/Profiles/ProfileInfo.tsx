@@ -57,7 +57,7 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                         Add Collection
                     </DialogButton>
                 </Field>
-                <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
+                <Focusable style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
                     {
                         profile.tags.map((t) =>
                             <Focusable>
@@ -65,7 +65,7 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                             </Focusable>
                         )
                     }
-                </div>
+                </Focusable>
                 <Field focusable={false} />
                 <Field
                     focusable={false}

@@ -48,7 +48,7 @@ export function InternalEditAction({
                     <Builder indentLevel={indentLevel} label="External Display Settings" description="External display settings (resolution, refresh rate, etc.).">
                         <Dropdown selectedOption={display.teardown_external_settings.type} rgOptions={externalSettings.map((setting) => {
                             return {
-                                label: setting.type,
+                                label: labelForCamelCase(setting.type),
                                 data: setting.type
                             };
                         })}
@@ -66,7 +66,7 @@ export function InternalEditAction({
                             },
                             ...locations.map((location) => {
                                 return {
-                                    label: location,
+                                    label: labelForCamelCase(location, '-'),
                                     data: location,
                                 }
                             })
@@ -99,7 +99,7 @@ export function InternalEditAction({
                     <Builder indentLevel={indentLevel} label="External Display Settings" description="External display settings.">
                         <Dropdown selectedOption={display.external_display_settings.type} rgOptions={externalSettings.map((setting) => {
                             return {
-                                label: setting.type,
+                                label: labelForCamelCase(setting.type),
                                 data: setting.type
                             };
                         })}
@@ -109,7 +109,7 @@ export function InternalEditAction({
                             }}
                         />
                     </Builder>
-                    <Builder indentLevel={indentLevel} label="Deck Screen Location" description="Location of the Deck screen on the desktop.">
+                    <Builder indentLevel={indentLevel} label="Deck Screen Location" description="Location of the Deck screen on the desktop relative to the external screen.">
                         <Dropdown selectedOption={display.deck_location} rgOptions={[
                             {
                                 label: 'Disabled',
@@ -117,7 +117,7 @@ export function InternalEditAction({
                             },
                             ...locations.map((location) => {
                                 return {
-                                    label: location,
+                                    label: labelForCamelCase(location, '-'),
                                     data: location,
                                 }
                             })
@@ -158,7 +158,7 @@ export function InternalEditAction({
                     <Builder indentLevel={indentLevel} label="Layout Option">
                         <Dropdown selectedOption={cloned.value.layout.layout_option.type} rgOptions={citraLayoutOptions.map((a) => {
                             return {
-                                label: a.type,
+                                label: labelForCamelCase(a.type),
                                 data: a.type
                             }
                         })} onChange={(option) => {
@@ -180,7 +180,7 @@ export function InternalEditAction({
                     <Builder indentLevel={indentLevel} label="Layout Option">
                         <Dropdown selectedOption={cloned.value.layout_option} rgOptions={melonDSLayoutOptions.map((a) => {
                             return {
-                                label: a,
+                                label: labelForCamelCase(a),
                                 data: a
                             }
                         })} onChange={(option) => {
@@ -191,7 +191,7 @@ export function InternalEditAction({
                     <Builder indentLevel={indentLevel} label="Sizing Option">
                         <Dropdown selectedOption={cloned.value.sizing_option} rgOptions={melonDSSizingOptions.map((a) => {
                             return {
-                                label: a,
+                                label: labelForCamelCase(a),
                                 data: a
                             }
                         })} onChange={(option) => {
@@ -275,7 +275,7 @@ export function InternalEditAction({
                             <Builder indentLevel={indentLevel + 1} label="Single-GBA Layout" description="Layout when a single GBA window is visible.">
                                 <Dropdown selectedOption={option.multi_screen_single_secondary_layout} rgOptions={layoutOptions.map((a) => {
                                     return {
-                                        label: a,
+                                        label: labelForKebabCase(a),
                                         data: a
                                     }
                                 })} onChange={(value) => {
@@ -286,7 +286,7 @@ export function InternalEditAction({
                             <Builder indentLevel={indentLevel + 1} label="Multi-GBA Layout" description="Layout when multiple GBA windows are visible.">
                                 <Dropdown selectedOption={option.multi_screen_multi_secondary_layout} rgOptions={layoutOptions.map((a) => {
                                     return {
-                                        label: a,
+                                        label: labelForKebabCase(a),
                                         data: a
                                     }
                                 })} onChange={(value) => {
@@ -304,7 +304,7 @@ export function InternalEditAction({
                     <Builder indentLevel={indentLevel} label="Multi-Screen Layout" description="Layout when the Deck's embedded display is enabled and an external display is connected.">
                         <Dropdown selectedOption={option.multi_screen_layout} rgOptions={layoutOptions.map((a) => {
                             return {
-                                label: a,
+                                label: labelForKebabCase(a),
                                 data: a
                             }
                         })} onChange={(value) => {
@@ -331,7 +331,7 @@ export function InternalEditAction({
                 <Builder indentLevel={indentLevel} label="Single Screen Layout" description="Layout when only the Deck's embedded display is available, or when an external display is connected while the Deck's embedded display is disabled.">
                     <Dropdown selectedOption={option.single_screen_layout} rgOptions={limitedLayoutOptions.map((a) => {
                         return {
-                            label: a,
+                            label: labelForKebabCase(a),
                             data: a
                         }
                     })} onChange={(value) => {
@@ -355,3 +355,29 @@ export function InternalEditAction({
     }
 }
 
+
+function labelForCamelCase(s: string, separator = ' '): string {
+    const splitIndexes: number[] = [];
+    s = s[0].toUpperCase() + s.slice(1);
+
+    [...s].forEach((c, i) => {
+        if (c === c.toUpperCase()) {
+            splitIndexes.push(i)
+        }
+    });
+
+    splitIndexes.push(s.length);
+    let start = splitIndexes.shift();
+
+    const words = [];
+    for (const next of splitIndexes) {
+        words.push(s.slice(start, next))
+        start = next;
+    }
+
+    return words.join(separator);
+}
+
+function labelForKebabCase(s: string): string {
+    return s.split('-').map((v) => v[0].toUpperCase() + v.slice(1).toLowerCase()).join('-');
+}

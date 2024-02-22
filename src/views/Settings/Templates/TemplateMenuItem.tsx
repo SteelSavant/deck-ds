@@ -1,7 +1,8 @@
-import { DialogButton, Field, Focusable, Navigation } from "decky-frontend-lib";
+import { DialogButton, Field, Navigation } from "decky-frontend-lib";
 import { ReactElement, useState } from "react";
 import { FaEye, FaPlus } from "react-icons/fa";
 import { Template, createProfile } from "../../../backend";
+import FocusableRow from "../../../components/FocusableRow";
 import { useServerApi } from "../../../context/serverApiContext";
 
 export default function TemplateMenuItem({ template }: { template: Template }): ReactElement {
@@ -34,7 +35,7 @@ export default function TemplateMenuItem({ template }: { template: Template }): 
 
     return (
         <Field focusable={false} label={template.pipeline.name} description={template.pipeline.description} children={
-            <Focusable style={{ display: 'flex', width: '100%', position: 'relative' }}>
+            <FocusableRow>
                 <DialogButton
                     style={{ height: '40px', minWidth: '60px', marginRight: '10px' }}
                     onClick={() => previewTemplate(template.id)}
@@ -60,7 +61,7 @@ export default function TemplateMenuItem({ template }: { template: Template }): 
                 >
                     <FaPlus />
                 </DialogButton>
-            </Focusable>
+            </FocusableRow>
         } />
     );
 }

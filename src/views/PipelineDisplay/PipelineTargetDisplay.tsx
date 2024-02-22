@@ -89,10 +89,12 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
     const newIndentLevel = selection.type === 'OneOf'
         ? indentLevel = + 1
         : indentLevel;
-    const built = forcedEnabled || isEnabled
-        ? buildSelection(action.id, action.selection, newIndentLevel, hideQamForChildren)
-        : null;
-    console.log(built?.props);
+
+    const childAction =
+        buildSelection(action.id, action.selection, newIndentLevel, hideQamForChildren);
+    const childActionIsConfigurable = childAction !== null;
+
+    console.log(childAction?.props);
 
     const hasError = configErrors[action.id]?.length ?? 0 > 0;
 
@@ -100,12 +102,12 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
         <Fragment>
             <Field
                 indentLevel={indentLevel}
-                focusable={!hasError && ((!built && forcedEnabled) || (selection.type !== 'AllOf' && forcedEnabled && qamHiddenByParent && !configErrors[action.id]))}
+                focusable={!hasError && ((!childAction && forcedEnabled) || (selection.type !== 'AllOf' && forcedEnabled && qamHiddenByParent && !configErrors[action.id]))}
                 label={action.name}
                 description={action.description}
                 icon={<ActionIcon action={action} />}
             >
-                <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', }}>
+                <Focusable style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', }}>
                     {
                         [
                             <ConfigErrorWarning errors={configErrors[action.id]} />,
@@ -139,7 +141,7 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
                                     }} />
                                 </Focusable>
                                 : null,
-                            selection.type !== 'AllOf' && built
+                            selection.type !== 'AllOf' && (childActionIsConfigurable || !forcedEnabled) || selection.type === 'OneOf'
                                 ?
                                 <DialogButton
                                     focusable={!qamHiddenByParent}
@@ -163,23 +165,20 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
                                             : 'show on QAM'}
                                 >
                                     {
-                                        built !== null ?
-                                            action.is_visible_on_qam && !qamHiddenByParent
-                                                ? <FaEye />
-                                                : <FaEyeSlash />
-                                            : null
+                                        action.is_visible_on_qam && !qamHiddenByParent
+                                            ? <FaEye />
+                                            : <FaEyeSlash />
                                     }
                                 </DialogButton>
                                 : null,
-
                         ].filter((x) => x)
                             .map((x) => <div style={{ marginRight: '10px' }}>
                                 {x}
                             </div>)
                     }
-                </div>
+                </Focusable>
             </Field>
-            {built}
+            {childAction}
         </Fragment >
     )
 }

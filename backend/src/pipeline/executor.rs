@@ -120,7 +120,7 @@ impl<'a> PipelineContext<'a> {
         let mut deserializer = serde_json::Deserializer::from_str(&persisted);
         let type_map: SerdeMap<String> = type_reg
             .deserialize_map(&mut deserializer)
-            .with_context(|| format!("failed to deserialize persisted context state"))?;
+            .with_context(|| "failed to deserialize persisted context state")?;
 
         let actions = type_map
             .get::<Vec<String>, _>("__actions__")

@@ -1,11 +1,14 @@
 import { Dropdown, Field, Toggle } from "decky-frontend-lib";
 import { Fragment, VFC } from "react";
+import { ActionChild } from "../../../components/ActionChild";
 import { EditAction } from "../../../components/EditAction";
 import HandleLoading from "../../../components/HandleLoading";
 import useGlobalSettings from "../../../hooks/useGlobalSettings";
 
 export const GlobalSettingsPage: VFC = () => {
     const { settings, updateSettings } = useGlobalSettings();
+
+    const Builder = ActionChild;
 
     // TODO:: make UI inject configurable
     return <HandleLoading
@@ -30,8 +33,7 @@ export const GlobalSettingsPage: VFC = () => {
                                 display_restoration: action.value
                             })
                         }} />
-                    <Field
-                        focusable={false}
+                    <Builder
                         indentLevel={1}
                         label="Apply Display Settings When Opening Desktop"
                         description="Apply display settings when switching to desktop normally, not just when restoring the displays from an app launch."
@@ -44,10 +46,9 @@ export const GlobalSettingsPage: VFC = () => {
                                 })
                             }}
                         />
-                    </Field>
+                    </Builder>
                     <Field label="Deck UI"></Field>
-                    <Field
-                        focusable={false}
+                    <Builder
                         indentLevel={1}
                         label="Enable UI Patching"
                         description="Allow patching game pages to have custom buttons to launch DeckDS profiles, instead of having to launch from the Quick Acess Menu."
@@ -60,9 +61,8 @@ export const GlobalSettingsPage: VFC = () => {
                                 })
                             }}
                         />
-                    </Field>
-                    <Field
-                        focusable={false}
+                    </Builder>
+                    <Builder
                         indentLevel={1}
                         label="Primary Target"
                         description="Determines which target is used by the primary 'Play' button when patching the UI"
@@ -85,7 +85,7 @@ export const GlobalSettingsPage: VFC = () => {
                                 : undefined
                             }
                         />
-                    </Field>
+                    </Builder>
                 </Fragment>
             )
         }}

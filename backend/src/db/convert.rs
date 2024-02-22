@@ -407,15 +407,9 @@ impl AppProfile {
                 o.description = profile.pipeline.description;
 
                 for (action_id, action) in o.actions.actions.iter_mut() {
-                    action.is_visible_on_qam = profile
-                        .pipeline
-                        .actions
-                        .actions
-                        .get(action_id)
-                        .unwrap_or_else(|| {
-                            panic!("action {action_id:?} should exist on profile {profile_id:?}")
-                        })
-                        .is_visible_on_qam;
+                    if let Some(profile_action) = profile.pipeline.actions.actions.get(action_id) {
+                        action.is_visible_on_qam = profile_action.is_visible_on_qam
+                    }
                 }
             }
         }
