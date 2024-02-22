@@ -83,7 +83,7 @@ fn main() -> Result<()> {
     );
 
     #[cfg(debug_assertions)]
-    let log_filepath = usdpl_back::api::dirs::home()
+    let log_filepath = dirs::home_dir()
         .unwrap_or_else(|| "/tmp/".into())
         .join(log_file_name);
     #[cfg(not(debug_assertions))]
@@ -102,13 +102,6 @@ fn main() -> Result<()> {
     )
     .unwrap();
 
-    let home_dir = usdpl_back::api::dirs::home()
-        .or_else(dirs::home_dir)
-        .expect("home dir must exist");
-
-    let config_dir = home_dir.join(".config").join(PACKAGE_NAME);
-    let autostart_dir = home_dir.join(".config/autostart");
-
     log::info!("Starting back-end ({} v{})", PACKAGE_NAME, PACKAGE_VERSION);
     println!("Starting back-end ({} v{})", PACKAGE_NAME, PACKAGE_VERSION);
 
@@ -116,14 +109,12 @@ fn main() -> Result<()> {
     log::info!("Log level set to {:?}", log::max_level());
     println!("Logging to: {:?} @ {:?}", log_filepath, log::max_level());
 
-    log::info!(
-        "Current dir `{}`",
-        std::env::current_dir().unwrap().display()
-    );
-    println!(
-        "Current dir `{}`",
-        std::env::current_dir().unwrap().display()
-    );
+    // usdpl_back::api::home_dir not available outside of decky, so we use the home_dir from the system and assume the user hasn't messed with things;
+    // the alternative is to pass the dir as an argument when running in autostart mode.
+    let home_dir = dirs::home_dir().expect("home dir must exist");
+
+    let config_dir = home_dir.join(".config").join(PACKAGE_NAME);
+    let autostart_dir = home_dir.join(".config/autostart");
 
     log::info!("home dir: {:?}", home_dir);
     println!("home dir `{}`", config_dir.display());
@@ -230,7 +221,9 @@ fn main() -> Result<()> {
             }
         }
         Modes::Serve => {
-            let db_path = config_dir.join("profiles.db");
+            let decky_data_dir = std::env::var("DECKY_PLUGIN_RUNTIME_DIR")
+                .expect("unable to find decky plugin runtime dir");
+            let db_path = Path::new(&decky_data_dir).join("profiles.db");
             let profiles_db: &'static ProfileDb =
                 Box::leak(Box::new(ProfileDb::new(db_path, registrar.clone())));
 
