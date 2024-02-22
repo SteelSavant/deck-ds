@@ -30,7 +30,7 @@ impl<'a> KWin<'a> {
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
 
-        let out = if output.status.success() && !stdout.contains("kpackagetool5 [options]") {
+        if output.status.success() && !stdout.contains("kpackagetool5 [options]") {
             Ok(())
         } else if stdout.contains("already exists") || stderr.contains("already exists") {
             let status = Command::new("kpackagetool5")
@@ -50,12 +50,7 @@ impl<'a> KWin<'a> {
             Err(anyhow::anyhow!(
                 "failed to install kwin script bundle {script_name}"
             ))
-        };
-
-        if out.is_ok() {
-            self.reconfigure()?;
         }
-        out
     }
 
     pub fn get_script_enabled(&self, script_name: &str) -> Result<bool> {
@@ -73,6 +68,7 @@ impl<'a> KWin<'a> {
         Ok(stdout == "true")
     }
 
+    /// Enables/disables script and reconfigures KWin with current settings. Should be called after changing settings, not before.
     pub fn set_script_enabled(&self, script_name: &str, is_enabled: bool) -> Result<()> {
         let set_cmd_out = Command::new("kwriteconfig5")
             .args([
@@ -194,7 +190,7 @@ impl<'a> KWin<'a> {
             .status()?
             .exit_ok()?;
 
-        Ok(self.reconfigure()?)
+        Ok(())
     }
 
     pub fn get_bundle(&self, script_name: &str) -> Option<Asset> {

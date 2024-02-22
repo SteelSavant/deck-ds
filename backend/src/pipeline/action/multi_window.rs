@@ -76,11 +76,12 @@ impl OptionsRW for MultiWindowOptions {
     }
 
     fn write(&self, kwin: &KWin) -> Result<()> {
-        kwin.set_script_enabled(SCRIPT, self.enabled)?;
         self.general.write(kwin)?;
         self.cemu.write(kwin)?;
         self.citra.write(kwin)?;
         self.dolphin.write(kwin)?;
+
+        kwin.set_script_enabled(SCRIPT, self.enabled)?;
 
         Ok(())
     }
