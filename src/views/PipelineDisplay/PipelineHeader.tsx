@@ -6,7 +6,10 @@ interface PipelineHeaderProps { containerRef: Ref<HTMLDivElement>, children: Rea
 const PipelineHeader: React.FC<PipelineHeaderProps> = ({ children, containerRef }: PipelineHeaderProps): ReactElement => {
     const margin = '30px';
     return (
-        <div ref={containerRef} style={{ marginLeft: margin, marginRight: margin, paddingRight: '10px' }}>
+        <div ref={containerRef} style={{
+            marginLeft: margin,
+            marginRight: margin,
+        }}>
             {children}
         </div>
     );
