@@ -540,6 +540,90 @@
         }
       }
     },
+    "ConfigSelection": {
+      "description": "Configured selection for an specific pipeline. Only user values are saved; everything else is pulled at runtime to ensure it's up to date.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Action"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/Action"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "OneOf"
+              ]
+            },
+            "value": {
+              "type": "object",
+              "required": [
+                "selection"
+              ],
+              "properties": {
+                "selection": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "AllOf"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "UserDefined"
+              ]
+            },
+            "value": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
+    },
     "CreateProfileRequest": {
       "type": "object",
       "required": [
@@ -1366,7 +1450,7 @@
         "targets": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/Selection_for_PipelineAction"
+            "$ref": "#/definitions/RuntimeSelection"
           }
         }
       }
@@ -1415,7 +1499,7 @@
           "description": "The value of the pipeline action",
           "allOf": [
             {
-              "$ref": "#/definitions/Selection_for_PipelineAction"
+              "$ref": "#/definitions/RuntimeSelection"
             }
           ]
         }
@@ -1430,12 +1514,12 @@
         "actions": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/PipelineActionSettings"
+            "$ref": "#/definitions/PipelineActionSettings_for_ConfigSelection"
           }
         }
       }
     },
-    "PipelineActionSettings": {
+    "PipelineActionSettings_for_ConfigSelection": {
       "type": "object",
       "required": [
         "is_visible_on_qam",
@@ -1465,7 +1549,7 @@
           "description": "The value of the pipeline action",
           "allOf": [
             {
-              "$ref": "#/definitions/Selection_for_String"
+              "$ref": "#/definitions/ConfigSelection"
             }
           ]
         }
@@ -1591,7 +1675,7 @@
         }
       }
     },
-    "Selection_for_PipelineAction": {
+    "RuntimeSelection": {
       "oneOf": [
         {
           "type": "object",
@@ -1664,28 +1748,6 @@
               }
             }
           }
-        }
-      ]
-    },
-    "Selection_for_String": {
-      "oneOf": [
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Action"
-              ]
-            },
-            "value": {
-              "$ref": "#/definitions/Action"
-            }
-          }
         },
         {
           "type": "object",
@@ -1697,46 +1759,13 @@
             "type": {
               "type": "string",
               "enum": [
-                "OneOf"
-              ]
-            },
-            "value": {
-              "type": "object",
-              "required": [
-                "actions",
-                "selection"
-              ],
-              "properties": {
-                "actions": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                "selection": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "AllOf"
+                "UserDefined"
               ]
             },
             "value": {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/PipelineAction"
               }
             }
           }

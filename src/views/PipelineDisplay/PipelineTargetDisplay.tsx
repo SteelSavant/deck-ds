@@ -23,13 +23,19 @@ export default function PipelineTargetDisplay({ root, description }: {
 }
 
 function buildSelection(id: string, selection: ActionSelection, indentLevel: number, qamHiddenByParent: boolean): ReactElement | null {
-    switch (selection.type) {
+    const type = selection.type;
+    switch (type) {
         case "Action":
             return buildAction(id, selection.value, indentLevel);
         case "OneOf":
             return buildOneOf(selection.value, indentLevel, qamHiddenByParent);
         case "AllOf":
+        case 'UserDefined':
+            // TODO::handle userdefined
             return buildAllOf(selection.value, indentLevel, qamHiddenByParent);
+        default:
+            const typecheck: never = type;
+            throw typecheck ?? 'buildSelection switch failed to typecheck';
     }
 }
 

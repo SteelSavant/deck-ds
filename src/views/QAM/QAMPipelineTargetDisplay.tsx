@@ -24,13 +24,19 @@ export default function QAMPipelineTargetDisplay({ root }: {
 }
 
 function buildRootSelection(id: string, selection: ActionSelection): ReactElement | null {
-    switch (selection.type) {
+    const type = selection.type;
+    switch (type) {
         case "Action":
             return buildAction(id, null, selection.value);
         case "OneOf":
             return buildOneOf(selection.value);
         case "AllOf":
+        case 'UserDefined':
+            // TODO::handle userdefined
             return buildAllOf(selection.value);
+        default:
+            const typecheck: never = type;
+            throw typecheck ?? 'buildSelection switch failed to typecheck';
     }
 }
 
@@ -101,6 +107,8 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
 
     switch (type) {
         case 'AllOf':
+        case 'UserDefined':
+            // TODO::handle userdefined
             if (forcedEnabled || selection.value.length == 0) {
                 return buildAllOf(selection.value);
             } else {

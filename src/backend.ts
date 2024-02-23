@@ -1,10 +1,13 @@
 import {
-    AutoStartRequest, CategoryProfile, CitraLayoutOption, CreateProfileRequest, CreateProfileResponse,
+    AutoStartRequest, CategoryProfile, CitraLayoutOption,
+    ConfigSelection,
+    CreateProfileRequest, CreateProfileResponse,
     DeleteProfileRequest, GetAppProfileRequest, GetAppProfileResponse,
     GetDefaultAppOverrideForProfileRequest, GetDefaultAppOverrideForProfileResponse,
     GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetSettingsResponse,
-    GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineAction, PipelineDefinition,
-    ReifyPipelineRequest, ReifyPipelineResponse, SelectionFor_PipelineAction, SelectionFor_String, SetAppProfileOverrideRequest,
+    GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineAction, PipelineActionSettingsFor_ConfigSelection, PipelineDefinition,
+    ReifyPipelineRequest, ReifyPipelineResponse, RuntimeSelection,
+    SetAppProfileOverrideRequest,
     SetAppProfileSettingsRequest, SetProfileRequest, SetSettingsRequest, Template
 } from "./types/backend_api";
 import { call_backend, init_embedded, init_usdpl, target_usdpl } from "./usdpl_front";
@@ -14,7 +17,7 @@ export {
     Action, AppProfile, AutoStartRequest, CategoryProfile, CemuOptions, CitraOptions, CreateProfileRequest,
     CreateProfileResponse, DeleteProfileRequest, DependencyError, DolphinOptions, ExternalDisplaySettings, GetProfileRequest,
     GetProfileResponse,
-    GetProfilesResponse, GetTemplatesResponse, GlobalConfig, LimitedMultiWindowLayout, MultiWindowLayout, PipelineAction, PipelineActionSettings, PipelineDefinition, PipelineTarget, ReifyPipelineRequest,
+    GetProfilesResponse, GetTemplatesResponse, GlobalConfig, LimitedMultiWindowLayout, MultiWindowLayout, PipelineAction, PipelineDefinition, PipelineTarget, ReifyPipelineRequest,
     ReifyPipelineResponse, RelativeLocation, SetProfileRequest, Template
 } from "./types/backend_api";
 
@@ -24,10 +27,12 @@ const USDPL_PORT: number = 44666;
 
 // Pipeline
 export type ActionOneOf = { selection: string, actions: PipelineAction[] }
-export type ActionSelection = SelectionFor_PipelineAction;
+export type ActionSelection = RuntimeSelection;
 
 export type DefinitionOneOf = { selection: string, actions: string[] }
-export type DefinitionSelection = SelectionFor_String;
+export type DefinitionSelection = ConfigSelection;
+
+export type PipelineActionSettings = PipelineActionSettingsFor_ConfigSelection;
 
 export interface AppProfileOveride {
     profileId: string,

@@ -6,7 +6,10 @@
  */
 
 export type PipelineTarget = "Desktop" | "Gamemode";
-export type SelectionFor_String =
+/**
+ * Configured selection for an specific pipeline. Only user values are saved; everything else is pulled at runtime to ensure it's up to date.
+ */
+export type ConfigSelection =
   | {
       type: "Action";
       value: Action;
@@ -14,12 +17,14 @@ export type SelectionFor_String =
   | {
       type: "OneOf";
       value: {
-        actions: string[];
         selection: string;
       };
     }
   | {
       type: "AllOf";
+    }
+  | {
+      type: "UserDefined";
       value: string[];
     };
 export type Action =
@@ -171,7 +176,7 @@ export type DependencyError =
       type: "FieldNotSet";
       value: string;
     };
-export type SelectionFor_PipelineAction =
+export type RuntimeSelection =
   | {
       type: "Action";
       value: Action;
@@ -185,6 +190,10 @@ export type SelectionFor_PipelineAction =
     }
   | {
       type: "AllOf";
+      value: PipelineAction[];
+    }
+  | {
+      type: "UserDefined";
       value: PipelineAction[];
     };
 
@@ -235,10 +244,10 @@ export interface PipelineDefinition {
 }
 export interface PipelineActionLookup {
   actions: {
-    [k: string]: PipelineActionSettings;
+    [k: string]: PipelineActionSettingsFor_ConfigSelection;
   };
 }
-export interface PipelineActionSettings {
+export interface PipelineActionSettingsFor_ConfigSelection {
   /**
    * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
    */
@@ -254,7 +263,7 @@ export interface PipelineActionSettings {
   /**
    * The value of the pipeline action
    */
-  selection: SelectionFor_String;
+  selection: ConfigSelection;
 }
 export interface DesktopSessionHandler {
   deck_is_primary_display: boolean;
@@ -439,7 +448,7 @@ export interface Pipeline {
   primary_target_override?: PipelineTarget | null;
   register_exit_hooks: boolean;
   targets: {
-    [k: string]: SelectionFor_PipelineAction;
+    [k: string]: RuntimeSelection;
   };
 }
 export interface PipelineAction {
@@ -461,7 +470,7 @@ export interface PipelineAction {
   /**
    * The value of the pipeline action
    */
-  selection: SelectionFor_PipelineAction;
+  selection: RuntimeSelection;
 }
 export interface SetAppProfileOverrideRequest {
   app_id: string;
