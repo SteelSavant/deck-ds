@@ -237,7 +237,7 @@ mod tests {
 
         expected.pipeline.actions.actions.insert(
             PipelineActionId::new("core:citra:layout:desktop"),
-            expected_action.settings.clone(),
+            expected_action.settings.clone().into(),
         );
 
         db.set_profile(expected.clone())?;

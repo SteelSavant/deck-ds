@@ -21,7 +21,7 @@ use crate::pipeline::action::session_handler::DesktopSessionHandler;
 use crate::pipeline::action::source_file::SourceFile;
 use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::action::ActionType;
-use crate::pipeline::data::{PipelineAction, Selection};
+use crate::pipeline::data::RuntimeSelection;
 use crate::settings::{AppId, GameId};
 use crate::sys::app_process::AppProcess;
 use crate::sys::kwin::KWin;
@@ -488,10 +488,10 @@ enum ExecActionType {
 
 impl Pipeline {
     fn build_actions(mut self, target: PipelineTarget) -> Vec<Action> {
-        fn build_recursive(selection: Selection<PipelineAction>) -> Vec<Action> {
+        fn build_recursive(selection: RuntimeSelection) -> Vec<Action> {
             match selection {
-                Selection::Action(action) => vec![action],
-                Selection::OneOf { selection, actions } => {
+                RuntimeSelection::Action(action) => vec![action],
+                RuntimeSelection::OneOf { selection, actions } => {
                     let action = actions
                         .into_iter()
                         .find(|a| a.id == selection)
@@ -499,14 +499,16 @@ impl Pipeline {
 
                     build_recursive(action.selection)
                 }
-                Selection::AllOf(actions) => actions
-                    .into_iter()
-                    .filter_map(|a| match a.enabled {
-                        None | Some(true) => Some(a.selection),
-                        Some(false) => None,
-                    })
-                    .flat_map(build_recursive)
-                    .collect(),
+                RuntimeSelection::AllOf(actions) | RuntimeSelection::UserDefined(actions) => {
+                    actions
+                        .into_iter()
+                        .filter_map(|a| match a.enabled {
+                            None | Some(true) => Some(a.selection),
+                            Some(false) => None,
+                        })
+                        .flat_map(build_recursive)
+                        .collect()
+                }
             }
         }
 

@@ -9,7 +9,7 @@ pub type DbCategoryProfile = v1::DbCategoryProfile;
 pub type DbAppOverride = v1::DbAppOverride;
 pub type DbAppSettings = v1::DbAppSettings;
 pub type DbPipelineDefinition = v1::DbPipelineDefinition;
-pub type DbSelection = v1::DbSelection;
+pub type DbConfigSelection = v1::DbConfigSelection;
 pub type DbAction = v1::DbAction;
 pub type DbPipelineActionSettings = v1::DbPipelineActionSettings;
 

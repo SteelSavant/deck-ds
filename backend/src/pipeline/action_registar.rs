@@ -1,6 +1,6 @@
 use anyhow::Context;
 
-use crate::settings::ProfileId;
+use crate::{settings::ProfileId};
 
 use super::{
     action::{
@@ -18,7 +18,7 @@ use super::{
     },
     data::{
         PipelineActionDefinition, PipelineActionId, PipelineActionLookup, PipelineActionSettings,
-        PipelineTarget, Selection,
+        PipelineTarget, DefinitionSelection,
     },
 };
 use std::{
@@ -57,12 +57,12 @@ impl PipelineActionRegistrar {
     ) -> PipelineActionLookup {
         fn get_ids(
             registrar: &PipelineActionRegistrar,
-            selection: &Selection<PipelineActionId>,
+            selection: &DefinitionSelection,
             target: PipelineTarget,
         ) -> HashSet<(PipelineActionId, PipelineTarget)> {
             match selection {
-                Selection::Action(_) => HashSet::new(),
-                Selection::OneOf { actions, .. } | Selection::AllOf(actions) => {
+                DefinitionSelection::Action(_) | DefinitionSelection::UserDefined => HashSet::new(),
+                DefinitionSelection::OneOf { actions, .. } | DefinitionSelection::AllOf(actions) => {
                     let mut ids: HashSet<_> = actions
                         .iter()
                         .map(|id| {
@@ -86,14 +86,14 @@ impl PipelineActionRegistrar {
 
         let set: HashSet<_> = targets
             .iter()
-            .flat_map(|(t, s)| get_ids(self, &Selection::AllOf(s.clone()), *t))
+            .flat_map(|(t, s)| get_ids(self, &DefinitionSelection::AllOf(s.clone()), *t))
             .collect();
 
         let mut actions = HashMap::new();
 
         for (id, target) in set {
             if let Some(action) = self.get(&id, target) {
-                actions.insert(action.id.clone(), action.settings.clone());
+                actions.insert(action.id.clone(), action.settings.into());
             }
         }
 
@@ -268,7 +268,7 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: true,
                         profile_override: None,
-                        selection: Selection::AllOf(vec![
+                        selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:citra:source"),
                             PipelineActionId::new("core:citra:layout")
                         ]),
@@ -279,7 +279,7 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: false,
                         profile_override: None,
-                        selection:  Selection::OneOf {selection: PipelineActionId::new("core:citra:flatpak_source"), actions: vec![
+                        selection:  DefinitionSelection::OneOf {selection: PipelineActionId::new("core:citra:flatpak_source"), actions: vec![
                             PipelineActionId::new("core:citra:flatpak_source"),
                             PipelineActionId::new("core:citra:custom_source")
                         ]},
@@ -357,7 +357,7 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: true,
                         profile_override: None,
-                        selection: Selection::AllOf(vec![
+                        selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:cemu:source"),
                             PipelineActionId::new("core:cemu:layout")
                         ]),
@@ -368,7 +368,7 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: false,
                         profile_override: None,
-                        selection:  Selection::OneOf {selection: PipelineActionId::new("core:cemu:flatpak_source"), actions: vec![
+                        selection:  DefinitionSelection::OneOf {selection: PipelineActionId::new("core:cemu:flatpak_source"), actions: vec![
                             PipelineActionId::new("core:cemu:flatpak_source"),
                             PipelineActionId::new("core:cemu:appimage_source"),
                             PipelineActionId::new("core:cemu:emudeck_proton_source"),
@@ -467,7 +467,7 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: true,
                         profile_override: None,
-                        selection: Selection::AllOf(vec![
+                        selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:melonds:source"),
                             PipelineActionId::new("core:melonds:layout")
                         ]),
@@ -478,7 +478,7 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: false,
                         profile_override: None,
-                        selection:  Selection::OneOf {selection: PipelineActionId::new("core:melonds:flatpak_source"), actions: vec![
+                        selection:  DefinitionSelection::OneOf {selection: PipelineActionId::new("core:melonds:flatpak_source"), actions: vec![
                             PipelineActionId::new("core:melonds:flatpak_source"),
                             PipelineActionId::new("core:melonds:custom_source")
                         ]},
@@ -546,7 +546,7 @@ pub struct PipelineActionDefinitionBuilder {
     /// Flags whether the selection is overridden by the setting from a different profile.
     pub profile_override: Option<ProfileId>,
     /// The value of the pipeline action.
-    pub selection: Selection<PipelineActionId>,
+    pub selection: DefinitionSelection,
     /// If true, the action is visible to be configured on the quick-access menu.
     pub is_visible_on_qam: bool,
 }

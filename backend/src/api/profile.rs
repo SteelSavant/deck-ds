@@ -16,8 +16,8 @@ use crate::{
         action::{Action, ErasedPipelineAction},
         action_registar::PipelineActionRegistrar,
         data::{
-            Pipeline, PipelineAction, PipelineActionId, PipelineDefinition, PipelineDefinitionId,
-            Selection, Template,
+            Pipeline, PipelineActionId, PipelineDefinition, PipelineDefinitionId, RuntimeSelection,
+            Template,
         },
         dependency::DependencyError,
         executor::PipelineContext,
@@ -432,14 +432,14 @@ fn check_config_errors(
     ctx: &mut PipelineContext,
 ) -> HashMap<PipelineActionId, Vec<DependencyError>> {
     fn collect_actions<'a>(
-        selection: &'a Selection<PipelineAction>,
+        selection: &'a RuntimeSelection,
         parent_id: &PipelineActionId,
     ) -> Vec<(PipelineActionId, &'a Action)> {
         match selection {
-            crate::pipeline::data::Selection::Action(action) => {
+            RuntimeSelection::Action(action) => {
                 vec![(parent_id.clone(), action)]
             }
-            crate::pipeline::data::Selection::OneOf { selection, actions } => {
+            RuntimeSelection::OneOf { selection, actions } => {
                 let action = actions
                     .iter()
                     .find(|a| a.id == *selection)
@@ -447,7 +447,11 @@ fn check_config_errors(
 
                 collect_actions(&action.selection, &action.id)
             }
-            crate::pipeline::data::Selection::AllOf(actions) => actions
+            RuntimeSelection::AllOf(actions) => actions
+                .iter()
+                .flat_map(|a| collect_actions(&a.selection, &a.id))
+                .collect(),
+            RuntimeSelection::UserDefined(actions) => actions
                 .iter()
                 .flat_map(|a| collect_actions(&a.selection, &a.id))
                 .collect(),

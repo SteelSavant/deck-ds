@@ -4,13 +4,13 @@ use native_db::transaction::RwTransaction;
 
 use crate::{
     db::model::{
-        DbAction, DbAppOverride, DbCategoryProfile, DbCemuLayout, DbCitraLayout,
+        DbAction, DbAppOverride, DbCategoryProfile, DbCemuLayout, DbCitraLayout, DbConfigSelection,
         DbDesktopSessionHandler, DbDisplayConfig, DbMelonDSLayout, DbMultiWindow,
-        DbPipelineActionSettings, DbSelection, DbSourceFile, DbVirtualScreen,
+        DbPipelineActionSettings, DbSourceFile, DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionId, ActionType, ErasedPipelineAction},
-        data::{PipelineActionId, PipelineActionLookup, PipelineDefinitionId, Selection},
+        data::{ConfigSelection, PipelineActionId, PipelineActionLookup, PipelineDefinitionId},
     },
 };
 
@@ -66,16 +66,18 @@ impl Action {
     }
 }
 
-impl Selection<PipelineActionId> {
+impl ConfigSelection {
     /// Saves the [Selection]. Because it may set new ids internally, `save_all_and_transform` cosumes self.
-    fn save_all_and_transform(self, rw: &RwTransaction) -> Result<DbSelection> {
+    fn save_all_and_transform(self, rw: &RwTransaction) -> Result<DbConfigSelection> {
         let selection = match self {
-            Selection::Action(action) => DbSelection::Action(action.save_and_transform(rw)?),
-            Selection::OneOf { selection, actions } => DbSelection::OneOf {
+            ConfigSelection::Action(action) => {
+                DbConfigSelection::Action(action.save_and_transform(rw)?)
+            }
+            ConfigSelection::OneOf { selection } => DbConfigSelection::OneOf {
                 selection: selection.clone(),
-                actions: actions.clone(),
             },
-            Selection::AllOf(actions) => DbSelection::AllOf(actions.clone()),
+            ConfigSelection::AllOf => DbConfigSelection::AllOf,
+            ConfigSelection::UserDefined(actions) => DbConfigSelection::UserDefined(actions),
         };
 
         Ok(selection)
@@ -128,12 +130,15 @@ impl DbCategoryProfile {
     }
 }
 
-impl DbSelection {
+impl DbConfigSelection {
     pub fn remove_all(&self, rw: &RwTransaction) -> Result<()> {
         match self {
-            DbSelection::Action(action) => action.remove(rw)?,
-            DbSelection::OneOf { .. } => (),
-            DbSelection::AllOf(_) => (),
+            DbConfigSelection::Action(action) => action.remove(rw)?,
+            DbConfigSelection::OneOf { .. } => todo!("figure out if this needs to do anything"),
+            DbConfigSelection::AllOf => todo!("figure out if this needs to do anything"),
+            DbConfigSelection::UserDefined(actions) => {
+                todo!("figure out if this needs to do anything")
+            }
         };
 
         Ok(())

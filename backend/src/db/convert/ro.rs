@@ -6,15 +6,15 @@ use native_db::transaction::RTransaction;
 
 use crate::{
     db::model::{
-        DbAction, DbCemuLayout, DbCitraLayout, DbDesktopSessionHandler, DbDisplayConfig,
-        DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings, DbPipelineDefinition,
-        DbSelection, DbSourceFile, DbVirtualScreen,
+        DbAction, DbCemuLayout, DbCitraLayout, DbConfigSelection, DbDesktopSessionHandler,
+        DbDisplayConfig, DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings,
+        DbPipelineDefinition, DbSourceFile, DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionType},
         data::{
-            PipelineActionId, PipelineActionLookup, PipelineActionSettings, PipelineDefinition,
-            Selection,
+            ConfigSelection, PipelineActionId, PipelineActionLookup, PipelineActionSettings,
+            PipelineDefinition,
         },
     },
 };
@@ -63,15 +63,17 @@ impl DbAction {
     }
 }
 
-impl DbSelection {
-    fn transform(&self, ro: &RTransaction) -> Result<Selection<PipelineActionId>> {
+impl DbConfigSelection {
+    fn transform(&self, ro: &RTransaction) -> Result<ConfigSelection> {
         let selection = match self {
-            DbSelection::Action(action) => Selection::Action(action.transform(ro)?),
-            DbSelection::OneOf { selection, actions } => Selection::OneOf {
+            DbConfigSelection::Action(action) => ConfigSelection::Action(action.transform(ro)?),
+            DbConfigSelection::OneOf { selection } => ConfigSelection::OneOf {
                 selection: selection.clone(),
-                actions: actions.clone(),
             },
-            DbSelection::AllOf(actions) => Selection::AllOf(actions.clone()),
+            DbConfigSelection::AllOf => ConfigSelection::AllOf,
+            DbConfigSelection::UserDefined(actions) => {
+                ConfigSelection::UserDefined(actions.clone())
+            }
         };
 
         Ok(selection)

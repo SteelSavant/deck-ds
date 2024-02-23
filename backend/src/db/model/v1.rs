@@ -112,17 +112,15 @@ pub struct DbPipelineActionSettings {
     pub enabled: Option<bool>,
     pub is_visible_on_qam: bool,
     pub profile_override: Option<ProfileId>,
-    pub selection: DbSelection,
+    pub selection: DbConfigSelection,
 }
 
 #[derive(Serialize, Deserialize)]
-pub enum DbSelection {
+pub enum DbConfigSelection {
     Action(DbAction),
-    OneOf {
-        selection: PipelineActionId,
-        actions: Vec<PipelineActionId>,
-    },
-    AllOf(Vec<PipelineActionId>),
+    OneOf { selection: PipelineActionId },
+    AllOf,
+    UserDefined(Vec<PipelineActionId>),
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

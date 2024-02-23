@@ -13,7 +13,8 @@ use self::{
     virtual_screen::VirtualScreen,
 };
 
-use super::{data::Selection, dependency::Dependency, executor::PipelineContext};
+use super::data::{ConfigSelection, DefinitionSelection, RuntimeSelection};
+use super::{dependency::Dependency, executor::PipelineContext};
 use anyhow::Result;
 
 pub mod cemu_layout;
@@ -116,9 +117,21 @@ pub enum Action {
     SourceFile(SourceFile),
 }
 
-impl<T: Into<Action>, R> From<T> for Selection<R> {
+impl<T: Into<Action>> From<T> for DefinitionSelection {
     fn from(value: T) -> Self {
-        Selection::Action(value.into())
+        Self::Action(value.into())
+    }
+}
+
+impl<T: Into<Action>> From<T> for ConfigSelection {
+    fn from(value: T) -> Self {
+        Self::Action(value.into())
+    }
+}
+
+impl<T: Into<Action>> From<T> for RuntimeSelection {
+    fn from(value: T) -> Self {
+        Self::Action(value.into())
     }
 }
 

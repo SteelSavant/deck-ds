@@ -74,18 +74,18 @@ pub struct Pipeline {
     pub description: String,
     pub register_exit_hooks: bool,
     pub primary_target_override: Option<PipelineTarget>,
-    pub targets: HashMap<PipelineTarget, Selection<PipelineAction>>,
+    pub targets: HashMap<PipelineTarget, RuntimeSelection>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PipelineActionDefinition {
     pub id: PipelineActionId,
     pub name: String,
     pub description: Option<String>,
-    pub settings: PipelineActionSettings,
+    pub settings: PipelineActionSettings<DefinitionSelection>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Serialize, PartialEq, Deserialize, JsonSchema)]
 pub struct PipelineAction {
     pub name: String,
     pub description: Option<String>,
@@ -97,11 +97,11 @@ pub struct PipelineAction {
     /// Flags whether the selection is overridden by the setting from a different profile.
     pub profile_override: Option<ProfileId>,
     /// The value of the pipeline action
-    pub selection: Selection<PipelineAction>,
+    pub selection: RuntimeSelection,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-pub struct PipelineActionSettings {
+pub struct PipelineActionSettings<Selection> {
     /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
     pub enabled: Option<bool>,
     /// Whether or not the pipeline action is hidden on the QAM
@@ -109,23 +109,69 @@ pub struct PipelineActionSettings {
     /// Flags whether the selection is overridden by the setting from a different profile.
     pub profile_override: Option<ProfileId>,
     /// The value of the pipeline action
-    pub selection: Selection<PipelineActionId>,
+    pub selection: Selection,
+}
+
+impl From<PipelineActionSettings<DefinitionSelection>> for PipelineActionSettings<ConfigSelection> {
+    fn from(value: PipelineActionSettings<DefinitionSelection>) -> Self {
+        Self {
+            enabled: value.enabled,
+            is_visible_on_qam: value.is_visible_on_qam,
+            profile_override: value.profile_override,
+            selection: value.selection.into(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct PipelineActionLookup {
-    pub actions: HashMap<PipelineActionId, PipelineActionSettings>,
+    pub actions: HashMap<PipelineActionId, PipelineActionSettings<ConfigSelection>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", content = "value")]
+pub enum DefinitionSelection {
+    Action(Action),
+    OneOf {
+        selection: PipelineActionId,
+        actions: Vec<PipelineActionId>,
+    },
+    AllOf(Vec<PipelineActionId>),
+    UserDefined, // TODO::matching rules for which actions can be selected
+}
+
+/// Configured selection for an specific pipeline. Only user values are saved;
+/// everything else is pulled at runtime to ensure it's up to date.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "type", content = "value")]
+pub enum ConfigSelection {
+    Action(Action),
+    OneOf { selection: PipelineActionId },
+    AllOf,
+    UserDefined(Vec<PipelineActionId>),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "type", content = "value")]
-pub enum Selection<T> {
+pub enum RuntimeSelection {
     Action(Action),
     OneOf {
         selection: PipelineActionId,
-        actions: Vec<T>,
+        actions: Vec<PipelineAction>,
     },
-    AllOf(Vec<T>),
+    AllOf(Vec<PipelineAction>),
+    UserDefined(Vec<PipelineAction>), // TODO::matching rules for which actions can be selected
+}
+
+impl From<DefinitionSelection> for ConfigSelection {
+    fn from(value: DefinitionSelection) -> Self {
+        match value {
+            DefinitionSelection::Action(action) => ConfigSelection::Action(action),
+            DefinitionSelection::OneOf { selection, .. } => ConfigSelection::OneOf { selection },
+            DefinitionSelection::AllOf(_) => ConfigSelection::AllOf,
+            DefinitionSelection::UserDefined => ConfigSelection::UserDefined(vec![]),
+        }
+    }
 }
 
 // Reification
@@ -163,7 +209,7 @@ impl PipelineDefinition {
             .targets
             .iter()
             .map(|(t, s)| {
-                Selection::AllOf(s.clone())
+                ConfigSelection::AllOf(s.clone())
                     .reify(*t, self, profiles, registrar)
                     .map(|s| (*t, s))
             })
@@ -181,17 +227,17 @@ impl PipelineDefinition {
     }
 }
 
-impl Selection<PipelineActionId> {
+impl ConfigSelection {
     fn reify(
         &self,
         target: PipelineTarget,
         pipeline: &PipelineDefinition,
         profiles: &[CategoryProfile],
         registrar: &PipelineActionRegistrar,
-    ) -> Result<Selection<PipelineAction>> {
+    ) -> Result<RuntimeSelection> {
         match self {
-            Selection::Action(action) => Ok(Selection::Action(action.clone())),
-            Selection::OneOf { selection, actions } => {
+            ConfigSelection::Action(action) => Ok(RuntimeSelection::Action(action.clone())),
+            ConfigSelection::OneOf { selection } => {
                 let actions = actions
                     .iter()
                     .map(|a| a.reify(target, pipeline, profiles, registrar))
@@ -201,7 +247,7 @@ impl Selection<PipelineActionId> {
                     actions,
                 })
             }
-            Selection::AllOf(actions) => actions
+            ConfigSelection::AllOf(actions) => actions
                 .iter()
                 .map(|a| a.reify(target, pipeline, profiles, registrar))
                 .collect::<Result<Vec<_>>>()
