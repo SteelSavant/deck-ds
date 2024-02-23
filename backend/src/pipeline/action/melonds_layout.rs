@@ -4,7 +4,7 @@ use crate::pipeline::executor::PipelineContext;
 
 use self::internal::RawMelonDSState;
 
-use super::{source_file::SourceFile, ActionId, ActionImpl};
+use super::{source_file::SourceFile, ActionId, ActionImpl, ActionType};
 use anyhow::{anyhow, Context, Result};
 use configparser::ini::Ini;
 use schemars::JsonSchema;
@@ -196,7 +196,7 @@ impl internal::RawMelonDSState {
 impl ActionImpl for MelonDSLayout {
     type State = internal::MelonDSLayoutState;
 
-    const NAME: &'static str = "MelonDSLayout";
+    const TYPE: ActionType = ActionType::MelonDSLayout;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let ini_path = ctx

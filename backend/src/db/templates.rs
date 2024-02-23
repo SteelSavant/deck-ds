@@ -12,8 +12,8 @@ use crate::{
         },
         action_registar::PipelineActionRegistrar,
         data::{
-            PipelineActionId, PipelineDefinition, PipelineTarget, Selection, Template, TemplateId,
-            TemplateInfo,
+            PipelineActionId, PipelineDefinition, PipelineDefinitionId, PipelineTarget, Template,
+            TemplateId, TemplateInfo,
         },
     },
 };
@@ -24,7 +24,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
         version: u32,
         name: String,
         description: String,
-        targets: HashMap<PipelineTarget, Selection<PipelineActionId>>,
+        targets: HashMap<PipelineTarget, Vec<PipelineActionId>>,
         action_overrides: HashMap<PipelineActionId, Action>,
         enabled_overrides: HashMap<PipelineActionId, Option<bool>>,
         is_visible_on_qam_overrides: HashMap<PipelineActionId, bool>,
@@ -58,6 +58,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                 id: self.id,
                 version: self.version,
                 pipeline: PipelineDefinition {
+                    id: PipelineDefinitionId::nil(),
                     source_template: TemplateInfo {
                         id: self.id,
                         version: self.version,
@@ -81,13 +82,13 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
             name: "melonDS".to_string(),
             description: "Maps the internal and external monitor to a single virtual screen, as melonDS does not currently support multiple windows. Allows optional melonDS layout configuration.".to_string(),
             targets: HashMap::from_iter([
-                (PipelineTarget::Desktop, Selection::AllOf(vec![
+                (PipelineTarget::Desktop, vec![
                     PipelineActionId::new("core:melonds:config"),
                     PipelineActionId::new("core:display:virtual_screen"),
-                ])),
-                (PipelineTarget::Gamemode, Selection::AllOf(vec![
+                ]),
+                (PipelineTarget::Gamemode, vec![
                     PipelineActionId::new("core:melonds:config"),
-                ]))
+                ])
             ]),
             action_overrides: Default::default(),
             enabled_overrides: Default::default(),
@@ -101,14 +102,14 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
             name: "Citra".to_string(),
             description: "Maps primary and secondary windows to different screens for Citra. Allows optional Citra layout configuration.".to_string(),
             targets: HashMap::from_iter([
-                (PipelineTarget::Desktop, Selection::AllOf(vec![
+                (PipelineTarget::Desktop, vec![
                     PipelineActionId::new("core:citra:config"),
                     PipelineActionId::new("core:citra:multi_window"),
                     PipelineActionId::new("core:display:display_config"),
-                ])),
-                (PipelineTarget::Gamemode, Selection::AllOf(vec![
+                ]),
+                (PipelineTarget::Gamemode, vec![
                     PipelineActionId::new("core:citra:config"),
-                ]))
+                ])
             ]),
             action_overrides: Default::default(),
             enabled_overrides: Default::default(),
@@ -123,15 +124,15 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
             description: "Maps primary and secondary windows to different screens for Cemu.".to_string(),
             targets: HashMap::from_iter([
                 (PipelineTarget::Desktop,
-                    Selection::AllOf(vec![
+                    vec![
                         PipelineActionId::new("core:cemu:config"),
                         PipelineActionId::new("core:cemu:multi_window"),
                         PipelineActionId::new("core:display:display_config"),
-                ])),
+                ]),
                 (PipelineTarget::Gamemode,
-                    Selection::AllOf(vec![
+                    vec![
                         PipelineActionId::new("core:cemu:config")
-                ]))
+                ])
             ]),
             action_overrides: Default::default(),
             enabled_overrides: Default::default(),
@@ -146,9 +147,9 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
             description: "Launches an application in desktop mode.".to_string(),
             targets: HashMap::from_iter([
                 (PipelineTarget::Desktop,
-                    Selection::AllOf(vec![
+                    vec![
                         PipelineActionId::new("core:display:display_config"),
-                    ])
+                    ]
                 )
             ]),
             action_overrides: HashMap::from_iter([

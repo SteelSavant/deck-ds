@@ -3,7 +3,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::pipeline::{
-    action::{ActionId, ActionImpl},
+    action::{ActionId, ActionImpl, ActionType},
     dependency::Dependency,
 };
 
@@ -21,7 +21,7 @@ pub struct DisplayConfig {
 impl ActionImpl for DisplayConfig {
     type State = ();
 
-    const NAME: &'static str = "DisplayConfig";
+    const TYPE: ActionType = ActionType::DisplayConfig;
 
     fn setup(&self, ctx: &mut crate::pipeline::executor::PipelineContext) -> anyhow::Result<()> {
         let display = ctx

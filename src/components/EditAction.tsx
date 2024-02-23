@@ -2,9 +2,8 @@ import { DialogButton, Dropdown, FileSelectionType, Toggle } from "decky-fronten
 import _ from "lodash";
 import { Fragment, ReactElement } from "react";
 import { FaFile } from "react-icons/fa";
-import { Action, ExternalDisplaySettings, RelativeLocation, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../backend";
+import { Action, CemuOptions, CitraOptions, DolphinOptions, ExternalDisplaySettings, LimitedMultiWindowLayout, MultiWindowLayout, RelativeLocation, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../backend";
 import { useServerApi } from "../context/serverApiContext";
-import { CemuOptions, CitraOptions, DolphinOptions, LimitedMultiWindowLayout, MultiWindowLayout } from "../types/backend_api";
 import { ActionChild, ActionChildBuilder } from "./ActionChild";
 
 

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { getSettings, setSettings } from "../backend";
-import { GlobalConfig } from "../types/backend_api";
+import { GlobalConfig, getSettings, setSettings } from "../backend";
 import { Loading } from "../util/loading";
 import { Err, Ok } from "../util/result";
 

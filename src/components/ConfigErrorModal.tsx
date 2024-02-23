@@ -1,6 +1,6 @@
 import { ConfirmModal } from "decky-frontend-lib";
 import { ReactElement } from "react";
-import { DependencyError } from "../types/backend_api";
+import { DependencyError } from "../backend";
 
 export default function ConfigErrorModal({ errors, closeModal }: { errors: DependencyError[], closeModal?: () => void }): ReactElement {
     return <ConfirmModal

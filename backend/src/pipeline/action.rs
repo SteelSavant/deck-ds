@@ -2,6 +2,7 @@ use std::fmt::Debug;
 
 use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use strum::{Display, EnumString};
 
 use crate::macros::newtype_uuid;
 
@@ -31,7 +32,7 @@ pub trait ActionImpl: DeserializeOwned + Serialize {
     type State: 'static + Debug + DeserializeOwned + Serialize;
 
     /// Essentially a more stable, hardcoded typename.
-    const NAME: &'static str;
+    const TYPE: ActionType;
 
     fn setup(&self, _ctx: &mut PipelineContext) -> Result<()> {
         // default to no setup
@@ -51,8 +52,8 @@ pub trait ActionImpl: DeserializeOwned + Serialize {
     fn get_id(&self) -> ActionId;
 
     /// Essentially a more stable, hardcoded typename.
-    fn get_name(&self) -> &'static str {
-        Self::NAME
+    fn get_type(&self) -> ActionType {
+        Self::TYPE
     }
 }
 
@@ -63,7 +64,7 @@ pub trait ErasedPipelineAction {
     fn get_dependencies(&self, ctx: &mut PipelineContext) -> Vec<Dependency>;
     fn get_id(&self) -> ActionId;
     /// Essentially a more stable, hardcoded typename.
-    fn get_name(&self) -> &'static str;
+    fn get_type(&self) -> ActionType;
 }
 
 impl<T> ErasedPipelineAction for T
@@ -94,8 +95,8 @@ where
         self.get_id()
     }
 
-    fn get_name(&self) -> &'static str {
-        self.get_name()
+    fn get_type(&self) -> ActionType {
+        self.get_type()
     }
 }
 
@@ -136,4 +137,17 @@ impl Action {
             Action::SourceFile(a) => Action::SourceFile(SourceFile { id, ..a.clone() }),
         }
     }
+}
+
+/// This effectively acts as a typename for the action, and thus variants CANNOT be renamed without breaking things
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Display, EnumString)]
+pub enum ActionType {
+    CemuLayout,
+    CitraLayout,
+    DesktopSessionHandler,
+    DisplayConfig,
+    MultiWindow,
+    MelonDSLayout,
+    SourceFile,
+    VirtualScreen,
 }

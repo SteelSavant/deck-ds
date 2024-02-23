@@ -175,7 +175,7 @@ mod tests {
     use crate::{
         pipeline::{
             action_registar::PipelineActionRegistrar,
-            data::{PipelineActionId, PipelineTarget, Selection},
+            data::{PipelineActionId, PipelineDefinitionId, PipelineTarget},
         },
         util::create_dir_all,
     };
@@ -196,10 +196,10 @@ mod tests {
 
         let db = ProfileDb::new(path.clone(), registrar.clone());
 
-        let targets = HashMap::from_iter([(
-            PipelineTarget::Desktop,
-            Selection::AllOf(vec![PipelineActionId::new("core:citra:layout")]),
-        )]);
+        let pipeline_action_id = PipelineActionId::new("core:citra:layout");
+
+        let targets =
+            HashMap::from_iter([(PipelineTarget::Desktop, vec![pipeline_action_id.clone()])]);
 
         let actions = registrar.make_lookup(&targets);
 
@@ -207,6 +207,7 @@ mod tests {
             id: ProfileId::from_uuid(Uuid::nil()),
             tags: vec!["Test".to_string()],
             pipeline: PipelineDefinition {
+                id: PipelineDefinitionId::nil(),
                 name: "Test Pipeline".to_string(),
                 description: "Test Description".to_string(),
                 source_template: Default::default(),
@@ -219,20 +220,40 @@ mod tests {
 
         db.set_profile(expected.clone())?;
         let actual = db.get_profile(&expected.id)?.expect("profile should exist");
+        let actual_action = actual
+            .pipeline
+            .actions
+            .get(&pipeline_action_id, PipelineTarget::Desktop, &registrar)
+            .expect("saved action should exist");
 
         assert_eq!(expected.id, actual.id);
         assert_eq!(expected.pipeline.name, actual.pipeline.name);
 
         expected.pipeline.name = "Updated".to_string();
 
+        let mut expected_action = actual_action.clone();
+        expected_action.settings.enabled = expected_action.settings.enabled.map(|v| !v);
+        expected_action.settings.is_visible_on_qam = !expected_action.settings.is_visible_on_qam;
+
+        expected.pipeline.actions.actions.insert(
+            PipelineActionId::new("core:citra:layout:desktop"),
+            expected_action.settings.clone(),
+        );
+
         db.set_profile(expected.clone())?;
 
         let actual = db
             .get_profile(&expected.id)?
             .expect("saved profile should exist");
+        let actual_action =
+            actual
+                .pipeline
+                .actions
+                .get(&pipeline_action_id, PipelineTarget::Desktop, &registrar);
 
         assert_eq!(expected.id, actual.id);
         assert_eq!(expected.pipeline.name, actual.pipeline.name);
+        assert_eq!(Some(expected_action), actual_action);
 
         let actual = db
             .get_profiles()?
@@ -241,9 +262,10 @@ mod tests {
             .expect("get_profiles should find 1 profile");
 
         assert_eq!(expected.id, actual.id);
-        assert_eq!(expected.pipeline.name, actual.pipeline.name);
 
         db.delete_profile(&expected.id)?;
+
+        assert!(db.get_profile(&expected.id)?.is_none());
 
         std::fs::remove_file(path)?;
         Ok(())
@@ -264,6 +286,8 @@ mod tests {
         let db = ProfileDb::new(path.clone(), registrar.clone());
 
         let app_id = AppId::new("appid");
+        let pd_id_1 = PipelineDefinitionId::new();
+        let pd_id_2 = PipelineDefinitionId::new();
 
         let profile1 = ProfileId::new();
         let profile2 = ProfileId::new();
@@ -278,6 +302,7 @@ mod tests {
             (
                 profile1,
                 PipelineDefinition {
+                    id: pd_id_1,
                     name: "Profile 1".into(),
                     description: "Profile 1".into(),
                     source_template: Default::default(),
@@ -290,6 +315,7 @@ mod tests {
             (
                 profile2,
                 PipelineDefinition {
+                    id: pd_id_2,
                     name: "Profile 2".into(),
                     description: "Profile 2".into(),
                     source_template: Default::default(),

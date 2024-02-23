@@ -1,12 +1,11 @@
 import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
 import { Fragment, ReactElement, useContext } from "react";
 import { ProfileContext } from ".";
-import { Action, ActionOneOf, ActionSelection, PipelineAction } from "../../backend";
+import { Action, ActionOneOf, ActionSelection, DependencyError, PipelineAction } from "../../backend";
 import ActionIcon from "../../components/ActionIcon";
 import ConfigErrorWarning from "../../components/ConfigErrorWarning";
 import { useAppState } from "../../context/appContext";
 import { ConfigErrorContext } from "../../context/configErrorContext";
-import { DependencyError } from "../../types/backend_api";
 import { MaybeString } from "../../types/short";
 import QAMEditAction from "./QAMEditAction";
 

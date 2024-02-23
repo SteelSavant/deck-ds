@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import { DependencyError } from "../types/backend_api";
+import { DependencyError } from "../backend";
 
 type ConfigErrors = {
     [k: string]: DependencyError[];

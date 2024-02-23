@@ -16,6 +16,7 @@ newtype_strid!(
     r#"Id in the form "plugin:group:action" | "plugin:group:action:variant""#,
     PipelineActionId
 );
+newtype_uuid!(PipelineDefinitionId);
 newtype_uuid!(TemplateId);
 
 impl PipelineActionId {
@@ -55,88 +56,76 @@ pub struct Template {
     pub pipeline: PipelineDefinition,
 }
 
-pub type PipelineDefinition = generic::PipelineDefinition<Action>;
-pub type Pipeline = generic::Pipeline<Action>;
-pub type PipelineActionDefinition = generic::PipelineActionDefinition<Action>;
-pub type PipelineAction = generic::PipelineAction<Action>;
-pub type PipelineActionSettings = generic::PipelineActionSettings<Action>;
-pub type Selection<T> = generic::Selection<Action, T>;
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct PipelineDefinition {
+    pub id: PipelineDefinitionId,
+    pub name: String,
+    pub source_template: TemplateInfo,
+    pub description: String,
+    pub register_exit_hooks: bool,
+    pub primary_target_override: Option<PipelineTarget>,
+    pub targets: HashMap<PipelineTarget, Vec<PipelineActionId>>,
+    pub actions: PipelineActionLookup,
+}
 
-pub type PipelineActionLookup = generic::PipelineActionLookup<Action>;
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct Pipeline {
+    pub name: String,
+    pub description: String,
+    pub register_exit_hooks: bool,
+    pub primary_target_override: Option<PipelineTarget>,
+    pub targets: HashMap<PipelineTarget, Selection<PipelineAction>>,
+}
 
-pub mod generic {
-    use super::*;
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct PipelineActionDefinition {
+    pub id: PipelineActionId,
+    pub name: String,
+    pub description: Option<String>,
+    pub settings: PipelineActionSettings,
+}
 
-    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-    pub struct PipelineDefinition<A> {
-        pub name: String,
-        pub source_template: TemplateInfo,
-        pub description: String,
-        pub register_exit_hooks: bool,
-        pub primary_target_override: Option<PipelineTarget>,
-        pub targets: HashMap<PipelineTarget, Selection<A, PipelineActionId>>,
-        pub actions: PipelineActionLookup<A>,
-    }
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct PipelineAction {
+    pub name: String,
+    pub description: Option<String>,
+    pub id: PipelineActionId,
+    /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+    pub enabled: Option<bool>,
+    /// Whether or not the pipeline action is hidden on the QAM
+    pub is_visible_on_qam: bool,
+    /// Flags whether the selection is overridden by the setting from a different profile.
+    pub profile_override: Option<ProfileId>,
+    /// The value of the pipeline action
+    pub selection: Selection<PipelineAction>,
+}
 
-    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-    pub struct Pipeline<A> {
-        pub name: String,
-        pub description: String,
-        pub register_exit_hooks: bool,
-        pub primary_target_override: Option<PipelineTarget>,
-        pub targets: HashMap<PipelineTarget, Selection<A, PipelineAction<A>>>,
-    }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct PipelineActionSettings {
+    /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
+    pub enabled: Option<bool>,
+    /// Whether or not the pipeline action is hidden on the QAM
+    pub is_visible_on_qam: bool,
+    /// Flags whether the selection is overridden by the setting from a different profile.
+    pub profile_override: Option<ProfileId>,
+    /// The value of the pipeline action
+    pub selection: Selection<PipelineActionId>,
+}
 
-    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-    pub struct PipelineActionDefinition<A> {
-        pub name: String,
-        pub description: Option<String>,
-        pub id: PipelineActionId,
-        pub settings: PipelineActionSettings<A>,
-    }
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
+pub struct PipelineActionLookup {
+    pub actions: HashMap<PipelineActionId, PipelineActionSettings>,
+}
 
-    #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-    pub struct PipelineAction<A> {
-        pub name: String,
-        pub description: Option<String>,
-        pub id: PipelineActionId,
-        /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
-        pub enabled: Option<bool>,
-        /// Whether or not the pipeline action is hidden on the QAM
-        pub is_visible_on_qam: bool,
-        /// Flags whether the selection is overridden by the setting from a different profile.
-        pub profile_override: Option<ProfileId>,
-        /// The value of the pipeline action
-        pub selection: Selection<A, PipelineAction<A>>,
-    }
-
-    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-    pub struct PipelineActionSettings<A> {
-        /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
-        pub enabled: Option<bool>,
-        /// Whether or not the pipeline action is hidden on the QAM
-        pub is_visible_on_qam: bool,
-        /// Flags whether the selection is overridden by the setting from a different profile.
-        pub profile_override: Option<ProfileId>,
-        /// The value of the pipeline action
-        pub selection: Selection<A, PipelineActionId>,
-    }
-
-    #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
-    pub struct PipelineActionLookup<A> {
-        pub actions: HashMap<PipelineActionId, generic::PipelineActionSettings<A>>,
-    }
-
-    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-    #[serde(tag = "type", content = "value")]
-    pub enum Selection<A, T> {
-        Action(A),
-        OneOf {
-            selection: PipelineActionId,
-            actions: Vec<T>,
-        },
-        AllOf(Vec<T>),
-    }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "type", content = "value")]
+pub enum Selection<T> {
+    Action(Action),
+    OneOf {
+        selection: PipelineActionId,
+        actions: Vec<T>,
+    },
+    AllOf(Vec<T>),
 }
 
 // Reification
@@ -173,7 +162,11 @@ impl PipelineDefinition {
         let targets = self
             .targets
             .iter()
-            .map(|(t, s)| s.reify(*t, self, profiles, registrar).map(|s| (*t, s)))
+            .map(|(t, s)| {
+                Selection::AllOf(s.clone())
+                    .reify(*t, self, profiles, registrar)
+                    .map(|s| (*t, s))
+            })
             .collect::<Result<Vec<_>>>()?
             .into_iter()
             .collect::<HashMap<_, _>>();

@@ -258,7 +258,7 @@
         "overrides": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/PipelineDefinition_for_Action"
+            "$ref": "#/definitions/PipelineDefinition"
           }
         }
       }
@@ -326,7 +326,7 @@
           "format": "uuid"
         },
         "pipeline": {
-          "$ref": "#/definitions/PipelineDefinition_for_Action"
+          "$ref": "#/definitions/PipelineDefinition"
         },
         "tags": {
           "type": "array",
@@ -547,7 +547,7 @@
       ],
       "properties": {
         "pipeline": {
-          "$ref": "#/definitions/PipelineDefinition_for_Action"
+          "$ref": "#/definitions/PipelineDefinition"
         }
       }
     },
@@ -1013,7 +1013,7 @@
         "pipeline": {
           "anyOf": [
             {
-              "$ref": "#/definitions/PipelineDefinition_for_Action"
+              "$ref": "#/definitions/PipelineDefinition"
             },
             {
               "type": "null"
@@ -1335,57 +1335,43 @@
         "separate"
       ]
     },
-    "PipelineActionLookup_for_Action": {
+    "Pipeline": {
       "type": "object",
       "required": [
-        "actions"
+        "description",
+        "name",
+        "register_exit_hooks",
+        "targets"
       ],
       "properties": {
-        "actions": {
+        "description": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "primary_target_override": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PipelineTarget"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "register_exit_hooks": {
+          "type": "boolean"
+        },
+        "targets": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/PipelineActionSettings_for_Action"
+            "$ref": "#/definitions/Selection_for_PipelineAction"
           }
         }
       }
     },
-    "PipelineActionSettings_for_Action": {
-      "type": "object",
-      "required": [
-        "is_visible_on_qam",
-        "selection"
-      ],
-      "properties": {
-        "enabled": {
-          "description": "Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.",
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
-        "is_visible_on_qam": {
-          "description": "Whether or not the pipeline action is hidden on the QAM",
-          "type": "boolean"
-        },
-        "profile_override": {
-          "description": "Flags whether the selection is overridden by the setting from a different profile.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "format": "uuid"
-        },
-        "selection": {
-          "description": "The value of the pipeline action",
-          "allOf": [
-            {
-              "$ref": "#/definitions/Selection_for_Action_and_String"
-            }
-          ]
-        }
-      }
-    },
-    "PipelineAction_for_Action": {
+    "PipelineAction": {
       "type": "object",
       "required": [
         "id",
@@ -1429,17 +1415,68 @@
           "description": "The value of the pipeline action",
           "allOf": [
             {
-              "$ref": "#/definitions/Selection_for_Action_and_PipelineAction_for_Action"
+              "$ref": "#/definitions/Selection_for_PipelineAction"
             }
           ]
         }
       }
     },
-    "PipelineDefinition_for_Action": {
+    "PipelineActionLookup": {
+      "type": "object",
+      "required": [
+        "actions"
+      ],
+      "properties": {
+        "actions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PipelineActionSettings"
+          }
+        }
+      }
+    },
+    "PipelineActionSettings": {
+      "type": "object",
+      "required": [
+        "is_visible_on_qam",
+        "selection"
+      ],
+      "properties": {
+        "enabled": {
+          "description": "Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "is_visible_on_qam": {
+          "description": "Whether or not the pipeline action is hidden on the QAM",
+          "type": "boolean"
+        },
+        "profile_override": {
+          "description": "Flags whether the selection is overridden by the setting from a different profile.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "selection": {
+          "description": "The value of the pipeline action",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Selection_for_String"
+            }
+          ]
+        }
+      }
+    },
+    "PipelineDefinition": {
       "type": "object",
       "required": [
         "actions",
         "description",
+        "id",
         "name",
         "register_exit_hooks",
         "source_template",
@@ -1447,10 +1484,14 @@
       ],
       "properties": {
         "actions": {
-          "$ref": "#/definitions/PipelineActionLookup_for_Action"
+          "$ref": "#/definitions/PipelineActionLookup"
         },
         "description": {
           "type": "string"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
         },
         "name": {
           "type": "string"
@@ -1474,7 +1515,10 @@
         "targets": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/Selection_for_Action_and_String"
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       }
@@ -1486,42 +1530,6 @@
         "Gamemode"
       ]
     },
-    "Pipeline_for_Action": {
-      "type": "object",
-      "required": [
-        "description",
-        "name",
-        "register_exit_hooks",
-        "targets"
-      ],
-      "properties": {
-        "description": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "primary_target_override": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PipelineTarget"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "register_exit_hooks": {
-          "type": "boolean"
-        },
-        "targets": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/Selection_for_Action_and_PipelineAction_for_Action"
-          }
-        }
-      }
-    },
     "ReifyPipelineRequest": {
       "type": "object",
       "required": [
@@ -1529,7 +1537,7 @@
       ],
       "properties": {
         "pipeline": {
-          "$ref": "#/definitions/PipelineDefinition_for_Action"
+          "$ref": "#/definitions/PipelineDefinition"
         }
       }
     },
@@ -1550,7 +1558,7 @@
           }
         },
         "pipeline": {
-          "$ref": "#/definitions/Pipeline_for_Action"
+          "$ref": "#/definitions/Pipeline"
         }
       }
     },
@@ -1583,7 +1591,7 @@
         }
       }
     },
-    "Selection_for_Action_and_PipelineAction_for_Action": {
+    "Selection_for_PipelineAction": {
       "oneOf": [
         {
           "type": "object",
@@ -1626,7 +1634,7 @@
                 "actions": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/definitions/PipelineAction_for_Action"
+                    "$ref": "#/definitions/PipelineAction"
                   }
                 },
                 "selection": {
@@ -1652,14 +1660,14 @@
             "value": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/PipelineAction_for_Action"
+                "$ref": "#/definitions/PipelineAction"
               }
             }
           }
         }
       ]
     },
-    "Selection_for_Action_and_String": {
+    "Selection_for_String": {
       "oneOf": [
         {
           "type": "object",
@@ -1747,7 +1755,7 @@
           "type": "string"
         },
         "pipeline": {
-          "$ref": "#/definitions/PipelineDefinition_for_Action"
+          "$ref": "#/definitions/PipelineDefinition"
         },
         "profile_id": {
           "type": "string",
@@ -1824,7 +1832,7 @@
           "format": "uuid"
         },
         "pipeline": {
-          "$ref": "#/definitions/PipelineDefinition_for_Action"
+          "$ref": "#/definitions/PipelineDefinition"
         },
         "version": {
           "description": "The template's version; should be updated each time an action is moved, added, or removed",

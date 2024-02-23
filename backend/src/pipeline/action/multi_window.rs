@@ -7,7 +7,7 @@ use crate::{
     sys::kwin::KWin,
 };
 
-use super::{ActionId, ActionImpl};
+use super::{ActionId, ActionImpl, ActionType};
 use smart_default::SmartDefault;
 
 const SCRIPT: &str = "emulatorwindowing";
@@ -293,7 +293,7 @@ impl OptionsRW for DolphinOptions {
 impl ActionImpl for MultiWindow {
     type State = MultiWindowOptions;
 
-    const NAME: &'static str = "MultiWindow";
+    const TYPE: ActionType = ActionType::MultiWindow;
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let mut options = MultiWindowOptions::load(&ctx.kwin)?;
