@@ -175,7 +175,7 @@ mod tests {
     use crate::{
         pipeline::{
             action_registar::PipelineActionRegistrar,
-            data::{PipelineActionId, PipelineTarget, Selection},
+            data::{PipelineActionId, PipelineDefinitionId, PipelineTarget},
         },
         util::create_dir_all,
     };
@@ -198,7 +198,7 @@ mod tests {
 
         let targets = HashMap::from_iter([(
             PipelineTarget::Desktop,
-            Selection::AllOf(vec![PipelineActionId::new("core:citra:layout")]),
+            vec![PipelineActionId::new("core:citra:layout")],
         )]);
 
         let actions = registrar.make_lookup(&targets);
@@ -207,6 +207,7 @@ mod tests {
             id: ProfileId::from_uuid(Uuid::nil()),
             tags: vec!["Test".to_string()],
             pipeline: PipelineDefinition {
+                id: PipelineDefinitionId::nil(),
                 name: "Test Pipeline".to_string(),
                 description: "Test Description".to_string(),
                 source_template: Default::default(),
@@ -264,6 +265,8 @@ mod tests {
         let db = ProfileDb::new(path.clone(), registrar.clone());
 
         let app_id = AppId::new("appid");
+        let pd_id_1 = PipelineDefinitionId::new();
+        let pd_id_2 = PipelineDefinitionId::new();
 
         let profile1 = ProfileId::new();
         let profile2 = ProfileId::new();
@@ -278,6 +281,7 @@ mod tests {
             (
                 profile1,
                 PipelineDefinition {
+                    id: pd_id_1,
                     name: "Profile 1".into(),
                     description: "Profile 1".into(),
                     source_template: Default::default(),
@@ -290,6 +294,7 @@ mod tests {
             (
                 profile2,
                 PipelineDefinition {
+                    id: pd_id_2,
                     name: "Profile 2".into(),
                     description: "Profile 2".into(),
                     source_template: Default::default(),

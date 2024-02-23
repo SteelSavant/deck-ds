@@ -2,6 +2,7 @@ use native_db::*;
 use native_model::{native_model, Model};
 use serde::{Deserialize, Serialize};
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 use crate::{
@@ -16,7 +17,7 @@ use crate::{
             session_handler::DesktopSessionHandler,
             ActionId,
         },
-        data::generic,
+        data::{PipelineActionId, PipelineDefinitionId, PipelineTarget, TemplateId, TemplateInfo},
     },
     settings::{AppId, ProfileId},
 };
@@ -48,6 +49,15 @@ pub struct DbCategoryProfile {
 #[derive(Serialize, Deserialize)]
 #[native_db]
 #[native_model(id = 2, version = 1, with = NativeModelJSON)]
+pub struct DbAppSettings {
+    #[primary_key]
+    pub app_id: AppId,
+    pub default_profile: Option<ProfileId>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[native_db]
+#[native_model(id = 3, version = 1, with = NativeModelJSON)]
 pub struct DbAppOverride {
     #[primary_key]
     pub id: (AppId, ProfileId),
@@ -56,35 +66,76 @@ pub struct DbAppOverride {
 
 #[derive(Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 3, version = 1, with = NativeModelJSON)]
-pub struct DbAppSettings {
+#[native_model(id = 4, version = 1, with = NativeModelJSON)]
+pub struct DbPipelineDefinition {
     #[primary_key]
-    pub app_id: AppId,
-    pub default_profile: Option<ProfileId>,
+    pub id: PipelineDefinitionId,
+    pub name: String,
+    pub source_template: DbTemplateInfo,
+    pub description: String,
+    pub register_exit_hooks: bool,
+    pub primary_target_override: Option<PipelineTarget>,
+    pub targets: HashMap<PipelineTarget, Vec<PipelineActionId>>,
+    pub actions: Vec<PipelineActionId>,
 }
 
-pub type DbPipelineDefinition = generic::PipelineDefinition<DbAction>;
-pub type DbSelection<T> = generic::Selection<DbAction, T>;
-pub type DbPipelineActionSettings = generic::PipelineActionSettings<DbAction>;
-pub type DbPipelineActionLookup = generic::PipelineActionLookup<DbAction>;
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct DbTemplateInfo {
+    pub id: TemplateId,
+    pub version: u32,
+}
+
+impl From<TemplateInfo> for DbTemplateInfo {
+    fn from(value: TemplateInfo) -> Self {
+        Self {
+            id: value.id,
+            version: value.version,
+        }
+    }
+}
+
+impl From<DbTemplateInfo> for TemplateInfo {
+    fn from(value: DbTemplateInfo) -> Self {
+        Self {
+            id: value.id,
+            version: value.version,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+#[native_db]
+#[native_model(id = 5, version = 1, with = NativeModelJSON)]
+pub struct DbPipelineActionSettings {
+    #[primary_key]
+    pub id: (PipelineDefinitionId, PipelineActionId),
+    pub enabled: Option<bool>,
+    pub is_visible_on_qam: bool,
+    pub profile_override: Option<ProfileId>,
+    pub selection: DbSelection,
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum DbSelection {
+    Action(DbAction),
+    OneOf {
+        selection: PipelineActionId,
+        actions: Vec<PipelineActionId>,
+    },
+    AllOf(Vec<PipelineActionId>),
+}
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum DbAction {
-    DesktopSessionHandler(ActionId),
-    DisplayConfig(ActionId),
-    VirtualScreen(ActionId),
-    MultiWindow(ActionId),
-    CitraLayout(ActionId),
-    CemuLayout(ActionId),
-    MelonDSLayout(ActionId),
-    SourceFile(ActionId),
+pub struct DbAction {
+    pub id: ActionId,
+    pub dtype: String, // ActionType as string, to avoid needing to update the join when actions are added
 }
 
 // Actions
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 4, version = 1, with = NativeModelJSON)]
+#[native_model(id = 101, version = 1, with = NativeModelJSON)]
 pub struct DbCemuLayout {
     #[primary_key]
     pub id: ActionId,
@@ -116,7 +167,7 @@ impl From<DbCemuLayout> for CemuLayout {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[native_db]
-#[native_model(id = 5, version = 1, with = NativeModelJSON)]
+#[native_model(id = 102, version = 1, with = NativeModelJSON)]
 pub struct DbCitraLayout {
     #[primary_key]
     pub id: ActionId,
@@ -179,7 +230,7 @@ pub enum DbCitraLayoutOption {
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 6, version = 1, with = NativeModelJSON)]
+#[native_model(id = 103, version = 1, with = NativeModelJSON)]
 pub struct DbMelonDSLayout {
     #[primary_key]
     pub id: ActionId,
@@ -254,7 +305,7 @@ pub enum DbMelonDSSizingOption {
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 7, version = 1, with = NativeModelJSON)]
+#[native_model(id = 104, version = 1, with = NativeModelJSON)]
 pub struct DbDesktopSessionHandler {
     #[primary_key]
     pub id: ActionId,
@@ -478,7 +529,7 @@ pub enum DbAspectRatioOption {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 8, version = 1, with = NativeModelJSON)]
+#[native_model(id = 105, version = 1, with = NativeModelJSON)]
 pub struct DbMultiWindow {
     #[primary_key]
     pub id: ActionId,
@@ -631,7 +682,7 @@ impl From<DbMultiWindow> for MultiWindow {
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize)]
 #[native_db]
-#[native_model(id = 9, version = 1, with = NativeModelJSON)]
+#[native_model(id = 106, version = 1, with = NativeModelJSON)]
 pub struct DbSourceFile {
     #[primary_key]
     pub id: ActionId,
@@ -724,7 +775,7 @@ pub enum DbAppImageSource {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 10, version = 1, with = NativeModelJSON)]
+#[native_model(id = 107, version = 1, with = NativeModelJSON)]
 pub struct DbVirtualScreen {
     #[primary_key]
     pub id: ActionId,
@@ -744,7 +795,7 @@ impl From<DbVirtualScreen> for VirtualScreen {
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 11, version = 1, with = NativeModelJSON)]
+#[native_model(id = 108, version = 1, with = NativeModelJSON)]
 pub struct DbDisplayConfig {
     #[primary_key]
     pub id: ActionId,

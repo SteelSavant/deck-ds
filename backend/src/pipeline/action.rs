@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use strum::Display;
+use strum::{Display, EnumString};
 
 use crate::macros::newtype_uuid;
 
@@ -140,7 +140,7 @@ impl Action {
 }
 
 /// This effectively acts as a typename for the action, and thus variants CANNOT be renamed without breaking things
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Display)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Display, EnumString)]
 pub enum ActionType {
     CemuLayout,
     CitraLayout,

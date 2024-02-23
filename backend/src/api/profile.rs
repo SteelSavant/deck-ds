@@ -434,10 +434,10 @@ fn check_config_errors(
         parent_id: &PipelineActionId,
     ) -> Vec<(PipelineActionId, &'a Action)> {
         match selection {
-            crate::pipeline::data::generic::Selection::Action(action) => {
+            crate::pipeline::data::Selection::Action(action) => {
                 vec![(parent_id.clone(), action)]
             }
-            crate::pipeline::data::generic::Selection::OneOf { selection, actions } => {
+            crate::pipeline::data::Selection::OneOf { selection, actions } => {
                 let action = actions
                     .iter()
                     .find(|a| a.id == *selection)
@@ -445,7 +445,7 @@ fn check_config_errors(
 
                 collect_actions(&action.selection, &action.id)
             }
-            crate::pipeline::data::generic::Selection::AllOf(actions) => actions
+            crate::pipeline::data::Selection::AllOf(actions) => actions
                 .iter()
                 .flat_map(|a| collect_actions(&a.selection, &a.id))
                 .collect(),

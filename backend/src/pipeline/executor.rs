@@ -7,6 +7,7 @@ use type_reg::untagged::{TypeMap as SerdeMap, TypeReg};
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::process::Command;
+use std::str::FromStr;
 use std::time::{Duration, Instant, SystemTime};
 use typemap::{Key, TypeMap};
 
@@ -104,9 +105,7 @@ impl<'a> PipelineContext<'a> {
             T: ActionImpl + Clone + Send + Sync + 'static,
             <T as ActionImpl>::State: Clone + Send + Sync,
         {
-            type_reg.register::<(T, Option<<T as ActionImpl>::State>)>(
-                serde_json::to_string(&T::TYPE).expect("ActionType should serialize in type map"),
-            );
+            type_reg.register::<(T, Option<<T as ActionImpl>::State>)>(T::TYPE.to_string());
         }
 
         type_reg.register::<Vec<String>>("__actions__".to_string());
@@ -132,7 +131,7 @@ impl<'a> PipelineContext<'a> {
             .map(|v| v.as_str());
 
         for action in actions {
-            match serde_json::from_str(action) {
+            match ActionType::from_str(action) {
                 Ok(action) => match action {
                     ActionType::DesktopSessionHandler => {
                         load_state::<DesktopSessionHandler>(&mut default, &type_map)

@@ -53,7 +53,7 @@ impl PipelineActionRegistrar {
 
     pub fn make_lookup(
         &self,
-        targets: &HashMap<PipelineTarget, Selection<PipelineActionId>>,
+        targets: &HashMap<PipelineTarget, Vec<PipelineActionId>>,
     ) -> PipelineActionLookup {
         fn get_ids(
             registrar: &PipelineActionRegistrar,
@@ -86,7 +86,7 @@ impl PipelineActionRegistrar {
 
         let set: HashSet<_> = targets
             .iter()
-            .flat_map(|(t, s)| get_ids(self, s, *t))
+            .flat_map(|(t, s)| get_ids(self, &Selection::AllOf(s.clone()), *t))
             .collect();
 
         let mut actions = HashMap::new();
@@ -592,14 +592,14 @@ mod tests {
         let targets = HashMap::from_iter([
             (
                 PipelineTarget::Desktop,
-                Selection::AllOf(vec![
+                vec![
                     PipelineActionId::new("core:cemu:config"),
                     PipelineActionId::new("core:cemu:multi_window"),
-                ]),
+                ],
             ),
             (
                 PipelineTarget::Gamemode,
-                Selection::AllOf(vec![PipelineActionId::new("core:cemu:config")]),
+                vec![PipelineActionId::new("core:cemu:config")],
             ),
         ]);
 
