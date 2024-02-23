@@ -184,7 +184,7 @@ impl PipelineActionLookup {
     ) -> Option<&PipelineActionSettings<ConfigSelection>> {
         let variant = id.variant(target);
 
-        self.actions.get(&variant)
+        self.actions.get(&variant).or_else(|| self.actions.get(id))
     }
 }
 
