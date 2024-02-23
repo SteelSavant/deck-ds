@@ -77,7 +77,7 @@ pub struct Pipeline {
     pub targets: HashMap<PipelineTarget, Selection<PipelineAction>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct PipelineActionDefinition {
     pub id: PipelineActionId,
     pub name: String,

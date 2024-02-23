@@ -82,13 +82,13 @@ impl AppProfile {
 impl PipelineDefinition {
     /// Saves the [PipelineDefinition]. Because it may set new ids internally, `save_all_and_transform` cosumes self.
     pub fn save_all_and_transform(self, rw: &RwTransaction) -> Result<DbPipelineDefinition> {
-        let actions = self.actions.save_all_and_transform(self.id, rw)?;
-
         let id = if self.id == PipelineDefinitionId::nil() {
             PipelineDefinitionId::new()
         } else {
             self.id
         };
+
+        let actions = self.actions.save_all_and_transform(id, rw)?;
 
         let db_pipeline = DbPipelineDefinition {
             id,

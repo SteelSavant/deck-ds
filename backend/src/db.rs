@@ -196,10 +196,10 @@ mod tests {
 
         let db = ProfileDb::new(path.clone(), registrar.clone());
 
-        let targets = HashMap::from_iter([(
-            PipelineTarget::Desktop,
-            vec![PipelineActionId::new("core:citra:layout")],
-        )]);
+        let pipeline_action_id = PipelineActionId::new("core:citra:layout");
+
+        let targets =
+            HashMap::from_iter([(PipelineTarget::Desktop, vec![pipeline_action_id.clone()])]);
 
         let actions = registrar.make_lookup(&targets);
 
@@ -220,20 +220,40 @@ mod tests {
 
         db.set_profile(expected.clone())?;
         let actual = db.get_profile(&expected.id)?.expect("profile should exist");
+        let actual_action = actual
+            .pipeline
+            .actions
+            .get(&pipeline_action_id, PipelineTarget::Desktop, &registrar)
+            .expect("saved action should exist");
 
         assert_eq!(expected.id, actual.id);
         assert_eq!(expected.pipeline.name, actual.pipeline.name);
 
         expected.pipeline.name = "Updated".to_string();
 
+        let mut expected_action = actual_action.clone();
+        expected_action.settings.enabled = expected_action.settings.enabled.map(|v| !v);
+        expected_action.settings.is_visible_on_qam = !expected_action.settings.is_visible_on_qam;
+
+        expected.pipeline.actions.actions.insert(
+            PipelineActionId::new("core:citra:layout:desktop"),
+            expected_action.settings.clone(),
+        );
+
         db.set_profile(expected.clone())?;
 
         let actual = db
             .get_profile(&expected.id)?
             .expect("saved profile should exist");
+        let actual_action =
+            actual
+                .pipeline
+                .actions
+                .get(&pipeline_action_id, PipelineTarget::Desktop, &registrar);
 
         assert_eq!(expected.id, actual.id);
         assert_eq!(expected.pipeline.name, actual.pipeline.name);
+        assert_eq!(Some(expected_action), actual_action);
 
         let actual = db
             .get_profiles()?
@@ -242,9 +262,10 @@ mod tests {
             .expect("get_profiles should find 1 profile");
 
         assert_eq!(expected.id, actual.id);
-        assert_eq!(expected.pipeline.name, actual.pipeline.name);
 
         db.delete_profile(&expected.id)?;
+
+        assert!(db.get_profile(&expected.id)?.is_none());
 
         std::fs::remove_file(path)?;
         Ok(())

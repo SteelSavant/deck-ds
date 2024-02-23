@@ -16,7 +16,8 @@ use crate::{
         action::{Action, ErasedPipelineAction},
         action_registar::PipelineActionRegistrar,
         data::{
-            Pipeline, PipelineAction, PipelineActionId, PipelineDefinition, Selection, Template,
+            Pipeline, PipelineAction, PipelineActionId, PipelineDefinition, PipelineDefinitionId,
+            Selection, Template,
         },
         dependency::DependencyError,
         executor::PipelineContext,
@@ -350,6 +351,7 @@ pub fn get_default_app_override_pipeline_for_profile(
                             }
 
                             PipelineDefinition {
+                                id: PipelineDefinitionId::nil(),
                                 actions: lookup,
                                 ..pipeline
                             }
