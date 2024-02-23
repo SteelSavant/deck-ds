@@ -12,10 +12,7 @@ use crate::{
     },
     pipeline::{
         action::{Action, ActionType},
-        data::{
-            ConfigSelection, PipelineActionId, PipelineActionLookup, PipelineActionSettings,
-            PipelineDefinition,
-        },
+        data::{ConfigSelection, PipelineActionLookup, PipelineActionSettings, PipelineDefinition},
     },
 };
 

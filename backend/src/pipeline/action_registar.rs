@@ -1,6 +1,6 @@
 use anyhow::Context;
 
-use crate::{settings::ProfileId};
+use crate::settings::ProfileId;
 
 use super::{
     action::{
