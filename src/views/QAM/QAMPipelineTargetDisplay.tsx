@@ -1,7 +1,7 @@
 import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
 import { Fragment, ReactElement, useContext } from "react";
 import { ProfileContext } from ".";
-import { Action, ActionOneOf, ActionSelection, DependencyError, PipelineAction } from "../../backend";
+import { Action, ActionOneOf, DependencyError, PipelineAction, RuntimeSelection } from "../../backend";
 import ActionIcon from "../../components/ActionIcon";
 import ConfigErrorWarning from "../../components/ConfigErrorWarning";
 import { useAppState } from "../../context/appContext";
@@ -10,29 +10,29 @@ import { MaybeString } from "../../types/short";
 import QAMEditAction from "./QAMEditAction";
 
 export default function QAMPipelineTargetDisplay({ root }: {
-    root: ActionSelection,
+    root: RuntimeSelection,
 }): ReactElement {
 
     return (
         <DialogBody style={{ marginBottom: '10px' }}>
             <DialogControlsSection>
                 <Field focusable={false} />
-                {buildRootSelection('root', root) ?? <div />}
+                {buildRootSelection('root', root)}
             </DialogControlsSection>
         </DialogBody>
     )
 }
 
-function buildRootSelection(id: string, selection: ActionSelection): ReactElement | null {
+function buildRootSelection(id: string, selection: RuntimeSelection): ReactElement {
     const type = selection.type;
     switch (type) {
         case "Action":
-            return buildAction(id, null, selection.value);
+            return buildAction(id, null, selection.value) ?? <div />;
         case "OneOf":
             return buildOneOf(selection.value);
-        case "AllOf":
         case 'UserDefined':
-            // TODO::handle userdefined
+        case "AllOf":
+            // TODO::handle user defined
             return buildAllOf(selection.value);
         default:
             const typecheck: never = type;
@@ -41,6 +41,7 @@ function buildRootSelection(id: string, selection: ActionSelection): ReactElemen
 }
 
 function buildAction(id: string, externalProfile: MaybeString, action: Action): ReactElement | null {
+    console.log("building action:", action);
     const { dispatchUpdate } = useAppState();
     const profileId = useContext(ProfileContext);
 
@@ -66,15 +67,21 @@ function buildAction(id: string, externalProfile: MaybeString, action: Action): 
         }
     });
 
+    console.log("built action component:", component);
+
     return component;
 }
 
 function buildOneOf(oneOf: ActionOneOf): ReactElement {
+    console.log("building oneOf", oneOf);
+
     const action = oneOf.actions.find((a) => a.id === oneOf.selection)!;
     return buildPipelineAction(action);
 }
 
 function buildAllOf(allOf: PipelineAction[]): ReactElement {
+    console.log("building allOf", allOf);
+
     return (
         <Fragment>
             {allOf.map((action) => buildPipelineAction(action))}
@@ -83,6 +90,9 @@ function buildAllOf(allOf: PipelineAction[]): ReactElement {
 }
 
 function buildPipelineAction(action: PipelineAction): ReactElement {
+    console.log("building pipeline action:", action);
+
+
     const { dispatchUpdate } = useAppState();
 
     const profileBeingOverridden = useContext(ProfileContext);
@@ -106,8 +116,8 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
     }
 
     switch (type) {
-        case 'AllOf':
         case 'UserDefined':
+        case 'AllOf':
             // TODO::handle userdefined
             if (forcedEnabled || selection.value.length == 0) {
                 return buildAllOf(selection.value);
@@ -127,6 +137,8 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
         case 'OneOf':
             return (
                 <Fragment>
+
+
                     <Header {...props} />
                     {
                         isEnabled
@@ -169,7 +181,6 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
             } else {
                 return <Fragment />
             }
-
 
         default:
             const typecheck: never = type;

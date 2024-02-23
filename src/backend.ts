@@ -1,12 +1,11 @@
 import {
     AutoStartRequest, CategoryProfile, CitraLayoutOption,
-    ConfigSelection,
     CreateProfileRequest, CreateProfileResponse,
     DeleteProfileRequest, GetAppProfileRequest, GetAppProfileResponse,
     GetDefaultAppOverrideForProfileRequest, GetDefaultAppOverrideForProfileResponse,
     GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetSettingsResponse,
     GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineAction, PipelineActionSettingsFor_ConfigSelection, PipelineDefinition,
-    ReifyPipelineRequest, ReifyPipelineResponse, RuntimeSelection,
+    ReifyPipelineRequest, ReifyPipelineResponse,
     SetAppProfileOverrideRequest,
     SetAppProfileSettingsRequest, SetProfileRequest, SetSettingsRequest, Template
 } from "./types/backend_api";
@@ -14,11 +13,10 @@ import { call_backend, init_embedded, init_usdpl, target_usdpl } from "./usdpl_f
 import { Err, Ok, Result } from "./util/result";
 
 export {
-    Action, AppProfile, AutoStartRequest, CategoryProfile, CemuOptions, CitraOptions, CreateProfileRequest,
+    Action, AppProfile, AutoStartRequest, CategoryProfile, CemuOptions, CitraOptions, ConfigSelection, CreateProfileRequest,
     CreateProfileResponse, DeleteProfileRequest, DependencyError, DolphinOptions, ExternalDisplaySettings, GetProfileRequest,
-    GetProfileResponse,
-    GetProfilesResponse, GetTemplatesResponse, GlobalConfig, LimitedMultiWindowLayout, MultiWindowLayout, PipelineAction, PipelineDefinition, PipelineTarget, ReifyPipelineRequest,
-    ReifyPipelineResponse, RelativeLocation, SetProfileRequest, Template
+    GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, GlobalConfig, LimitedMultiWindowLayout, MultiWindowLayout, PipelineAction, PipelineDefinition, PipelineTarget, ReifyPipelineRequest,
+    ReifyPipelineResponse, RelativeLocation, RuntimeSelection, SetProfileRequest, Template
 } from "./types/backend_api";
 
 
@@ -27,10 +25,8 @@ const USDPL_PORT: number = 44666;
 
 // Pipeline
 export type ActionOneOf = { selection: string, actions: PipelineAction[] }
-export type ActionSelection = RuntimeSelection;
 
 export type DefinitionOneOf = { selection: string, actions: string[] }
-export type DefinitionSelection = ConfigSelection;
 
 export type PipelineActionSettings = PipelineActionSettingsFor_ConfigSelection;
 

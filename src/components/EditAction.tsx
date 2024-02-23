@@ -43,7 +43,7 @@ export function InternalEditAction({
             const locations: RelativeLocation[] = ['Above', 'Below', 'LeftOf', 'RightOf']; // SameAs excluded because it doesn't really make sense
             const externalSettings: ExternalDisplaySettings[] = [{ type: 'Previous' }, { type: 'Native' }] // Preference excluded because its a pain to configure, and I'm pretty sure doesn't work
             return (
-                <div>
+                <Fragment>
                     <Builder indentLevel={indentLevel} label="External Display Settings" description="External display settings (resolution, refresh rate, etc.).">
                         <Dropdown selectedOption={display.teardown_external_settings.type} rgOptions={externalSettings.map((setting) => {
                             return {
@@ -86,7 +86,7 @@ export function InternalEditAction({
                             </Builder>
                             : <div />
                     }
-                </div>
+                </Fragment>
             );
         case 'DisplayConfig': {
             // TODO::This is largely a duplicate of the above; refactor when Preference gets configured in UI.
@@ -94,7 +94,7 @@ export function InternalEditAction({
             const locations: RelativeLocation[] = ['Above', 'Below', 'LeftOf', 'RightOf']; // SameAs excluded because it doesn't really make sense
             const externalSettings: ExternalDisplaySettings[] = [{ type: 'Previous' }, { type: 'Native' }] // Preference excluded because its a pain to configure, and I'm pretty sure doesn't work
             return (
-                <div>
+                <Fragment>
                     <Builder indentLevel={indentLevel} label="External Display Settings" description="External display settings.">
                         <Dropdown selectedOption={display.external_display_settings.type} rgOptions={externalSettings.map((setting) => {
                             return {
@@ -137,23 +137,23 @@ export function InternalEditAction({
                             </Builder>
                             : <div />
                     }
-                </div>
+                </Fragment>
             );
         }
         case 'CemuLayout':
             return (
-                <div>
+                <Fragment>
                     <Builder indentLevel={indentLevel} label="Separate Gamepad View">
                         <Toggle value={cloned.value.layout.separate_gamepad_view} onChange={(isEnabled) => {
                             cloned.value.layout.separate_gamepad_view = isEnabled;
                             onChange(cloned);
                         }} />
                     </Builder>
-                </div>
+                </Fragment>
             );
         case 'CitraLayout':
             return (
-                <div>
+                <Fragment>
                     <Builder indentLevel={indentLevel} label="Layout Option">
                         <Dropdown selectedOption={cloned.value.layout.layout_option.type} rgOptions={citraLayoutOptions.map((a) => {
                             return {
@@ -171,11 +171,11 @@ export function InternalEditAction({
                             onChange(cloned);
                         }} />
                     </Builder>
-                </div>
+                </Fragment>
             );
         case 'MelonDSLayout':
             return (
-                <div>
+                <Fragment>
                     <Builder indentLevel={indentLevel} label="Layout Option">
                         <Dropdown selectedOption={cloned.value.layout_option} rgOptions={melonDSLayoutOptions.map((a) => {
                             return {
@@ -210,7 +210,7 @@ export function InternalEditAction({
                             onChange(cloned);
                         }} />
                     </Builder>
-                </div >
+                </Fragment >
             );
         case 'SourceFile':
             const sourceValue = cloned.value;

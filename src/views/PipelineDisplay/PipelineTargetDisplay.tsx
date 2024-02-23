@@ -1,7 +1,7 @@
 import { DialogBody, DialogButton, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
 import { Fragment, ReactElement, useContext } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { Action, ActionOneOf, ActionSelection, PipelineAction, } from "../../backend";
+import { Action, ActionOneOf, PipelineAction, RuntimeSelection, } from "../../backend";
 import ActionIcon from "../../components/ActionIcon";
 import ConfigErrorWarning from "../../components/ConfigErrorWarning";
 import { EditAction } from "../../components/EditAction";
@@ -9,7 +9,7 @@ import { ConfigErrorContext } from "../../context/configErrorContext";
 import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
 
 export default function PipelineTargetDisplay({ root, description }: {
-    root: ActionSelection,
+    root: RuntimeSelection,
     description: ReactElement
 }): ReactElement {
     return (
@@ -22,7 +22,7 @@ export default function PipelineTargetDisplay({ root, description }: {
     )
 }
 
-function buildSelection(id: string, selection: ActionSelection, indentLevel: number, qamHiddenByParent: boolean): ReactElement | null {
+function buildSelection(id: string, selection: RuntimeSelection, indentLevel: number, qamHiddenByParent: boolean): ReactElement | null {
     const type = selection.type;
     switch (type) {
         case "Action":

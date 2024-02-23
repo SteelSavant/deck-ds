@@ -1,6 +1,6 @@
 import { Focusable, Tabs } from "decky-frontend-lib";
 import { ReactElement, useEffect, useRef, useState } from "react";
-import { ActionSelection, PipelineContainer, PipelineTarget } from "../../backend";
+import { PipelineContainer, PipelineTarget, RuntimeSelection } from "../../backend";
 import HandleLoading from "../../components/HandleLoading";
 import { IconForTarget } from "../../components/IconForTarget";
 import { ConfigErrorContext } from "../../context/configErrorContext";
@@ -35,7 +35,7 @@ export default function PipelineDisplay({ header, general, secondaryAction, seco
                 ({ pipeline, config_errors }) => {
                     interface TargetDescriptor {
                         target: string,
-                        root: ActionSelection,
+                        root: RuntimeSelection,
                         description: ReactElement,
                     }
 
