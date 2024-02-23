@@ -2,6 +2,7 @@ import { DialogButton, PanelSection } from "decky-frontend-lib";
 import { Fragment, ReactElement, createContext } from "react";
 import { RiArrowDownSFill, RiArrowRightSFill } from "react-icons/ri";
 import { PipelineTarget } from "../../backend";
+import FocusableRow from "../../components/FocusableRow";
 import HandleLoading from "../../components/HandleLoading";
 import { IconForTarget } from "../../components/IconForTarget";
 import { ShortAppDetails, useAppState } from "../../context/appContext";
@@ -78,13 +79,13 @@ function AppProfileSection({ launchActions }: { launchActions: LaunchActions }):
 
     const { openViews, setAppViewOpen } = useAppState();
 
-    return (<PanelSection title={launchActions.profile.pipeline.name} >
-        {
-            launchActions.targets.map((t) => {
-                const isOpen = openViews[profileId]?.[t.target];
-                return (
-                    <Fragment>
-                        <div style={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
+    return (
+        <PanelSection title={launchActions.profile.pipeline.name} >
+            {
+                launchActions.targets.map((t) => {
+                    const isOpen = openViews[profileId]?.[t.target];
+                    return (
+                        <FocusableRow>
                             <DialogButton
                                 style={{
                                     display: 'flex',
@@ -131,17 +132,17 @@ function AppProfileSection({ launchActions }: { launchActions: LaunchActions }):
                                         : <RiArrowRightSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill' }} />
                                 }
                             </DialogButton>
-                        </div>
-                        {
-                            isOpen ?
-                                <QAMTarget profileId={profileId} target={t.target} />
-                                : <div />
-                        }
-                    </Fragment>
-                )
-            })
-        }
-    </PanelSection>
+
+                            {
+                                isOpen ?
+                                    <QAMTarget profileId={profileId} target={t.target} />
+                                    : <div />
+                            }
+                        </FocusableRow>
+                    )
+                })
+            }
+        </PanelSection>
     );
 }
 
