@@ -134,11 +134,7 @@ impl DbConfigSelection {
     pub fn remove_all(&self, rw: &RwTransaction) -> Result<()> {
         match self {
             DbConfigSelection::Action(action) => action.remove(rw)?,
-            DbConfigSelection::OneOf { .. } => todo!("figure out if this needs to do anything"),
-            DbConfigSelection::AllOf => todo!("figure out if this needs to do anything"),
-            DbConfigSelection::UserDefined(actions) => {
-                todo!("figure out if this needs to do anything")
-            }
+            _ => (),
         };
 
         Ok(())

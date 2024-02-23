@@ -93,7 +93,7 @@ impl PipelineActionRegistrar {
 
         for (id, target) in set {
             if let Some(action) = self.get(&id, target) {
-                actions.insert(action.id.clone(), action.settings.into());
+                actions.insert(action.id.clone(), action.settings.clone() .into());
             }
         }
 

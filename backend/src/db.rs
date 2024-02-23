@@ -223,7 +223,7 @@ mod tests {
         let actual_action = actual
             .pipeline
             .actions
-            .get(&pipeline_action_id, PipelineTarget::Desktop, &registrar)
+            .get(&pipeline_action_id, PipelineTarget::Desktop)
             .expect("saved action should exist");
 
         assert_eq!(expected.id, actual.id);
@@ -231,13 +231,13 @@ mod tests {
 
         expected.pipeline.name = "Updated".to_string();
 
-        let mut expected_action = actual_action.clone();
-        expected_action.settings.enabled = expected_action.settings.enabled.map(|v| !v);
-        expected_action.settings.is_visible_on_qam = !expected_action.settings.is_visible_on_qam;
+        let mut expected_settings = actual_action.clone();
+        expected_settings.enabled = expected_settings.enabled.map(|v| !v);
+        expected_settings.is_visible_on_qam = !expected_settings.is_visible_on_qam;
 
         expected.pipeline.actions.actions.insert(
             PipelineActionId::new("core:citra:layout:desktop"),
-            expected_action.settings.clone().into(),
+            expected_settings.clone().into(),
         );
 
         db.set_profile(expected.clone())?;
@@ -245,15 +245,14 @@ mod tests {
         let actual = db
             .get_profile(&expected.id)?
             .expect("saved profile should exist");
-        let actual_action =
-            actual
-                .pipeline
-                .actions
-                .get(&pipeline_action_id, PipelineTarget::Desktop, &registrar);
+        let actual_action = actual
+            .pipeline
+            .actions
+            .get(&pipeline_action_id, PipelineTarget::Desktop);
 
         assert_eq!(expected.id, actual.id);
         assert_eq!(expected.pipeline.name, actual.pipeline.name);
-        assert_eq!(Some(expected_action), actual_action);
+        assert_eq!(Some(expected_settings).as_ref(), actual_action);
 
         let actual = db
             .get_profiles()?
