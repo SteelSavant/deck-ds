@@ -209,9 +209,10 @@ impl PipelineDefinition {
             .targets
             .iter()
             .map(|(t, s)| {
-                ConfigSelection::AllOf(s.clone())
-                    .reify(*t, self, profiles, registrar)
-                    .map(|s| (*t, s))
+                s.iter()
+                    .map(|v| v.reify(*t, self, profiles, registrar))
+                    .collect::<Result<Vec<_>>>()
+                    .map(|v| (*t, RuntimeSelection::AllOf(v)))
             })
             .collect::<Result<Vec<_>>>()?
             .into_iter()
@@ -227,34 +228,53 @@ impl PipelineDefinition {
     }
 }
 
-impl ConfigSelection {
-    fn reify(
-        &self,
-        target: PipelineTarget,
-        pipeline: &PipelineDefinition,
-        profiles: &[CategoryProfile],
-        registrar: &PipelineActionRegistrar,
-    ) -> Result<RuntimeSelection> {
-        match self {
-            ConfigSelection::Action(action) => Ok(RuntimeSelection::Action(action.clone())),
-            ConfigSelection::OneOf { selection } => {
-                let actions = actions
-                    .iter()
-                    .map(|a| a.reify(target, pipeline, profiles, registrar))
-                    .collect::<Result<Vec<_>>>();
-                actions.map(|actions| Selection::OneOf {
-                    selection: selection.clone(),
-                    actions,
-                })
-            }
-            ConfigSelection::AllOf(actions) => actions
-                .iter()
-                .map(|a| a.reify(target, pipeline, profiles, registrar))
-                .collect::<Result<Vec<_>>>()
-                .map(Selection::AllOf),
-        }
-    }
-}
+// impl ConfigSelection {
+//     fn reify(
+//         &self,
+//         id: &PipelineActionId,
+//         target: PipelineTarget,
+//         pipeline: &PipelineDefinition,
+//         profiles: &[CategoryProfile],
+//         registrar: &PipelineActionRegistrar,
+//     ) -> Result<RuntimeSelection> {
+//         let registered_selection = registrar
+//             .get(id, target)
+//             .map(|v| v.settings.selection)
+//             .with_context(|| {
+//                 format!("unable to find registered pipline action {id:?} when reifying config")
+//             })?;
+
+//         match self {
+//             ConfigSelection::Action(action) => Ok(RuntimeSelection::Action(action.clone())),
+//             ConfigSelection::OneOf { selection } => match registered_selection {
+//                 DefinitionSelection::OneOf { actions, .. } => {
+//                     let actions = actions
+//                         .iter()
+//                         .map(|a| a.reify(target, pipeline, profiles, registrar))
+//                         .collect::<Result<Vec<_>>>();
+//                     actions.map(|actions| RuntimeSelection::OneOf {
+//                         selection: selection.clone(),
+//                         actions,
+//                     })
+//                 }
+//                 _ => Err(anyhow::anyhow!("selection type mismatch in reify config")),
+//             },
+//             ConfigSelection::AllOf => match registered_selection {
+//                 DefinitionSelection::AllOf(actions) => actions
+//                     .iter()
+//                     .map(|a| a.reify(target, pipeline, profiles, registrar))
+//                     .collect::<Result<Vec<_>>>()
+//                     .map(RuntimeSelection::AllOf),
+//                 _ => Err(anyhow::anyhow!("selection type mismatch in reify config")),
+//             },
+//             ConfigSelection::UserDefined(actions) => actions
+//                 .iter()
+//                 .map(|a| a.reify(target, pipeline, profiles, registrar))
+//                 .collect::<Result<Vec<_>>>()
+//                 .map(RuntimeSelection::UserDefined),
+//         }
+//     }
+// }
 
 impl PipelineActionId {
     fn reify(
@@ -292,31 +312,31 @@ impl PipelineActionId {
     }
 }
 
-impl PipelineActionDefinition {
-    fn reify(
-        &self,
-        profile_override: Option<ProfileId>,
-        target: PipelineTarget,
-        pipeline: &PipelineDefinition,
-        profiles: &[CategoryProfile],
-        registrar: &PipelineActionRegistrar,
-    ) -> Result<PipelineAction> {
-        let selection = self
-            .settings
-            .selection
-            .reify(target, pipeline, profiles, registrar)?;
+// impl PipelineActionDefinition {
+//     fn reify(
+//         &self,
+//         profile_override: Option<ProfileId>,
+//         target: PipelineTarget,
+//         pipeline: &PipelineDefinition,
+//         profiles: &[CategoryProfile],
+//         registrar: &PipelineActionRegistrar,
+//     ) -> Result<PipelineAction> {
+//         let selection = self
+//             .settings
+//             .selection
+//             .reify(target, pipeline, profiles, registrar)?;
 
-        Ok(PipelineAction {
-            name: self.name.clone(),
-            description: self.description.clone(),
-            id: self.id.clone(),
-            enabled: self.settings.enabled,
-            profile_override,
-            selection,
-            is_visible_on_qam: self.settings.is_visible_on_qam,
-        })
-    }
-}
+//         Ok(PipelineAction {
+//             name: self.name.clone(),
+//             description: self.description.clone(),
+//             id: self.id.clone(),
+//             enabled: self.settings.enabled,
+//             profile_override,
+//             selection,
+//             is_visible_on_qam: self.settings.is_visible_on_qam,
+//         })
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
