@@ -8,8 +8,7 @@ import {
     useEffect,
     useState
 } from 'react';
-import { ApiError, getAppProfile, getDefaultAppOverrideForProfileRequest, getProfile, PipelineDefinition, reifyPipeline, setAppProfileOverride, setAppProfileSettings, setProfile } from '../backend';
-import { AppProfile, PipelineTarget, ReifyPipelineResponse } from '../types/backend_api';
+import { ApiError, AppProfile, getAppProfile, getDefaultAppOverrideForProfileRequest, getProfile, PipelineDefinition, PipelineTarget, reifyPipeline, ReifyPipelineResponse, setAppProfileOverride, setAppProfileSettings, setProfile } from '../backend';
 import { MaybeString } from '../types/short';
 import { Loading } from '../util/loading';
 import { patchPipeline, PipelineUpdate } from '../util/patch_pipeline';

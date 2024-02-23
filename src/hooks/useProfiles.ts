@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { CategoryProfile, CreateProfileRequest, Response, SetProfileRequest, createProfile, deleteProfile, getProfile, getProfiles, setProfile, } from "../backend";
-import { CreateProfileResponse, DeleteProfileRequest } from "../types/backend_api";
+import { CategoryProfile, CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, Response, SetProfileRequest, createProfile, deleteProfile, getProfile, getProfiles, setProfile, } from "../backend";
 import { Loading } from "../util/loading";
 
 interface Profiles {

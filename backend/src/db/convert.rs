@@ -7,7 +7,7 @@ use native_db::transaction::{RTransaction, RwTransaction};
 
 use crate::{
     db::model::{DbAppOverride, DbCategoryProfile, DbPipelineActionSettings, DbPipelineDefinition},
-    pipeline::data::PipelineDefinition,
+    pipeline::data::{PipelineDefinition, PipelineDefinitionId},
     settings::{AppId, AppProfile, CategoryProfile},
 };
 
@@ -15,6 +15,23 @@ use super::model::DbAppSettings;
 
 mod ro;
 mod rw;
+
+// Primary types
+
+impl CategoryProfile {
+    /// Saves the [CategoryProfile]. Because it may set new ids internally, `save_all_and_transform` cosumes self.
+    pub fn save_all(self, rw: &RwTransaction) -> Result<()> {
+        let db_profile = DbCategoryProfile {
+            id: self.id,
+            tags: self.tags.clone(),
+            pipeline: self.pipeline.save_all_and_transform(rw)?,
+        };
+
+        rw.insert(db_profile)?;
+
+        Ok(())
+    }
+}
 
 impl AppProfile {
     pub fn load(app_id: &AppId, ro: &RTransaction) -> Result<Self> {
@@ -63,11 +80,18 @@ impl AppProfile {
 }
 
 impl PipelineDefinition {
-    pub fn save_all_and_transform(&self, rw: &RwTransaction) -> Result<DbPipelineDefinition> {
+    /// Saves the [PipelineDefinition]. Because it may set new ids internally, `save_all_and_transform` cosumes self.
+    pub fn save_all_and_transform(self, rw: &RwTransaction) -> Result<DbPipelineDefinition> {
         let actions = self.actions.save_all_and_transform(self.id, rw)?;
 
+        let id = if self.id == PipelineDefinitionId::nil() {
+            PipelineDefinitionId::new()
+        } else {
+            self.id
+        };
+
         let db_pipeline = DbPipelineDefinition {
-            id: self.id,
+            id,
             name: self.name.clone(),
             description: self.description.clone(),
             source_template: self.source_template.clone().into(),
@@ -81,19 +105,7 @@ impl PipelineDefinition {
     }
 }
 
-impl CategoryProfile {
-    pub fn save_all(&self, rw: &RwTransaction) -> Result<()> {
-        let db_profile = DbCategoryProfile {
-            id: self.id,
-            tags: self.tags.clone(),
-            pipeline: self.pipeline.save_all_and_transform(rw)?,
-        };
-
-        rw.insert(db_profile)?;
-
-        Ok(())
-    }
-}
+// DB types
 
 impl DbCategoryProfile {
     pub fn remove_all(mut self, rw: &RwTransaction) -> Result<()> {

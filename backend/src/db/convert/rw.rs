@@ -14,8 +14,11 @@ use crate::{
     },
 };
 
+// Primary types
+
 impl Action {
-    fn save_and_transform(&self, rw: &RwTransaction) -> Result<DbAction> {
+    /// Saves the [Action]. Because it may set new ids internally, `save_all_and_transform` cosumes self.
+    fn save_and_transform(self, rw: &RwTransaction) -> Result<DbAction> {
         let cloned = {
             let id = self.get_id();
             // if id not set, create new id
@@ -64,7 +67,8 @@ impl Action {
 }
 
 impl Selection<PipelineActionId> {
-    fn save_all_and_transform(&self, rw: &RwTransaction) -> Result<DbSelection> {
+    /// Saves the [Selection]. Because it may set new ids internally, `save_all_and_transform` cosumes self.
+    fn save_all_and_transform(self, rw: &RwTransaction) -> Result<DbSelection> {
         let selection = match self {
             Selection::Action(action) => DbSelection::Action(action.save_and_transform(rw)?),
             Selection::OneOf { selection, actions } => DbSelection::OneOf {
@@ -79,13 +83,14 @@ impl Selection<PipelineActionId> {
 }
 
 impl PipelineActionLookup {
+    /// Saves the [PipelineActionLookup]. Because it may set new ids internally, `save_all_and_transform` cosumes self.
     pub fn save_all_and_transform(
-        &self,
+        self,
         pipeline_id: PipelineDefinitionId,
         rw: &RwTransaction,
     ) -> Result<Vec<PipelineActionId>> {
         self.actions
-            .iter()
+            .into_iter()
             .map(|(k, v)| {
                 let settings = DbPipelineActionSettings {
                     id: (pipeline_id, k.clone()),
@@ -102,6 +107,8 @@ impl PipelineActionLookup {
             .collect::<Result<Vec<_>>>()
     }
 }
+
+// DB types
 
 impl DbCategoryProfile {
     pub fn remove_app_overrides(&self, rw: &RwTransaction) -> Result<()> {

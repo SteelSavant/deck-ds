@@ -1,15 +1,20 @@
-import { AutoStartRequest, CategoryProfile, CitraLayoutOption, CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, GetAppProfileRequest, GetAppProfileResponse, GetDefaultAppOverrideForProfileRequest, GetDefaultAppOverrideForProfileResponse, GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetSettingsResponse, GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineActionFor_Action, PipelineActionSettingsFor_Action, PipelineDefinitionFor_Action, PipelineFor_Action, ReifyPipelineRequest, ReifyPipelineResponse, SelectionFor_ActionAnd_PipelineActionFor_Action, SelectionFor_ActionAnd_String, SetAppProfileOverrideRequest, SetAppProfileSettingsRequest, SetProfileRequest, SetSettingsRequest, Template } from "./types/backend_api";
+import {
+    AutoStartRequest, CategoryProfile, CitraLayoutOption, CreateProfileRequest, CreateProfileResponse,
+    DeleteProfileRequest, GetAppProfileRequest, GetAppProfileResponse,
+    GetDefaultAppOverrideForProfileRequest, GetDefaultAppOverrideForProfileResponse,
+    GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetSettingsResponse,
+    GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineAction, PipelineDefinition,
+    ReifyPipelineRequest, ReifyPipelineResponse, SelectionFor_PipelineAction, SelectionFor_String, SetAppProfileOverrideRequest,
+    SetAppProfileSettingsRequest, SetProfileRequest, SetSettingsRequest, Template
+} from "./types/backend_api";
 import { call_backend, init_embedded, init_usdpl, target_usdpl } from "./usdpl_front";
 import { Err, Ok, Result } from "./util/result";
 
 export {
-    Action,
-    AutoStartRequest, CategoryProfile, CreateProfileRequest,
-    CreateProfileResponse, DeleteProfileRequest, ExternalDisplaySettings, GetProfileRequest,
+    Action, AppProfile, AutoStartRequest, CategoryProfile, CemuOptions, CitraOptions, CreateProfileRequest,
+    CreateProfileResponse, DeleteProfileRequest, DependencyError, DolphinOptions, ExternalDisplaySettings, GetProfileRequest,
     GetProfileResponse,
-    GetProfilesResponse,
-    GetTemplatesResponse,
-    PipelineTarget, ReifyPipelineRequest,
+    GetProfilesResponse, GetTemplatesResponse, GlobalConfig, LimitedMultiWindowLayout, MultiWindowLayout, PipelineAction, PipelineActionSettings, PipelineDefinition, PipelineTarget, ReifyPipelineRequest,
     ReifyPipelineResponse, RelativeLocation, SetProfileRequest, Template
 } from "./types/backend_api";
 
@@ -18,15 +23,11 @@ const USDPL_PORT: number = 44666;
 
 
 // Pipeline
-export type Pipeline = PipelineFor_Action;
-export type PipelineDefinition = PipelineDefinitionFor_Action;
-export type PipelineAction = PipelineActionFor_Action;
-export type PipelineActionSettings = PipelineActionSettingsFor_Action;
 export type ActionOneOf = { selection: string, actions: PipelineAction[] }
-export type ActionSelection = SelectionFor_ActionAnd_PipelineActionFor_Action;
+export type ActionSelection = SelectionFor_PipelineAction;
 
 export type DefinitionOneOf = { selection: string, actions: string[] }
-export type DefinitionSelection = SelectionFor_ActionAnd_String;
+export type DefinitionSelection = SelectionFor_String;
 
 export interface AppProfileOveride {
     profileId: string,

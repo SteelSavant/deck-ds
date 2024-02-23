@@ -1,7 +1,7 @@
 import { DialogButton, Focusable, showModal } from "decky-frontend-lib";
 import { ReactElement } from "react";
 import { FaExclamationTriangle } from "react-icons/fa";
-import { DependencyError } from "../types/backend_api";
+import { DependencyError } from "../backend";
 import ConfigErrorModal from "./ConfigErrorModal";
 
 export default function ConfigErrorWarning({ errors }: { errors: DependencyError[] | undefined }): ReactElement {

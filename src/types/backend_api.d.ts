@@ -6,7 +6,7 @@
  */
 
 export type PipelineTarget = "Desktop" | "Gamemode";
-export type SelectionFor_ActionAnd_String =
+export type SelectionFor_String =
   | {
       type: "Action";
       value: Action;
@@ -171,7 +171,7 @@ export type DependencyError =
       type: "FieldNotSet";
       value: string;
     };
-export type SelectionFor_ActionAnd_PipelineActionFor_Action =
+export type SelectionFor_PipelineAction =
   | {
       type: "Action";
       value: Action;
@@ -179,13 +179,13 @@ export type SelectionFor_ActionAnd_PipelineActionFor_Action =
   | {
       type: "OneOf";
       value: {
-        actions: PipelineActionFor_Action[];
+        actions: PipelineAction[];
         selection: string;
       };
     }
   | {
       type: "AllOf";
-      value: PipelineActionFor_Action[];
+      value: PipelineAction[];
     };
 
 /**
@@ -219,25 +219,26 @@ export interface AutoStartRequest {
   target: PipelineTarget;
 }
 export interface CreateProfileRequest {
-  pipeline: PipelineDefinitionFor_Action;
+  pipeline: PipelineDefinition;
 }
-export interface PipelineDefinitionFor_Action {
-  actions: PipelineActionLookupFor_Action;
+export interface PipelineDefinition {
+  actions: PipelineActionLookup;
   description: string;
+  id: string;
   name: string;
   primary_target_override?: PipelineTarget | null;
   register_exit_hooks: boolean;
   source_template: TemplateInfo;
   targets: {
-    [k: string]: SelectionFor_ActionAnd_String;
+    [k: string]: string[];
   };
 }
-export interface PipelineActionLookupFor_Action {
+export interface PipelineActionLookup {
   actions: {
-    [k: string]: PipelineActionSettingsFor_Action;
+    [k: string]: PipelineActionSettings;
   };
 }
-export interface PipelineActionSettingsFor_Action {
+export interface PipelineActionSettings {
   /**
    * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
    */
@@ -253,7 +254,7 @@ export interface PipelineActionSettingsFor_Action {
   /**
    * The value of the pipeline action
    */
-  selection: SelectionFor_ActionAnd_String;
+  selection: SelectionFor_String;
 }
 export interface DesktopSessionHandler {
   deck_is_primary_display: boolean;
@@ -374,14 +375,14 @@ export interface AppProfile {
   default_profile?: string | null;
   id: string;
   overrides: {
-    [k: string]: PipelineDefinitionFor_Action;
+    [k: string]: PipelineDefinition;
   };
 }
 export interface GetDefaultAppOverrideForProfileRequest {
   profile_id: string;
 }
 export interface GetDefaultAppOverrideForProfileResponse {
-  pipeline?: PipelineDefinitionFor_Action | null;
+  pipeline?: PipelineDefinition | null;
 }
 export interface GetProfileRequest {
   profile_id: string;
@@ -391,7 +392,7 @@ export interface GetProfileResponse {
 }
 export interface CategoryProfile {
   id: string;
-  pipeline: PipelineDefinitionFor_Action;
+  pipeline: PipelineDefinition;
   tags: string[];
 }
 export interface GetProfilesResponse {
@@ -417,31 +418,31 @@ export interface GetTemplatesResponse {
 }
 export interface Template {
   id: string;
-  pipeline: PipelineDefinitionFor_Action;
+  pipeline: PipelineDefinition;
   /**
    * The template's version; should be updated each time an action is moved, added, or removed
    */
   version: number;
 }
 export interface ReifyPipelineRequest {
-  pipeline: PipelineDefinitionFor_Action;
+  pipeline: PipelineDefinition;
 }
 export interface ReifyPipelineResponse {
   config_errors: {
     [k: string]: DependencyError[];
   };
-  pipeline: PipelineFor_Action;
+  pipeline: Pipeline;
 }
-export interface PipelineFor_Action {
+export interface Pipeline {
   description: string;
   name: string;
   primary_target_override?: PipelineTarget | null;
   register_exit_hooks: boolean;
   targets: {
-    [k: string]: SelectionFor_ActionAnd_PipelineActionFor_Action;
+    [k: string]: SelectionFor_PipelineAction;
   };
 }
-export interface PipelineActionFor_Action {
+export interface PipelineAction {
   description?: string | null;
   /**
    * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
@@ -460,11 +461,11 @@ export interface PipelineActionFor_Action {
   /**
    * The value of the pipeline action
    */
-  selection: SelectionFor_ActionAnd_PipelineActionFor_Action;
+  selection: SelectionFor_PipelineAction;
 }
 export interface SetAppProfileOverrideRequest {
   app_id: string;
-  pipeline: PipelineDefinitionFor_Action;
+  pipeline: PipelineDefinition;
   profile_id: string;
 }
 export interface SetAppProfileSettingsRequest {

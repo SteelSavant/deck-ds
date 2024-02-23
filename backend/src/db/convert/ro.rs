@@ -20,7 +20,7 @@ use crate::{
 };
 
 impl DbAction {
-    pub fn transform(&self, ro: &RTransaction) -> Result<Action> {
+    fn transform(&self, ro: &RTransaction) -> Result<Action> {
         let id = self.id;
         let dtype: ActionType = serde_json::from_str(&self.dtype)?;
 
@@ -64,7 +64,7 @@ impl DbAction {
 }
 
 impl DbSelection {
-    pub fn transform(&self, ro: &RTransaction) -> Result<Selection<PipelineActionId>> {
+    fn transform(&self, ro: &RTransaction) -> Result<Selection<PipelineActionId>> {
         let selection = match self {
             DbSelection::Action(action) => Selection::Action(action.transform(ro)?),
             DbSelection::OneOf { selection, actions } => Selection::OneOf {

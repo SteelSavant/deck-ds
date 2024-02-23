@@ -1,8 +1,7 @@
 import { showModal } from "decky-frontend-lib";
-import { CategoryProfile, PipelineTarget, autoStart, getProfile, reifyPipeline } from "../backend";
+import { CategoryProfile, DependencyError, PipelineTarget, autoStart, getProfile, reifyPipeline } from "../backend";
 import ConfigErrorModal from "../components/ConfigErrorModal";
 import { ShortAppDetails } from "../context/appContext";
-import { DependencyError } from "../types/backend_api";
 import useProfiles from "./useProfiles";
 
 export interface LaunchActions {
