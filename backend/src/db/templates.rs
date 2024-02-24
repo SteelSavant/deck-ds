@@ -3,8 +3,6 @@ use std::{collections::HashMap, fmt::Debug};
 newtype_uuid!(ProfileId);
 newtype_strid!("", AppId);
 
-use strum::IntoEnumIterator;
-
 use crate::{
     macros::{newtype_strid, newtype_uuid},
     pipeline::{
@@ -69,6 +67,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                     primary_target_override: None,
                     register_exit_hooks: true,
                     actions,
+                    user_actions: vec![],
                 },
             }
         }

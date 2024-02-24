@@ -117,6 +117,7 @@ impl DbPipelineDefinition {
             primary_target_override: self.primary_target_override,
             root: self.root.clone(),
             actions: PipelineActionLookup { actions },
+            user_actions: vec![],
         })
     }
 }
