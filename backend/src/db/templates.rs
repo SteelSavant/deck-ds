@@ -67,7 +67,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                     primary_target_override: None,
                     register_exit_hooks: true,
                     actions,
-                    user_actions: vec![],
+                    secondary_actions: vec![],
                 },
             }
         }
@@ -77,7 +77,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
         // melonDS
         TemplateBuilder {
             id: TemplateId::parse("c6430131-50e0-435e-a917-5ae3cfa46e3c"),
-            root: PipelineActionId::new("core:melonds:melonds"),
+            root: PipelineActionId::new("core:melonds:root"),
             action_overrides: Default::default(),
             enabled_overrides: Default::default(),
             is_visible_on_qam_overrides: Default::default(),
@@ -85,7 +85,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
         // Citra
         TemplateBuilder {
             id: TemplateId::parse("fe82be74-22b9-4135-b7a0-cb6d8f51aecd"),
-            root: PipelineActionId::new("core:citra:citra"),
+            root: PipelineActionId::new("core:citra:root"),
             action_overrides: Default::default(),
             enabled_overrides: Default::default(),
             is_visible_on_qam_overrides: Default::default(),
@@ -93,7 +93,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
         // Cemu
         TemplateBuilder {
             id: TemplateId::parse("33c863e5-2739-4bc3-b9bc-4798bac8682d"),
-            root: PipelineActionId::new("core:cemu:cemu"),
+            root: PipelineActionId::new("core:cemu:root"),
             action_overrides: Default::default(),
             enabled_overrides: Default::default(),
             is_visible_on_qam_overrides: Default::default(),
@@ -101,7 +101,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
         // App
         TemplateBuilder {
             id: TemplateId::parse("84f870e9-9491-41a9-8837-d5a6f591f687"),
-            root: PipelineActionId::new("core:app:app"),
+            root: PipelineActionId::new("core:app:root"),
             action_overrides: HashMap::from_iter([(
                 PipelineActionId::new("core:display:display_config:desktop"),
                 Action::DisplayConfig(DisplayConfig {

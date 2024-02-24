@@ -211,7 +211,7 @@ mod tests {
                 primary_target_override: None,
                 root: pipeline_action_id.clone(),
                 actions,
-                user_actions: vec![],
+                secondary_actions: vec![],
             },
         };
 
@@ -288,10 +288,10 @@ mod tests {
         let profile1 = ProfileId::new();
         let profile2 = ProfileId::new();
 
-        let targets1 = PipelineActionId::new("core:citra:citra");
+        let targets1 = PipelineActionId::new("core:citra:root");
         let actions1 = registrar.make_lookup(&targets1);
 
-        let targets2 = PipelineActionId::new("core:melonds:melonds");
+        let targets2 = PipelineActionId::new("core:melonds:root");
         let actions2 = registrar.make_lookup(&targets2);
 
         let overrides: HashMap<_, _, RandomState> = HashMap::from_iter(vec![
@@ -305,7 +305,7 @@ mod tests {
                     primary_target_override: None,
                     root: targets1.clone(),
                     actions: actions1,
-                    user_actions: vec![],
+                    secondary_actions: vec![],
                 },
             ),
             (
@@ -318,7 +318,7 @@ mod tests {
                     primary_target_override: None,
                     root: targets2.clone(),
                     actions: actions2,
-                    user_actions: vec![],
+                    secondary_actions: vec![],
                 },
             ),
         ]);

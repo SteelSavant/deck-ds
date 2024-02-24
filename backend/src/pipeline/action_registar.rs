@@ -255,16 +255,6 @@ impl PipelineActionRegistarBuilder {
                         }.into(),
                     })
                 })
-                // .with_group("secondary", |group| {
-                //     group.with_action("flatpak", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
-                //         name: todo!(),
-                //         description: todo!(),
-                //         enabled: todo!(),
-                //         profile_override: todo!(),
-                //         is_visible_on_qam: todo!(),
-                //         selection: todo!(),
-                //     })
-                // })
                 .with_group("citra", |group| {
                     let citra_name = "Citra".to_string();
                     let citra_description = Some("Maps primary and secondary windows to different screens for Citra. Allows optional Citra layout configuration.".to_string());
@@ -272,7 +262,7 @@ impl PipelineActionRegistarBuilder {
                     let citra_layout_name = "Layout".to_string();
                     let citra_layout_description = Some("Edits Citra ini file to desired layout settings.".to_string());
 
-                    group.with_action("citra", None, PipelineActionDefinitionBuilder {
+                    group.with_action("root", None, PipelineActionDefinitionBuilder {
                         name: citra_name.clone(),
                         description: citra_description.clone(),
                         enabled: None,
@@ -368,7 +358,7 @@ impl PipelineActionRegistarBuilder {
                     let cemu_layout_name = "Layout".to_string();
                     let cemu_layout_description = Some("Edits Cemu settings.xml file to desired settings.".to_string());
 
-                    group.with_action("cemu", None, PipelineActionDefinitionBuilder {
+                    group.with_action("root", None, PipelineActionDefinitionBuilder {
                         name: cemu_name.clone(),
                         description: cemu_description.clone(),
                         enabled: None,
@@ -485,7 +475,7 @@ impl PipelineActionRegistarBuilder {
                     let melonds_layout_name = "Layout".to_string();
                     let melonds_layout_description = Some("Edits melonDS ini file to desired layout settings.".to_string());
 
-                    group.with_action("melonds", None, PipelineActionDefinitionBuilder {
+                    group.with_action("root", None, PipelineActionDefinitionBuilder {
                         name: melonds_name.clone(),
                         description: melonds_description.clone(),
                         enabled: None,
@@ -562,7 +552,7 @@ impl PipelineActionRegistarBuilder {
                     let app_name =  "App".to_string();
                     let app_description = Some("Launches an application in desktop mode.".to_string());
 
-                    group.with_action("app", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                    group.with_action("root", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
                         name: app_name.clone(),
                         description: app_description.clone(),
                         enabled: None,
@@ -575,6 +565,9 @@ impl PipelineActionRegistarBuilder {
                     })
                 })
         })
+        // .with_scope("secondary", |scope| {
+        //     todo!("secondary actions; for now, browser flatpaks (or custom) sites")
+        // })
     }
 }
 
@@ -619,12 +612,12 @@ mod tests {
     fn test_make_cemu_lookup() {
         let registrar = PipelineActionRegistrar::builder().with_core().build();
 
-        let root = PipelineActionId::new("core:cemu:cemu");
+        let root = PipelineActionId::new("core:cemu:root");
 
         let lookup = registrar.make_lookup(&root);
         let expected_keys: HashSet<PipelineActionId, RandomState> = HashSet::from_iter(
             [
-                "core:cemu:cemu",
+                "core:cemu:root",
                 "core:cemu:multi_window:desktop",
                 "core:cemu:source",
                 "core:cemu:flatpak_source",

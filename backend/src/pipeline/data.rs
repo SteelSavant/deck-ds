@@ -58,7 +58,7 @@ pub struct PipelineDefinition {
     pub primary_target_override: Option<PipelineTarget>,
     /// Root action in the tree. Selection be an AllOf.
     pub root: PipelineActionId,
-    pub user_actions: Vec<PipelineActionId>,
+    pub secondary_actions: Vec<PipelineActionId>,
     pub actions: PipelineActionLookup,
 }
 
