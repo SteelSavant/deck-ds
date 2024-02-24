@@ -17,7 +17,7 @@ use crate::{
             session_handler::DesktopSessionHandler,
             ActionId,
         },
-        data::{PipelineActionId, PipelineDefinitionId, PipelineTarget, TemplateId, TemplateInfo},
+        data::{PipelineActionId, PipelineDefinitionId, PipelineTarget, TemplateId},
     },
     settings::{AppId, ProfileId},
 };
@@ -71,36 +71,11 @@ pub struct DbPipelineDefinition {
     #[primary_key]
     pub id: PipelineDefinitionId,
     pub name: String,
-    pub source_template: DbTemplateInfo,
     pub description: String,
     pub register_exit_hooks: bool,
     pub primary_target_override: Option<PipelineTarget>,
-    pub targets: HashMap<PipelineTarget, Vec<PipelineActionId>>,
+    pub root: PipelineActionId,
     pub actions: Vec<PipelineActionId>,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct DbTemplateInfo {
-    pub id: TemplateId,
-    pub version: u32,
-}
-
-impl From<TemplateInfo> for DbTemplateInfo {
-    fn from(value: TemplateInfo) -> Self {
-        Self {
-            id: value.id,
-            version: value.version,
-        }
-    }
-}
-
-impl From<DbTemplateInfo> for TemplateInfo {
-    fn from(value: DbTemplateInfo) -> Self {
-        Self {
-            id: value.id,
-            version: value.version,
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -807,7 +782,7 @@ impl From<DisplayConfig> for DbDisplayConfig {
         Self {
             id: value.id,
             external_display_settings: value.external_display_settings.into(),
-            deck_location: value.deck_location.map(|v| v.into()),
+            deck_location: value.deck_location.map(std::convert::Into::into),
             deck_is_primary_display: value.deck_is_primary_display,
         }
     }
@@ -818,7 +793,7 @@ impl From<DbDisplayConfig> for DisplayConfig {
         Self {
             id: value.id,
             external_display_settings: value.external_display_settings.into(),
-            deck_location: value.deck_location.map(|v| v.into()),
+            deck_location: value.deck_location.map(std::convert::Into::into),
             deck_is_primary_display: value.deck_is_primary_display,
         }
     }

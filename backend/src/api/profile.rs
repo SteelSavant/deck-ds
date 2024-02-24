@@ -8,6 +8,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use anyhow::Result;
+use strum::IntoEnumIterator;
 
 use crate::{
     asset::AssetManager,
@@ -16,8 +17,8 @@ use crate::{
         action::{Action, ErasedPipelineAction},
         action_registar::PipelineActionRegistrar,
         data::{
-            Pipeline, PipelineActionId, PipelineDefinition, PipelineDefinitionId, RuntimeSelection,
-            Template,
+            Pipeline, PipelineActionId, PipelineDefinition, PipelineDefinitionId, PipelineTarget,
+            RuntimeSelection, Template,
         },
         dependency::DependencyError,
         executor::PipelineContext,
@@ -340,7 +341,7 @@ pub fn get_default_app_override_pipeline_for_profile(
                         pipeline: profile.map(|profile| {
                             let pipeline = profile.pipeline;
 
-                            let mut lookup = registrar.make_lookup(&pipeline.targets);
+                            let mut lookup = registrar.make_lookup(&pipeline.root);
 
                             for (id, action) in lookup.actions.iter_mut() {
                                 action.profile_override = Some(args.profile_id);

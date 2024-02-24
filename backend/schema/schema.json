@@ -1563,8 +1563,7 @@
         "id",
         "name",
         "register_exit_hooks",
-        "source_template",
-        "targets"
+        "root"
       ],
       "properties": {
         "actions": {
@@ -1593,17 +1592,9 @@
         "register_exit_hooks": {
           "type": "boolean"
         },
-        "source_template": {
-          "$ref": "#/definitions/TemplateInfo"
-        },
-        "targets": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
+        "root": {
+          "description": "Root action in the tree. Selection be an AllOf.",
+          "type": "string"
         }
       }
     },
@@ -1852,8 +1843,7 @@
       "type": "object",
       "required": [
         "id",
-        "pipeline",
-        "version"
+        "pipeline"
       ],
       "properties": {
         "id": {
@@ -1862,31 +1852,6 @@
         },
         "pipeline": {
           "$ref": "#/definitions/PipelineDefinition"
-        },
-        "version": {
-          "description": "The template's version; should be updated each time an action is moved, added, or removed",
-          "type": "integer",
-          "format": "uint32",
-          "minimum": 0.0
-        }
-      }
-    },
-    "TemplateInfo": {
-      "type": "object",
-      "required": [
-        "id",
-        "version"
-      ],
-      "properties": {
-        "id": {
-          "type": "string",
-          "format": "uuid"
-        },
-        "version": {
-          "description": "The template's version; should be updated each time an action is moved, added, or removed",
-          "type": "integer",
-          "format": "uint32",
-          "minimum": 0.0
         }
       }
     },

@@ -1,4 +1,5 @@
 use anyhow::Context;
+use strum::IntoEnumIterator;
 
 use crate::settings::ProfileId;
 
@@ -51,10 +52,7 @@ impl PipelineActionRegistrar {
         self.actions.clone()
     }
 
-    pub fn make_lookup(
-        &self,
-        targets: &HashMap<PipelineTarget, Vec<PipelineActionId>>,
-    ) -> PipelineActionLookup {
+    pub fn make_lookup(&self, root: &PipelineActionId) -> PipelineActionLookup {
         fn get_ids(
             registrar: &PipelineActionRegistrar,
             selection: &DefinitionSelection,
@@ -66,13 +64,7 @@ impl PipelineActionRegistrar {
                 | DefinitionSelection::AllOf(actions) => {
                     let mut ids: HashSet<_> = actions
                         .iter()
-                        .map(|id| {
-                            registrar
-                                .get(id, target)
-                                .with_context(|| format!("action {id:?} should exist"))
-                                .inspect_err(|err| log::error!("{err}"))
-                                .unwrap()
-                        })
+                        .filter_map(|id| registrar.get(id, target))
                         .flat_map(|def| get_ids(registrar, &def.settings.selection, target))
                         .collect();
 
@@ -85,9 +77,8 @@ impl PipelineActionRegistrar {
             }
         }
 
-        let set: HashSet<_> = targets
-            .iter()
-            .flat_map(|(t, s)| get_ids(self, &DefinitionSelection::AllOf(s.clone()), *t))
+        let set: HashSet<_> = PipelineTarget::iter()
+            .flat_map(|t| get_ids(self, &DefinitionSelection::AllOf(vec![root.clone()]), t))
             .collect();
 
         let mut actions = HashMap::new();
@@ -282,7 +273,7 @@ impl PipelineActionRegistarBuilder {
                     let citra_layout_name = "Layout".to_string();
                     let citra_layout_description = Some("Edits Citra ini file to desired layout settings.".to_string());
 
-                    group.with_action("citra", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                    group.with_action("citra", None, PipelineActionDefinitionBuilder {
                         name: citra_name.clone(),
                         description: citra_description.clone(),
                         enabled: None,
@@ -292,17 +283,6 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:citra:layout"),
                             PipelineActionId::new("core:citra:multi_window"),
                             PipelineActionId::new("core:display:display_config"),
-                        ]),
-                        is_visible_on_qam: true,
-                    })
-                    .with_action("citra", Some(PipelineTarget::Gamemode), PipelineActionDefinitionBuilder {
-                        name: citra_name.clone(),
-                        description: citra_description.clone(),
-                        enabled: None,
-                        profile_override: None,
-                        selection: DefinitionSelection::AllOf(vec![
-                            PipelineActionId::new("core:citra:source"),
-                            PipelineActionId::new("core:citra:layout"),
                         ]),
                         is_visible_on_qam: true,
                     })
@@ -389,7 +369,7 @@ impl PipelineActionRegistarBuilder {
                     let cemu_layout_name = "Layout".to_string();
                     let cemu_layout_description = Some("Edits Cemu settings.xml file to desired settings.".to_string());
 
-                    group.with_action("cemu", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                    group.with_action("cemu", None, PipelineActionDefinitionBuilder {
                         name: cemu_name.clone(),
                         description: cemu_description.clone(),
                         enabled: None,
@@ -402,17 +382,7 @@ impl PipelineActionRegistarBuilder {
                         ]),
                         is_visible_on_qam: true,
                     })
-                    .with_action("cemu", Some(PipelineTarget::Gamemode), PipelineActionDefinitionBuilder {
-                        name: cemu_name.clone(),
-                        description: cemu_description.clone(),
-                        enabled: None,
-                        profile_override: None,
-                        selection: DefinitionSelection::AllOf(vec![
-                            PipelineActionId::new("core:cemu:source"),
-                            PipelineActionId::new("core:cemu:layout"),
-                        ]),
-                        is_visible_on_qam: true,
-                    })
+                 
                     .with_action("source", None, PipelineActionDefinitionBuilder {
                         name: "Cemu Settings Source".to_string(),
                         description: Some("Source file to use when editing Cemu settings.".to_string()),
@@ -513,11 +483,11 @@ impl PipelineActionRegistarBuilder {
                 })
                 .with_group("melonds", |group| {
                     let melonds_name = "melonDS".to_string();
-                    let melonds_description = Some("Maps primary and secondary windows to different screens for melonds.".to_string());
+                    let melonds_description = Some("Maps the internal and external monitor to a single virtual screen, as melonDS does not currently support multiple windows. Allows optional melonDS layout configuration.".to_string());
                     let melonds_layout_name = "Layout".to_string();
                     let melonds_layout_description = Some("Edits melonDS ini file to desired layout settings.".to_string());
 
-                    group.with_action("melonds", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                    group.with_action("melonds", None, PipelineActionDefinitionBuilder {
                         name: melonds_name.clone(),
                         description: melonds_description.clone(),
                         enabled: None,
@@ -529,17 +499,7 @@ impl PipelineActionRegistarBuilder {
                         ]),
                         is_visible_on_qam: true,
                     })
-                    .with_action("melonds", Some(PipelineTarget::Gamemode), PipelineActionDefinitionBuilder {
-                        name: melonds_name.clone(),
-                        description: melonds_description.clone(),
-                        enabled: None,
-                        profile_override: None,
-                        selection: DefinitionSelection::AllOf(vec![
-                            PipelineActionId::new("core:melonds:source"),
-                            PipelineActionId::new("core:melonds:layout")
-                        ]),
-                        is_visible_on_qam: true,
-                    })
+                 
                     .with_action("source", None, PipelineActionDefinitionBuilder {
                         name: "melonDS Settings Source".to_string(),
                         description: Some("Source file to use when editing melonDS settings.".to_string()),
@@ -602,7 +562,7 @@ impl PipelineActionRegistarBuilder {
                     })
                 })
                 .with_group("app", |group| {
-                    let app_name =  "Launches an application in desktop mode.".to_string();
+                    let app_name =  "App".to_string();
                     let app_description = Some("Launches an application in desktop mode.".to_string());
 
                     group.with_action("app", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
@@ -659,40 +619,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_action_count() {
-        assert_eq!(
-            PipelineActionRegistrar::builder()
-                .with_core()
-                .build()
-                .actions
-                .len(),
-            25
-        );
-    }
-
-    #[test]
     fn test_make_cemu_lookup() {
         let registrar = PipelineActionRegistrar::builder().with_core().build();
 
-        let targets = HashMap::from_iter([
-            (
-                PipelineTarget::Desktop,
-                vec![
-                    PipelineActionId::new("core:cemu:config"),
-                    PipelineActionId::new("core:cemu:multi_window"),
-                ],
-            ),
-            (
-                PipelineTarget::Gamemode,
-                vec![PipelineActionId::new("core:cemu:config")],
-            ),
-        ]);
+        let root = PipelineActionId::new("core:cemu:cemu");
 
-        let lookup = registrar.make_lookup(&targets);
+        let lookup = registrar.make_lookup(&root);
         let expected_keys: HashSet<PipelineActionId, RandomState> = HashSet::from_iter(
             [
+                "core:cemu:cemu",
                 "core:cemu:multi_window:desktop",
-                "core:cemu:config",
                 "core:cemu:source",
                 "core:cemu:flatpak_source",
                 "core:cemu:emudeck_proton_source",

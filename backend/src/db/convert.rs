@@ -7,7 +7,7 @@ use native_db::transaction::{RTransaction, RwTransaction};
 
 use crate::{
     db::model::{DbAppOverride, DbCategoryProfile, DbPipelineActionSettings, DbPipelineDefinition},
-    pipeline::data::{PipelineDefinition, PipelineDefinitionId},
+    pipeline::data::{PipelineActionId, PipelineDefinition, PipelineDefinitionId},
     settings::{AppId, AppProfile, CategoryProfile},
 };
 
@@ -94,10 +94,9 @@ impl PipelineDefinition {
             id,
             name: self.name.clone(),
             description: self.description.clone(),
-            source_template: self.source_template.clone().into(),
             register_exit_hooks: self.register_exit_hooks,
             primary_target_override: self.primary_target_override,
-            targets: self.targets.clone(),
+            root: self.root.clone(),
             actions,
         };
 
@@ -111,7 +110,7 @@ impl DbCategoryProfile {
     pub fn remove_all(mut self, rw: &RwTransaction) -> Result<()> {
         self.remove_app_overrides(rw)?;
 
-        let mut ids: Vec<_> = self.pipeline.targets.into_values().flatten().collect();
+        let mut ids = vec![self.pipeline.root];
         let mut actions = self.pipeline.actions;
         ids.append(&mut actions);
 
@@ -124,7 +123,7 @@ impl DbCategoryProfile {
             }
         }
 
-        self.pipeline.targets = HashMap::new();
+        self.pipeline.root = PipelineActionId::new("");
         self.pipeline.actions = vec![];
 
         Ok(rw.remove(self)?)

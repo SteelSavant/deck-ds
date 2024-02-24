@@ -1,5 +1,6 @@
 use derive_more::Display;
 use std::collections::HashMap;
+use strum::{EnumIter, IntoEnumIterator};
 
 use crate::{
     macros::{newtype_strid, newtype_uuid},
@@ -34,25 +35,17 @@ impl PipelineActionId {
     }
 }
 
-#[derive(Copy, Debug, Display, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, JsonSchema)]
+#[derive(
+    Copy, Debug, Display, Clone, PartialEq, Eq, Hash, EnumIter, Serialize, Deserialize, JsonSchema,
+)]
 pub enum PipelineTarget {
     Desktop,
     Gamemode,
 }
 
-#[cfg_attr(test, derive(Default))]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-pub struct TemplateInfo {
-    pub id: TemplateId,
-    /// The template's version; should be updated each time an action is moved, added, or removed
-    pub version: u32,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Template {
     pub id: TemplateId,
-    /// The template's version; should be updated each time an action is moved, added, or removed
-    pub version: u32,
     pub pipeline: PipelineDefinition,
 }
 
@@ -60,11 +53,11 @@ pub struct Template {
 pub struct PipelineDefinition {
     pub id: PipelineDefinitionId,
     pub name: String,
-    pub source_template: TemplateInfo,
     pub description: String,
     pub register_exit_hooks: bool,
     pub primary_target_override: Option<PipelineTarget>,
-    pub targets: HashMap<PipelineTarget, Vec<PipelineActionId>>,
+    /// Root action in the tree. Selection be an AllOf.
+    pub root: PipelineActionId,
     pub actions: PipelineActionLookup,
 }
 
@@ -194,17 +187,15 @@ impl PipelineDefinition {
         profiles: &[CategoryProfile],
         registrar: &PipelineActionRegistrar,
     ) -> Result<Pipeline> {
-        let targets = self
-            .targets
-            .iter()
-            .map(|(t, s)| {
-                s.iter()
-                    .map(|v| v.reify(*t, self, profiles, registrar))
-                    .collect::<Result<Vec<_>>>()
-                    .map(|v| (*t, RuntimeSelection::AllOf(v)))
+        let targets = PipelineTarget::iter()
+            .map(|t| {
+                self.root
+                    .reify(t, self, profiles, registrar)
+                    .map(|v| v.map(|v| (t, v.selection)))
             })
             .collect::<Result<Vec<_>>>()?
             .into_iter()
+            .filter_map(std::convert::identity)
             .collect::<HashMap<_, _>>();
 
         Ok(Pipeline {
@@ -224,34 +215,34 @@ impl PipelineActionId {
         pipeline: &PipelineDefinition,
         profiles: &[CategoryProfile],
         registrar: &PipelineActionRegistrar,
-    ) -> Result<PipelineAction> {
-        let config = pipeline.actions.get(self, target).with_context(|| {
-            format!(
-                "Failed to get action {:?} for current pipeline @ {}",
-                self, target
-            )
-        })?;
+    ) -> Result<Option<PipelineAction>> {
+        let config = pipeline.actions.get(self, target);
 
-        let definition = registrar
-            .get(self, target)
-            .with_context(|| format!("Failed to get registered action {:?} @ {}", self, target))?;
+        match config {
+            Some(config) => {
+                let definition = registrar.get(self, target).with_context(|| {
+                    format!("Failed to get registered action {:?} @ {}", self, target)
+                })?;
 
-        let settings = config
-            .profile_override
-            .and_then(|profile| {
-                profiles
-                    .iter()
-                    .find(|p| p.id == profile)
-                    .and_then(|p| p.pipeline.actions.get(self, target))
-                    .map(|config| (Some(profile), config))
-            })
-            .unwrap_or_else(|| (None, config));
+                let settings = config
+                    .profile_override
+                    .and_then(|profile| {
+                        profiles
+                            .iter()
+                            .find(|p| p.id == profile)
+                            .and_then(|p| p.pipeline.actions.get(self, target))
+                            .map(|config| (Some(profile), config))
+                    })
+                    .unwrap_or_else(|| (None, config));
 
-        let resolved_action = settings.1.reify(
-            settings.0, definition, target, pipeline, profiles, registrar,
-        )?;
+                let resolved_action = settings.1.reify(
+                    settings.0, definition, target, pipeline, profiles, registrar,
+                )?;
 
-        Ok(resolved_action)
+                Ok(Some(resolved_action))
+            }
+            None => Ok(None),
+        }
     }
 }
 
@@ -306,7 +297,10 @@ impl ConfigSelection {
                         .collect::<Result<Vec<_>>>();
                     actions.map(|actions| RuntimeSelection::OneOf {
                         selection: selection.clone(),
-                        actions,
+                        actions: actions
+                            .into_iter()
+                            .filter_map(std::convert::identity)
+                            .collect(),
                     })
                 }
                 _ => Err(anyhow::anyhow!("selection type mismatch in reify config")),
@@ -316,14 +310,14 @@ impl ConfigSelection {
                     .iter()
                     .map(|a| a.reify(target, pipeline, profiles, registrar))
                     .collect::<Result<Vec<_>>>()
-                    .map(RuntimeSelection::AllOf),
+                    .map(|v| RuntimeSelection::AllOf(v.into_iter().filter_map(|v| v).collect())),
                 _ => Err(anyhow::anyhow!("selection type mismatch in reify config")),
             },
-            ConfigSelection::UserDefined(actions) => actions
-                .iter()
-                .map(|a| a.reify(target, pipeline, profiles, registrar))
-                .collect::<Result<Vec<_>>>()
-                .map(RuntimeSelection::UserDefined),
+            ConfigSelection::UserDefined(actions) => todo!(), // actions
+                                                              //     .iter()
+                                                              //     .map(|a| a.reify(target, pipeline, profiles, registrar))
+                                                              //     .collect::<Result<Vec<_>>>()
+                                                              //     .map(RuntimeSelection::UserDefined),
         }
     }
 }

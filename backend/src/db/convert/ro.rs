@@ -113,10 +113,9 @@ impl DbPipelineDefinition {
             id: self.id,
             name: self.name.clone(),
             description: self.description.clone(),
-            source_template: self.source_template.into(),
             register_exit_hooks: self.register_exit_hooks,
             primary_target_override: self.primary_target_override,
-            targets: self.targets.clone(),
+            root: self.root.clone(),
             actions: PipelineActionLookup { actions },
         })
     }

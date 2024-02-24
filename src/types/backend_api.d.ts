@@ -237,10 +237,10 @@ export interface PipelineDefinition {
   name: string;
   primary_target_override?: PipelineTarget | null;
   register_exit_hooks: boolean;
-  source_template: TemplateInfo;
-  targets: {
-    [k: string]: string[];
-  };
+  /**
+   * Root action in the tree. Selection be an AllOf.
+   */
+  root: string;
 }
 export interface PipelineActionLookup {
   actions: {
@@ -361,13 +361,6 @@ export interface CustomFileOptions {
    */
   valid_ext: string[];
 }
-export interface TemplateInfo {
-  id: string;
-  /**
-   * The template's version; should be updated each time an action is moved, added, or removed
-   */
-  version: number;
-}
 export interface CreateProfileResponse {
   profile_id: string;
 }
@@ -428,10 +421,6 @@ export interface GetTemplatesResponse {
 export interface Template {
   id: string;
   pipeline: PipelineDefinition;
-  /**
-   * The template's version; should be updated each time an action is moved, added, or removed
-   */
-  version: number;
 }
 export interface ReifyPipelineRequest {
   pipeline: PipelineDefinition;

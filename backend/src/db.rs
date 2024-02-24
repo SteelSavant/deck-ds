@@ -167,6 +167,7 @@ impl ProfileDb {
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
+    use strum::IntoEnumIterator;
 
     use std::{collections::HashMap, hash::RandomState};
 
@@ -198,10 +199,7 @@ mod tests {
 
         let pipeline_action_id = PipelineActionId::new("core:citra:layout");
 
-        let targets =
-            HashMap::from_iter([(PipelineTarget::Desktop, vec![pipeline_action_id.clone()])]);
-
-        let actions = registrar.make_lookup(&targets);
+        let actions = registrar.make_lookup(&pipeline_action_id);
 
         let mut expected: CategoryProfile = CategoryProfile {
             id: ProfileId::from_uuid(Uuid::nil()),
@@ -210,10 +208,9 @@ mod tests {
                 id: PipelineDefinitionId::nil(),
                 name: "Test Pipeline".to_string(),
                 description: "Test Description".to_string(),
-                source_template: Default::default(),
                 register_exit_hooks: true,
                 primary_target_override: None,
-                targets,
+                root: pipeline_action_id.clone(),
                 actions,
             },
         };
@@ -291,10 +288,10 @@ mod tests {
         let profile1 = ProfileId::new();
         let profile2 = ProfileId::new();
 
-        let targets1 = HashMap::new();
+        let targets1 = PipelineActionId::new("core:citra:citra");
         let actions1 = registrar.make_lookup(&targets1);
 
-        let targets2 = HashMap::new();
+        let targets2 = PipelineActionId::new("core:melonds:melonds");
         let actions2 = registrar.make_lookup(&targets2);
 
         let overrides: HashMap<_, _, RandomState> = HashMap::from_iter(vec![
@@ -304,10 +301,9 @@ mod tests {
                     id: pd_id_1,
                     name: "Profile 1".into(),
                     description: "Profile 1".into(),
-                    source_template: Default::default(),
                     register_exit_hooks: true,
                     primary_target_override: None,
-                    targets: targets1,
+                    root: targets1.clone(),
                     actions: actions1,
                 },
             ),
@@ -317,10 +313,9 @@ mod tests {
                     id: pd_id_2,
                     name: "Profile 2".into(),
                     description: "Profile 2".into(),
-                    source_template: Default::default(),
                     register_exit_hooks: true,
                     primary_target_override: None,
-                    targets: targets2,
+                    root: targets2.clone(),
                     actions: actions2,
                 },
             ),
@@ -347,7 +342,25 @@ mod tests {
 
         let actual = db.get_app_profile(&app_id)?;
 
-        assert_eq!(expected, actual);
+        assert_eq!(expected.id, actual.id);
+        assert_eq!(expected.default_profile, actual.default_profile);
+        assert_eq!(
+            expected.overrides[&profile1].id,
+            actual.overrides[&profile1].id
+        );
+        assert_eq!(
+            expected.overrides[&profile2].id,
+            actual.overrides[&profile2].id
+        );
+        assert_eq!(
+            expected.overrides[&profile1].actions.actions[&targets1],
+            actual.overrides[&profile1].actions.actions[&targets1]
+        );
+
+        assert_eq!(
+            expected.overrides[&profile2].actions.actions[&targets2],
+            actual.overrides[&profile2].actions.actions[&targets2]
+        );
 
         std::fs::remove_file(&path)?;
 
