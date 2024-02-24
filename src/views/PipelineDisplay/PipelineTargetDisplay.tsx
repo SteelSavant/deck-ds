@@ -8,14 +8,12 @@ import { EditAction } from "../../components/EditAction";
 import { ConfigErrorContext } from "../../context/configErrorContext";
 import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
 
-export default function PipelineTargetDisplay({ root, description }: {
+export default function PipelineTargetDisplay({ root, }: {
     root: RuntimeSelection,
-    description: ReactElement
 }): ReactElement {
     return (
         <DialogBody>
             <DialogControlsSection>
-                <Field focusable={false} description={description} />
                 {buildSelection('root', root, root.type === 'AllOf' ? -1 : 0, false)}
             </DialogControlsSection>
         </DialogBody>

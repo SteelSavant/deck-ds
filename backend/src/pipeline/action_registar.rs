@@ -17,8 +17,8 @@ use super::{
         ActionId,
     },
     data::{
-        PipelineActionDefinition, PipelineActionId, PipelineActionLookup, PipelineActionSettings,
-        PipelineTarget, DefinitionSelection,
+        DefinitionSelection, PipelineActionDefinition, PipelineActionId, PipelineActionLookup,
+        PipelineActionSettings, PipelineTarget,
     },
 };
 use std::{
@@ -62,7 +62,8 @@ impl PipelineActionRegistrar {
         ) -> HashSet<(PipelineActionId, PipelineTarget)> {
             match selection {
                 DefinitionSelection::Action(_) | DefinitionSelection::UserDefined => HashSet::new(),
-                DefinitionSelection::OneOf { actions, .. } | DefinitionSelection::AllOf(actions) => {
+                DefinitionSelection::OneOf { actions, .. }
+                | DefinitionSelection::AllOf(actions) => {
                     let mut ids: HashSet<_> = actions
                         .iter()
                         .map(|id| {
@@ -93,7 +94,7 @@ impl PipelineActionRegistrar {
 
         for (id, target) in set {
             if let Some(action) = self.get(&id, target) {
-                actions.insert(action.id.clone(), action.settings.clone() .into());
+                actions.insert(action.id.clone(), action.settings.clone().into());
             }
         }
 
@@ -215,6 +216,9 @@ impl PipelineActionRegistarBuilder {
     pub fn with_core(self) -> Self {
         // All actions in the registrar have nil ActionIds, since they're not stored in the DB.
         self.with_scope("core", |scope| {
+            let multi_window_name = "Multi-Window Emulation".to_string();
+            let multi_window_description = Some("Manages windows for known emulators configurations with multiple display windows.".to_string());
+
             scope
                 .with_group("display", |group| {
                     group.with_action(
@@ -261,17 +265,46 @@ impl PipelineActionRegistarBuilder {
                         }.into(),
                     })
                 })
+                // .with_group("secondary", |group| {
+                //     group.with_action("flatpak", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                //         name: todo!(),
+                //         description: todo!(),
+                //         enabled: todo!(),
+                //         profile_override: todo!(),
+                //         is_visible_on_qam: todo!(),
+                //         selection: todo!(),
+                //     })
+                // })
                 .with_group("citra", |group| {
-                    group.with_action("config", None, PipelineActionDefinitionBuilder {
-                        name: "Citra Configuration".to_string(),
-                        description: None,
+                    let citra_name = "Citra".to_string();
+                    let citra_description = Some("Maps primary and secondary windows to different screens for Citra. Allows optional Citra layout configuration.".to_string());
+
+                    let citra_layout_name = "Layout".to_string();
+                    let citra_layout_description = Some("Edits Citra ini file to desired layout settings.".to_string());
+
+                    group.with_action("citra", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                        name: citra_name.clone(),
+                        description: citra_description.clone(),
                         enabled: None,
-                        is_visible_on_qam: true,
                         profile_override: None,
                         selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:citra:source"),
-                            PipelineActionId::new("core:citra:layout")
+                            PipelineActionId::new("core:citra:layout"),
+                            PipelineActionId::new("core:citra:multi_window"),
+                            PipelineActionId::new("core:display:display_config"),
                         ]),
+                        is_visible_on_qam: true,
+                    })
+                    .with_action("citra", Some(PipelineTarget::Gamemode), PipelineActionDefinitionBuilder {
+                        name: citra_name.clone(),
+                        description: citra_description.clone(),
+                        enabled: None,
+                        profile_override: None,
+                        selection: DefinitionSelection::AllOf(vec![
+                            PipelineActionId::new("core:citra:source"),
+                            PipelineActionId::new("core:citra:layout"),
+                        ]),
+                        is_visible_on_qam: true,
                     })
                     .with_action("source", None, PipelineActionDefinitionBuilder {
                         name: "Citra Settings Source".to_string(),
@@ -306,9 +339,9 @@ impl PipelineActionRegistarBuilder {
                             source: FileSource::Custom(CustomFileOptions {path: None, valid_ext: vec!["ini".to_string()]})
                         }.into(),
                     })
-                    .with_action("layout",    Some(PipelineTarget::Desktop),   PipelineActionDefinitionBuilder {
-                        name: "Citra Layout".to_string(),
-                        description: Some("Edits Citra ini file to desired layout settings.".to_string()),
+                    .with_action("layout", Some(PipelineTarget::Desktop),   PipelineActionDefinitionBuilder {
+                        name: citra_layout_name.clone(),
+                        description: citra_layout_description.clone(),
                         enabled: Some(true),
                         is_visible_on_qam: true,
                         profile_override: None,
@@ -320,9 +353,9 @@ impl PipelineActionRegistarBuilder {
                             fullscreen: true,
                             }
                         }.into(),
-                    }).with_action("layout",    Some(PipelineTarget::Gamemode),PipelineActionDefinitionBuilder {
-                        name: "Citra Layout".to_string(),
-                        description: Some("Edits Citra ini file to desired layout settings.".to_string()),
+                    }).with_action("layout", Some(PipelineTarget::Gamemode),PipelineActionDefinitionBuilder {
+                        name: citra_layout_name.clone(),
+                        description: citra_layout_description.clone(),
                         enabled: Some(true),
                         is_visible_on_qam: true,
                         profile_override: None,
@@ -336,8 +369,8 @@ impl PipelineActionRegistarBuilder {
                         }.into(),
                     })
                     .with_action("multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
-                        name: "Multi-Window Emulation".to_string(),
-                        description: Some("Manages windows for known emulators configurations with multiple display windows.".into()),
+                        name: multi_window_name.clone(),
+                        description: multi_window_description.clone(),
                         enabled: None,
                         is_visible_on_qam: false,
                         profile_override: None,
@@ -351,16 +384,34 @@ impl PipelineActionRegistarBuilder {
                     })
                 })
                 .with_group("cemu", |group| {
-                    group.with_action("config", None, PipelineActionDefinitionBuilder {
-                        name: "Cemu Configuration".to_string(),
-                        description: None,
+                    let cemu_name = "Cemu".to_string();
+                    let cemu_description = Some("Maps primary and secondary windows to different screens for Cemu.".to_string());
+                    let cemu_layout_name = "Layout".to_string();
+                    let cemu_layout_description = Some("Edits Cemu settings.xml file to desired settings.".to_string());
+
+                    group.with_action("cemu", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                        name: cemu_name.clone(),
+                        description: cemu_description.clone(),
                         enabled: None,
-                        is_visible_on_qam: true,
                         profile_override: None,
                         selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:cemu:source"),
-                            PipelineActionId::new("core:cemu:layout")
+                            PipelineActionId::new("core:cemu:layout"),
+                            PipelineActionId::new("core:cemu:multi_window"),
+                            PipelineActionId::new("core:display:display_config"),
                         ]),
+                        is_visible_on_qam: true,
+                    })
+                    .with_action("cemu", Some(PipelineTarget::Gamemode), PipelineActionDefinitionBuilder {
+                        name: cemu_name.clone(),
+                        description: cemu_description.clone(),
+                        enabled: None,
+                        profile_override: None,
+                        selection: DefinitionSelection::AllOf(vec![
+                            PipelineActionId::new("core:cemu:source"),
+                            PipelineActionId::new("core:cemu:layout"),
+                        ]),
+                        is_visible_on_qam: true,
                     })
                     .with_action("source", None, PipelineActionDefinitionBuilder {
                         name: "Cemu Settings Source".to_string(),
@@ -395,7 +446,7 @@ impl PipelineActionRegistarBuilder {
                         selection: SourceFile {
                             id: ActionId::nil(),
                             source: FileSource::AppImage(AppImageSource::Cemu)
-                        }.into(), 
+                        }.into(),
                     })
                     .with_action("emudeck_proton_source", None, PipelineActionDefinitionBuilder {
                         name: "EmuDeck (Proton)".to_string(),
@@ -419,8 +470,8 @@ impl PipelineActionRegistarBuilder {
                             source: FileSource::Custom(CustomFileOptions {path: None, valid_ext: vec!["xml".to_string()]}),
                         }.into()
                     }).with_action("layout", Some(PipelineTarget::Desktop),     PipelineActionDefinitionBuilder {
-                        name: "Cemu Layout".to_string(),
-                        description: Some("Edits Cemu settings.xml file to desired settings.".to_string()),
+                        name: cemu_layout_name.clone(),
+                        description: cemu_layout_description.clone(),
                         enabled: Some(true),
                         is_visible_on_qam: true,
                         profile_override: None,
@@ -432,8 +483,8 @@ impl PipelineActionRegistarBuilder {
                             }
                         }.into(),
                     }).with_action("layout",  Some(PipelineTarget::Gamemode),    PipelineActionDefinitionBuilder {
-                        name: "Cemu Layout".to_string(),
-                        description: Some("Edits Cemu settings.xml file to desired settings.".to_string()),
+                        name: cemu_layout_name.to_string(),
+                        description: cemu_description.clone(),
                         enabled: Some(true),
                         is_visible_on_qam: true,
                         profile_override: None,
@@ -446,8 +497,8 @@ impl PipelineActionRegistarBuilder {
                         }.into(),
                     })
                     .with_action("multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
-                        name: "Multi-Window Emulation".to_string(),
-                        description: Some("Manages windows for known emulators configurations with multiple display windows.".into()),
+                        name: multi_window_name.clone(),
+                        description: multi_window_description.clone(),
                         enabled: None,
                         is_visible_on_qam: false,
                         profile_override: None,
@@ -461,16 +512,33 @@ impl PipelineActionRegistarBuilder {
                     })
                 })
                 .with_group("melonds", |group| {
-                    group.with_action("config", None, PipelineActionDefinitionBuilder {
-                        name: "melonDS Configuration".to_string(),
-                        description: None,
+                    let melonds_name = "melonDS".to_string();
+                    let melonds_description = Some("Maps primary and secondary windows to different screens for melonds.".to_string());
+                    let melonds_layout_name = "Layout".to_string();
+                    let melonds_layout_description = Some("Edits melonDS ini file to desired layout settings.".to_string());
+
+                    group.with_action("melonds", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                        name: melonds_name.clone(),
+                        description: melonds_description.clone(),
                         enabled: None,
+                        profile_override: None,
+                        selection: DefinitionSelection::AllOf(vec![
+                            PipelineActionId::new("core:melonds:source"),
+                            PipelineActionId::new("core:melonds:layout"),
+                            PipelineActionId::new("core:display:virtual_screen"),
+                        ]),
                         is_visible_on_qam: true,
+                    })
+                    .with_action("melonds", Some(PipelineTarget::Gamemode), PipelineActionDefinitionBuilder {
+                        name: melonds_name.clone(),
+                        description: melonds_description.clone(),
+                        enabled: None,
                         profile_override: None,
                         selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:melonds:source"),
                             PipelineActionId::new("core:melonds:layout")
                         ]),
+                        is_visible_on_qam: true,
                     })
                     .with_action("source", None, PipelineActionDefinitionBuilder {
                         name: "melonDS Settings Source".to_string(),
@@ -506,8 +574,8 @@ impl PipelineActionRegistarBuilder {
                         }.into()
                     })
                     .with_action("layout", Some(PipelineTarget::Desktop),     PipelineActionDefinitionBuilder {
-                        name: "melonDS Layout".to_string(),
-                        description: Some("Edits melonDS ini file to desired layout settings.".to_string()),
+                        name: melonds_layout_name.clone(),
+                        description: melonds_layout_description.clone(),
                         enabled: Some(true),
                         is_visible_on_qam: true,
                         profile_override: None,
@@ -519,8 +587,8 @@ impl PipelineActionRegistarBuilder {
                             swap_screens: false,
                         }.into(),
                     }).with_action("layout", Some(PipelineTarget::Gamemode),    PipelineActionDefinitionBuilder {
-                        name: "melonDS Layout".to_string(),
-                        description: Some("Edits melonDS ini file to desired settings.".to_string()),
+                        name: melonds_layout_name.clone(),
+                        description: melonds_layout_description.clone(),
                         enabled: Some(true),
                         is_visible_on_qam: true,
                         profile_override: None,
@@ -531,6 +599,22 @@ impl PipelineActionRegistarBuilder {
                             book_mode: false,
                             swap_screens: false,
                         }.into(),
+                    })
+                })
+                .with_group("app", |group| {
+                    let app_name =  "Launches an application in desktop mode.".to_string();
+                    let app_description = Some("Launches an application in desktop mode.".to_string());
+
+                    group.with_action("app", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                        name: app_name.clone(),
+                        description: app_description.clone(),
+                        enabled: None,
+                        profile_override: None,
+                        is_visible_on_qam: true,
+                        selection: DefinitionSelection::AllOf(vec![
+                            PipelineActionId::new("core:app:multi_window"),
+                            PipelineActionId::new("core:display:display_config"),
+                        ]),
                     })
                 })
         })
@@ -545,10 +629,11 @@ pub struct PipelineActionDefinitionBuilder {
     pub enabled: Option<bool>,
     /// Flags whether the selection is overridden by the setting from a different profile.
     pub profile_override: Option<ProfileId>,
-    /// The value of the pipeline action.
-    pub selection: DefinitionSelection,
+
     /// If true, the action is visible to be configured on the quick-access menu.
     pub is_visible_on_qam: bool,
+    /// The value of the pipeline action.
+    pub selection: DefinitionSelection,
 }
 
 impl PipelineActionDefinitionBuilder {

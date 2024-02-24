@@ -83,11 +83,10 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
             description: "Maps the internal and external monitor to a single virtual screen, as melonDS does not currently support multiple windows. Allows optional melonDS layout configuration.".to_string(),
             targets: HashMap::from_iter([
                 (PipelineTarget::Desktop, vec![
-                    PipelineActionId::new("core:melonds:config"),
-                    PipelineActionId::new("core:display:virtual_screen"),
+                    PipelineActionId::new("core:melonds:melonds"),
                 ]),
                 (PipelineTarget::Gamemode, vec![
-                    PipelineActionId::new("core:melonds:config"),
+                    PipelineActionId::new("core:melonds:melonds"),
                 ])
             ]),
             action_overrides: Default::default(),
@@ -103,12 +102,10 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
             description: "Maps primary and secondary windows to different screens for Citra. Allows optional Citra layout configuration.".to_string(),
             targets: HashMap::from_iter([
                 (PipelineTarget::Desktop, vec![
-                    PipelineActionId::new("core:citra:config"),
-                    PipelineActionId::new("core:citra:multi_window"),
-                    PipelineActionId::new("core:display:display_config"),
+                    PipelineActionId::new("core:citra:citra"),
                 ]),
                 (PipelineTarget::Gamemode, vec![
-                    PipelineActionId::new("core:citra:config"),
+                    PipelineActionId::new("core:citra:citra"),
                 ])
             ]),
             action_overrides: Default::default(),
@@ -123,32 +120,27 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
             name: "Cemu".to_string(),
             description: "Maps primary and secondary windows to different screens for Cemu.".to_string(),
             targets: HashMap::from_iter([
-                (PipelineTarget::Desktop,
-                    vec![
-                        PipelineActionId::new("core:cemu:config"),
-                        PipelineActionId::new("core:cemu:multi_window"),
-                        PipelineActionId::new("core:display:display_config"),
+                (PipelineTarget::Desktop, vec![
+                    PipelineActionId::new("core:cemu:cemu"),
                 ]),
-                (PipelineTarget::Gamemode,
-                    vec![
-                        PipelineActionId::new("core:cemu:config")
+                (PipelineTarget::Gamemode, vec![
+                    PipelineActionId::new("core:cemu:cemu")
                 ])
             ]),
             action_overrides: Default::default(),
             enabled_overrides: Default::default(),
             is_visible_on_qam_overrides: Default::default(),
         },
-
-        // Simple Desktop
+        // App
         TemplateBuilder {
             id: TemplateId::parse("84f870e9-9491-41a9-8837-d5a6f591f687"),
             version: 0,
-            name: "Simple Desktop".to_string(),
+            name: "App".to_string(),
             description: "Launches an application in desktop mode.".to_string(),
             targets: HashMap::from_iter([
                 (PipelineTarget::Desktop,
                     vec![
-                        PipelineActionId::new("core:display:display_config"),
+                        PipelineActionId::new("core:app:app"),
                     ]
                 )
             ]),
