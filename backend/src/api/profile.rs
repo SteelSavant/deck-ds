@@ -8,7 +8,6 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use anyhow::Result;
-use strum::IntoEnumIterator;
 
 use crate::{
     asset::AssetManager,
@@ -17,8 +16,8 @@ use crate::{
         action::{Action, ErasedPipelineAction},
         action_registar::PipelineActionRegistrar,
         data::{
-            Pipeline, PipelineActionId, PipelineDefinition, PipelineDefinitionId, PipelineTarget,
-            RuntimeSelection, Template,
+            Pipeline, PipelineActionId, PipelineDefinition, PipelineDefinitionId, RuntimeSelection,
+            Template,
         },
         dependency::DependencyError,
         executor::PipelineContext,

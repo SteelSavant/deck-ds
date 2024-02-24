@@ -167,7 +167,6 @@ impl ProfileDb {
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
-    use strum::IntoEnumIterator;
 
     use std::{collections::HashMap, hash::RandomState};
 

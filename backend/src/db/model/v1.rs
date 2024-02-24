@@ -2,7 +2,6 @@ use native_db::*;
 use native_model::{native_model, Model};
 use serde::{Deserialize, Serialize};
 
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 use crate::{
@@ -17,7 +16,7 @@ use crate::{
             session_handler::DesktopSessionHandler,
             ActionId,
         },
-        data::{PipelineActionId, PipelineDefinitionId, PipelineTarget, TemplateId},
+        data::{PipelineActionId, PipelineDefinitionId, PipelineTarget},
     },
     settings::{AppId, ProfileId},
 };

@@ -314,11 +314,11 @@ impl ConfigSelection {
                     .map(|v| RuntimeSelection::AllOf(v.into_iter().filter_map(|v| v).collect())),
                 _ => Err(anyhow::anyhow!("selection type mismatch in reify config")),
             },
-            ConfigSelection::UserDefined(actions) => todo!(), // actions
-                                                              //     .iter()
-                                                              //     .map(|a| a.reify(target, pipeline, profiles, registrar))
-                                                              //     .collect::<Result<Vec<_>>>()
-                                                              //     .map(RuntimeSelection::UserDefined),
+            ConfigSelection::UserDefined(_actions) => todo!(), // actions
+                                                               //     .iter()
+                                                               //     .map(|a| a.reify(target, pipeline, profiles, registrar))
+                                                               //     .collect::<Result<Vec<_>>>()
+                                                               //     .map(RuntimeSelection::UserDefined),
         }
     }
 }

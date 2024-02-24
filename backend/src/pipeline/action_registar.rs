@@ -1,4 +1,3 @@
-use anyhow::Context;
 use strum::IntoEnumIterator;
 
 use crate::settings::ProfileId;
@@ -382,7 +381,6 @@ impl PipelineActionRegistarBuilder {
                         ]),
                         is_visible_on_qam: true,
                     })
-                 
                     .with_action("source", None, PipelineActionDefinitionBuilder {
                         name: "Cemu Settings Source".to_string(),
                         description: Some("Source file to use when editing Cemu settings.".to_string()),
@@ -499,7 +497,6 @@ impl PipelineActionRegistarBuilder {
                         ]),
                         is_visible_on_qam: true,
                     })
-                 
                     .with_action("source", None, PipelineActionDefinitionBuilder {
                         name: "melonDS Settings Source".to_string(),
                         description: Some("Source file to use when editing melonDS settings.".to_string()),
