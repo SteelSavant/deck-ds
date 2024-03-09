@@ -11,6 +11,9 @@ use crate::{
             cemu_layout::{CemuLayout, CemuLayoutState},
             citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
             display_config::DisplayConfig,
+            launch_secondary_app::{
+                FlatpakApp, LaunchSecondaryApp, SecondaryApp, SecondaryAppWindowingBehavior,
+            },
             melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
             multi_window::{CemuOptions, CitraOptions, DolphinOptions, GeneralOptions},
             session_handler::DesktopSessionHandler,
@@ -794,6 +797,103 @@ impl From<DbDisplayConfig> for DisplayConfig {
             external_display_settings: value.external_display_settings.into(),
             deck_location: value.deck_location.map(std::convert::Into::into),
             deck_is_primary_display: value.deck_is_primary_display,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[native_db]
+#[native_model(id = 109, version = 1, with = NativeModelJSON)]
+pub struct DbLaunchSecondaryApp {
+    #[primary_key]
+    pub id: ActionId,
+    pub name: String,
+    pub app: DbSecondaryApp,
+    pub windowing_behavior: DbSecondaryAppWindowingBehavior,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+enum DbSecondaryApp {
+    Flatpak { app_id: String, args: Vec<String> },
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+enum DbSecondaryAppWindowingBehavior {
+    PreferSecondary,
+    PreferPrimary,
+    Hidden,
+    Unmanaged,
+}
+
+impl From<LaunchSecondaryApp> for DbLaunchSecondaryApp {
+    fn from(value: LaunchSecondaryApp) -> Self {
+        Self {
+            id: value.id,
+            name: value.name,
+            app: value.app.into(),
+            windowing_behavior: value.windowing_behavior.into(),
+        }
+    }
+}
+
+impl From<DbLaunchSecondaryApp> for LaunchSecondaryApp {
+    fn from(value: DbLaunchSecondaryApp) -> Self {
+        Self {
+            id: value.id,
+            name: value.name,
+            app: value.app.into(),
+            windowing_behavior: value.windowing_behavior.into(),
+        }
+    }
+}
+
+impl From<SecondaryApp> for DbSecondaryApp {
+    fn from(value: SecondaryApp) -> Self {
+        match value {
+            SecondaryApp::Flatpak(app) => DbSecondaryApp::Flatpak {
+                app_id: app.app_id,
+                args: app.args,
+            },
+        }
+    }
+}
+
+impl From<DbSecondaryApp> for SecondaryApp {
+    fn from(value: DbSecondaryApp) -> Self {
+        match value {
+            DbSecondaryApp::Flatpak { app_id, args } => {
+                SecondaryApp::Flatpak(FlatpakApp { app_id, args })
+            }
+        }
+    }
+}
+
+impl From<SecondaryAppWindowingBehavior> for DbSecondaryAppWindowingBehavior {
+    fn from(value: SecondaryAppWindowingBehavior) -> Self {
+        match value {
+            SecondaryAppWindowingBehavior::PreferSecondary => {
+                DbSecondaryAppWindowingBehavior::PreferSecondary
+            }
+            SecondaryAppWindowingBehavior::PreferPrimary => {
+                DbSecondaryAppWindowingBehavior::PreferPrimary
+            }
+            SecondaryAppWindowingBehavior::Hidden => DbSecondaryAppWindowingBehavior::Hidden,
+            SecondaryAppWindowingBehavior::Unmanaged => DbSecondaryAppWindowingBehavior::Unmanaged,
+        }
+    }
+}
+
+impl From<DbSecondaryAppWindowingBehavior> for SecondaryAppWindowingBehavior {
+    fn from(value: DbSecondaryAppWindowingBehavior) -> Self {
+        match value {
+            DbSecondaryAppWindowingBehavior::PreferSecondary => {
+                SecondaryAppWindowingBehavior::PreferSecondary
+            }
+            DbSecondaryAppWindowingBehavior::PreferPrimary => {
+                SecondaryAppWindowingBehavior::PreferPrimary
+            }
+            DbSecondaryAppWindowingBehavior::Hidden => SecondaryAppWindowingBehavior::Hidden,
+            DbSecondaryAppWindowingBehavior::Unmanaged => SecondaryAppWindowingBehavior::Unmanaged,
         }
     }
 }

@@ -5,8 +5,8 @@ use native_db::transaction::RwTransaction;
 use crate::{
     db::model::{
         DbAction, DbAppOverride, DbCategoryProfile, DbCemuLayout, DbCitraLayout, DbConfigSelection,
-        DbDesktopSessionHandler, DbDisplayConfig, DbMelonDSLayout, DbMultiWindow,
-        DbPipelineActionSettings, DbSourceFile, DbVirtualScreen,
+        DbDesktopSessionHandler, DbDisplayConfig, DbLaunchSecondaryApp, DbMelonDSLayout,
+        DbMultiWindow, DbPipelineActionSettings, DbSourceFile, DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionId, ActionType, ErasedPipelineAction},
@@ -55,6 +55,9 @@ impl Action {
             }
             Action::SourceFile(action) => {
                 rw.insert::<DbSourceFile>(action.into())?;
+            }
+            Action::LaunchSecondaryApp(action) => {
+                rw.insert::<DbLaunchSecondaryApp>(action.into())?;
             }
         };
 
@@ -177,6 +180,10 @@ impl DbAction {
             }
             ActionType::SourceFile => {
                 let action = rw.get().primary::<DbSourceFile>(id)?;
+                action.map(|a| rw.remove(a))
+            }
+            ActionType::LaunchSecondaryApp => {
+                let action = rw.get().primary::<DbLaunchSecondaryApp>(id)?;
                 action.map(|a| rw.remove(a))
             }
         }

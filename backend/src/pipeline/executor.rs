@@ -15,6 +15,7 @@ use crate::asset::AssetManager;
 use crate::pipeline::action::cemu_layout::CemuLayout;
 use crate::pipeline::action::citra_layout::CitraLayout;
 use crate::pipeline::action::display_config::DisplayConfig;
+use crate::pipeline::action::launch_secondary_app::LaunchSecondaryApp;
 use crate::pipeline::action::melonds_layout::MelonDSLayout;
 use crate::pipeline::action::multi_window::MultiWindow;
 use crate::pipeline::action::session_handler::DesktopSessionHandler;
@@ -149,6 +150,9 @@ impl<'a> PipelineContext<'a> {
                     ActionType::DisplayConfig => {
                         load_state::<DisplayConfig>(&mut default, &type_map)
                     }
+                    ActionType::LaunchSecondaryApp => {
+                        load_state::<LaunchSecondaryApp>(&mut default, &type_map)
+                    }
                 },
                 Err(err) => {
                     log::warn!("failed to parse action {action} from type reg: {err}")
@@ -200,6 +204,7 @@ impl<'a> PipelineContext<'a> {
                 Action::CemuLayout(a) => insert_action(self, &mut map, a),
                 Action::MelonDSLayout(a) => insert_action(self, &mut map, a),
                 Action::SourceFile(a) => insert_action(self, &mut map, a),
+                Action::LaunchSecondaryApp(a) => insert_action(self, &mut map, a),
             };
         }
 

@@ -7,8 +7,8 @@ use native_db::transaction::RTransaction;
 use crate::{
     db::model::{
         DbAction, DbCemuLayout, DbCitraLayout, DbConfigSelection, DbDesktopSessionHandler,
-        DbDisplayConfig, DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings,
-        DbPipelineDefinition, DbSourceFile, DbVirtualScreen,
+        DbDisplayConfig, DbLaunchSecondaryApp, DbMelonDSLayout, DbMultiWindow,
+        DbPipelineActionSettings, DbPipelineDefinition, DbSourceFile, DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionType},
@@ -53,6 +53,10 @@ impl DbAction {
             ActionType::SourceFile => {
                 let action = ro.get().primary::<DbSourceFile>(id)?;
                 action.map(|a| Action::SourceFile(a.into()))
+            }
+            ActionType::LaunchSecondaryApp => {
+                let action = ro.get().primary::<DbLaunchSecondaryApp>(id)?;
+                action.map(|a| Action::LaunchSecondaryApp(a.into()))
             }
         };
 
