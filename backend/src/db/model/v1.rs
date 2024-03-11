@@ -843,12 +843,12 @@ pub struct DbLaunchSecondaryApp {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-enum DbSecondaryApp {
+pub enum DbSecondaryApp {
     Flatpak { app_id: String, args: Vec<String> },
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-enum DbSecondaryAppWindowingBehavior {
+pub enum DbSecondaryAppWindowingBehavior {
     PreferSecondary,
     PreferPrimary,
     Hidden,
