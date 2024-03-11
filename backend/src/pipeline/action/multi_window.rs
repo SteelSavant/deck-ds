@@ -10,18 +10,33 @@ use crate::{
 use super::{ActionId, ActionImpl, ActionType};
 use smart_default::SmartDefault;
 
+mod cemu_options;
+mod citra_options;
+mod custom_options;
+mod dolphin_options;
+
+pub use cemu_options::CemuWindowOptions;
+pub use citra_options::CitraWindowOptions;
+pub use custom_options::CustomWindowOptions;
+pub use dolphin_options::DolphinWindowOptions;
+
 const SCRIPT: &str = "emulatorwindowing";
+
+// This technically could be generic over the app type and just support one app,
+// but it adds a lot of boilerplate elsewhere, and I don't feel like dealing with it.
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct MultiWindow {
     pub id: ActionId,
     pub general: GeneralOptions,
     /// Some(options) if Cemu is configurable, None otherwise
-    pub cemu: Option<CemuOptions>,
+    pub cemu: Option<CemuWindowOptions>,
     /// Some(options) if Citra is configurable, None otherwise
-    pub citra: Option<CitraOptions>,
+    pub citra: Option<CitraWindowOptions>,
     /// Some(options) if Dolphin is configurable, None otherwise
-    pub dolphin: Option<DolphinOptions>,
+    pub dolphin: Option<DolphinWindowOptions>,
+    // /// Some(options) if Custom is configurable, None otherwise
+    pub custom: Option<CustomWindowOptions>,
 }
 
 trait OptionsRW {
@@ -56,9 +71,10 @@ pub enum MultiWindowLayout {
 pub struct MultiWindowOptions {
     pub enabled: bool,
     pub general: GeneralOptions,
-    pub cemu: CemuOptions,
-    pub citra: CitraOptions,
-    pub dolphin: DolphinOptions,
+    pub cemu: CemuWindowOptions,
+    pub citra: CitraWindowOptions,
+    pub dolphin: DolphinWindowOptions,
+    pub custom: CustomWindowOptions,
 }
 
 impl OptionsRW for MultiWindowOptions {
@@ -69,9 +85,10 @@ impl OptionsRW for MultiWindowOptions {
         Ok(Self {
             enabled: kwin.get_script_enabled(SCRIPT)?,
             general: GeneralOptions::load(kwin)?,
-            cemu: CemuOptions::load(kwin)?,
-            citra: CitraOptions::load(kwin)?,
-            dolphin: DolphinOptions::load(kwin)?,
+            cemu: CemuWindowOptions::load(kwin)?,
+            citra: CitraWindowOptions::load(kwin)?,
+            dolphin: DolphinWindowOptions::load(kwin)?,
+            custom: CustomWindowOptions::load(kwin)?,
         })
     }
 
@@ -80,6 +97,7 @@ impl OptionsRW for MultiWindowOptions {
         self.cemu.write(kwin)?;
         self.citra.write(kwin)?;
         self.dolphin.write(kwin)?;
+        self.custom.write(kwin)?;
 
         kwin.set_script_enabled(SCRIPT, self.enabled)?;
 
@@ -118,178 +136,6 @@ impl OptionsRW for GeneralOptions {
     }
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
-pub struct CemuOptions {
-    pub single_screen_layout: LimitedMultiWindowLayout,
-    pub multi_screen_layout: MultiWindowLayout,
-}
-
-impl OptionsRW for CemuOptions {
-    fn load(kwin: &KWin) -> Result<Self>
-    where
-        Self: Sized,
-    {
-        let single_screen_layout = kwin
-            .get_script_string_setting(SCRIPT, "cemuSingleScreenLayout")?
-            .and_then(|v| serde_json::from_str(&v).ok())
-            .unwrap_or(LimitedMultiWindowLayout::ColumnRight);
-        let multi_screen_layout = kwin
-            .get_script_string_setting(SCRIPT, "cemuMultiScreenSingleSecondaryLayout")?
-            .and_then(|v| serde_json::from_str(&v).ok())
-            .unwrap_or(MultiWindowLayout::Separate);
-
-        Ok(Self {
-            single_screen_layout,
-            multi_screen_layout,
-        })
-    }
-
-    fn write(&self, kwin: &KWin) -> Result<()> {
-        kwin.set_script_string_setting(
-            SCRIPT,
-            "cemuSingleScreenLayout",
-            &serde_json::to_string(&self.single_screen_layout)?,
-        )?;
-
-        kwin.set_script_string_setting(
-            SCRIPT,
-            "cemuMultiScreenSingleSecondaryLayout",
-            &serde_json::to_string(&self.multi_screen_layout)?,
-        )?;
-
-        Ok(())
-    }
-}
-
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
-pub struct CitraOptions {
-    pub single_screen_layout: LimitedMultiWindowLayout,
-    pub multi_screen_layout: MultiWindowLayout,
-}
-
-impl OptionsRW for CitraOptions {
-    fn load(kwin: &KWin) -> Result<Self>
-    where
-        Self: Sized,
-    {
-        let single_screen_layout = kwin
-            .get_script_string_setting(SCRIPT, "citraSingleScreenLayout")?
-            .and_then(|v| serde_json::from_str(&v).ok())
-            .unwrap_or(LimitedMultiWindowLayout::ColumnRight);
-        let multi_screen_layout = kwin
-            .get_script_string_setting(SCRIPT, "citraMultiScreenSingleSecondaryLayout")?
-            .and_then(|v| serde_json::from_str(&v).ok())
-            .unwrap_or(MultiWindowLayout::Separate);
-
-        Ok(Self {
-            single_screen_layout,
-            multi_screen_layout,
-        })
-    }
-
-    fn write(&self, kwin: &KWin) -> Result<()> {
-        kwin.set_script_string_setting(
-            SCRIPT,
-            "citraSingleScreenLayout",
-            &serde_json::to_string(&self.single_screen_layout)?,
-        )?;
-
-        kwin.set_script_string_setting(
-            SCRIPT,
-            "citraMultiScreenSingleSecondaryLayout",
-            &serde_json::to_string(&self.multi_screen_layout)?,
-        )?;
-
-        Ok(())
-    }
-}
-
-#[derive(Debug, Clone, SmartDefault, PartialEq, Serialize, Deserialize, JsonSchema)]
-pub struct DolphinOptions {
-    pub single_screen_layout: LimitedMultiWindowLayout,
-    pub multi_screen_single_secondary_layout: MultiWindowLayout,
-    #[default(MultiWindowLayout::ColumnRight)]
-    pub multi_screen_multi_secondary_layout: MultiWindowLayout,
-    // GBA ids to blacklist, 1,2,3 or 4
-    pub gba_blacklist: Vec<u8>,
-}
-
-impl OptionsRW for DolphinOptions {
-    fn load(kwin: &KWin) -> Result<Self>
-    where
-        Self: Sized,
-    {
-        let single_screen_layout = kwin
-            .get_script_string_setting(SCRIPT, "dolphinSingleScreenLayout")?
-            .and_then(|v| serde_json::from_str(&v).ok())
-            .unwrap_or(LimitedMultiWindowLayout::ColumnRight);
-        let multi_screen_single_secondary_layout = kwin
-            .get_script_string_setting(SCRIPT, "dolphinMultiScreenSingleSecondaryLayout")?
-            .and_then(|v| serde_json::from_str(&v).ok())
-            .unwrap_or(MultiWindowLayout::Separate);
-        let multi_screen_multi_secondary_layout = kwin
-            .get_script_string_setting(SCRIPT, "dolphinMultiScreenMultiSecondaryLayout")?
-            .and_then(|v| serde_json::from_str(&v).ok())
-            .unwrap_or(MultiWindowLayout::ColumnRight);
-
-        let gba_blacklist = kwin
-            .get_script_string_setting(SCRIPT, "dolphinBlacklist")?
-            .map(|s| {
-                s.split(',')
-                    .filter_map(|v| {
-                        let trimmed = v.trim().to_ascii_uppercase();
-                        if trimmed.starts_with("GBA") && trimmed.len() == 4 {
-                            trimmed.chars().last().unwrap().to_string().parse().ok()
-                        } else {
-                            None
-                        }
-                    })
-                    .collect()
-            })
-            .unwrap_or_default();
-
-        Ok(Self {
-            single_screen_layout,
-            multi_screen_single_secondary_layout,
-            multi_screen_multi_secondary_layout,
-            gba_blacklist,
-        })
-    }
-
-    fn write(&self, kwin: &KWin) -> Result<()> {
-        kwin.set_script_string_setting(
-            SCRIPT,
-            "dolphinSingleScreenLayout",
-            &serde_json::to_string(&self.single_screen_layout)?,
-        )?;
-
-        kwin.set_script_string_setting(
-            SCRIPT,
-            "dolphinMultiScreenSingleSecondaryLayout",
-            &serde_json::to_string(&self.multi_screen_single_secondary_layout)?,
-        )?;
-
-        kwin.set_script_string_setting(
-            SCRIPT,
-            "dolphinMultiScreenMultiSecondaryLayout",
-            &serde_json::to_string(&self.multi_screen_multi_secondary_layout)?,
-        )?;
-
-        kwin.set_script_string_setting(
-            SCRIPT,
-            "dolphinBlacklist",
-            &self
-                .gba_blacklist
-                .iter()
-                .map(|v| format!("GBA{v}"))
-                .collect::<Vec<_>>()
-                .join(","),
-        )?;
-
-        Ok(())
-    }
-}
-
 impl ActionImpl for MultiWindow {
     type State = MultiWindowOptions;
 
@@ -313,6 +159,10 @@ impl ActionImpl for MultiWindow {
 
         if let Some(dolphin) = self.dolphin.clone() {
             options.dolphin = dolphin;
+        }
+
+        if let Some(custom) = self.custom.clone() {
+            options.custom = custom;
         }
 
         options.write(&ctx.kwin)

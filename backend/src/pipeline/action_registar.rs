@@ -8,7 +8,7 @@ use super::{
         citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
         display_config::DisplayConfig,
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
-        multi_window::{CemuOptions, CitraOptions, GeneralOptions, MultiWindow},
+        multi_window::{CemuWindowOptions, CitraWindowOptions, GeneralOptions, MultiWindow},
         session_handler::{DesktopSessionHandler, ExternalDisplaySettings, RelativeLocation},
         source_file::{
             AppImageSource, CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile,
@@ -346,9 +346,10 @@ impl PipelineActionRegistarBuilder {
                         selection: MultiWindow {
                             id: ActionId::nil(),
                             general: GeneralOptions::default(),
-                            citra: Some(CitraOptions::default()),
+                            citra: Some(CitraWindowOptions::default()),
                             cemu: None,
                             dolphin: None,
+                            custom: None,
                         }.into(),
                     })
                 })
@@ -463,9 +464,10 @@ impl PipelineActionRegistarBuilder {
                         selection: MultiWindow {
                             id: ActionId::nil(),
                             general: GeneralOptions::default(),
-                            cemu: Some(CemuOptions::default()),
+                            cemu: Some(CemuWindowOptions::default()),
                             citra: None,
                             dolphin: None,
+                            custom: None,
                         }.into(),
                     })
                 })

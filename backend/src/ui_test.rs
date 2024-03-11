@@ -47,6 +47,7 @@ pub fn ui_test() -> Result<()> {
         cemu: None,
         citra: None,
         dolphin: None,
+        custom: None,
     };
 
     let duration = Duration::from_secs(10);

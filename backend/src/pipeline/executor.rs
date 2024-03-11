@@ -553,8 +553,8 @@ mod tests {
             display_config::DisplayConfig,
             melonds_layout::{MelonDSLayoutOption, MelonDSLayoutState, MelonDSSizingOption},
             multi_window::{
-                CemuOptions, CitraOptions, DolphinOptions, GeneralOptions,
-                LimitedMultiWindowLayout, MultiWindowLayout, MultiWindowOptions,
+                CemuWindowOptions, CitraWindowOptions, CustomWindowOptions, DolphinWindowOptions,
+                GeneralOptions, LimitedMultiWindowLayout, MultiWindowLayout, MultiWindowOptions,
             },
             session_handler::{DisplayState, ExternalDisplaySettings, RelativeLocation},
             source_file::{FileSource, FlatpakSource},
@@ -602,6 +602,7 @@ mod tests {
                 cemu: None,
                 citra: None,
                 dolphin: None,
+                custom: None,
             }
             .into(),
             SourceFile {
@@ -641,20 +642,21 @@ mod tests {
         ctx.set_state::<MultiWindow>(MultiWindowOptions {
             enabled: true,
             general: GeneralOptions::default(),
-            cemu: CemuOptions {
+            cemu: CemuWindowOptions {
                 single_screen_layout: LimitedMultiWindowLayout::ColumnLeft,
                 multi_screen_layout: MultiWindowLayout::Separate,
             },
-            citra: CitraOptions {
+            citra: CitraWindowOptions {
                 single_screen_layout: LimitedMultiWindowLayout::ColumnRight,
                 multi_screen_layout: MultiWindowLayout::Separate,
             },
-            dolphin: DolphinOptions {
+            dolphin: DolphinWindowOptions {
                 single_screen_layout: LimitedMultiWindowLayout::SquareLeft,
                 multi_screen_single_secondary_layout: MultiWindowLayout::SquareRight,
                 multi_screen_multi_secondary_layout: MultiWindowLayout::Separate,
                 gba_blacklist: vec![1, 2, 3, 4],
             },
+            custom: CustomWindowOptions::default(),
         });
         ctx.set_state::<SourceFile>("some_random_path".into());
         ctx.set_state::<CemuLayout>(CemuLayoutState {

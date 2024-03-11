@@ -15,7 +15,10 @@ use crate::{
                 FlatpakApp, LaunchSecondaryApp, SecondaryApp, SecondaryAppWindowingBehavior,
             },
             melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
-            multi_window::{CemuOptions, CitraOptions, DolphinOptions, GeneralOptions},
+            multi_window::{
+                CemuWindowOptions, CitraWindowOptions, CustomWindowOptions, DolphinWindowOptions,
+                GeneralOptions,
+            },
             session_handler::DesktopSessionHandler,
             ActionId,
         },
@@ -512,6 +515,7 @@ pub struct DbMultiWindow {
     pub cemu: Option<DbMultiWindowCemuOptions>,
     pub citra: Option<DbMultiWindowCitraOptions>,
     pub dolphin: Option<DbMultiWindowDolphinOptions>,
+    pub custom: Option<DbMultiWindowCustomOptions>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -538,6 +542,16 @@ pub struct DbMultiWindowDolphinOptions {
     multi_screen_single_secondary_layout: DbMultiWindowLayout,
     multi_screen_multi_secondary_layout: DbMultiWindowLayout,
     gba_blacklist: Vec<u8>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DbMultiWindowCustomOptions {
+    pub primary_window_override: Option<String>,
+    pub secondary_window_matcher: Option<String>,
+    pub classes: Vec<String>,
+    pub single_screen_layout: DbLimitedMultiWindowLayout,
+    pub multi_screen_single_secondary_layout: DbMultiWindowLayout,
+    pub multi_screen_multi_secondary_layout: DbMultiWindowLayout,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
@@ -625,6 +639,14 @@ impl From<MultiWindow> for DbMultiWindow {
                 multi_screen_multi_secondary_layout: v.multi_screen_multi_secondary_layout.into(),
                 gba_blacklist: v.gba_blacklist,
             }),
+            custom: value.custom.map(|v| DbMultiWindowCustomOptions {
+                primary_window_override: v.primary_window_override.clone(),
+                secondary_window_matcher: v.secondary_window_matcher.clone(),
+                classes: v.classes.clone(),
+                single_screen_layout: v.single_screen_layout.into(),
+                multi_screen_single_secondary_layout: v.multi_screen_single_secondary_layout.into(),
+                multi_screen_multi_secondary_layout: v.multi_screen_multi_secondary_layout.into(),
+            }),
         }
     }
 }
@@ -637,19 +659,27 @@ impl From<DbMultiWindow> for MultiWindow {
                 keep_above: value.general.keep_above,
                 swap_screens: value.general.swap_screens,
             },
-            cemu: value.cemu.map(|v| CemuOptions {
+            cemu: value.cemu.map(|v| CemuWindowOptions {
                 single_screen_layout: v.single_screen_layout.into(),
                 multi_screen_layout: v.multi_screen_layout.into(),
             }),
-            citra: value.citra.map(|v| CitraOptions {
+            citra: value.citra.map(|v| CitraWindowOptions {
                 single_screen_layout: v.single_screen_layout.into(),
                 multi_screen_layout: v.multi_screen_layout.into(),
             }),
-            dolphin: value.dolphin.map(|v| DolphinOptions {
+            dolphin: value.dolphin.map(|v| DolphinWindowOptions {
                 single_screen_layout: v.single_screen_layout.into(),
                 multi_screen_single_secondary_layout: v.multi_screen_single_secondary_layout.into(),
                 multi_screen_multi_secondary_layout: v.multi_screen_multi_secondary_layout.into(),
                 gba_blacklist: v.gba_blacklist,
+            }),
+            custom: value.custom.map(|v| CustomWindowOptions {
+                primary_window_override: v.primary_window_override.clone(),
+                secondary_window_matcher: v.secondary_window_matcher.clone(),
+                classes: v.classes.clone(),
+                single_screen_layout: v.single_screen_layout.into(),
+                multi_screen_single_secondary_layout: v.multi_screen_single_secondary_layout.into(),
+                multi_screen_multi_secondary_layout: v.multi_screen_multi_secondary_layout.into(),
             }),
         }
     }
