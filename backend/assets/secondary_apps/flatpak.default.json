@@ -1,0 +1,68 @@
+[
+    {
+        "type": "Flatpak",
+        "id": "20f75c64-3105-41b9-8d40-a84e4ff5a3ac",
+        "name": "YouTube [Chrome]",
+        "app_id": "com.google.Chrome",
+        "args": [
+            "--start-fullscreen",
+            "--new-window",
+            "youtube.com"
+        ]
+    },
+    {
+        "type": "Flatpak",
+        "id": "e90133d6-82b0-433b-ac28-24a26f9f9f1d",
+        "name": "YouTube [Firefox]",
+        "app_id": "org.mozilla.firefox",
+        "args": [
+            "--kiosk",
+            "--new-window",
+            "youtube.com"
+        ]
+    },
+    {
+        "type": "Flatpak",
+        "id": "20f75c64-3105-41b9-8d40-a84e4ff5a3ac",
+        "name": "Netflix [Chrome]",
+        "app_id": "com.google.Chrome",
+        "args": [
+            "--start-fullscreen",
+            "--new-window",
+            "netflix.com"
+        ]
+    },
+    {
+        "type": "Flatpak",
+        "id": "e90133d6-82b0-433b-ac28-24a26f9f9f1d",
+        "name": "Netflix [Firefox]",
+        "app_id": "org.mozilla.firefox",
+        "args": [
+            "--kiosk",
+            "--new-window",
+            "netflix.com"
+        ]
+    },
+    {
+        "type": "Flatpak",
+        "id": "20f75c64-3105-41b9-8d40-a84e4ff5a3ac",
+        "name": "Amazon Prime Video [Chrome]",
+        "app_id": "com.google.Chrome",
+        "args": [
+            "--start-fullscreen",
+            "--new-window",
+            "amazon.com/gp/video/storefront"
+        ]
+    },
+    {
+        "type": "Flatpak",
+        "id": "e90133d6-82b0-433b-ac28-24a26f9f9f1d",
+        "name": "Amazon Prime Video [Firefox]",
+        "app_id": "org.mozilla.firefox",
+        "args": [
+            "--kiosk",
+            "--new-window",
+            "amazon.com/gp/video/storefront"
+        ]
+    }
+]
