@@ -34,6 +34,7 @@ pub mod db;
 mod macros;
 mod native_model_serde_json;
 pub mod pipeline;
+pub mod secondary_app;
 pub mod sys;
 pub mod util;
 

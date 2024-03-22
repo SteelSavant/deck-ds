@@ -8,7 +8,9 @@ use super::{
         citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
         display_config::DisplayConfig,
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
-        multi_window::{CemuWindowOptions, CitraWindowOptions, GeneralOptions, MultiWindow},
+        multi_window::primary_windowing::{
+            CemuWindowOptions, CitraWindowOptions, GeneralOptions, MultiWindow,
+        },
         session_handler::{DesktopSessionHandler, ExternalDisplaySettings, RelativeLocation},
         source_file::{
             AppImageSource, CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile,

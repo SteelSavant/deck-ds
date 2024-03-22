@@ -11,11 +11,11 @@ use crate::{
             cemu_layout::{CemuLayout, CemuLayoutState},
             citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
             display_config::DisplayConfig,
-            launch_secondary_app::{
+            melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
+            multi_window::launch_secondary_app::{
                 FlatpakApp, LaunchSecondaryApp, SecondaryApp, SecondaryAppWindowingBehavior,
             },
-            melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
-            multi_window::{
+            multi_window::primary_windowing::{
                 CemuWindowOptions, CitraWindowOptions, CustomWindowOptions, DolphinWindowOptions,
                 GeneralOptions,
             },
@@ -31,7 +31,9 @@ use crate::{
 
 use crate::{
     pipeline::action::{
-        multi_window::{LimitedMultiWindowLayout, MultiWindow, MultiWindowLayout},
+        multi_window::primary_windowing::{
+            LimitedMultiWindowLayout, MultiWindow, MultiWindowLayout,
+        },
         session_handler::{ExternalDisplaySettings, RelativeLocation},
         source_file::{
             AppImageSource, CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile,

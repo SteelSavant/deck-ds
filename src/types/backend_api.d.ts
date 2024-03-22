@@ -59,6 +59,10 @@ export type Action =
   | {
       type: "SourceFile";
       value: SourceFile;
+    }
+  | {
+      type: "LaunchSecondaryApp";
+      value: LaunchSecondaryApp;
     };
 export type RelativeLocation = "Above" | "Below" | "LeftOf" | "RightOf" | "SameAs";
 export type ExternalDisplaySettings =
@@ -147,6 +151,11 @@ export type FileSource =
 export type FlatpakSource = "Cemu" | "Citra" | "MelonDS";
 export type AppImageSource = "Cemu";
 export type EmuDeckSource = "CemuProton";
+export type SecondaryApp = {
+  type: "Flatpak";
+  value: FlatpakApp;
+};
+export type SecondaryAppWindowingBehavior = "PreferSecondary" | "PreferPrimary" | "Hidden" | "Unmanaged";
 export type DependencyError =
   | {
       type: "SystemCmdNotFound";
@@ -241,6 +250,7 @@ export interface PipelineDefinition {
    * Root action in the tree. Selection be an AllOf.
    */
   root: string;
+  secondary_actions: string[];
 }
 export interface PipelineActionLookup {
   actions: {
@@ -293,27 +303,36 @@ export interface MultiWindow {
   /**
    * Some(options) if Cemu is configurable, None otherwise
    */
-  cemu?: CemuOptions | null;
+  cemu?: CemuWindowOptions | null;
   /**
    * Some(options) if Citra is configurable, None otherwise
    */
-  citra?: CitraOptions | null;
+  citra?: CitraWindowOptions | null;
+  custom?: CustomWindowOptions | null;
   /**
    * Some(options) if Dolphin is configurable, None otherwise
    */
-  dolphin?: DolphinOptions | null;
+  dolphin?: DolphinWindowOptions | null;
   general: GeneralOptions;
   id: string;
 }
-export interface CemuOptions {
+export interface CemuWindowOptions {
   multi_screen_layout: MultiWindowLayout;
   single_screen_layout: LimitedMultiWindowLayout;
 }
-export interface CitraOptions {
+export interface CitraWindowOptions {
   multi_screen_layout: MultiWindowLayout;
   single_screen_layout: LimitedMultiWindowLayout;
 }
-export interface DolphinOptions {
+export interface CustomWindowOptions {
+  classes: string[];
+  multi_screen_multi_secondary_layout: MultiWindowLayout;
+  multi_screen_single_secondary_layout: MultiWindowLayout;
+  primary_window_override?: string | null;
+  secondary_window_matcher?: string | null;
+  single_screen_layout: LimitedMultiWindowLayout;
+}
+export interface DolphinWindowOptions {
   gba_blacklist: number[];
   multi_screen_multi_secondary_layout: MultiWindowLayout;
   multi_screen_single_secondary_layout: MultiWindowLayout;
@@ -360,6 +379,16 @@ export interface CustomFileOptions {
    * valid file extensions for source file
    */
   valid_ext: string[];
+}
+export interface LaunchSecondaryApp {
+  app: SecondaryApp;
+  id: string;
+  name: string;
+  windowing_behavior: SecondaryAppWindowingBehavior;
+}
+export interface FlatpakApp {
+  app_id: string;
+  args: string[];
 }
 export interface CreateProfileResponse {
   profile_id: string;

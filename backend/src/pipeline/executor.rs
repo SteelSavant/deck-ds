@@ -15,9 +15,9 @@ use crate::asset::AssetManager;
 use crate::pipeline::action::cemu_layout::CemuLayout;
 use crate::pipeline::action::citra_layout::CitraLayout;
 use crate::pipeline::action::display_config::DisplayConfig;
-use crate::pipeline::action::launch_secondary_app::LaunchSecondaryApp;
 use crate::pipeline::action::melonds_layout::MelonDSLayout;
-use crate::pipeline::action::multi_window::MultiWindow;
+use crate::pipeline::action::multi_window::launch_secondary_app::LaunchSecondaryApp;
+use crate::pipeline::action::multi_window::primary_windowing::MultiWindow;
 use crate::pipeline::action::session_handler::DesktopSessionHandler;
 use crate::pipeline::action::source_file::SourceFile;
 use crate::pipeline::action::virtual_screen::VirtualScreen;
@@ -552,7 +552,7 @@ mod tests {
             citra_layout::{CitraLayoutOption, CitraLayoutState, CitraState},
             display_config::DisplayConfig,
             melonds_layout::{MelonDSLayoutOption, MelonDSLayoutState, MelonDSSizingOption},
-            multi_window::{
+            multi_window::primary_windowing::{
                 CemuWindowOptions, CitraWindowOptions, CustomWindowOptions, DolphinWindowOptions,
                 GeneralOptions, LimitedMultiWindowLayout, MultiWindowLayout, MultiWindowOptions,
             },

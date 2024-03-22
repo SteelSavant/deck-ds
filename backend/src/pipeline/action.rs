@@ -7,11 +7,11 @@ use strum::{Display, EnumString};
 use crate::macros::newtype_uuid;
 
 use self::display_config::DisplayConfig;
-use self::launch_secondary_app::{LaunchSecondaryApp};
+use self::multi_window::launch_secondary_app::LaunchSecondaryApp;
 use self::{
     cemu_layout::CemuLayout, citra_layout::CitraLayout, melonds_layout::MelonDSLayout,
-    multi_window::MultiWindow, session_handler::DesktopSessionHandler, source_file::SourceFile,
-    virtual_screen::VirtualScreen,
+    multi_window::primary_windowing::MultiWindow, session_handler::DesktopSessionHandler,
+    source_file::SourceFile, virtual_screen::VirtualScreen,
 };
 
 use super::data::{ConfigSelection, DefinitionSelection, RuntimeSelection};
@@ -21,7 +21,6 @@ use anyhow::Result;
 pub mod cemu_layout;
 pub mod citra_layout;
 mod desktop;
-pub mod launch_secondary_app;
 pub mod melonds_layout;
 pub mod multi_window;
 pub mod source_file;

@@ -229,6 +229,24 @@
               "$ref": "#/definitions/SourceFile"
             }
           }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "LaunchSecondaryApp"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/LaunchSecondaryApp"
+            }
+          }
         }
       ]
     },
@@ -367,7 +385,7 @@
         }
       }
     },
-    "CemuOptions": {
+    "CemuWindowOptions": {
       "type": "object",
       "required": [
         "multi_screen_layout",
@@ -525,7 +543,7 @@
         }
       }
     },
-    "CitraOptions": {
+    "CitraWindowOptions": {
       "type": "object",
       "required": [
         "multi_screen_layout",
@@ -666,6 +684,44 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "CustomWindowOptions": {
+      "type": "object",
+      "required": [
+        "classes",
+        "multi_screen_multi_secondary_layout",
+        "multi_screen_single_secondary_layout",
+        "single_screen_layout"
+      ],
+      "properties": {
+        "classes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "multi_screen_multi_secondary_layout": {
+          "$ref": "#/definitions/MultiWindowLayout"
+        },
+        "multi_screen_single_secondary_layout": {
+          "$ref": "#/definitions/MultiWindowLayout"
+        },
+        "primary_window_override": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "secondary_window_matcher": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "single_screen_layout": {
+          "$ref": "#/definitions/LimitedMultiWindowLayout"
         }
       }
     },
@@ -871,7 +927,7 @@
         }
       }
     },
-    "DolphinOptions": {
+    "DolphinWindowOptions": {
       "type": "object",
       "required": [
         "gba_blacklist",
@@ -1033,6 +1089,24 @@
           }
         }
       ]
+    },
+    "FlatpakApp": {
+      "type": "object",
+      "required": [
+        "app_id",
+        "args"
+      ],
+      "properties": {
+        "app_id": {
+          "type": "string"
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     },
     "FlatpakSource": {
       "type": "string",
@@ -1198,6 +1272,30 @@
         },
         "restore_displays_if_not_executing_pipeline": {
           "type": "boolean"
+        }
+      }
+    },
+    "LaunchSecondaryApp": {
+      "type": "object",
+      "required": [
+        "app",
+        "id",
+        "name",
+        "windowing_behavior"
+      ],
+      "properties": {
+        "app": {
+          "$ref": "#/definitions/SecondaryApp"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "windowing_behavior": {
+          "$ref": "#/definitions/SecondaryAppWindowingBehavior"
         }
       }
     },
@@ -1371,7 +1469,7 @@
           "description": "Some(options) if Cemu is configurable, None otherwise",
           "anyOf": [
             {
-              "$ref": "#/definitions/CemuOptions"
+              "$ref": "#/definitions/CemuWindowOptions"
             },
             {
               "type": "null"
@@ -1382,7 +1480,17 @@
           "description": "Some(options) if Citra is configurable, None otherwise",
           "anyOf": [
             {
-              "$ref": "#/definitions/CitraOptions"
+              "$ref": "#/definitions/CitraWindowOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "custom": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CustomWindowOptions"
             },
             {
               "type": "null"
@@ -1393,7 +1501,7 @@
           "description": "Some(options) if Dolphin is configurable, None otherwise",
           "anyOf": [
             {
-              "$ref": "#/definitions/DolphinOptions"
+              "$ref": "#/definitions/DolphinWindowOptions"
             },
             {
               "type": "null"
@@ -1563,7 +1671,8 @@
         "id",
         "name",
         "register_exit_hooks",
-        "root"
+        "root",
+        "secondary_actions"
       ],
       "properties": {
         "actions": {
@@ -1595,6 +1704,12 @@
         "root": {
           "description": "Root action in the tree. Selection be an AllOf.",
           "type": "string"
+        },
+        "secondary_actions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -1761,6 +1876,37 @@
             }
           }
         }
+      ]
+    },
+    "SecondaryApp": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Flatpak"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/FlatpakApp"
+            }
+          }
+        }
+      ]
+    },
+    "SecondaryAppWindowingBehavior": {
+      "type": "string",
+      "enum": [
+        "PreferSecondary",
+        "PreferPrimary",
+        "Hidden",
+        "Unmanaged"
       ]
     },
     "SetAppProfileOverrideRequest": {

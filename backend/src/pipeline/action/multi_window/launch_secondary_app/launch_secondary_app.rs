@@ -5,26 +5,19 @@ use nix::unistd::Pid;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use super::{ActionId, ActionImpl, ActionType};
+use crate::{
+    pipeline::action::{multi_window::OptionsRW, ActionId, ActionImpl, ActionType},
+    secondary_app::{FlatpakApp, SecondaryApp},
+    sys::windowing::get_window_info_from_pid,
+};
+
+use super::secondary_app_options::SecondaryAppWindowOptions;
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
 pub struct LaunchSecondaryApp {
     pub id: ActionId,
-    pub name: String,
     pub app: SecondaryApp,
     pub windowing_behavior: SecondaryAppWindowingBehavior,
-}
-
-#[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
-#[serde(tag = "type", content = "value")]
-pub enum SecondaryApp {
-    Flatpak(FlatpakApp),
-}
-
-#[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
-pub struct FlatpakApp {
-    pub app_id: String,
-    pub args: Vec<String>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
@@ -38,17 +31,23 @@ pub enum SecondaryAppWindowingBehavior {
 #[derive(Debug, Clone, PartialEq)]
 pub struct SecondaryAppState {
     pid: Option<Pid>,
+    options: SecondaryAppWindowOptions,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-struct SerializableSecondaryAppState;
+struct SerializableSecondaryAppState {
+    options: SecondaryAppWindowOptions,
+}
 
 impl Serialize for SecondaryAppState {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        SerializableSecondaryAppState.serialize(serializer)
+        SerializableSecondaryAppState {
+            options: self.options.clone(),
+        }
+        .serialize(serializer)
     }
 }
 
@@ -57,30 +56,46 @@ impl<'de> Deserialize<'de> for SecondaryAppState {
     where
         D: serde::Deserializer<'de>,
     {
-        SerializableSecondaryAppState::deserialize(deserializer)
-            .map(|_| SecondaryAppState { pid: None })
+        SerializableSecondaryAppState::deserialize(deserializer).map(|v| SecondaryAppState {
+            pid: None,
+            options: v.options,
+        })
     }
 }
 
 impl ActionImpl for LaunchSecondaryApp {
     type State = SecondaryAppState;
 
-    const TYPE: super::ActionType = ActionType::LaunchSecondaryApp;
+    const TYPE: ActionType = ActionType::LaunchSecondaryApp;
 
-    fn get_id(&self) -> super::ActionId {
+    fn get_id(&self) -> ActionId {
         self.id
     }
 
     fn setup(&self, ctx: &mut crate::pipeline::executor::PipelineContext) -> Result<()> {
         let pid = self.app.setup()?;
+        let options = SecondaryAppWindowOptions::load(&ctx.kwin)?;
+        ctx.set_state::<Self>(SecondaryAppState {
+            pid: Some(pid),
+            options,
+        });
 
-        ctx.set_state::<Self>(SecondaryAppState { pid: Some(pid) });
+        let window_info = get_window_info_from_pid(pid)?;
 
-        todo!("load window info + save to windowing script config");
+        SecondaryAppWindowOptions {
+            window_matcher: escape_string_for_regex(window_info.name),
+            classes: window_info.classes,
+            windowing_behavior: self.windowing_behavior,
+        }
+        .write(&ctx.kwin)
     }
 
     fn teardown(&self, ctx: &mut crate::pipeline::executor::PipelineContext) -> Result<()> {
-        if let Some(pid) = ctx.get_state::<Self>().and_then(|state| state.pid) {
+        if let Some(pid) = ctx.get_state::<Self>().and_then(|state| {
+            let _ = state.options.write(&ctx.kwin); // ignore result for now
+
+            state.pid
+        }) {
             self.app.teardown(pid)
         } else {
             Ok(())
@@ -195,4 +210,14 @@ fn check_running_flatpaks() -> Result<Vec<FlatpakStatus>> {
             String::from_utf8_lossy(&output.stderr).to_string()
         ))
     }
+}
+
+fn escape_string_for_regex(mut s: String) -> String {
+    for c in [
+        '\\', '^', '$', '*', '+', '?', '.', '(', ')', '|', '{', '}', '[', ']',
+    ] {
+        s = s.replace(c, &format!("\\{c}"));
+    }
+
+    s
 }
