@@ -23,7 +23,7 @@ impl OptionsRW for SecondaryAppWindowOptions {
 
         let classes = kwin
             .get_script_string_setting(SCRIPT, "secondaryAppWindowClasses")?
-            .map(|s| s.split(',').map(|v| v.trim()).collect())
+            .map(|s| s.split(',').map(|v| v.trim().to_string()).collect())
             .unwrap_or_default();
 
         let windowing_behavior = kwin
@@ -44,13 +44,13 @@ impl OptionsRW for SecondaryAppWindowOptions {
         kwin.set_script_string_setting(
             SCRIPT,
             "secondaryAppClasses",
-            &serde_json::to_string(&self.classes.join(",")),
+            &serde_json::to_string(&self.classes.join(",")).unwrap(),
         )?;
 
         kwin.set_script_string_setting(
             SCRIPT,
             "secondaryAppWindowingBehavior",
-            &serde_json::to_string(&self.windowing_behavior),
+            &serde_json::to_string(&self.windowing_behavior).unwrap(),
         )?;
 
         Ok(())

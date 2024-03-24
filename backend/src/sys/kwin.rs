@@ -194,7 +194,7 @@ impl<'a> KWin<'a> {
     }
 
     pub fn get_bundle(&self, script_name: &str) -> Option<Asset> {
-        self.assets_manager.get(
+        self.assets_manager.get_file(
             self.bundles_dir
                 .join(script_name)
                 .with_extension("kwinscript"),

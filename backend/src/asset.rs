@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use include_dir::{Dir, File};
 use std::{
     borrow::Cow,
+    collections::HashMap,
     io::ErrorKind,
     path::{Path, PathBuf},
 };
@@ -27,9 +28,12 @@ impl<'a> AssetManager<'a> {
     ///
     /// # Example
     /// ```
-    /// let asset = manager.get(PathBuf::from("kwin/emulatorwindowing.kwinscript"))
+    /// let asset = manager.get_file(PathBuf::from("kwin/emulatorwindowing.kwinscript"))
     /// ```
-    pub fn get<'b, P: AsRef<Path> + std::fmt::Debug>(&'b self, asset_path: P) -> Option<Asset<'a>> {
+    pub fn get_file<'b, P: AsRef<Path> + std::fmt::Debug>(
+        &'b self,
+        asset_path: P,
+    ) -> Option<Asset<'a>> {
         let external = self.external_asset_path.join(&asset_path);
 
         fn get_external(external: PathBuf) -> Result<Option<AssetType<'static>>> {
@@ -50,8 +54,54 @@ impl<'a> AssetManager<'a> {
             })
             .map(|a| Asset { asset_impl: a })
     }
+
+    /// Returns a list of [AssetDirEntry] if the dir exists, otherwise [None]
+    ///
+    pub fn get_dir<P: AsRef<Path> + std::fmt::Debug>(
+        &self,
+        asset_dir: P,
+    ) -> Option<Vec<AssetDirEntry>> {
+        let mut entries = HashMap::new();
+        let embedded = self.embedded_assets.get_dir(&asset_dir);
+        if let Some(dir) = embedded {
+            for entry in dir.entries().iter() {
+                match entry {
+                    include_dir::DirEntry::Dir(dir) => entries.insert(
+                        dir.path().to_path_buf(),
+                        AssetDirEntry::Dir(dir.path().to_path_buf()),
+                    ),
+                    include_dir::DirEntry::File(file) => entries.insert(
+                        dir.path().to_path_buf(),
+                        AssetDirEntry::Dir(file.path().to_path_buf()),
+                    ),
+                };
+            }
+        }
+
+        let external = self.external_asset_path.join(&asset_dir);
+        if let Ok(read_dir) = std::fs::read_dir(external) {
+            for entry in read_dir.filter_map(|v| v.ok()) {
+                let path = entry.path();
+                if path.is_dir() {
+                    entries.insert(path.clone(), AssetDirEntry::Dir(path));
+                } else {
+                    entries.insert(path.clone(), AssetDirEntry::File(path));
+                }
+            }
+        }
+
+        if entries.is_empty() {
+            None
+        } else {
+            Some(entries.into_values().collect())
+        }
+    }
 }
 
+pub enum AssetDirEntry {
+    Dir(PathBuf),
+    File(PathBuf),
+}
 pub struct Asset<'a> {
     asset_impl: AssetType<'a>,
 }
@@ -106,3 +156,5 @@ impl<'a> Asset<'a> {
         })
     }
 }
+
+// TODO::tests

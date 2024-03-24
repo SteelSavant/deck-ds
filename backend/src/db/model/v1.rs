@@ -12,18 +12,19 @@ use crate::{
             citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
             display_config::DisplayConfig,
             melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
-            multi_window::launch_secondary_app::{
-                FlatpakApp, LaunchSecondaryApp, SecondaryApp, SecondaryAppWindowingBehavior,
-            },
-            multi_window::primary_windowing::{
-                CemuWindowOptions, CitraWindowOptions, CustomWindowOptions, DolphinWindowOptions,
-                GeneralOptions,
+            multi_window::{
+                launch_secondary_app::{LaunchSecondaryApp, SecondaryAppWindowingBehavior},
+                primary_windowing::{
+                    CemuWindowOptions, CitraWindowOptions, CustomWindowOptions,
+                    DolphinWindowOptions, GeneralOptions,
+                },
             },
             session_handler::DesktopSessionHandler,
             ActionId,
         },
         data::{PipelineActionId, PipelineDefinitionId, PipelineTarget},
     },
+    secondary_app::{FlatpakApp, SecondaryApp},
     settings::{AppId, ProfileId},
 };
 
@@ -839,7 +840,6 @@ impl From<DbDisplayConfig> for DisplayConfig {
 pub struct DbLaunchSecondaryApp {
     #[primary_key]
     pub id: ActionId,
-    pub name: String,
     pub app: DbSecondaryApp,
     pub windowing_behavior: DbSecondaryAppWindowingBehavior,
 }
@@ -861,7 +861,6 @@ impl From<LaunchSecondaryApp> for DbLaunchSecondaryApp {
     fn from(value: LaunchSecondaryApp) -> Self {
         Self {
             id: value.id,
-            name: value.name,
             app: value.app.into(),
             windowing_behavior: value.windowing_behavior.into(),
         }
@@ -872,7 +871,6 @@ impl From<DbLaunchSecondaryApp> for LaunchSecondaryApp {
     fn from(value: DbLaunchSecondaryApp) -> Self {
         Self {
             id: value.id,
-            name: value.name,
             app: value.app.into(),
             windowing_behavior: value.windowing_behavior.into(),
         }
