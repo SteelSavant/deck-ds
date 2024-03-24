@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use nix::unistd::Pid;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     pipeline::action::{multi_window::OptionsRW, ActionId, ActionImpl, ActionType},
     secondary_app::{FlatpakApp, SecondaryApp},
-    sys::windowing::get_window_info_from_pid,
+    sys::{flatpak::check_running_flatpaks, windowing::get_window_info_from_pid},
 };
 
 use super::secondary_app_options::SecondaryAppWindowOptions;
@@ -173,42 +173,6 @@ impl FlatpakApp {
         } else {
             Ok(())
         }
-    }
-}
-
-struct FlatpakStatus {
-    app_id: String,
-    pid: Pid,
-    _instance: u32,
-}
-
-fn check_running_flatpaks() -> Result<Vec<FlatpakStatus>> {
-    let output = Command::new("flatpak").arg("ps").output()?;
-    if output.status.success() {
-        let status = String::from_utf8_lossy(&output.stdout)
-            .lines()
-            .skip(1)
-            .map(|v| v.split_ascii_whitespace())
-            .map(|mut v| {
-                let status = FlatpakStatus {
-                    _instance: v
-                        .next()
-                        .with_context(|| "instance number expected")?
-                        .parse()?,
-                    pid: Pid::from_raw(v.next().with_context(|| "pid expected")?.parse()?),
-                    app_id: v
-                        .next()
-                        .with_context(|| "expected flatpak app id")?
-                        .to_string(),
-                };
-                Ok(status)
-            })
-            .collect::<Result<_>>()?;
-        Ok(status)
-    } else {
-        Err(anyhow::anyhow!(
-            String::from_utf8_lossy(&output.stderr).to_string()
-        ))
     }
 }
 

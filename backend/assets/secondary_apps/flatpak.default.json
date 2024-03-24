@@ -1,7 +1,6 @@
-[
-    {
+{
+    "20f75c64-3105-41b9-8d40-a84e4ff5a3ac": {
         "type": "Flatpak",
-        "id": "20f75c64-3105-41b9-8d40-a84e4ff5a3ac",
         "name": "YouTube [Chrome]",
         "app_id": "com.google.Chrome",
         "args": [
@@ -10,9 +9,8 @@
             "youtube.com"
         ]
     },
-    {
+    "fd811b3f-4e09-4828-92aa-9220239c274b": {
         "type": "Flatpak",
-        "id": "e90133d6-82b0-433b-ac28-24a26f9f9f1d",
         "name": "YouTube [Firefox]",
         "app_id": "org.mozilla.firefox",
         "args": [
@@ -21,9 +19,8 @@
             "youtube.com"
         ]
     },
-    {
+    "5d27c8dc-1504-45ef-a5d7-49e8545c62c4": {
         "type": "Flatpak",
-        "id": "20f75c64-3105-41b9-8d40-a84e4ff5a3ac",
         "name": "Netflix [Chrome]",
         "app_id": "com.google.Chrome",
         "args": [
@@ -32,9 +29,8 @@
             "netflix.com"
         ]
     },
-    {
+    "d518dc5a-13b8-4993-b09d-139fd7bf9ba3": {
         "type": "Flatpak",
-        "id": "e90133d6-82b0-433b-ac28-24a26f9f9f1d",
         "name": "Netflix [Firefox]",
         "app_id": "org.mozilla.firefox",
         "args": [
@@ -43,9 +39,8 @@
             "netflix.com"
         ]
     },
-    {
+    "3775b25c-220a-4764-bd72-52d8bf303301": {
         "type": "Flatpak",
-        "id": "20f75c64-3105-41b9-8d40-a84e4ff5a3ac",
         "name": "Amazon Prime Video [Chrome]",
         "app_id": "com.google.Chrome",
         "args": [
@@ -54,9 +49,8 @@
             "amazon.com/gp/video/storefront"
         ]
     },
-    {
+    "e90133d6-82b0-433b-ac28-24a26f9f9f1d": {
         "type": "Flatpak",
-        "id": "e90133d6-82b0-433b-ac28-24a26f9f9f1d",
         "name": "Amazon Prime Video [Firefox]",
         "app_id": "org.mozilla.firefox",
         "args": [
@@ -65,4 +59,4 @@
             "amazon.com/gp/video/storefront"
         ]
     }
-]
+}
