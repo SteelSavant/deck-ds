@@ -43,7 +43,7 @@ impl<'a> SecondaryAppManager<'a> {
                         match e {
                             crate::asset::AssetDirEntry::Dir(_) => None, // TODO::walkdir if needed
                             crate::asset::AssetDirEntry::File(file) => {
-                                self.asset_manager.get_file(&file)
+                                self.asset_manager.get_file(file)
                             }
                         }
                     })

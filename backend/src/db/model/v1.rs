@@ -13,12 +13,12 @@ use crate::{
             display_config::DisplayConfig,
             melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
             multi_window::{
-                launch_secondary_app::{
-                    LaunchSecondaryApp, LaunchSecondaryAppPreset, SecondaryAppWindowingBehavior,
-                },
                 primary_windowing::{
                     CemuWindowOptions, CitraWindowOptions, CustomWindowOptions,
                     DolphinWindowOptions, GeneralOptions,
+                },
+                secondary_app::{
+                    LaunchSecondaryApp, LaunchSecondaryAppPreset, SecondaryAppWindowingBehavior,
                 },
             },
             platform_select::PlatformSelect,

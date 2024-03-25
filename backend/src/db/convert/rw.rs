@@ -142,10 +142,9 @@ impl DbCategoryProfile {
 
 impl DbConfigSelection {
     pub fn remove_all(&self, rw: &RwTransaction) -> Result<()> {
-        match self {
-            DbConfigSelection::Action(action) => action.remove(rw)?,
-            _ => (),
-        };
+        if let DbConfigSelection::Action(action) = self {
+            action.remove(rw)?
+        }
 
         Ok(())
     }

@@ -7,7 +7,7 @@ use strum::{Display, EnumString};
 use crate::macros::newtype_uuid;
 
 use self::display_config::DisplayConfig;
-use self::multi_window::launch_secondary_app::{LaunchSecondaryApp, LaunchSecondaryAppPreset};
+use self::multi_window::secondary_app::{LaunchSecondaryApp, LaunchSecondaryAppPreset};
 use self::platform_select::PlatformSelect;
 use self::{
     cemu_layout::CemuLayout, citra_layout::CitraLayout, melonds_layout::MelonDSLayout,

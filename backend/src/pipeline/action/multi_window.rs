@@ -4,8 +4,8 @@ use crate::sys::kwin::KWin;
 
 use super::{ActionId, ActionImpl, ActionType};
 
-pub mod launch_secondary_app;
 pub mod primary_windowing;
+pub mod secondary_app;
 
 const SCRIPT: &str = "emulatorwindowing";
 

@@ -1,20 +1,17 @@
-use std::process::Command;
-
 use anyhow::{Context, Result};
-use nix::unistd::Pid;
+
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     pipeline::{
-        action::{multi_window::OptionsRW, ActionId, ActionImpl, ActionType},
+        action::{ActionId, ActionImpl, ActionType},
         dependency::Dependency,
     },
-    secondary_app::{FlatpakApp, SecondaryApp, SecondaryAppPresetId},
-    sys::{flatpak::check_running_flatpaks, windowing::get_window_info_from_pid},
+    secondary_app::SecondaryAppPresetId,
 };
 
-use super::{LaunchSecondaryApp, SecondaryAppState, SecondaryAppWindowingBehavior};
+use super::{LaunchSecondaryApp, SecondaryAppWindowingBehavior};
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
 pub struct LaunchSecondaryAppPreset {
@@ -66,6 +63,6 @@ impl ActionImpl for LaunchSecondaryAppPreset {
         &self,
         _ctx: &mut crate::pipeline::executor::PipelineContext,
     ) -> Vec<crate::pipeline::dependency::Dependency> {
-        vec![Dependency::SecondaryAppPreset(self.preset.clone())]
+        vec![Dependency::SecondaryAppPreset(self.preset)]
     }
 }

@@ -196,7 +196,7 @@ impl PipelineDefinition {
             })
             .collect::<Result<Vec<_>>>()?
             .into_iter()
-            .filter_map(std::convert::identity)
+            .flatten()
             .collect::<HashMap<_, _>>();
 
         Ok(Pipeline {
@@ -234,7 +234,7 @@ impl PipelineActionId {
                             .and_then(|p| p.pipeline.actions.get(self, target))
                             .map(|config| (Some(profile), config))
                     })
-                    .unwrap_or_else(|| (None, config));
+                    .unwrap_or((None, config));
 
                 let resolved_action = settings.1.reify(
                     settings.0, definition, target, pipeline, profiles, registrar,
@@ -267,7 +267,7 @@ impl PipelineActionSettings<ConfigSelection> {
             enabled: self.enabled,
             is_visible_on_qam: self.is_visible_on_qam,
             profile_override,
-            selection: selection,
+            selection,
         })
     }
 }
@@ -298,10 +298,7 @@ impl ConfigSelection {
                         .collect::<Result<Vec<_>>>();
                     actions.map(|actions| RuntimeSelection::OneOf {
                         selection: selection.clone(),
-                        actions: actions
-                            .into_iter()
-                            .filter_map(std::convert::identity)
-                            .collect(),
+                        actions: actions.into_iter().flatten().collect(),
                     })
                 }
                 _ => Err(anyhow::anyhow!("selection type mismatch in reify config")),
@@ -311,7 +308,7 @@ impl ConfigSelection {
                     .iter()
                     .map(|a| a.reify(target, pipeline, profiles, registrar))
                     .collect::<Result<Vec<_>>>()
-                    .map(|v| RuntimeSelection::AllOf(v.into_iter().filter_map(|v| v).collect())),
+                    .map(|v| RuntimeSelection::AllOf(v.into_iter().flatten().collect())),
                 _ => Err(anyhow::anyhow!("selection type mismatch in reify config")),
             },
             ConfigSelection::UserDefined(_actions) => todo!(), // actions

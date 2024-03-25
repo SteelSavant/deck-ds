@@ -12,7 +12,7 @@ use super::{
         display_config::DisplayConfig,
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
         multi_window::{
-            launch_secondary_app::LaunchSecondaryApp,
+            secondary_app::LaunchSecondaryApp,
             primary_windowing::{
                 CemuWindowOptions, CitraWindowOptions, GeneralOptions, MultiWindow,
             },

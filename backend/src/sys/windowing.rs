@@ -54,7 +54,7 @@ fn get_window_info_for_window_id(id: usize) -> Result<WindowInfo> {
             .get(1)
             .expect("window class regex should have 1 capture")
             .as_str()
-            .split_terminator(",")
+            .split_terminator(',')
             .map(|v| v.trim_matches(&[' ', '"'] as &[_]).to_string())
             .collect();
 

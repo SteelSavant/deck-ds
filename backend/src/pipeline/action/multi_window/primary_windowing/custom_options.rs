@@ -90,13 +90,13 @@ impl OptionsRW for CustomWindowOptions {
         kwin.set_script_string_setting(
             SCRIPT,
             "customPrimaryWindowMatcher",
-            self.primary_window_override.as_deref().unwrap_or(&""),
+            self.primary_window_override.as_deref().unwrap_or(""),
         )?;
 
         kwin.set_script_string_setting(
             SCRIPT,
             "customSecondaryWindowMatcher",
-            self.secondary_window_matcher.as_deref().unwrap_or(&""),
+            self.secondary_window_matcher.as_deref().unwrap_or(""),
         )?;
 
         kwin.set_script_string_setting(SCRIPT, "customWindowClasses", &self.classes.join(","))?;

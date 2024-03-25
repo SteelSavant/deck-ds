@@ -16,10 +16,10 @@ use crate::pipeline::action::cemu_layout::CemuLayout;
 use crate::pipeline::action::citra_layout::CitraLayout;
 use crate::pipeline::action::display_config::DisplayConfig;
 use crate::pipeline::action::melonds_layout::MelonDSLayout;
-use crate::pipeline::action::multi_window::launch_secondary_app::{
+use crate::pipeline::action::multi_window::primary_windowing::MultiWindow;
+use crate::pipeline::action::multi_window::secondary_app::{
     LaunchSecondaryApp, LaunchSecondaryAppPreset,
 };
-use crate::pipeline::action::multi_window::primary_windowing::MultiWindow;
 use crate::pipeline::action::platform_select::PlatformSelect;
 use crate::pipeline::action::session_handler::DesktopSessionHandler;
 use crate::pipeline::action::source_file::SourceFile;

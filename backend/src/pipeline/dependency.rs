@@ -90,7 +90,7 @@ impl Dependency {
                 if presets.contains_key(id) {
                     Ok(())
                 } else {
-                    Err(DependencyError::SecondaryAppPresetNotFound(id.clone()))
+                    Err(DependencyError::SecondaryAppPresetNotFound(*id))
                 }
             }
         }
