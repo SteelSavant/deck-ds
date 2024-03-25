@@ -13,18 +13,21 @@ use crate::{
             display_config::DisplayConfig,
             melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
             multi_window::{
-                launch_secondary_app::{LaunchSecondaryApp, SecondaryAppWindowingBehavior},
+                launch_secondary_app::{
+                    LaunchSecondaryApp, LaunchSecondaryAppPreset, SecondaryAppWindowingBehavior,
+                },
                 primary_windowing::{
                     CemuWindowOptions, CitraWindowOptions, CustomWindowOptions,
                     DolphinWindowOptions, GeneralOptions,
                 },
             },
+            platform_select::PlatformSelect,
             session_handler::DesktopSessionHandler,
             ActionId,
         },
         data::{PipelineActionId, PipelineDefinitionId, PipelineTarget},
     },
-    secondary_app::{FlatpakApp, SecondaryApp},
+    secondary_app::{FlatpakApp, SecondaryApp, SecondaryAppPresetId},
     settings::{AppId, ProfileId},
 };
 
@@ -924,6 +927,63 @@ impl From<DbSecondaryAppWindowingBehavior> for SecondaryAppWindowingBehavior {
             }
             DbSecondaryAppWindowingBehavior::Hidden => SecondaryAppWindowingBehavior::Hidden,
             DbSecondaryAppWindowingBehavior::Unmanaged => SecondaryAppWindowingBehavior::Unmanaged,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[native_db]
+#[native_model(id = 110, version = 1, with = NativeModelJSON)]
+pub struct DbLaunchSecondaryAppPreset {
+    #[primary_key]
+    pub id: ActionId,
+    pub preset: SecondaryAppPresetId,
+    pub windowing_behavior: DbSecondaryAppWindowingBehavior,
+}
+
+impl From<LaunchSecondaryAppPreset> for DbLaunchSecondaryAppPreset {
+    fn from(value: LaunchSecondaryAppPreset) -> Self {
+        Self {
+            id: value.id,
+            preset: value.preset,
+            windowing_behavior: value.windowing_behavior.into(),
+        }
+    }
+}
+
+impl From<DbLaunchSecondaryAppPreset> for LaunchSecondaryAppPreset {
+    fn from(value: DbLaunchSecondaryAppPreset) -> Self {
+        Self {
+            id: value.id,
+            preset: value.preset,
+            windowing_behavior: value.windowing_behavior.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[native_db]
+#[native_model(id = 111, version = 1, with = NativeModelJSON)]
+pub struct DbPlatformSelect {
+    #[primary_key]
+    pub id: ActionId,
+    pub platform: PipelineActionId,
+}
+
+impl From<PlatformSelect> for DbPlatformSelect {
+    fn from(value: PlatformSelect) -> Self {
+        Self {
+            id: value.id,
+            platform: value.platform,
+        }
+    }
+}
+
+impl From<DbPlatformSelect> for PlatformSelect {
+    fn from(value: DbPlatformSelect) -> Self {
+        Self {
+            id: value.id,
+            platform: value.platform,
         }
     }
 }

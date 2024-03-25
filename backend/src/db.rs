@@ -288,10 +288,10 @@ mod tests {
         let profile1 = ProfileId::new();
         let profile2 = ProfileId::new();
 
-        let targets1 = PipelineActionId::new("core:citra:root");
+        let targets1 = PipelineActionId::new("core:citra:platform");
         let actions1 = registrar.make_lookup(&targets1);
 
-        let targets2 = PipelineActionId::new("core:melonds:root");
+        let targets2 = PipelineActionId::new("core:melonds:platform");
         let actions2 = registrar.make_lookup(&targets2);
 
         let overrides: HashMap<_, _, RandomState> = HashMap::from_iter(vec![

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::pipeline::action::multi_window::{OptionsRW, SCRIPT};
 
-use super::launch_secondary_app::SecondaryAppWindowingBehavior;
+use super::SecondaryAppWindowingBehavior;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct SecondaryAppWindowOptions {

@@ -6,6 +6,8 @@ use thiserror::Error;
 use anyhow::Result;
 use which::which;
 
+use crate::{secondary_app::SecondaryAppPresetId, sys::flatpak::list_installed_flatpaks};
+
 use super::executor::PipelineContext;
 
 #[derive(Error, Debug, Clone, Serialize, JsonSchema)]
@@ -25,6 +27,10 @@ pub enum DependencyError {
     KwinScriptFailedInstall(String),
     #[error("required field `{0}` must be set")]
     FieldNotSet(String),
+    #[error("required flatpak `{0}` must be installed")]
+    FlatpakNotFound(String),
+    #[error("required secondary app preset `{0:?}` must exist")]
+    SecondaryAppPresetNotFound(SecondaryAppPresetId),
 }
 
 pub enum Dependency {
@@ -32,6 +38,8 @@ pub enum Dependency {
     Path { path: PathBuf, is_file: bool },
     KwinScript(String),
     ConfigField(String),
+    Flatpak(String),
+    SecondaryAppPreset(SecondaryAppPresetId),
     Display,
 }
 
@@ -67,6 +75,24 @@ impl Dependency {
             }
             Dependency::ConfigField(field) => Err(DependencyError::FieldNotSet(field.clone())),
             Dependency::Display => verify_system_deps(&["xrandr", "cvt", "kscreen-doctor"], ctx),
+            Dependency::Flatpak(app_id) => {
+                Dependency::System("flatpak".into()).verify_config(ctx)?;
+                let apps = list_installed_flatpaks().expect("list flatpaks should work");
+                if apps.into_iter().any(|v| v.app_id == *app_id) {
+                    Ok(())
+                } else {
+                    Err(DependencyError::FlatpakNotFound(app_id.clone()))
+                }
+            }
+            Dependency::SecondaryAppPreset(id) => {
+                let presets = ctx.secondary_app.get_presets();
+
+                if presets.contains_key(id) {
+                    Ok(())
+                } else {
+                    Err(DependencyError::SecondaryAppPresetNotFound(id.clone()))
+                }
+            }
         }
     }
 

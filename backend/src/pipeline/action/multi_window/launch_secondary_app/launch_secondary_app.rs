@@ -6,61 +6,25 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    pipeline::action::{multi_window::OptionsRW, ActionId, ActionImpl, ActionType},
+    pipeline::{
+        action::{multi_window::OptionsRW, ActionId, ActionImpl, ActionType},
+        dependency::Dependency,
+        executor::PipelineContext,
+    },
     secondary_app::{FlatpakApp, SecondaryApp},
     sys::{flatpak::check_running_flatpaks, windowing::get_window_info_from_pid},
 };
 
-use super::secondary_app_options::SecondaryAppWindowOptions;
+use super::{
+    secondary_app_options::SecondaryAppWindowOptions, SecondaryAppState,
+    SecondaryAppWindowingBehavior,
+};
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
 pub struct LaunchSecondaryApp {
     pub id: ActionId,
     pub app: SecondaryApp,
     pub windowing_behavior: SecondaryAppWindowingBehavior,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
-pub enum SecondaryAppWindowingBehavior {
-    PreferSecondary,
-    PreferPrimary,
-    Hidden,
-    Unmanaged,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct SecondaryAppState {
-    pid: Option<Pid>,
-    options: SecondaryAppWindowOptions,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-struct SerializableSecondaryAppState {
-    options: SecondaryAppWindowOptions,
-}
-
-impl Serialize for SecondaryAppState {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        SerializableSecondaryAppState {
-            options: self.options.clone(),
-        }
-        .serialize(serializer)
-    }
-}
-
-impl<'de> Deserialize<'de> for SecondaryAppState {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        SerializableSecondaryAppState::deserialize(deserializer).map(|v| SecondaryAppState {
-            pid: None,
-            options: v.options,
-        })
-    }
 }
 
 impl ActionImpl for LaunchSecondaryApp {
@@ -72,7 +36,7 @@ impl ActionImpl for LaunchSecondaryApp {
         self.id
     }
 
-    fn setup(&self, ctx: &mut crate::pipeline::executor::PipelineContext) -> Result<()> {
+    fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let pid = self.app.setup()?;
         let options = SecondaryAppWindowOptions::load(&ctx.kwin)?;
         ctx.set_state::<Self>(SecondaryAppState {
@@ -90,7 +54,7 @@ impl ActionImpl for LaunchSecondaryApp {
         .write(&ctx.kwin)
     }
 
-    fn teardown(&self, ctx: &mut crate::pipeline::executor::PipelineContext) -> Result<()> {
+    fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {
         if let Some(pid) = ctx.get_state::<Self>().and_then(|state| {
             let _ = state.options.write(&ctx.kwin); // ignore result for now
 
@@ -100,6 +64,10 @@ impl ActionImpl for LaunchSecondaryApp {
         } else {
             Ok(())
         }
+    }
+
+    fn get_dependencies(&self, ctx: &mut PipelineContext) -> Vec<Dependency> {
+        self.app.get_dependencies(ctx)
     }
 }
 
@@ -124,6 +92,12 @@ impl SecondaryApp {
 
             //     Ok(())
             // }
+        }
+    }
+
+    fn get_dependencies(&self, _ctx: &mut PipelineContext) -> Vec<Dependency> {
+        match self {
+            SecondaryApp::Flatpak(flatpak) => flatpak.get_dependencies(),
         }
     }
 }
@@ -173,6 +147,10 @@ impl FlatpakApp {
         } else {
             Ok(())
         }
+    }
+
+    fn get_dependencies(&self) -> Vec<Dependency> {
+        vec![Dependency::Flatpak(self.app_id.clone())]
     }
 }
 

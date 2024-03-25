@@ -21,16 +21,16 @@ pub struct FlatpakApp {
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
 pub struct SecondaryAppPreset {
-    name: String,
-    app: SecondaryApp,
+    pub name: String,
+    pub app: SecondaryApp,
 }
 
-pub struct SecondaryAppManager {
-    asset_manager: AssetManager<'static>,
+pub struct SecondaryAppManager<'a> {
+    asset_manager: AssetManager<'a>,
 }
 
-impl SecondaryAppManager {
-    pub fn new(asset_manager: AssetManager<'static>) -> Self {
+impl<'a> SecondaryAppManager<'a> {
+    pub fn new(asset_manager: AssetManager<'a>) -> Self {
         Self { asset_manager }
     }
 

@@ -1,6 +1,9 @@
 use strum::IntoEnumIterator;
 
-use crate::settings::ProfileId;
+use crate::{
+    secondary_app::{FlatpakApp, SecondaryApp},
+    settings::ProfileId,
+};
 
 use super::{
     action::{
@@ -8,9 +11,13 @@ use super::{
         citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
         display_config::DisplayConfig,
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
-        multi_window::primary_windowing::{
-            CemuWindowOptions, CitraWindowOptions, GeneralOptions, MultiWindow,
+        multi_window::{
+            launch_secondary_app::LaunchSecondaryApp,
+            primary_windowing::{
+                CemuWindowOptions, CitraWindowOptions, GeneralOptions, MultiWindow,
+            },
         },
+        platform_select::PlatformSelect,
         session_handler::{DesktopSessionHandler, ExternalDisplaySettings, RelativeLocation},
         source_file::{
             AppImageSource, CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile,
@@ -206,12 +213,73 @@ impl PipelineActionRegistarBuilder {
     }
 
     pub fn with_core(self) -> Self {
+        // TOPLEVEL: scope:toplevel:{platform|secondary}
+        // PLATFORM: scope:group:platform
+        // ACTION: scope:group:{name}
+
         // All actions in the registrar have nil ActionIds, since they're not stored in the DB.
         self.with_scope("core", |scope| {
             let multi_window_name = "Multi-Window Emulation".to_string();
             let multi_window_description = Some("Manages windows for known emulators configurations with multiple display windows.".to_string());
 
             scope
+                .with_group("toplevel", |group| {
+                    group.with_action("platform", None, PipelineActionDefinitionBuilder {
+                        name: "Platform".into(),
+                        description: Some("Selects the desired app platform".into()),
+                        enabled: None,
+                        profile_override: None,
+                        is_visible_on_qam: false,
+                        selection: DefinitionSelection::Action(PlatformSelect {
+                            id: ActionId::nil(),
+                            platform: PipelineActionId::new("core:app:platform"),
+                        }.into()),
+                    }).with_action("secondary", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                        name: "Secondary App".into(),
+                        description: Some("An additional system application to launch alongside the main app.".into()),
+                        enabled: Some(false),
+                        profile_override: None,
+                        is_visible_on_qam: true,
+                        selection: DefinitionSelection::OneOf { 
+                            selection: PipelineActionId::new("core:secondary:launch_secondary_app_preset"), 
+                            actions: vec![
+                                PipelineActionId::new("core:secondary:launch_secondary_app_preset"),
+                                PipelineActionId::new("core:secondary:launch_secondary_app")
+                            ]  
+                        },
+                    })
+                })
+                .with_group("secondary", |group| {
+                    group.with_action("launch_secondary_app", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                        name: "Custom App".into(),
+                        description: Some("Custom app config to launch along with the main Steam app.".into()),
+                        enabled: None,
+                        profile_override: None,
+                        is_visible_on_qam: true,
+                        selection: DefinitionSelection::Action(LaunchSecondaryApp {
+                            id: ActionId::nil(),
+                            app: SecondaryApp::Flatpak(FlatpakApp {
+                                app_id: "".into(),
+                                args: vec![],
+                            }),
+                            windowing_behavior: Default::default(),
+                        }.into()),
+                    }).with_action("launch_secondary_app_preset", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                        name: "Preset".into(),
+                        description: Some("App to launch along with the main Steam app.".into()),
+                        enabled: None,
+                        profile_override: None,
+                        is_visible_on_qam: true,
+                        selection: DefinitionSelection::Action(LaunchSecondaryApp {
+                            id: ActionId::nil(),
+                            app: SecondaryApp::Flatpak(FlatpakApp {
+                                app_id: "".into(),
+                                args: vec![],
+                            }),
+                            windowing_behavior: Default::default(),
+                        }.into()),
+                    })
+                })
                 .with_group("display", |group| {
                     group.with_action(
                         "desktop_session",
@@ -264,7 +332,7 @@ impl PipelineActionRegistarBuilder {
                     let citra_layout_name = "Layout".to_string();
                     let citra_layout_description = Some("Edits Citra ini file to desired layout settings.".to_string());
 
-                    group.with_action("root", None, PipelineActionDefinitionBuilder {
+                    group.with_action("platform", None, PipelineActionDefinitionBuilder {
                         name: citra_name.clone(),
                         description: citra_description.clone(),
                         enabled: None,
@@ -361,7 +429,7 @@ impl PipelineActionRegistarBuilder {
                     let cemu_layout_name = "Layout".to_string();
                     let cemu_layout_description = Some("Edits Cemu settings.xml file to desired settings.".to_string());
 
-                    group.with_action("root", None, PipelineActionDefinitionBuilder {
+                    group.with_action("platform", None, PipelineActionDefinitionBuilder {
                         name: cemu_name.clone(),
                         description: cemu_description.clone(),
                         enabled: None,
@@ -479,7 +547,7 @@ impl PipelineActionRegistarBuilder {
                     let melonds_layout_name = "Layout".to_string();
                     let melonds_layout_description = Some("Edits melonDS ini file to desired layout settings.".to_string());
 
-                    group.with_action("root", None, PipelineActionDefinitionBuilder {
+                    group.with_action("platform", None, PipelineActionDefinitionBuilder {
                         name: melonds_name.clone(),
                         description: melonds_description.clone(),
                         enabled: None,
@@ -556,7 +624,7 @@ impl PipelineActionRegistarBuilder {
                     let app_name =  "App".to_string();
                     let app_description = Some("Launches an application in desktop mode.".to_string());
 
-                    group.with_action("root", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                    group.with_action("platform", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
                         name: app_name.clone(),
                         description: app_description.clone(),
                         enabled: None,
@@ -616,12 +684,12 @@ mod tests {
     fn test_make_cemu_lookup() {
         let registrar = PipelineActionRegistrar::builder().with_core().build();
 
-        let root = PipelineActionId::new("core:cemu:root");
+        let root = PipelineActionId::new("core:cemu:platform");
 
         let lookup = registrar.make_lookup(&root);
         let expected_keys: HashSet<PipelineActionId, RandomState> = HashSet::from_iter(
             [
-                "core:cemu:root",
+                "core:cemu:platform",
                 "core:cemu:multi_window:desktop",
                 "core:cemu:source",
                 "core:cemu:flatpak_source",

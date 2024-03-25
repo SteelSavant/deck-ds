@@ -5,8 +5,9 @@ use native_db::transaction::RwTransaction;
 use crate::{
     db::model::{
         DbAction, DbAppOverride, DbCategoryProfile, DbCemuLayout, DbCitraLayout, DbConfigSelection,
-        DbDesktopSessionHandler, DbDisplayConfig, DbLaunchSecondaryApp, DbMelonDSLayout,
-        DbMultiWindow, DbPipelineActionSettings, DbSourceFile, DbVirtualScreen,
+        DbDesktopSessionHandler, DbDisplayConfig, DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset,
+        DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings, DbPlatformSelect, DbSourceFile,
+        DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionId, ActionType, ErasedPipelineAction},
@@ -58,6 +59,12 @@ impl Action {
             }
             Action::LaunchSecondaryApp(action) => {
                 rw.insert::<DbLaunchSecondaryApp>(action.into())?;
+            }
+            Action::LaunchSecondaryAppPreset(action) => {
+                rw.insert::<DbLaunchSecondaryAppPreset>(action.into())?;
+            }
+            Action::PlatformSelect(action) => {
+                rw.insert::<DbPlatformSelect>(action.into())?;
             }
         };
 
@@ -184,6 +191,14 @@ impl DbAction {
             }
             ActionType::LaunchSecondaryApp => {
                 let action = rw.get().primary::<DbLaunchSecondaryApp>(id)?;
+                action.map(|a| rw.remove(a))
+            }
+            ActionType::LaunchSecondaryAppPreset => {
+                let action = rw.get().primary::<DbLaunchSecondaryAppPreset>(id)?;
+                action.map(|a| rw.remove(a))
+            }
+            ActionType::PlatformSelect => {
+                let action = rw.get().primary::<DbPlatformSelect>(id)?;
                 action.map(|a| rw.remove(a))
             }
         }

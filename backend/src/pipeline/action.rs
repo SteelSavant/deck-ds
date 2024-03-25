@@ -7,7 +7,8 @@ use strum::{Display, EnumString};
 use crate::macros::newtype_uuid;
 
 use self::display_config::DisplayConfig;
-use self::multi_window::launch_secondary_app::LaunchSecondaryApp;
+use self::multi_window::launch_secondary_app::{LaunchSecondaryApp, LaunchSecondaryAppPreset};
+use self::platform_select::PlatformSelect;
 use self::{
     cemu_layout::CemuLayout, citra_layout::CitraLayout, melonds_layout::MelonDSLayout,
     multi_window::primary_windowing::MultiWindow, session_handler::DesktopSessionHandler,
@@ -24,10 +25,12 @@ mod desktop;
 pub mod melonds_layout;
 pub mod multi_window;
 pub mod source_file;
+mod toplevel;
 pub mod virtual_screen;
 
 pub use desktop::display_config;
 pub use desktop::session_handler;
+pub use toplevel::platform_select;
 
 pub trait ActionImpl: DeserializeOwned + Serialize {
     /// Type of runtime state of the action
@@ -108,6 +111,7 @@ newtype_uuid!(ActionId);
 #[enum_delegate::implement(ErasedPipelineAction)]
 #[serde(tag = "type", content = "value")]
 pub enum Action {
+    PlatformSelect(PlatformSelect),
     DesktopSessionHandler(DesktopSessionHandler),
     DisplayConfig(DisplayConfig),
     VirtualScreen(VirtualScreen),
@@ -117,6 +121,7 @@ pub enum Action {
     MelonDSLayout(MelonDSLayout),
     SourceFile(SourceFile),
     LaunchSecondaryApp(LaunchSecondaryApp),
+    LaunchSecondaryAppPreset(LaunchSecondaryAppPreset),
 }
 
 impl<T: Into<Action>> From<T> for DefinitionSelection {
@@ -140,6 +145,7 @@ impl<T: Into<Action>> From<T> for RuntimeSelection {
 impl Action {
     pub fn cloned_with_id(&self, id: ActionId) -> Self {
         match self {
+            Action::PlatformSelect(a) => Action::PlatformSelect(PlatformSelect { id, ..a.clone() }),
             Action::DesktopSessionHandler(a) => {
                 Action::DesktopSessionHandler(DesktopSessionHandler { id, ..*a })
             }
@@ -153,6 +159,9 @@ impl Action {
             Action::LaunchSecondaryApp(a) => {
                 Action::LaunchSecondaryApp(LaunchSecondaryApp { id, ..a.clone() })
             }
+            Action::LaunchSecondaryAppPreset(a) => {
+                Action::LaunchSecondaryAppPreset(LaunchSecondaryAppPreset { id, ..a.clone() })
+            }
         }
     }
 }
@@ -160,6 +169,7 @@ impl Action {
 /// This effectively acts as a typename for the action, and thus variants CANNOT be renamed without breaking things
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Display, EnumString)]
 pub enum ActionType {
+    PlatformSelect,
     CemuLayout,
     CitraLayout,
     DesktopSessionHandler,
@@ -169,4 +179,5 @@ pub enum ActionType {
     SourceFile,
     VirtualScreen,
     LaunchSecondaryApp,
+    LaunchSecondaryAppPreset,
 }

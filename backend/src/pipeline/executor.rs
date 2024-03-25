@@ -16,13 +16,17 @@ use crate::pipeline::action::cemu_layout::CemuLayout;
 use crate::pipeline::action::citra_layout::CitraLayout;
 use crate::pipeline::action::display_config::DisplayConfig;
 use crate::pipeline::action::melonds_layout::MelonDSLayout;
-use crate::pipeline::action::multi_window::launch_secondary_app::LaunchSecondaryApp;
+use crate::pipeline::action::multi_window::launch_secondary_app::{
+    LaunchSecondaryApp, LaunchSecondaryAppPreset,
+};
 use crate::pipeline::action::multi_window::primary_windowing::MultiWindow;
+use crate::pipeline::action::platform_select::PlatformSelect;
 use crate::pipeline::action::session_handler::DesktopSessionHandler;
 use crate::pipeline::action::source_file::SourceFile;
 use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::action::ActionType;
 use crate::pipeline::data::RuntimeSelection;
+use crate::secondary_app::SecondaryAppManager;
 use crate::settings::{AppId, GameId};
 use crate::sys::app_process::AppProcess;
 use crate::sys::kwin::KWin;
@@ -51,6 +55,7 @@ pub struct PipelineContext<'a> {
     /// Display handler,
     pub display: Option<XDisplay>,
     pub should_register_exit_hooks: bool,
+    pub secondary_app: SecondaryAppManager<'a>,
     /// actions that have run
     have_run: Vec<Action>,
     /// pipeline state
@@ -74,10 +79,11 @@ impl<'a> PipelineContext<'a> {
         PipelineContext {
             home_dir,
             config_dir,
-            kwin: KWin::new(assets_manager),
+            kwin: KWin::new(assets_manager.clone()),
             display: XDisplay::new().ok(),
             state: TypeMap::new(),
             have_run: vec![],
+            secondary_app: SecondaryAppManager::new(assets_manager),
             should_register_exit_hooks: true,
         }
     }
@@ -134,6 +140,9 @@ impl<'a> PipelineContext<'a> {
         for action in actions {
             match ActionType::from_str(action) {
                 Ok(action) => match action {
+                    ActionType::PlatformSelect => {
+                        load_state::<PlatformSelect>(&mut default, &type_map)
+                    }
                     ActionType::DesktopSessionHandler => {
                         load_state::<DesktopSessionHandler>(&mut default, &type_map)
                     }
@@ -152,6 +161,9 @@ impl<'a> PipelineContext<'a> {
                     }
                     ActionType::LaunchSecondaryApp => {
                         load_state::<LaunchSecondaryApp>(&mut default, &type_map)
+                    }
+                    ActionType::LaunchSecondaryAppPreset => {
+                        load_state::<LaunchSecondaryAppPreset>(&mut default, &type_map)
                     }
                 },
                 Err(err) => {
@@ -196,6 +208,7 @@ impl<'a> PipelineContext<'a> {
         // TODO::clone less things
         for action in self.have_run.iter() {
             match action {
+                Action::PlatformSelect(a) => insert_action(self, &mut map, a),
                 Action::DesktopSessionHandler(a) => insert_action(self, &mut map, a),
                 Action::DisplayConfig(a) => insert_action(self, &mut map, a),
                 Action::VirtualScreen(a) => insert_action(self, &mut map, a),
@@ -205,6 +218,7 @@ impl<'a> PipelineContext<'a> {
                 Action::MelonDSLayout(a) => insert_action(self, &mut map, a),
                 Action::SourceFile(a) => insert_action(self, &mut map, a),
                 Action::LaunchSecondaryApp(a) => insert_action(self, &mut map, a),
+                Action::LaunchSecondaryAppPreset(a) => insert_action(self, &mut map, a),
             };
         }
 
