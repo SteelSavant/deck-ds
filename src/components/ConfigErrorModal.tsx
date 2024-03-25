@@ -34,11 +34,9 @@ function DisplayError(error: DependencyError): ReactElement {
             case "FieldNotSet":
                 return `Field "${error.value}" must be set`
             case "FlatpakNotFound":
-                // TODO::this
-                throw "not implemented"
+                return `Required flatpak  ${error.value} must be installed`;
             case "SecondaryAppPresetNotFound":
-                // TODO::this
-                throw "not implemented"
+                return `required secondary app preset ${error.value} must exist`;
             default:
                 const typecheck: never = type;
                 throw typecheck ?? 'DependencyError failed to typecheck';

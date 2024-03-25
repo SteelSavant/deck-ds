@@ -129,7 +129,7 @@ pub enum DefinitionSelection {
         actions: Vec<PipelineActionId>,
     },
     AllOf(Vec<PipelineActionId>),
-    UserDefined, // TODO::matching rules for which actions can be selected
+    UserDefined, // TODO::matching rules for which actions can be selected (or just get rid of this)
 }
 
 /// Configured selection for an specific pipeline. Only user values are saved;

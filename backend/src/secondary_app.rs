@@ -60,7 +60,7 @@ impl<'a> SecondaryAppManager<'a> {
                         match v.1.app {
                             SecondaryApp::Flatpak(ref flatpak) => {
                                 list_installed_flatpaks()
-                                    .unwrap_or_default() // TODO::error handling                                 installed.into_iter().any(|v| v.app_id == flatpak.app_id)
+                                    .unwrap_or_default() // TODO::error handling
                                     .into_iter()
                                     .any(|v| v.app_id == flatpak.app_id)
                             }

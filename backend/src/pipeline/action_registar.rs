@@ -634,9 +634,6 @@ impl PipelineActionRegistarBuilder {
                     })
                 })
         })
-        // .with_scope("secondary", |scope| {
-        //     todo!("secondary actions; for now, browser flatpaks (or custom) sites")
-        // })
     }
 }
 

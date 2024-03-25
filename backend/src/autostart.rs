@@ -79,7 +79,7 @@ impl LoadedAutoStart {
         Self { autostart, target }
     }
 
-    // TODO::teardown leftover
+    // TODO::teardown leftover?
 
     pub fn build_executor(
         self,
