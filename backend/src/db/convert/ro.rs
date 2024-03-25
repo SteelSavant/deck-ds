@@ -8,8 +8,8 @@ use crate::{
     db::model::{
         DbAction, DbCemuLayout, DbCitraLayout, DbConfigSelection, DbDesktopSessionHandler,
         DbDisplayConfig, DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset, DbMelonDSLayout,
-        DbMultiWindow, DbPipelineActionSettings, DbPipelineDefinition, DbPlatformSelect,
-        DbSourceFile, DbVirtualScreen,
+        DbMultiWindow, DbPipelineActionSettings, DbPipelineDefinition, DbSourceFile,
+        DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionType},
@@ -62,10 +62,6 @@ impl DbAction {
             ActionType::LaunchSecondaryAppPreset => {
                 let action = ro.get().primary::<DbLaunchSecondaryAppPreset>(id)?;
                 action.map(|a| Action::LaunchSecondaryAppPreset(a.into()))
-            }
-            ActionType::PlatformSelect => {
-                let action = ro.get().primary::<DbPlatformSelect>(id)?;
-                action.map(|a| Action::PlatformSelect(a.into()))
             }
         };
 
@@ -125,10 +121,9 @@ impl DbPipelineDefinition {
         Ok(PipelineDefinition {
             id: self.id,
             name: self.name.clone(),
-            description: self.description.clone(),
             register_exit_hooks: self.register_exit_hooks,
             primary_target_override: self.primary_target_override,
-            root: self.root.clone(),
+            platform: self.platform.clone(),
             actions: PipelineActionLookup { actions },
             secondary_actions: vec![],
         })

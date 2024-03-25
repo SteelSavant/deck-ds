@@ -340,7 +340,7 @@ pub fn get_default_app_override_pipeline_for_profile(
                         pipeline: profile.map(|profile| {
                             let pipeline = profile.pipeline;
 
-                            let mut lookup = registrar.make_lookup(&pipeline.root);
+                            let mut lookup = registrar.make_lookup(&pipeline.platform);
 
                             for (id, action) in lookup.actions.iter_mut() {
                                 action.profile_override = Some(args.profile_id);

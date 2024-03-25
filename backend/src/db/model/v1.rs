@@ -21,7 +21,6 @@ use crate::{
                     LaunchSecondaryApp, LaunchSecondaryAppPreset, SecondaryAppWindowingBehavior,
                 },
             },
-            platform_select::PlatformSelect,
             session_handler::DesktopSessionHandler,
             ActionId,
         },
@@ -82,10 +81,9 @@ pub struct DbPipelineDefinition {
     #[primary_key]
     pub id: PipelineDefinitionId,
     pub name: String,
-    pub description: String,
     pub register_exit_hooks: bool,
     pub primary_target_override: Option<PipelineTarget>,
-    pub root: PipelineActionId,
+    pub platform: PipelineActionId,
     pub actions: Vec<PipelineActionId>,
 }
 
@@ -957,33 +955,6 @@ impl From<DbLaunchSecondaryAppPreset> for LaunchSecondaryAppPreset {
             id: value.id,
             preset: value.preset,
             windowing_behavior: value.windowing_behavior.into(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[native_db]
-#[native_model(id = 111, version = 1, with = NativeModelJSON)]
-pub struct DbPlatformSelect {
-    #[primary_key]
-    pub id: ActionId,
-    pub platform: PipelineActionId,
-}
-
-impl From<PlatformSelect> for DbPlatformSelect {
-    fn from(value: PlatformSelect) -> Self {
-        Self {
-            id: value.id,
-            platform: value.platform,
-        }
-    }
-}
-
-impl From<DbPlatformSelect> for PlatformSelect {
-    fn from(value: DbPlatformSelect) -> Self {
-        Self {
-            id: value.id,
-            platform: value.platform,
         }
     }
 }

@@ -20,7 +20,6 @@ use crate::pipeline::action::multi_window::primary_windowing::MultiWindow;
 use crate::pipeline::action::multi_window::secondary_app::{
     LaunchSecondaryApp, LaunchSecondaryAppPreset,
 };
-use crate::pipeline::action::platform_select::PlatformSelect;
 use crate::pipeline::action::session_handler::DesktopSessionHandler;
 use crate::pipeline::action::source_file::SourceFile;
 use crate::pipeline::action::virtual_screen::VirtualScreen;
@@ -140,9 +139,6 @@ impl<'a> PipelineContext<'a> {
         for action in actions {
             match ActionType::from_str(action) {
                 Ok(action) => match action {
-                    ActionType::PlatformSelect => {
-                        load_state::<PlatformSelect>(&mut default, &type_map)
-                    }
                     ActionType::DesktopSessionHandler => {
                         load_state::<DesktopSessionHandler>(&mut default, &type_map)
                     }
@@ -208,7 +204,6 @@ impl<'a> PipelineContext<'a> {
         // TODO::clone less things
         for action in self.have_run.iter() {
             match action {
-                Action::PlatformSelect(a) => insert_action(self, &mut map, a),
                 Action::DesktopSessionHandler(a) => insert_action(self, &mut map, a),
                 Action::DisplayConfig(a) => insert_action(self, &mut map, a),
                 Action::VirtualScreen(a) => insert_action(self, &mut map, a),

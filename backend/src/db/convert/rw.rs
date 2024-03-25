@@ -6,8 +6,7 @@ use crate::{
     db::model::{
         DbAction, DbAppOverride, DbCategoryProfile, DbCemuLayout, DbCitraLayout, DbConfigSelection,
         DbDesktopSessionHandler, DbDisplayConfig, DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset,
-        DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings, DbPlatformSelect, DbSourceFile,
-        DbVirtualScreen,
+        DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings, DbSourceFile, DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionId, ActionType, ErasedPipelineAction},
@@ -62,9 +61,6 @@ impl Action {
             }
             Action::LaunchSecondaryAppPreset(action) => {
                 rw.insert::<DbLaunchSecondaryAppPreset>(action.into())?;
-            }
-            Action::PlatformSelect(action) => {
-                rw.insert::<DbPlatformSelect>(action.into())?;
             }
         };
 
@@ -194,10 +190,6 @@ impl DbAction {
             }
             ActionType::LaunchSecondaryAppPreset => {
                 let action = rw.get().primary::<DbLaunchSecondaryAppPreset>(id)?;
-                action.map(|a| rw.remove(a))
-            }
-            ActionType::PlatformSelect => {
-                let action = rw.get().primary::<DbPlatformSelect>(id)?;
                 action.map(|a| rw.remove(a))
             }
         }

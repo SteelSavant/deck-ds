@@ -21,8 +21,8 @@ use crate::{
 pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
     struct TemplateBuilder {
         id: TemplateId,
-        /// Root action in the tree. Selection be an AllOf.
-        root: PipelineActionId,
+        /// Root action in the tree. Should be a platform action.
+        platform: PipelineActionId,
         action_overrides: HashMap<PipelineActionId, Action>,
         enabled_overrides: HashMap<PipelineActionId, Option<bool>>,
         is_visible_on_qam_overrides: HashMap<PipelineActionId, bool>,
@@ -30,7 +30,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
 
     impl TemplateBuilder {
         fn build(self, registrar: &PipelineActionRegistrar) -> Template {
-            let mut actions = registrar.make_lookup(&self.root);
+            let mut actions = registrar.make_lookup(&self.platform);
             for (id, action) in self.action_overrides {
                 actions
                     .actions
@@ -53,8 +53,8 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
             }
 
             let root_action = registrar
-                .get(&self.root, PipelineTarget::Desktop)
-                .or_else(|| registrar.get(&self.root, PipelineTarget::Gamemode))
+                .get(&self.platform, PipelineTarget::Desktop)
+                .or_else(|| registrar.get(&self.platform, PipelineTarget::Gamemode))
                 .unwrap();
 
             Template {
@@ -62,8 +62,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                 pipeline: PipelineDefinition {
                     id: PipelineDefinitionId::nil(),
                     name: root_action.name.clone(),
-                    description: root_action.description.clone().unwrap_or_default(),
-                    root: self.root,
+                    platform: self.platform,
                     primary_target_override: None,
                     register_exit_hooks: true,
                     actions,
@@ -77,7 +76,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
         // melonDS
         TemplateBuilder {
             id: TemplateId::parse("c6430131-50e0-435e-a917-5ae3cfa46e3c"),
-            root: PipelineActionId::new("core:melonds:platform"),
+            platform: PipelineActionId::new("core:melonds:platform"),
             action_overrides: Default::default(),
             enabled_overrides: Default::default(),
             is_visible_on_qam_overrides: Default::default(),
@@ -85,7 +84,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
         // Citra
         TemplateBuilder {
             id: TemplateId::parse("fe82be74-22b9-4135-b7a0-cb6d8f51aecd"),
-            root: PipelineActionId::new("core:citra:platform"),
+            platform: PipelineActionId::new("core:citra:platform"),
             action_overrides: Default::default(),
             enabled_overrides: Default::default(),
             is_visible_on_qam_overrides: Default::default(),
@@ -93,7 +92,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
         // Cemu
         TemplateBuilder {
             id: TemplateId::parse("33c863e5-2739-4bc3-b9bc-4798bac8682d"),
-            root: PipelineActionId::new("core:cemu:platform"),
+            platform: PipelineActionId::new("core:cemu:platform"),
             action_overrides: Default::default(),
             enabled_overrides: Default::default(),
             is_visible_on_qam_overrides: Default::default(),
@@ -101,7 +100,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
         // App
         TemplateBuilder {
             id: TemplateId::parse("84f870e9-9491-41a9-8837-d5a6f591f687"),
-            root: PipelineActionId::new("core:app:platform"),
+            platform: PipelineActionId::new("core:app:platform"),
             action_overrides: HashMap::from_iter([(
                 PipelineActionId::new("core:display:display_config:desktop"),
                 Action::DisplayConfig(DisplayConfig {

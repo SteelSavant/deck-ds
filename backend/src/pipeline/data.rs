@@ -53,11 +53,9 @@ pub struct Template {
 pub struct PipelineDefinition {
     pub id: PipelineDefinitionId,
     pub name: String,
-    pub description: String,
     pub register_exit_hooks: bool,
     pub primary_target_override: Option<PipelineTarget>,
-    /// Root action in the tree. Selection be an AllOf.
-    pub root: PipelineActionId,
+    pub platform: PipelineActionId,
     pub secondary_actions: Vec<PipelineActionId>,
     pub actions: PipelineActionLookup,
 }
@@ -189,10 +187,15 @@ impl PipelineDefinition {
         registrar: &PipelineActionRegistrar,
     ) -> Result<Pipeline> {
         let targets = PipelineTarget::iter()
-            .map(|t| {
-                self.root
-                    .reify(t, self, profiles, registrar)
-                    .map(|v| v.map(|v| (t, v.selection)))
+            .flat_map(|t: PipelineTarget| {
+                let mut toplevel: Vec<_> = registrar.toplevel().into_keys().collect();
+                toplevel.sort_by_key(|v| &v.0);
+                toplevel.insert(0, &self.platform);
+
+                toplevel.into_iter().map(move |v| {
+                    v.reify(t, self, profiles, registrar)
+                        .map(|v| v.map(|v| (t, v.selection)))
+                })
             })
             .collect::<Result<Vec<_>>>()?
             .into_iter()
@@ -201,7 +204,7 @@ impl PipelineDefinition {
 
         Ok(Pipeline {
             name: self.name.clone(),
-            description: self.description.clone(),
+            description: "".to_string(), // TODO::this
             register_exit_hooks: self.register_exit_hooks,
             primary_target_override: self.primary_target_override,
             targets,

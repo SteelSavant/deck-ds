@@ -17,7 +17,6 @@ use super::{
                 CemuWindowOptions, CitraWindowOptions, GeneralOptions, MultiWindow,
             },
         },
-        platform_select::PlatformSelect,
         session_handler::{DesktopSessionHandler, ExternalDisplaySettings, RelativeLocation},
         source_file::{
             AppImageSource, CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile,
@@ -60,7 +59,15 @@ impl PipelineActionRegistrar {
         self.actions.clone()
     }
 
-    pub fn make_lookup(&self, root: &PipelineActionId) -> PipelineActionLookup {
+    pub fn toplevel(&self) -> HashMap<&PipelineActionId, &PipelineActionDefinition> {
+        self.actions.iter().filter(|v| v.0.raw().split_terminator(':').skip(1).next() == Some("toplevel")).collect()
+    }
+
+    pub fn platform(&self) -> HashMap<&PipelineActionId, &PipelineActionDefinition> {
+        self.actions.iter().filter(|v| v.0.raw().split_terminator(':').skip(2).next() == Some("platform")).collect()
+    }
+
+    pub fn make_lookup(&self, platform: &PipelineActionId) -> PipelineActionLookup {
         fn get_ids(
             registrar: &PipelineActionRegistrar,
             selection: &DefinitionSelection,
@@ -86,7 +93,7 @@ impl PipelineActionRegistrar {
         }
 
         let set: HashSet<_> = PipelineTarget::iter()
-            .flat_map(|t| get_ids(self, &DefinitionSelection::AllOf(vec![root.clone()]), t))
+            .flat_map(|t| get_ids(self, &DefinitionSelection::AllOf(vec![platform.clone()]), t))
             .collect();
 
         let mut actions = HashMap::new();
@@ -213,7 +220,7 @@ impl PipelineActionRegistarBuilder {
     }
 
     pub fn with_core(self) -> Self {
-        // TOPLEVEL: scope:toplevel:{platform|secondary}
+        // TOPLEVEL: scope:toplevel:{type}
         // PLATFORM: scope:group:platform
         // ACTION: scope:group:{name}
 
@@ -224,17 +231,7 @@ impl PipelineActionRegistarBuilder {
 
             scope
                 .with_group("toplevel", |group| {
-                    group.with_action("platform", None, PipelineActionDefinitionBuilder {
-                        name: "Platform".into(),
-                        description: Some("Selects the desired app platform".into()),
-                        enabled: None,
-                        profile_override: None,
-                        is_visible_on_qam: false,
-                        selection: DefinitionSelection::Action(PlatformSelect {
-                            id: ActionId::nil(),
-                            platform: PipelineActionId::new("core:app:platform"),
-                        }.into()),
-                    }).with_action("secondary", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                    group.with_action("secondary", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
                         name: "Secondary App".into(),
                         description: Some("An additional system application to launch alongside the main app.".into()),
                         enabled: Some(false),
