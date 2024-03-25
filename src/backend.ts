@@ -13,9 +13,10 @@ import { call_backend, init_embedded, init_usdpl, target_usdpl } from "./usdpl_f
 import { Err, Ok, Result } from "./util/result";
 
 export {
-    Action, AppProfile, AutoStartRequest, CategoryProfile, CemuOptions, CitraOptions, ConfigSelection, CreateProfileRequest,
-    CreateProfileResponse, DeleteProfileRequest, DependencyError, DolphinOptions, ExternalDisplaySettings, GetProfileRequest,
-    GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, GlobalConfig, LimitedMultiWindowLayout, MultiWindowLayout, PipelineAction, PipelineDefinition, PipelineTarget, ReifyPipelineRequest,
+    Action, AppProfile, AutoStartRequest, CategoryProfile, CemuWindowOptions, CitraWindowOptions, ConfigSelection, CreateProfileRequest,
+    CreateProfileResponse, DeleteProfileRequest, DependencyError, DolphinWindowOptions, ExternalDisplaySettings, GetProfileRequest,
+    GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, GlobalConfig, LaunchSecondaryApp, LaunchSecondaryAppPreset,
+    LimitedMultiWindowLayout, MultiWindowLayout, PipelineAction, PipelineDefinition, PipelineTarget, ReifyPipelineRequest,
     ReifyPipelineResponse, RelativeLocation, RuntimeSelection, SetProfileRequest, Template
 } from "./types/backend_api";
 

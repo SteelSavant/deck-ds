@@ -3,10 +3,9 @@ import {
 } from "decky-frontend-lib";
 import { VFC } from "react";
 import { FaGears } from "react-icons/fa6";
-import { HiFolder, HiTemplate } from "react-icons/hi";
+import { HiFolder } from "react-icons/hi";
 import { GlobalSettingsPage } from "./GlobalSettings";
 import { ProfilesPage } from "./Profiles";
-import { TemplatesPage } from "./Templates";
 
 const SettingsRouter: VFC = () => {
     const pages = [
@@ -16,13 +15,6 @@ const SettingsRouter: VFC = () => {
             icon: <HiFolder />,
             hideTitle: false,
             identifier: 'profiles',
-        },
-        {
-            title: 'Templates',
-            content: <div> <TemplatesPage /> </div>,
-            icon: <HiTemplate />,
-            hideTitle: false,
-            identifier: 'templates',
         },
         {
             title: 'Settings',

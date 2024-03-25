@@ -247,6 +247,24 @@
               "$ref": "#/definitions/LaunchSecondaryApp"
             }
           }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "LaunchSecondaryAppPreset"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/LaunchSecondaryAppPreset"
+            }
+          }
         }
       ]
     },
@@ -864,6 +882,43 @@
               "type": "string"
             }
           }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "FlatpakNotFound"
+              ]
+            },
+            "value": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "SecondaryAppPresetNotFound"
+              ]
+            },
+            "value": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
         }
       ]
     },
@@ -1280,7 +1335,6 @@
       "required": [
         "app",
         "id",
-        "name",
         "windowing_behavior"
       ],
       "properties": {
@@ -1291,8 +1345,26 @@
           "type": "string",
           "format": "uuid"
         },
-        "name": {
-          "type": "string"
+        "windowing_behavior": {
+          "$ref": "#/definitions/SecondaryAppWindowingBehavior"
+        }
+      }
+    },
+    "LaunchSecondaryAppPreset": {
+      "type": "object",
+      "required": [
+        "id",
+        "preset",
+        "windowing_behavior"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "preset": {
+          "type": "string",
+          "format": "uuid"
         },
         "windowing_behavior": {
           "$ref": "#/definitions/SecondaryAppWindowingBehavior"
@@ -1667,25 +1739,24 @@
       "type": "object",
       "required": [
         "actions",
-        "description",
         "id",
         "name",
+        "platform",
         "register_exit_hooks",
-        "root",
         "secondary_actions"
       ],
       "properties": {
         "actions": {
           "$ref": "#/definitions/PipelineActionLookup"
         },
-        "description": {
-          "type": "string"
-        },
         "id": {
           "type": "string",
           "format": "uuid"
         },
         "name": {
+          "type": "string"
+        },
+        "platform": {
           "type": "string"
         },
         "primary_target_override": {
@@ -1700,10 +1771,6 @@
         },
         "register_exit_hooks": {
           "type": "boolean"
-        },
-        "root": {
-          "description": "Root action in the tree. Selection be an AllOf.",
-          "type": "string"
         },
         "secondary_actions": {
           "type": "array",

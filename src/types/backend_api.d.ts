@@ -63,6 +63,10 @@ export type Action =
   | {
       type: "LaunchSecondaryApp";
       value: LaunchSecondaryApp;
+    }
+  | {
+      type: "LaunchSecondaryAppPreset";
+      value: LaunchSecondaryAppPreset;
     };
 export type RelativeLocation = "Above" | "Below" | "LeftOf" | "RightOf" | "SameAs";
 export type ExternalDisplaySettings =
@@ -184,6 +188,14 @@ export type DependencyError =
   | {
       type: "FieldNotSet";
       value: string;
+    }
+  | {
+      type: "FlatpakNotFound";
+      value: string;
+    }
+  | {
+      type: "SecondaryAppPresetNotFound";
+      value: string;
     };
 export type RuntimeSelection =
   | {
@@ -241,15 +253,11 @@ export interface CreateProfileRequest {
 }
 export interface PipelineDefinition {
   actions: PipelineActionLookup;
-  description: string;
   id: string;
   name: string;
+  platform: string;
   primary_target_override?: PipelineTarget | null;
   register_exit_hooks: boolean;
-  /**
-   * Root action in the tree. Selection be an AllOf.
-   */
-  root: string;
   secondary_actions: string[];
 }
 export interface PipelineActionLookup {
@@ -383,12 +391,16 @@ export interface CustomFileOptions {
 export interface LaunchSecondaryApp {
   app: SecondaryApp;
   id: string;
-  name: string;
   windowing_behavior: SecondaryAppWindowingBehavior;
 }
 export interface FlatpakApp {
   app_id: string;
   args: string[];
+}
+export interface LaunchSecondaryAppPreset {
+  id: string;
+  preset: string;
+  windowing_behavior: SecondaryAppWindowingBehavior;
 }
 export interface CreateProfileResponse {
   profile_id: string;

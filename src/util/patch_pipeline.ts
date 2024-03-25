@@ -41,7 +41,6 @@ export function patchPipeline(pipeline: PipelineDefinition, update: PipelineUpda
 
         return {
             ...pipeline,
-            description: info.description ?? pipeline.description,
             name: info.name ?? pipeline.name,
             register_exit_hooks: info.register_exit_hooks ?? pipeline.register_exit_hooks,
             primary_target_override: info.primary_target_override === undefined

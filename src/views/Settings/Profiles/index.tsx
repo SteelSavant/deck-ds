@@ -9,6 +9,7 @@ export const ProfilesPage: VFC = () => {
     const { profiles, deleteProfile } = useProfiles();
 
     const navigateToTemplates = () => Navigation.Navigate('/deck-ds/settings/templates');
+    // TODO::instead of navigating to templates, create a new profile and navigate to it
 
     // TODO:: make profiles reorderable
     return <HandleLoading
@@ -21,7 +22,7 @@ export const ProfilesPage: VFC = () => {
                 <div style={{ padding: '15px', display: 'flex', minWidth: '100px', justifyContent: 'space-between', alignItems: 'center', }}>
                     <DialogButton onClick={navigateToTemplates} onOKButton={navigateToTemplates}>
                         <FaPlus style={{ paddingRight: '1rem' }} />
-                        Create From Template
+                        New Profile
                     </DialogButton>
                 </div>
             </DialogBody>

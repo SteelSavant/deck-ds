@@ -60,11 +60,11 @@ impl PipelineActionRegistrar {
     }
 
     pub fn toplevel(&self) -> HashMap<&PipelineActionId, &PipelineActionDefinition> {
-        self.actions.iter().filter(|v| v.0.raw().split_terminator(':').skip(1).next() == Some("toplevel")).collect()
+        self.actions.iter().filter(|v| v.0.raw().split_terminator(':').nth(1) == Some("toplevel")).collect()
     }
 
     pub fn platform(&self) -> HashMap<&PipelineActionId, &PipelineActionDefinition> {
-        self.actions.iter().filter(|v| v.0.raw().split_terminator(':').skip(2).next() == Some("platform")).collect()
+        self.actions.iter().filter(|v| v.0.raw().split_terminator(':').nth(2) == Some("platform")).collect()
     }
 
     pub fn make_lookup(&self, platform: &PipelineActionId) -> PipelineActionLookup {

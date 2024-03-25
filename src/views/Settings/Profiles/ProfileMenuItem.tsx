@@ -37,7 +37,7 @@ export default function ProfileMenuItem({ profile, deleteProfile }: { profile: C
         <Field
             focusable={false}
             label={profile.pipeline.name}
-            description={profile.pipeline.description}
+        // description={profile.pipeline.description}
         >
             <FocusableRow>
                 <DialogButton

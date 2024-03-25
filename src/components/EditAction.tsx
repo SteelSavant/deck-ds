@@ -2,7 +2,7 @@ import { DialogButton, Dropdown, FileSelectionType, Toggle } from "decky-fronten
 import _ from "lodash";
 import { Fragment, ReactElement } from "react";
 import { FaFile } from "react-icons/fa";
-import { Action, CemuOptions, CitraOptions, DolphinOptions, ExternalDisplaySettings, LimitedMultiWindowLayout, MultiWindowLayout, RelativeLocation, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../backend";
+import { Action, CemuWindowOptions, CitraWindowOptions, DolphinWindowOptions, ExternalDisplaySettings, LimitedMultiWindowLayout, MultiWindowLayout, RelativeLocation, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../backend";
 import { useServerApi } from "../context/serverApiContext";
 import { ActionChild, ActionChildBuilder } from "./ActionChild";
 
@@ -255,8 +255,8 @@ export function InternalEditAction({
                 return <p> invalid multi-window configuration; must have exactly one option</p>
             }
 
-            function isDolphin(o: DolphinOptions | CemuOptions | CitraOptions): o is DolphinOptions {
-                return !!(o as DolphinOptions).gba_blacklist;
+            function isDolphin(o: DolphinWindowOptions | CemuWindowOptions | CitraWindowOptions): o is DolphinWindowOptions {
+                return !!(o as DolphinWindowOptions).gba_blacklist;
             }
 
             const option = options[0];
@@ -267,7 +267,7 @@ export function InternalEditAction({
                 ? dolphinLimitedLayoutOptions
                 : dsLimitedLayoutOptions;
 
-            function DolphinAction(option: DolphinOptions): ReactElement {
+            function DolphinAction(option: DolphinWindowOptions): ReactElement {
                 return (
                     <Builder indentLevel={indentLevel} label="Multi-Screen Layout" description="Layout when the Deck's embedded display is enabled and an external display is connected." >
                         <Fragment>
@@ -298,7 +298,7 @@ export function InternalEditAction({
                 );
             }
 
-            function DsAction(option: CemuOptions | CitraOptions): ReactElement {
+            function DsAction(option: CemuWindowOptions | CitraWindowOptions): ReactElement {
                 return (
                     <Builder indentLevel={indentLevel} label="Multi-Screen Layout" description="Layout when the Deck's embedded display is enabled and an external display is connected.">
                         <Dropdown selectedOption={option.multi_screen_layout} rgOptions={layoutOptions.map((a) => {
@@ -313,6 +313,8 @@ export function InternalEditAction({
                     </Builder>
                 );
             }
+
+            // TODO::check for custom action
 
             return <Fragment>
                 <Builder indentLevel={indentLevel} label="Keep Above" description="Keep emulator windows above others.">
@@ -346,8 +348,10 @@ export function InternalEditAction({
 
 
             </Fragment>;
-        // case 'LaunchSecondaryApp':
-        // // TODO::this
+        case 'LaunchSecondaryApp':
+        // TODO::this
+        case 'LaunchSecondaryAppPreset':
+        // TODO::this
         case 'VirtualScreen':
             return notConfigurable;
         default:

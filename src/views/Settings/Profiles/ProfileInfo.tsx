@@ -45,7 +45,10 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
         value={settings}
         onOk={(globalSettings) => (
             <div>
-                <Field focusable={false} description={profile.pipeline.description} />
+                <Field
+                    focusable={false}
+                // description={profile.pipeline.description}
+                />
                 <Field
                     focusable={false}
                     label='Collections'

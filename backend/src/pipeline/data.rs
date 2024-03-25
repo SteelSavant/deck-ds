@@ -202,9 +202,14 @@ impl PipelineDefinition {
             .flatten()
             .collect::<HashMap<_, _>>();
 
+        let description = registrar
+            .get(&self.platform, PipelineTarget::Desktop)
+            .and_then(|v| v.description.clone())
+            .unwrap_or_default();
+
         Ok(Pipeline {
             name: self.name.clone(),
-            description: "".to_string(), // TODO::this
+            description,
             register_exit_hooks: self.register_exit_hooks,
             primary_target_override: self.primary_target_override,
             targets,
