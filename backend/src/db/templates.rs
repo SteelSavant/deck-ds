@@ -66,7 +66,6 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                     primary_target_override: None,
                     register_exit_hooks: true,
                     actions,
-                    secondary_actions: vec![],
                 },
             }
         }

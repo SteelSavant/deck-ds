@@ -210,7 +210,6 @@ mod tests {
                 primary_target_override: None,
                 platform: pipeline_action_id.clone(),
                 actions,
-                secondary_actions: vec![],
             },
         };
 
@@ -303,7 +302,6 @@ mod tests {
                     primary_target_override: None,
                     platform: targets1.clone(),
                     actions: actions1,
-                    secondary_actions: vec![],
                 },
             ),
             (
@@ -315,7 +313,6 @@ mod tests {
                     primary_target_override: None,
                     platform: targets2.clone(),
                     actions: actions2,
-                    secondary_actions: vec![],
                 },
             ),
         ]);

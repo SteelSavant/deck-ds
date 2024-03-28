@@ -27,7 +27,18 @@ impl PipelineActionId {
             PipelineTarget::Gamemode => "gamemode",
         };
 
-        PipelineActionId::new(&format!("{}:{variant}", self.0))
+        PipelineActionId::new(&format!("{}:{variant}", self.no_variant().0))
+    }
+
+    pub fn no_variant(&self) -> PipelineActionId {
+        PipelineActionId::new(
+            &self
+                .0
+                .split_terminator(':')
+                .take(3)
+                .collect::<Vec<_>>()
+                .join(":"),
+        )
     }
 
     pub fn eq_variant(&self, id: &PipelineActionId, target: PipelineTarget) -> bool {
@@ -56,7 +67,6 @@ pub struct PipelineDefinition {
     pub register_exit_hooks: bool,
     pub primary_target_override: Option<PipelineTarget>,
     pub platform: PipelineActionId,
-    pub secondary_actions: Vec<PipelineActionId>,
     pub actions: PipelineActionLookup,
 }
 
@@ -181,26 +191,34 @@ impl PipelineActionLookup {
 }
 
 impl PipelineDefinition {
-    pub fn reify(
-        &self,
+    pub fn reify<'a>(
+        &'a self,
         profiles: &[CategoryProfile],
-        registrar: &PipelineActionRegistrar,
+        registrar: &'a PipelineActionRegistrar,
     ) -> Result<Pipeline> {
         let targets = PipelineTarget::iter()
-            .flat_map(|t: PipelineTarget| {
+            .map(|t: PipelineTarget| {
                 let mut toplevel: Vec<_> = registrar.toplevel().into_keys().collect();
-                toplevel.sort_by_key(|v| &v.0);
+
+                toplevel.sort_by(|a, b| a.0.cmp(&b.0));
                 toplevel.insert(0, &self.platform);
 
-                toplevel.into_iter().map(move |v| {
-                    v.reify(t, self, profiles, registrar)
-                        .map(|v| v.map(|v| (t, v.selection)))
-                })
+                let reified: Vec<_> = toplevel
+                    .into_iter()
+                    .filter(|v| actions_have_target(v, &registrar.make_lookup(v), t, registrar))
+                    .map(|v| v.reify(t, self, profiles, registrar))
+                    .filter_map(|v| v.transpose())
+                    .collect::<Result<_>>()?;
+
+                Ok((t, RuntimeSelection::AllOf(reified)))
             })
-            .collect::<Result<Vec<_>>>()?
+            .collect::<Result<HashMap<_, _>>>()?
             .into_iter()
-            .flatten()
-            .collect::<HashMap<_, _>>();
+            .filter(|v| match &v.1 {
+                RuntimeSelection::AllOf(v) => !v.is_empty(),
+                _ => panic!("expected toplevel in reify to be AllOf"),
+            })
+            .collect();
 
         let description = registrar
             .get(&self.platform, PipelineTarget::Desktop)
@@ -225,7 +243,21 @@ impl PipelineActionId {
         profiles: &[CategoryProfile],
         registrar: &PipelineActionRegistrar,
     ) -> Result<Option<PipelineAction>> {
-        let config = pipeline.actions.get(self, target);
+        let config = pipeline.actions.get(self, target).cloned().or_else(|| {
+            registrar.get(self, target).map(|v| PipelineActionSettings {
+                enabled: v.settings.enabled,
+                is_visible_on_qam: v.settings.is_visible_on_qam,
+                profile_override: v.settings.profile_override,
+                selection: match &v.settings.selection {
+                    DefinitionSelection::Action(a) => ConfigSelection::Action(a.clone()),
+                    DefinitionSelection::OneOf { selection, .. } => ConfigSelection::OneOf {
+                        selection: selection.clone(),
+                    },
+                    DefinitionSelection::AllOf(_) => ConfigSelection::AllOf,
+                    DefinitionSelection::UserDefined => ConfigSelection::UserDefined(vec![]),
+                },
+            })
+        });
 
         match config {
             Some(config) => {
@@ -242,7 +274,7 @@ impl PipelineActionId {
                             .and_then(|p| p.pipeline.actions.get(self, target))
                             .map(|config| (Some(profile), config))
                     })
-                    .unwrap_or((None, config));
+                    .unwrap_or((None, &config));
 
                 let resolved_action = settings.1.reify(
                     settings.0, definition, target, pipeline, profiles, registrar,
@@ -323,15 +355,63 @@ impl ConfigSelection {
                                                                //     .iter()
                                                                //     .map(|a| a.reify(target, pipeline, profiles, registrar))
                                                                //     .collect::<Result<Vec<_>>>()
-                                                               //     .map(RuntimeSelection::UserDefined),
+                                                               //     .map(RuntimeSelection::UserDefined(actions.clone())),
         }
     }
 }
 
+fn actions_have_target(
+    root: &PipelineActionId,
+    map: &PipelineActionLookup,
+    target: PipelineTarget,
+    registrar: &PipelineActionRegistrar,
+) -> bool {
+    fn search_settings(
+        id: &PipelineActionId,
+        map: &PipelineActionLookup,
+        target: PipelineTarget,
+        registrar: &PipelineActionRegistrar,
+    ) -> bool {
+        let settings = map.get(id, target);
+
+        match settings {
+            Some(PipelineActionSettings { selection, .. }) => match selection {
+                ConfigSelection::Action(_) => true,
+                ConfigSelection::AllOf | ConfigSelection::OneOf { .. } => {
+                    match registrar.get(id, target) {
+                        Some(values) => match &values.settings.selection {
+                            DefinitionSelection::AllOf(values)
+                            | DefinitionSelection::OneOf {
+                                actions: values, ..
+                            } => values
+                                .iter()
+                                .any(|v| search_settings(v, map, target, registrar)),
+                            _ => panic!(),
+                        },
+                        None => false,
+                    }
+                }
+                ConfigSelection::UserDefined(values) => values
+                    .into_iter()
+                    .any(|v| search_settings(v, map, target, registrar)),
+            },
+            None => false,
+        }
+    }
+
+    search_settings(&root, map, target, registrar)
+}
+
 #[cfg(test)]
 mod tests {
+    use strum::IntoEnumIterator;
 
-    use crate::{db::ProfileDb, pipeline::action_registar::PipelineActionRegistrar};
+    use crate::{
+        db::ProfileDb,
+        pipeline::{action_registar::PipelineActionRegistrar, data::actions_have_target},
+    };
+
+    use super::*;
 
     #[test]
     fn test_template_reification() {
@@ -346,12 +426,56 @@ mod tests {
         let res: Vec<_> = profiles
             .get_templates()
             .into_iter()
-            .map(|t| t.pipeline.clone().reify(&[], &registrar))
+            .map(|t| (&t.pipeline, t.pipeline.clone().reify(&[], &registrar)))
             .collect();
 
-        for p in res {
-            if let Err(err) = p {
-                panic!("{err}");
+        assert!(res.len() > 0);
+
+        for (tp, p) in res {
+            match p {
+                Ok(p) => {
+                    assert_eq!(tp.name, p.name);
+                    let target_count = PipelineTarget::iter().fold(0, |a, v| {
+                        if actions_have_target(&tp.platform, &tp.actions, v, &registrar) {
+                            a + 1
+                        } else {
+                            a
+                        }
+                    });
+                    assert!(target_count > 0);
+                    assert_eq!(
+                        target_count,
+                        p.targets.len(),
+                        "target mismatch for {}; expected {target_count}, got {:?}",
+                        tp.name,
+                        p.targets
+                    );
+
+                    let desktop = p.targets.get(&PipelineTarget::Desktop).unwrap();
+
+                    match desktop {
+                        crate::pipeline::data::RuntimeSelection::AllOf(v) => {
+                            assert!(
+                                v.iter()
+                                    .any(|v| v.id.no_variant() == tp.platform.no_variant()),
+                                "platform not found toplevel for {:?}, got {:?}",
+                                tp.platform,
+                                v.iter().map(|v| &v.id).collect::<Vec<_>>()
+                            );
+
+                            assert_eq!(
+                                v.len(),
+                                registrar.toplevel().into_keys().len() + 1,
+                                "not all toplevel found for {:?}: {:?}",
+                                tp.platform,
+                                v.iter().map(|v| v.id.clone()).collect::<Vec<_>>(),
+                            )
+                            // may need revision of toplevel actions change
+                        }
+                        _ => panic!(),
+                    }
+                }
+                Err(err) => panic!("{err}"),
             }
         }
     }

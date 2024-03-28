@@ -12,10 +12,11 @@ use super::{
         display_config::DisplayConfig,
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
         multi_window::{
-            secondary_app::LaunchSecondaryApp,
             primary_windowing::{
-                CemuWindowOptions, CitraWindowOptions, GeneralOptions, MultiWindow,
+                CemuWindowOptions, CitraWindowOptions, CustomWindowOptions, GeneralOptions,
+                MultiWindow,
             },
+            secondary_app::LaunchSecondaryApp,
         },
         session_handler::{DesktopSessionHandler, ExternalDisplaySettings, RelativeLocation},
         source_file::{
@@ -60,11 +61,17 @@ impl PipelineActionRegistrar {
     }
 
     pub fn toplevel(&self) -> HashMap<&PipelineActionId, &PipelineActionDefinition> {
-        self.actions.iter().filter(|v| v.0.raw().split_terminator(':').nth(1) == Some("toplevel")).collect()
+        self.actions
+            .iter()
+            .filter(|v| v.0.raw().split_terminator(':').nth(1) == Some("toplevel"))
+            .collect()
     }
 
     pub fn platform(&self) -> HashMap<&PipelineActionId, &PipelineActionDefinition> {
-        self.actions.iter().filter(|v| v.0.raw().split_terminator(':').nth(2) == Some("platform")).collect()
+        self.actions
+            .iter()
+            .filter(|v| v.0.raw().split_terminator(':').nth(2) == Some("platform"))
+            .collect()
     }
 
     pub fn make_lookup(&self, platform: &PipelineActionId) -> PipelineActionLookup {
@@ -237,12 +244,12 @@ impl PipelineActionRegistarBuilder {
                         enabled: Some(false),
                         profile_override: None,
                         is_visible_on_qam: true,
-                        selection: DefinitionSelection::OneOf { 
-                            selection: PipelineActionId::new("core:secondary:launch_secondary_app_preset"), 
+                        selection: DefinitionSelection::OneOf {
+                            selection: PipelineActionId::new("core:secondary:launch_secondary_app"), 
                             actions: vec![
                                 PipelineActionId::new("core:secondary:launch_secondary_app_preset"),
                                 PipelineActionId::new("core:secondary:launch_secondary_app")
-                            ]  
+                            ]
                         },
                     })
                 })
@@ -621,7 +628,8 @@ impl PipelineActionRegistarBuilder {
                     let app_name =  "App".to_string();
                     let app_description = Some("Launches an application in desktop mode.".to_string());
 
-                    group.with_action("platform", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                    group
+                    .with_action("platform", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
                         name: app_name.clone(),
                         description: app_description.clone(),
                         enabled: None,
@@ -631,6 +639,21 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:app:multi_window"),
                             PipelineActionId::new("core:display:display_config"),
                         ]),
+                    })
+                    .with_action("multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                        name: multi_window_name.clone(),
+                        description: multi_window_description.clone(),
+                        enabled: None,
+                        is_visible_on_qam: false,
+                        profile_override: None,
+                        selection: MultiWindow {
+                            id: ActionId::nil(),
+                            general: GeneralOptions::default(),
+                            cemu: None,
+                            citra: None,
+                            dolphin: None,
+                            custom: Some(CustomWindowOptions::default()),
+                        }.into(),
                     })
                 })
         })
@@ -712,5 +735,14 @@ mod tests {
 
         assert_eq!(difference.len(), 0);
         assert_eq!(intersection.len(), expected_keys.len());
+    }
+
+    #[test]
+    fn test_toplevel() {
+        let registrar = PipelineActionRegistrar::builder().with_core().build();
+        let toplevel = registrar.toplevel();
+
+        assert!(toplevel.contains_key(&PipelineActionId::new("core:toplevel:secondary:desktop")));
+        assert_eq!(toplevel.len(), 1);
     }
 }

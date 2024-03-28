@@ -102,6 +102,7 @@ fn main() -> Result<()> {
         std::fs::File::create(&log_filepath).unwrap(),
     )
     .unwrap();
+    log_panics::init();
 
     log::info!("Starting back-end ({} v{})", PACKAGE_NAME, PACKAGE_VERSION);
     println!("Starting back-end ({} v{})", PACKAGE_NAME, PACKAGE_VERSION);

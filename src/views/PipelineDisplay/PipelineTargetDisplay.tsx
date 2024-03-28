@@ -55,7 +55,8 @@ function buildAction(id: string, action: Action, indentLevel: number): ReactElem
 }
 
 function buildOneOf(oneOf: ActionOneOf, indentLevel: number, qamHiddenByParent: boolean): ReactElement {
-    const action = oneOf.actions.find((a) => a.id === oneOf.selection)!;
+    console.log("oneof: ", oneOf);
+    const action = oneOf.actions.find((a) => a.id.startsWith(oneOf.selection))!; // this really should be a === check, but the ids are kinda jacked after the latest refactor
     return buildPipelineAction(action, indentLevel + 1, qamHiddenByParent);
 }
 

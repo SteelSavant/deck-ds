@@ -258,7 +258,6 @@ export interface PipelineDefinition {
   platform: string;
   primary_target_override?: PipelineTarget | null;
   register_exit_hooks: boolean;
-  secondary_actions: string[];
 }
 export interface PipelineActionLookup {
   actions: {

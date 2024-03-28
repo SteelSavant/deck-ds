@@ -442,8 +442,10 @@ fn check_config_errors(
             RuntimeSelection::OneOf { selection, actions } => {
                 let action = actions
                     .iter()
-                    .find(|a| a.id == *selection)
-                    .expect("selected action should exist");
+                    .find(|a| a.id.no_variant() == selection.no_variant())
+                    .unwrap_or_else(|| {
+                        panic!("selected action {selection:?} should exist in {actions:?}")
+                    });
 
                 collect_actions(&action.selection, &action.id)
             }

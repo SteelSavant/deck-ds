@@ -1742,8 +1742,7 @@
         "id",
         "name",
         "platform",
-        "register_exit_hooks",
-        "secondary_actions"
+        "register_exit_hooks"
       ],
       "properties": {
         "actions": {
@@ -1771,12 +1770,6 @@
         },
         "register_exit_hooks": {
           "type": "boolean"
-        },
-        "secondary_actions": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       }
     },

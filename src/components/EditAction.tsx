@@ -1,9 +1,10 @@
-import { DialogButton, Dropdown, FileSelectionType, Toggle } from "decky-frontend-lib";
+import { DialogButton, Dropdown, FileSelectionType, TextField, Toggle } from "decky-frontend-lib";
 import _ from "lodash";
 import { Fragment, ReactElement } from "react";
 import { FaFile } from "react-icons/fa";
 import { Action, CemuWindowOptions, CitraWindowOptions, DolphinWindowOptions, ExternalDisplaySettings, LimitedMultiWindowLayout, MultiWindowLayout, RelativeLocation, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../backend";
 import { useServerApi } from "../context/serverApiContext";
+import { CustomWindowOptions, SecondaryAppWindowingBehavior } from "../types/backend_api";
 import { ActionChild, ActionChildBuilder } from "./ActionChild";
 
 
@@ -89,7 +90,7 @@ export function InternalEditAction({
                 </Fragment>
             );
         case 'DisplayConfig': {
-            // TODO::This is largely a duplicate of the above; refactor when Preference gets configured in UI.
+            // TODO::This is largely a duplicate of the above DesktopSessionHandler; refactor when Preference gets configured in UI.
             const display = cloned.value;
             const locations: RelativeLocation[] = ['Above', 'Below', 'LeftOf', 'RightOf']; // SameAs excluded because it doesn't really make sense
             const externalSettings: ExternalDisplaySettings[] = [{ type: 'Previous' }, { type: 'Native' }] // Preference excluded because its a pain to configure, and I'm pretty sure doesn't work
@@ -246,7 +247,7 @@ export function InternalEditAction({
                     return notConfigurable;
             }
         case 'MultiWindow':
-            const options = [cloned.value.cemu, cloned.value.citra, cloned.value.dolphin]
+            const options = [cloned.value.cemu, cloned.value.citra, cloned.value.dolphin, cloned.value.custom]
                 .filter((v) => v)
                 .map((v) => v!);
 
@@ -255,9 +256,14 @@ export function InternalEditAction({
                 return <p> invalid multi-window configuration; must have exactly one option</p>
             }
 
-            function isDolphin(o: DolphinWindowOptions | CemuWindowOptions | CitraWindowOptions): o is DolphinWindowOptions {
+            function isDolphin(o: DolphinWindowOptions | CemuWindowOptions | CitraWindowOptions | CustomWindowOptions): o is DolphinWindowOptions {
                 return !!(o as DolphinWindowOptions).gba_blacklist;
             }
+
+            function isCustom(o: DolphinWindowOptions | CemuWindowOptions | CitraWindowOptions | CustomWindowOptions): o is CustomWindowOptions {
+                return !!(o as CustomWindowOptions).classes;
+            }
+
 
             const option = options[0];
             const layoutOptions: MultiWindowLayout[] = ['column-right', 'column-left', 'square-right', 'square-left', 'separate'];
@@ -269,32 +275,69 @@ export function InternalEditAction({
 
             function DolphinAction(option: DolphinWindowOptions): ReactElement {
                 return (
-                    <Builder indentLevel={indentLevel} label="Multi-Screen Layout" description="Layout when the Deck's embedded display is enabled and an external display is connected." >
-                        <Fragment>
-                            <Builder indentLevel={indentLevel + 1} label="Single-GBA Layout" description="Layout when a single GBA window is visible.">
-                                <Dropdown selectedOption={option.multi_screen_single_secondary_layout} rgOptions={layoutOptions.map((a) => {
-                                    return {
-                                        label: labelForKebabCase(a),
-                                        data: a
-                                    }
-                                })} onChange={(value) => {
-                                    option.multi_screen_single_secondary_layout = value.data;
-                                    onChange(cloned);
-                                }} />
-                            </Builder>
-                            <Builder indentLevel={indentLevel + 1} label="Multi-GBA Layout" description="Layout when multiple GBA windows are visible.">
-                                <Dropdown selectedOption={option.multi_screen_multi_secondary_layout} rgOptions={layoutOptions.map((a) => {
-                                    return {
-                                        label: labelForKebabCase(a),
-                                        data: a
-                                    }
-                                })} onChange={(value) => {
-                                    option.multi_screen_multi_secondary_layout = value.data;
-                                    onChange(cloned);
-                                }} />
-                            </Builder>
-                        </Fragment>
-                    </Builder>
+                    <Fragment>
+                        <Builder indentLevel={indentLevel} label="Multi-Screen Layout" description="Layout when the Deck's embedded display is enabled and an external display is connected." >
+                            <Fragment />
+                        </Builder>
+                        <Builder indentLevel={indentLevel + 1} label="Single-GBA Layout" description="Layout when a single GBA window is visible.">
+                            <Dropdown selectedOption={option.multi_screen_single_secondary_layout} rgOptions={layoutOptions.map((a) => {
+                                return {
+                                    label: labelForKebabCase(a),
+                                    data: a
+                                }
+                            })} onChange={(value) => {
+                                option.multi_screen_single_secondary_layout = value.data;
+                                onChange(cloned);
+                            }} />
+                        </Builder>
+                        <Builder indentLevel={indentLevel + 1} label="Multi-GBA Layout" description="Layout when multiple GBA windows are visible.">
+                            <Dropdown selectedOption={option.multi_screen_multi_secondary_layout} rgOptions={layoutOptions.map((a) => {
+                                return {
+                                    label: labelForKebabCase(a),
+                                    data: a
+                                }
+                            })} onChange={(value) => {
+                                option.multi_screen_multi_secondary_layout = value.data;
+                                onChange(cloned);
+                            }} />
+                        </Builder>
+                    </Fragment>
+
+                );
+            }
+
+            function CustomAction(option: CustomWindowOptions): ReactElement {
+                // Note: classes, etc. aren't set by the user, but instead reconfigured at runtime
+                // In the future, we may consider using the fields as overrides to the automatic scraping
+
+                return (
+                    <Fragment>
+                        <Builder indentLevel={indentLevel} label="Multi-Screen Layout" description="Layout when the Deck's embedded display is enabled and an external display is connected." >
+                            <Fragment />
+                        </Builder>
+                        <Builder indentLevel={indentLevel + 1} label="Single-Window Layout" description="Layout when a single alternate window is visible.">
+                            <Dropdown selectedOption={option.multi_screen_single_secondary_layout} rgOptions={layoutOptions.map((a) => {
+                                return {
+                                    label: labelForKebabCase(a),
+                                    data: a
+                                }
+                            })} onChange={(value) => {
+                                option.multi_screen_single_secondary_layout = value.data;
+                                onChange(cloned);
+                            }} />
+                        </Builder>
+                        <Builder indentLevel={indentLevel + 1} label="Multi-Window Layout" description="Layout when multiple alternate windows are visible.">
+                            <Dropdown selectedOption={option.multi_screen_multi_secondary_layout} rgOptions={layoutOptions.map((a) => {
+                                return {
+                                    label: labelForKebabCase(a),
+                                    data: a
+                                }
+                            })} onChange={(value) => {
+                                option.multi_screen_multi_secondary_layout = value.data;
+                                onChange(cloned);
+                            }} />
+                        </Builder>
+                    </Fragment>
                 );
             }
 
@@ -313,8 +356,6 @@ export function InternalEditAction({
                     </Builder>
                 );
             }
-
-            // TODO::check for custom action
 
             return <Fragment>
                 <Builder indentLevel={indentLevel} label="Keep Above" description="Keep emulator windows above others.">
@@ -343,13 +384,52 @@ export function InternalEditAction({
                 {
                     isDolphin(option)
                         ? DolphinAction(option)
-                        : DsAction(option)
+                        : isCustom(option)
+                            ? CustomAction(option)
+                            : DsAction(option)
                 }
-
-
             </Fragment>;
         case 'LaunchSecondaryApp':
-        // TODO::this
+            const app = cloned.value.app;
+            const windowing = cloned.value.windowing_behavior; // TODO::this
+            const appType = app.type;
+            const windowingOptions: SecondaryAppWindowingBehavior[] = ['PreferSecondary', 'PreferPrimary', 'Hidden', 'Unmanaged'];
+            switch (appType) {
+                case 'Flatpak':
+                    const flatpak = app.value;
+                    return (
+                        <Fragment>
+                            <Builder indentLevel={indentLevel} label="App Id">
+                                <TextField value={flatpak.app_id} onChange={(v) => {
+                                    flatpak.app_id = v.target.value;
+                                    onChange(cloned);
+                                }} />
+                            </Builder >
+                            <Builder indentLevel={indentLevel} label="Args">
+                                <TextField value={flatpak.app_id} onChange={(v) => {
+                                    flatpak.args = v.target.value.split(/\s+/);
+                                    onChange(cloned);
+                                }} />
+                            </Builder >
+                            <Builder indentLevel={indentLevel} label="Windowing">
+                                <Dropdown
+                                    selectedOption={windowing} rgOptions={windowingOptions.map((a) => {
+                                        return {
+                                            label: labelForCamelCase(a),
+                                            data: a
+                                        }
+                                    })} onChange={(value) => {
+                                        cloned.value.windowing_behavior = value.data;
+                                        onChange(cloned);
+                                    }}
+                                />
+                            </Builder>
+                        </Fragment >
+                    );
+                default:
+                    const typecheck: never = appType;
+                    throw typecheck ?? "App type failed to typecheck";
+            }
         case 'LaunchSecondaryAppPreset':
         // TODO::this
         case 'VirtualScreen':
