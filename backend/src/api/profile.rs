@@ -442,7 +442,7 @@ fn check_config_errors(
             RuntimeSelection::OneOf { selection, actions } => {
                 let action = actions
                     .iter()
-                    .find(|a| a.id.no_variant() == selection.no_variant())
+                    .find(|a| a.id.no_variant() == selection.no_variant()) // TODO:: These shouldn't be required to filter by no_variant
                     .unwrap_or_else(|| {
                         panic!("selected action {selection:?} should exist in {actions:?}")
                     });
