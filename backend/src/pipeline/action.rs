@@ -7,7 +7,7 @@ use strum::{Display, EnumString};
 use crate::macros::newtype_uuid;
 
 use self::display_config::DisplayConfig;
-use self::multi_window::secondary_app::{LaunchSecondaryApp, LaunchSecondaryAppPreset};
+use self::multi_window::secondary_app::{LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp};
 use self::{
     cemu_layout::CemuLayout, citra_layout::CitraLayout, melonds_layout::MelonDSLayout,
     multi_window::primary_windowing::MultiWindow, session_handler::DesktopSessionHandler,
@@ -116,7 +116,7 @@ pub enum Action {
     CemuLayout(CemuLayout),
     MelonDSLayout(MelonDSLayout),
     SourceFile(SourceFile),
-    LaunchSecondaryApp(LaunchSecondaryApp),
+    LaunchSecondaryFlatpakApp(LaunchSecondaryFlatpakApp),
     LaunchSecondaryAppPreset(LaunchSecondaryAppPreset),
 }
 
@@ -151,8 +151,8 @@ impl Action {
             Action::CemuLayout(a) => Action::CemuLayout(CemuLayout { id, ..*a }),
             Action::MelonDSLayout(a) => Action::MelonDSLayout(MelonDSLayout { id, ..*a }),
             Action::SourceFile(a) => Action::SourceFile(SourceFile { id, ..a.clone() }),
-            Action::LaunchSecondaryApp(a) => {
-                Action::LaunchSecondaryApp(LaunchSecondaryApp { id, ..a.clone() })
+            Action::LaunchSecondaryFlatpakApp(a) => {
+                Action::LaunchSecondaryFlatpakApp(LaunchSecondaryFlatpakApp { id, ..a.clone() })
             }
             Action::LaunchSecondaryAppPreset(a) => {
                 Action::LaunchSecondaryAppPreset(LaunchSecondaryAppPreset { id, ..a.clone() })
@@ -172,6 +172,6 @@ pub enum ActionType {
     MelonDSLayout,
     SourceFile,
     VirtualScreen,
-    LaunchSecondaryApp,
+    LaunchSecondaryFlatpakApp,
     LaunchSecondaryAppPreset,
 }

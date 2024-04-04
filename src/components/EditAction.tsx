@@ -38,6 +38,8 @@ export function InternalEditAction({
     const serverApi = useServerApi();
     const notConfigurable = null;
 
+    const secondaryAppWindowingOptions: SecondaryAppWindowingBehavior[] = ['PreferSecondary', 'PreferPrimary', 'Hidden', 'Unmanaged'];
+
     switch (type) {
         case 'DesktopSessionHandler':
             const display = cloned.value;
@@ -389,49 +391,65 @@ export function InternalEditAction({
                             : DsAction(option)
                 }
             </Fragment>;
-        case 'LaunchSecondaryApp':
-            const app = cloned.value.app;
-            const windowing = cloned.value.windowing_behavior; // TODO::this
-            const appType = app.type;
-            const windowingOptions: SecondaryAppWindowingBehavior[] = ['PreferSecondary', 'PreferPrimary', 'Hidden', 'Unmanaged'];
-            switch (appType) {
-                case 'Flatpak':
-                    const flatpak = app.value;
-                    return (
-                        <Fragment>
-                            <Builder indentLevel={indentLevel} label="App Id">
-                                <TextField value={flatpak.app_id} onChange={(v) => {
-                                    flatpak.app_id = v.target.value;
-                                    onChange(cloned);
-                                }} />
-                            </Builder >
-                            <Builder indentLevel={indentLevel} label="Args">
-                                <TextField value={flatpak.app_id} onChange={(v) => {
-                                    flatpak.args = v.target.value.split(/\s+/);
-                                    onChange(cloned);
-                                }} />
-                            </Builder >
-                            <Builder indentLevel={indentLevel} label="Windowing">
-                                <Dropdown
-                                    selectedOption={windowing} rgOptions={windowingOptions.map((a) => {
-                                        return {
-                                            label: labelForCamelCase(a),
-                                            data: a
-                                        }
-                                    })} onChange={(value) => {
-                                        cloned.value.windowing_behavior = value.data;
-                                        onChange(cloned);
-                                    }}
-                                />
-                            </Builder>
-                        </Fragment >
-                    );
-                default:
-                    const typecheck: never = appType;
-                    throw typecheck ?? "App type failed to typecheck";
-            }
-        case 'LaunchSecondaryAppPreset':
-        // TODO::this
+        case 'LaunchSecondaryFlatpakApp': {
+            const flatpak = cloned.value.app;
+            const windowing = cloned.value.windowing_behavior;
+
+            return (
+                <Fragment>
+                    <Builder indentLevel={indentLevel} label="App Id">
+                        <TextField value={flatpak.app_id} onChange={(v) => {
+                            flatpak.app_id = v.target.value;
+                            onChange(cloned);
+                        }} />
+                    </Builder >
+                    <Builder indentLevel={indentLevel} label="Args">
+                        <TextField value={flatpak.app_id} onChange={(v) => {
+                            flatpak.args = v.target.value.split(/\s+/);
+                            onChange(cloned);
+                        }} />
+                    </Builder >
+                    <Builder indentLevel={indentLevel - 1} label="Windowing">
+                        <Dropdown
+                            selectedOption={windowing} rgOptions={secondaryAppWindowingOptions.map((a) => {
+                                return {
+                                    label: labelForCamelCase(a),
+                                    data: a
+                                }
+                            })} onChange={(value) => {
+                                cloned.value.windowing_behavior = value.data;
+                                onChange(cloned);
+                            }}
+                        />
+                    </Builder>
+                </Fragment >
+            );
+        }
+
+        case 'LaunchSecondaryAppPreset': {
+            const windowing = cloned.value.windowing_behavior;
+
+            return (
+                <Fragment>
+                    <Builder indentLevel={indentLevel} label="Selected Preset">
+                        <p>TODO::{cloned.value.preset}</p>
+                    </Builder>
+                    <Builder indentLevel={indentLevel - 1} label="Windowing">
+                        <Dropdown
+                            selectedOption={windowing} rgOptions={secondaryAppWindowingOptions.map((a) => {
+                                return {
+                                    label: labelForCamelCase(a),
+                                    data: a
+                                }
+                            })} onChange={(value) => {
+                                cloned.value.windowing_behavior = value.data;
+                                onChange(cloned);
+                            }}
+                        />
+                    </Builder>
+                </Fragment>
+            );
+        }
         case 'VirtualScreen':
             return notConfigurable;
         default:

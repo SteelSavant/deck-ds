@@ -18,7 +18,8 @@ use crate::{
                     DolphinWindowOptions, GeneralOptions,
                 },
                 secondary_app::{
-                    LaunchSecondaryApp, LaunchSecondaryAppPreset, SecondaryAppWindowingBehavior,
+                    LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp,
+                    SecondaryAppWindowingBehavior,
                 },
             },
             session_handler::DesktopSessionHandler,
@@ -838,16 +839,22 @@ impl From<DbDisplayConfig> for DisplayConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
 #[native_model(id = 109, version = 1, with = NativeModelJSON)]
-pub struct DbLaunchSecondaryApp {
+pub struct DbLaunchSecondaryFlatpakApp {
     #[primary_key]
     pub id: ActionId,
-    pub app: DbSecondaryApp,
+    pub app: DbSecondaryFlatpakApp,
     pub windowing_behavior: DbSecondaryAppWindowingBehavior,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DbSecondaryApp {
-    Flatpak { app_id: String, args: Vec<String> },
+    Flatpak(DbSecondaryFlatpakApp),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DbSecondaryFlatpakApp {
+    app_id: String,
+    args: Vec<String>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -858,8 +865,26 @@ pub enum DbSecondaryAppWindowingBehavior {
     Unmanaged,
 }
 
-impl From<LaunchSecondaryApp> for DbLaunchSecondaryApp {
-    fn from(value: LaunchSecondaryApp) -> Self {
+impl From<FlatpakApp> for DbSecondaryFlatpakApp {
+    fn from(value: FlatpakApp) -> Self {
+        Self {
+            app_id: value.app_id,
+            args: value.args,
+        }
+    }
+}
+
+impl From<DbSecondaryFlatpakApp> for FlatpakApp {
+    fn from(value: DbSecondaryFlatpakApp) -> Self {
+        Self {
+            app_id: value.app_id,
+            args: value.args,
+        }
+    }
+}
+
+impl From<LaunchSecondaryFlatpakApp> for DbLaunchSecondaryFlatpakApp {
+    fn from(value: LaunchSecondaryFlatpakApp) -> Self {
         Self {
             id: value.id,
             app: value.app.into(),
@@ -868,8 +893,8 @@ impl From<LaunchSecondaryApp> for DbLaunchSecondaryApp {
     }
 }
 
-impl From<DbLaunchSecondaryApp> for LaunchSecondaryApp {
-    fn from(value: DbLaunchSecondaryApp) -> Self {
+impl From<DbLaunchSecondaryFlatpakApp> for LaunchSecondaryFlatpakApp {
+    fn from(value: DbLaunchSecondaryFlatpakApp) -> Self {
         Self {
             id: value.id,
             app: value.app.into(),
@@ -881,10 +906,7 @@ impl From<DbLaunchSecondaryApp> for LaunchSecondaryApp {
 impl From<SecondaryApp> for DbSecondaryApp {
     fn from(value: SecondaryApp) -> Self {
         match value {
-            SecondaryApp::Flatpak(app) => DbSecondaryApp::Flatpak {
-                app_id: app.app_id,
-                args: app.args,
-            },
+            SecondaryApp::Flatpak(app) => DbSecondaryApp::Flatpak(app.into()),
         }
     }
 }
@@ -892,9 +914,7 @@ impl From<SecondaryApp> for DbSecondaryApp {
 impl From<DbSecondaryApp> for SecondaryApp {
     fn from(value: DbSecondaryApp) -> Self {
         match value {
-            DbSecondaryApp::Flatpak { app_id, args } => {
-                SecondaryApp::Flatpak(FlatpakApp { app_id, args })
-            }
+            DbSecondaryApp::Flatpak(app) => SecondaryApp::Flatpak(app.into()),
         }
     }
 }

@@ -21,16 +21,16 @@ use super::{
 };
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
-pub struct LaunchSecondaryApp {
+pub struct LaunchSecondaryFlatpakApp {
     pub id: ActionId,
-    pub app: SecondaryApp,
+    pub app: FlatpakApp,
     pub windowing_behavior: SecondaryAppWindowingBehavior,
 }
 
-impl ActionImpl for LaunchSecondaryApp {
+impl ActionImpl for LaunchSecondaryFlatpakApp {
     type State = SecondaryAppState;
 
-    const TYPE: ActionType = ActionType::LaunchSecondaryApp;
+    const TYPE: ActionType = ActionType::LaunchSecondaryFlatpakApp;
 
     fn get_id(&self) -> ActionId {
         self.id
@@ -67,38 +67,7 @@ impl ActionImpl for LaunchSecondaryApp {
     }
 
     fn get_dependencies(&self, ctx: &mut PipelineContext) -> Vec<Dependency> {
-        self.app.get_dependencies(ctx)
-    }
-}
-
-impl SecondaryApp {
-    fn setup(&self) -> Result<Pid> {
-        match self {
-            SecondaryApp::Flatpak(app) => app.setup(),
-            // SecondaryAppType::CliCmd { setup, .. } => setup.exec(),
-        }
-    }
-
-    fn teardown(&self, pid: Pid) -> Result<()> {
-        match self {
-            SecondaryApp::Flatpak(app) => app.teardown(pid),
-            // SecondaryApp::CliCmd { teardown, .. } => {
-            //     // Kill old pid, ignore status in case its already exited
-            //     let _ = Command::new("kill").arg(&pid.as_raw().to_string()).status();
-
-            //     if let Some(teardown) = teardown {
-            //         teardown.exec().map(|_| ())?
-            //     }
-
-            //     Ok(())
-            // }
-        }
-    }
-
-    fn get_dependencies(&self, _ctx: &mut PipelineContext) -> Vec<Dependency> {
-        match self {
-            SecondaryApp::Flatpak(flatpak) => flatpak.get_dependencies(),
-        }
+        self.app.get_dependencies()
     }
 }
 

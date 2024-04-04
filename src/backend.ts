@@ -15,8 +15,7 @@ import { Err, Ok, Result } from "./util/result";
 export {
     Action, AppProfile, AutoStartRequest, CategoryProfile, CemuWindowOptions, CitraWindowOptions, ConfigSelection, CreateProfileRequest,
     CreateProfileResponse, DeleteProfileRequest, DependencyError, DolphinWindowOptions, ExternalDisplaySettings, GetProfileRequest,
-    GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, GlobalConfig, LaunchSecondaryApp, LaunchSecondaryAppPreset,
-    LimitedMultiWindowLayout, MultiWindowLayout, PipelineAction, PipelineDefinition, PipelineTarget, ReifyPipelineRequest,
+    GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, GlobalConfig, LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp, LimitedMultiWindowLayout, MultiWindowLayout, PipelineAction, PipelineDefinition, PipelineTarget, ReifyPipelineRequest,
     ReifyPipelineResponse, RelativeLocation, RuntimeSelection, SetProfileRequest, Template
 } from "./types/backend_api";
 

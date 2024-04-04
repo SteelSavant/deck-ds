@@ -240,11 +240,11 @@
             "type": {
               "type": "string",
               "enum": [
-                "LaunchSecondaryApp"
+                "LaunchSecondaryFlatpakApp"
               ]
             },
             "value": {
-              "$ref": "#/definitions/LaunchSecondaryApp"
+              "$ref": "#/definitions/LaunchSecondaryFlatpakApp"
             }
           }
         },
@@ -1330,26 +1330,6 @@
         }
       }
     },
-    "LaunchSecondaryApp": {
-      "type": "object",
-      "required": [
-        "app",
-        "id",
-        "windowing_behavior"
-      ],
-      "properties": {
-        "app": {
-          "$ref": "#/definitions/SecondaryApp"
-        },
-        "id": {
-          "type": "string",
-          "format": "uuid"
-        },
-        "windowing_behavior": {
-          "$ref": "#/definitions/SecondaryAppWindowingBehavior"
-        }
-      }
-    },
     "LaunchSecondaryAppPreset": {
       "type": "object",
       "required": [
@@ -1363,6 +1343,26 @@
           "format": "uuid"
         },
         "preset": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "windowing_behavior": {
+          "$ref": "#/definitions/SecondaryAppWindowingBehavior"
+        }
+      }
+    },
+    "LaunchSecondaryFlatpakApp": {
+      "type": "object",
+      "required": [
+        "app",
+        "id",
+        "windowing_behavior"
+      ],
+      "properties": {
+        "app": {
+          "$ref": "#/definitions/FlatpakApp"
+        },
+        "id": {
           "type": "string",
           "format": "uuid"
         },
@@ -1933,28 +1933,6 @@
               "items": {
                 "$ref": "#/definitions/PipelineAction"
               }
-            }
-          }
-        }
-      ]
-    },
-    "SecondaryApp": {
-      "oneOf": [
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Flatpak"
-              ]
-            },
-            "value": {
-              "$ref": "#/definitions/FlatpakApp"
             }
           }
         }

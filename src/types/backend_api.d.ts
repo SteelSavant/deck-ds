@@ -61,8 +61,8 @@ export type Action =
       value: SourceFile;
     }
   | {
-      type: "LaunchSecondaryApp";
-      value: LaunchSecondaryApp;
+      type: "LaunchSecondaryFlatpakApp";
+      value: LaunchSecondaryFlatpakApp;
     }
   | {
       type: "LaunchSecondaryAppPreset";
@@ -155,10 +155,6 @@ export type FileSource =
 export type FlatpakSource = "Cemu" | "Citra" | "MelonDS";
 export type AppImageSource = "Cemu";
 export type EmuDeckSource = "CemuProton";
-export type SecondaryApp = {
-  type: "Flatpak";
-  value: FlatpakApp;
-};
 export type SecondaryAppWindowingBehavior = "PreferSecondary" | "PreferPrimary" | "Hidden" | "Unmanaged";
 export type DependencyError =
   | {
@@ -387,8 +383,8 @@ export interface CustomFileOptions {
    */
   valid_ext: string[];
 }
-export interface LaunchSecondaryApp {
-  app: SecondaryApp;
+export interface LaunchSecondaryFlatpakApp {
+  app: FlatpakApp;
   id: string;
   windowing_behavior: SecondaryAppWindowingBehavior;
 }

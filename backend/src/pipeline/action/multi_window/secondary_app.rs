@@ -1,9 +1,9 @@
-mod launch_secondary_app;
 mod launch_secondary_app_preset;
+mod launch_secondary_flatpak_app;
 mod secondary_app_options;
 
-pub use launch_secondary_app::*;
 pub use launch_secondary_app_preset::*;
+pub use launch_secondary_flatpak_app::*;
 use nix::unistd::Pid;
 use schemars::JsonSchema;
 pub use secondary_app_options::*;

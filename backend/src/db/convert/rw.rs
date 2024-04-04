@@ -56,7 +56,7 @@ impl Action {
             Action::SourceFile(action) => {
                 rw.insert::<DbSourceFile>(action.into())?;
             }
-            Action::LaunchSecondaryApp(action) => {
+            Action::LaunchSecondaryFlatpakApp(action) => {
                 rw.insert::<DbLaunchSecondaryApp>(action.into())?;
             }
             Action::LaunchSecondaryAppPreset(action) => {
@@ -184,7 +184,7 @@ impl DbAction {
                 let action = rw.get().primary::<DbSourceFile>(id)?;
                 action.map(|a| rw.remove(a))
             }
-            ActionType::LaunchSecondaryApp => {
+            ActionType::LaunchSecondaryFlatpakApp => {
                 let action = rw.get().primary::<DbLaunchSecondaryApp>(id)?;
                 action.map(|a| rw.remove(a))
             }

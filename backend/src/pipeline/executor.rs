@@ -18,7 +18,7 @@ use crate::pipeline::action::display_config::DisplayConfig;
 use crate::pipeline::action::melonds_layout::MelonDSLayout;
 use crate::pipeline::action::multi_window::primary_windowing::MultiWindow;
 use crate::pipeline::action::multi_window::secondary_app::{
-    LaunchSecondaryApp, LaunchSecondaryAppPreset,
+    LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp,
 };
 use crate::pipeline::action::session_handler::DesktopSessionHandler;
 use crate::pipeline::action::source_file::SourceFile;
@@ -155,8 +155,8 @@ impl<'a> PipelineContext<'a> {
                     ActionType::DisplayConfig => {
                         load_state::<DisplayConfig>(&mut default, &type_map)
                     }
-                    ActionType::LaunchSecondaryApp => {
-                        load_state::<LaunchSecondaryApp>(&mut default, &type_map)
+                    ActionType::LaunchSecondaryFlatpakApp => {
+                        load_state::<LaunchSecondaryFlatpakApp>(&mut default, &type_map)
                     }
                     ActionType::LaunchSecondaryAppPreset => {
                         load_state::<LaunchSecondaryAppPreset>(&mut default, &type_map)
@@ -212,7 +212,7 @@ impl<'a> PipelineContext<'a> {
                 Action::CemuLayout(a) => insert_action(self, &mut map, a),
                 Action::MelonDSLayout(a) => insert_action(self, &mut map, a),
                 Action::SourceFile(a) => insert_action(self, &mut map, a),
-                Action::LaunchSecondaryApp(a) => insert_action(self, &mut map, a),
+                Action::LaunchSecondaryFlatpakApp(a) => insert_action(self, &mut map, a),
                 Action::LaunchSecondaryAppPreset(a) => insert_action(self, &mut map, a),
             };
         }

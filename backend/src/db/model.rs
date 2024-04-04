@@ -23,7 +23,7 @@ pub type DbMultiWindow = v1::DbMultiWindow;
 pub type DbSourceFile = v1::DbSourceFile;
 pub type DbVirtualScreen = v1::DbVirtualScreen;
 pub type DbDisplayConfig = v1::DbDisplayConfig;
-pub type DbLaunchSecondaryApp = v1::DbLaunchSecondaryApp;
+pub type DbLaunchSecondaryApp = v1::DbLaunchSecondaryFlatpakApp;
 pub type DbLaunchSecondaryAppPreset = v1::DbLaunchSecondaryAppPreset;
 
 pub static DATABASE_BUILDER: Lazy<native_db::DatabaseBuilder> = Lazy::new(|| {
@@ -75,7 +75,7 @@ pub static DATABASE_BUILDER: Lazy<native_db::DatabaseBuilder> = Lazy::new(|| {
             .define::<v1::DbDisplayConfig>()
             .expect("failed to define DbDisplayConfig v1");
         builder
-            .define::<v1::DbLaunchSecondaryApp>()
+            .define::<v1::DbLaunchSecondaryFlatpakApp>()
             .expect("failed to define LaunchSecondaryApp v1");
         builder
             .define::<v1::DbLaunchSecondaryAppPreset>()

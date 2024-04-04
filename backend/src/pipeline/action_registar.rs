@@ -1,7 +1,7 @@
 use strum::IntoEnumIterator;
 
 use crate::{
-    secondary_app::{FlatpakApp, SecondaryApp},
+    secondary_app::{FlatpakApp, SecondaryApp, SecondaryAppPreset, SecondaryAppPresetId},
     settings::ProfileId,
 };
 
@@ -16,7 +16,7 @@ use super::{
                 CemuWindowOptions, CitraWindowOptions, CustomWindowOptions, GeneralOptions,
                 MultiWindow,
             },
-            secondary_app::LaunchSecondaryApp,
+            secondary_app::{LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp},
         },
         session_handler::{DesktopSessionHandler, ExternalDisplaySettings, RelativeLocation},
         source_file::{
@@ -245,27 +245,27 @@ impl PipelineActionRegistarBuilder {
                         profile_override: None,
                         is_visible_on_qam: true,
                         selection: DefinitionSelection::OneOf {
-                            selection: PipelineActionId::new("core:secondary:launch_secondary_app"), 
+                            selection: PipelineActionId::new("core:secondary:launch_secondary_app_preset"), 
                             actions: vec![
                                 PipelineActionId::new("core:secondary:launch_secondary_app_preset"),
-                                PipelineActionId::new("core:secondary:launch_secondary_app")
+                                PipelineActionId::new("core:secondary:launch_secondary_flatpak_app")
                             ]
                         },
                     })
                 })
                 .with_group("secondary", |group| {
-                    group.with_action("launch_secondary_app", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                    group.with_action("launch_secondary_flatpak_app", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
                         name: "Custom App".into(),
                         description: Some("Custom app config to launch along with the main Steam app.".into()),
                         enabled: None,
                         profile_override: None,
                         is_visible_on_qam: true,
-                        selection: DefinitionSelection::Action(LaunchSecondaryApp {
+                        selection: DefinitionSelection::Action(LaunchSecondaryFlatpakApp {
                             id: ActionId::nil(),
-                            app: SecondaryApp::Flatpak(FlatpakApp {
+                            app: FlatpakApp {
                                 app_id: "".into(),
                                 args: vec![],
-                            }),
+                            },
                             windowing_behavior: Default::default(),
                         }.into()),
                     }).with_action("launch_secondary_app_preset", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
@@ -274,12 +274,9 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         profile_override: None,
                         is_visible_on_qam: true,
-                        selection: DefinitionSelection::Action(LaunchSecondaryApp {
+                        selection: DefinitionSelection::Action(LaunchSecondaryAppPreset {
                             id: ActionId::nil(),
-                            app: SecondaryApp::Flatpak(FlatpakApp {
-                                app_id: "".into(),
-                                args: vec![],
-                            }),
+                            preset: SecondaryAppPresetId::parse("fd811b3f-4e09-4828-92aa-9220239c274b"), // Youtube [Firefox]
                             windowing_behavior: Default::default(),
                         }.into()),
                     })

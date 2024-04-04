@@ -244,18 +244,32 @@ impl PipelineActionId {
         registrar: &PipelineActionRegistrar,
     ) -> Result<Option<PipelineAction>> {
         let config = pipeline.actions.get(self, target).cloned().or_else(|| {
-            registrar.get(self, target).map(|v| PipelineActionSettings {
-                enabled: v.settings.enabled,
-                is_visible_on_qam: v.settings.is_visible_on_qam,
-                profile_override: v.settings.profile_override,
-                selection: match &v.settings.selection {
-                    DefinitionSelection::Action(a) => ConfigSelection::Action(a.clone()),
-                    DefinitionSelection::OneOf { selection, .. } => ConfigSelection::OneOf {
-                        selection: selection.clone(),
-                    },
-                    DefinitionSelection::AllOf(_) => ConfigSelection::AllOf,
-                    DefinitionSelection::UserDefined => ConfigSelection::UserDefined(vec![]),
-                },
+            registrar.get(self, target).and_then(|v| {
+                Some(PipelineActionSettings {
+                    enabled: v.settings.enabled,
+                    is_visible_on_qam: v.settings.is_visible_on_qam,
+                    profile_override: v.settings.profile_override,
+                    selection: match &v.settings.selection {
+                        DefinitionSelection::Action(a) => Some(ConfigSelection::Action(a.clone())),
+                        DefinitionSelection::OneOf { selection, actions } => {
+                            let action = registrar.get(selection, target).or_else(|| {
+                                actions
+                                    .iter()
+                                    .map(|v| registrar.get(v, target))
+                                    .next()
+                                    .flatten()
+                            });
+
+                            action.map(|v| ConfigSelection::OneOf {
+                                selection: v.id.clone(),
+                            })
+                        }
+                        DefinitionSelection::AllOf(_) => Some(ConfigSelection::AllOf),
+                        DefinitionSelection::UserDefined => {
+                            Some(ConfigSelection::UserDefined(vec![]))
+                        }
+                    }?,
+                })
             })
         });
 
@@ -451,6 +465,8 @@ mod tests {
                         p.targets
                     );
 
+                    assert_pipeline_traversable(&p);
+
                     let desktop = p.targets.get(&PipelineTarget::Desktop).unwrap();
 
                     match desktop {
@@ -476,6 +492,35 @@ mod tests {
                     }
                 }
                 Err(err) => panic!("{err}"),
+            }
+        }
+    }
+
+    fn assert_pipeline_traversable(p: &Pipeline) {
+        fn assert_selection_traversable(s: &RuntimeSelection) {
+            match s {
+                RuntimeSelection::Action(_) => (),
+                RuntimeSelection::OneOf { selection, actions } => {
+                    assert!(
+                        actions.iter().any(|v| v.id == *selection),
+                        "could not find selection {selection:?} in available actions {actions:?}"
+                    );
+                    for a in actions {
+                        assert_selection_traversable(&a.selection)
+                    }
+                }
+                RuntimeSelection::AllOf(actions) | RuntimeSelection::UserDefined(actions) => {
+                    for a in actions {
+                        assert_selection_traversable(&a.selection)
+                    }
+                }
+            }
+        }
+
+        for target in PipelineTarget::iter() {
+            let root = p.targets.get(&target);
+            if let Some(root) = root {
+                assert_selection_traversable(&root);
             }
         }
     }

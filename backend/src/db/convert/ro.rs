@@ -55,9 +55,9 @@ impl DbAction {
                 let action = ro.get().primary::<DbSourceFile>(id)?;
                 action.map(|a| Action::SourceFile(a.into()))
             }
-            ActionType::LaunchSecondaryApp => {
+            ActionType::LaunchSecondaryFlatpakApp => {
                 let action = ro.get().primary::<DbLaunchSecondaryApp>(id)?;
-                action.map(|a| Action::LaunchSecondaryApp(a.into()))
+                action.map(|a| Action::LaunchSecondaryFlatpakApp(a.into()))
             }
             ActionType::LaunchSecondaryAppPreset => {
                 let action = ro.get().primary::<DbLaunchSecondaryAppPreset>(id)?;

@@ -11,7 +11,7 @@ use crate::{
     secondary_app::SecondaryAppPresetId,
 };
 
-use super::{LaunchSecondaryApp, SecondaryAppWindowingBehavior};
+use super::{LaunchSecondaryFlatpakApp, SecondaryAppWindowingBehavior};
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
 pub struct LaunchSecondaryAppPreset {
@@ -32,12 +32,14 @@ impl ActionImpl for LaunchSecondaryAppPreset {
             .remove(&self.preset)
             .with_context(|| format!("Secondary app preset {:?} should exist", self.preset))?;
 
-        LaunchSecondaryApp {
-            id: self.id,
-            app: preset.app,
-            windowing_behavior: self.windowing_behavior,
+        match preset.app {
+            crate::secondary_app::SecondaryApp::Flatpak(app) => LaunchSecondaryFlatpakApp {
+                id: self.id,
+                app,
+                windowing_behavior: self.windowing_behavior,
+            }
+            .setup(ctx),
         }
-        .setup(ctx)
     }
 
     fn teardown(&self, ctx: &mut crate::pipeline::executor::PipelineContext) -> Result<()> {
@@ -47,12 +49,14 @@ impl ActionImpl for LaunchSecondaryAppPreset {
             .remove(&self.preset)
             .with_context(|| format!("Secondary app preset {:?} should exist", self.preset))?;
 
-        LaunchSecondaryApp {
-            id: self.id,
-            app: preset.app,
-            windowing_behavior: self.windowing_behavior,
+        match preset.app {
+            crate::secondary_app::SecondaryApp::Flatpak(app) => LaunchSecondaryFlatpakApp {
+                id: self.id,
+                app,
+                windowing_behavior: self.windowing_behavior,
+            }
+            .teardown(ctx),
         }
-        .teardown(ctx)
     }
 
     fn get_id(&self) -> ActionId {
