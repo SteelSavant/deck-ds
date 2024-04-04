@@ -3,6 +3,9 @@ import { Action, PipelineActionSettings, PipelineDefinition, PipelineTarget } fr
 import { MaybeString } from "../types/short";
 
 export type PipelineUpdate = {
+    type: 'updatePlatform',
+    platform: string,
+} | {
     type: 'updateEnabled',
     id: string,
     isEnabled: boolean
@@ -47,7 +50,13 @@ export function patchPipeline(pipeline: PipelineDefinition, update: PipelineUpda
                 ? pipeline.primary_target_override
                 : info.primary_target_override
         };
-    } else {
+    } else if (update.type === 'updatePlatform') {
+        return {
+            ...pipeline,
+            platform: update.platform,
+        }
+    }
+    else {
         let updatedActions: { [k: string]: PipelineActionSettings } = {};
         let currentActions = pipeline.actions.actions;
         for (let key in currentActions) {
@@ -57,6 +66,7 @@ export function patchPipeline(pipeline: PipelineDefinition, update: PipelineUpda
                 const type = update.type;
 
                 switch (type) {
+
                     case 'updateEnabled':
                         cloned.enabled = update.isEnabled;
                         break;
