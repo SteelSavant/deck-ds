@@ -465,7 +465,7 @@ mod tests {
                         p.targets
                     );
 
-                    assert_pipeline_traversable(&p);
+                    assert_pipeline_traversable(&p, &registrar);
 
                     let desktop = p.targets.get(&PipelineTarget::Desktop).unwrap();
 
@@ -496,8 +496,12 @@ mod tests {
         }
     }
 
-    fn assert_pipeline_traversable(p: &Pipeline) {
-        fn assert_selection_traversable(s: &RuntimeSelection) {
+    fn assert_pipeline_traversable(p: &Pipeline, registrar: &PipelineActionRegistrar) {
+        fn assert_selection_traversable(
+            s: &RuntimeSelection,
+            target: PipelineTarget,
+            registrar: &PipelineActionRegistrar,
+        ) {
             match s {
                 RuntimeSelection::Action(_) => (),
                 RuntimeSelection::OneOf { selection, actions } => {
@@ -506,12 +510,14 @@ mod tests {
                         "could not find selection {selection:?} in available actions {actions:?}"
                     );
                     for a in actions {
-                        assert_selection_traversable(&a.selection)
+                        assert_eq!(registrar.get(&a.id, target).unwrap().id, a.id);
+                        assert_selection_traversable(&a.selection, target, registrar)
                     }
                 }
                 RuntimeSelection::AllOf(actions) | RuntimeSelection::UserDefined(actions) => {
                     for a in actions {
-                        assert_selection_traversable(&a.selection)
+                        assert_eq!(registrar.get(&a.id, target).unwrap().id, a.id);
+                        assert_selection_traversable(&a.selection, target, registrar)
                     }
                 }
             }
@@ -520,7 +526,7 @@ mod tests {
         for target in PipelineTarget::iter() {
             let root = p.targets.get(&target);
             if let Some(root) = root {
-                assert_selection_traversable(&root);
+                assert_selection_traversable(&root, target, registrar);
             }
         }
     }
