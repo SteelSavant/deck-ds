@@ -55,7 +55,6 @@ function buildAction(id: string, action: Action, indentLevel: number): ReactElem
 }
 
 function buildOneOf(oneOf: ActionOneOf, indentLevel: number, qamHiddenByParent: boolean): ReactElement {
-    console.log("oneof: ", oneOf);
     const action = oneOf.actions.find((a) => a.id === oneOf.selection)!;
     return buildPipelineAction(action, indentLevel + 1, qamHiddenByParent);
 }
@@ -71,9 +70,6 @@ function buildAllOf(allOf: PipelineAction[], indentLevel: number, qamHiddenByPar
 function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHiddenByParent: boolean): ReactElement {
     const { dispatch } = useModifiablePipelineContainer();
     const configErrors = useContext(ConfigErrorContext);
-
-    console.log('recieved config errors: ', configErrors);
-
 
     const selection = action.selection;
     const isEnabled = action.enabled;
@@ -98,9 +94,6 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
     const childAction =
         buildSelection(action.id, action.selection, newIndentLevel, hideQamForChildren);
     const childActionIsConfigurable = childAction !== null;
-
-    console.log(childAction?.props);
-
     const hasError = configErrors[action.id]?.length ?? 0 > 0;
 
     return (

@@ -59,9 +59,6 @@ export default function PipelineDisplay({ header, general, secondaryAction, seco
 
 
                     const allTargets = defaultTargets.concat(extraTargets);
-
-                    console.log('config errors to pass: ', config_errors);
-
                     const tabs = [
                         {
                             title: 'General',

@@ -59,6 +59,7 @@ export function patchPipeline(pipeline: PipelineDefinition, update: PipelineUpda
     else {
         let updatedActions: { [k: string]: PipelineActionSettings } = {};
         let currentActions = pipeline.actions.actions;
+
         for (let key in currentActions) {
             if (key === update.id) {
                 let cloned = _.cloneDeep(currentActions[key]);
@@ -111,6 +112,7 @@ export function patchPipeline(pipeline: PipelineDefinition, update: PipelineUpda
                 updatedActions[key] = currentActions[key];
             }
         }
+
 
         return {
             ...pipeline,

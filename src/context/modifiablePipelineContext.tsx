@@ -35,7 +35,6 @@ function modifiablePipelineContainerReducerBuilder(onUpdate?: UpdatePipeline): (
     function modifiablePipelineContainerReducer(state: PipelineContainerState, action: StateAction): PipelineContainerState {
         console.log('handling modifiable pipeline dispatch for', action);
 
-
         const newContainer: PipelineContainer = (() => {
             const pipeline = state.container.pipeline;
 
