@@ -1,12 +1,15 @@
 import { DialogBody, DialogButton, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
-import { Fragment, ReactElement, useContext } from "react";
+import { Fragment, ReactElement, createContext, useContext } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { Action, ActionOneOf, PipelineAction, RuntimeSelection, } from "../../backend";
+import { Action, ActionOneOf, PipelineAction, PipelineTarget, RuntimeSelection, } from "../../backend";
 import ActionIcon from "../../components/ActionIcon";
 import ConfigErrorWarning from "../../components/ConfigErrorWarning";
 import { EditAction } from "../../components/EditAction";
 import { ConfigErrorContext } from "../../context/configErrorContext";
 import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
+
+const PipelineTargetContext = createContext<PipelineTarget>("Desktop");
+
 
 export default function PipelineTargetDisplay({ root, }: {
     root: RuntimeSelection,
@@ -39,6 +42,8 @@ function buildSelection(id: string, selection: RuntimeSelection, indentLevel: nu
 
 function buildAction(id: string, action: Action, indentLevel: number): ReactElement | null {
     const { dispatch } = useModifiablePipelineContainer();
+    const target = useContext(PipelineTargetContext);
+
 
     return EditAction({
         action: action, indentLevel: indentLevel + 1, onChange: (updatedAction) => {
@@ -48,6 +53,7 @@ function buildAction(id: string, action: Action, indentLevel: number): ReactElem
                         type: 'updateAction',
                         id: id,
                         action: updatedAction,
+                        target,
                     }
                 });
         }
@@ -70,6 +76,9 @@ function buildAllOf(allOf: PipelineAction[], indentLevel: number, qamHiddenByPar
 function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHiddenByParent: boolean): ReactElement {
     const { dispatch } = useModifiablePipelineContainer();
     const configErrors = useContext(ConfigErrorContext);
+    const target = useContext(PipelineTargetContext);
+
+
 
     const selection = action.selection;
     const isEnabled = action.enabled;
@@ -81,7 +90,8 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
             update: {
                 type: 'updateVisibleOnQAM',
                 id: action.id,
-                visible: !action.is_visible_on_qam
+                visible: !action.is_visible_on_qam,
+                target,
             }
         })
     }
@@ -92,7 +102,7 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
         : indentLevel;
 
     const childAction =
-        buildSelection(action.id, action.selection, newIndentLevel, hideQamForChildren);
+        isEnabled || forcedEnabled ? buildSelection(action.id, action.selection, newIndentLevel, hideQamForChildren) : null;
     const childActionIsConfigurable = childAction !== null;
     const hasError = configErrors[action.id]?.length ?? 0 > 0;
 
@@ -117,6 +127,7 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
                                                 type: 'updateEnabled',
                                                 id: action.id,
                                                 isEnabled: value,
+                                                target,
                                             }
                                         })
                                     } />
@@ -134,6 +145,7 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
                                                 type: 'updateOneOf',
                                                 id: action.id,
                                                 selection: option.data,
+                                                target,
                                             }
                                         })
                                     }} />

@@ -397,15 +397,15 @@ export function InternalEditAction({
 
             return (
                 <Fragment>
-                    <Builder indentLevel={indentLevel} label="App Id">
+                    <Builder indentLevel={indentLevel} label="App Id" description="The app id of the flatpak. Example: net.kuribo64.melonDS">
                         <TextField value={flatpak.app_id} onChange={(v) => {
                             flatpak.app_id = v.target.value;
                             onChange(cloned);
                         }} />
                     </Builder >
-                    <Builder indentLevel={indentLevel} label="Args">
-                        <TextField value={flatpak.app_id} onChange={(v) => {
-                            flatpak.args = v.target.value.split(/\s+/);
+                    <Builder indentLevel={indentLevel} label="Args" description="Comma separated list of arguments for the flatpak app.">
+                        <TextField value={flatpak.args.join(',')} onChange={(v) => {
+                            flatpak.args = v.target.value.split(','); // TODO::technically won't handle commas in strings correctly, but that's a later problem.
                             onChange(cloned);
                         }} />
                     </Builder >

@@ -168,7 +168,7 @@ function QAMTarget({ reified, target }: { reified: ReifyPipelineResponse, target
     return (
         selection
             ? <ConfigErrorContext.Provider value={reified.config_errors} >
-                <QAMPipelineTargetDisplay root={selection} />
+                <QAMPipelineTargetDisplay root={selection} target={target} />
             </ConfigErrorContext.Provider>
             : <Fragment />
     );

@@ -494,6 +494,7 @@ export interface Template {
 export interface PatchPipelineActionRequest {
   id: string;
   pipeline: PipelineDefinition;
+  target: PipelineTarget;
   update: PipelineActionUpdate;
 }
 export interface PatchPipelineActionResponse {

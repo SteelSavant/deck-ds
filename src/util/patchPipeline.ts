@@ -7,27 +7,32 @@ export type PipelineUpdate = {
     type: 'updatePlatform',
     platform: string,
 } | {
-    type: 'updateEnabled',
-    id: string,
-    isEnabled: boolean
+    type: 'updatePipelineInfo',
+    info: PipelineInfo,
 } | {
     type: 'updateProfileOverride',
     id: string,
+    target: PipelineTarget,
     profileOverride: MaybeString
+} | {
+    type: 'updateEnabled',
+    id: string,
+    target: PipelineTarget,
+    isEnabled: boolean
 } | {
     type: 'updateOneOf',
     id: string,
+    target: PipelineTarget,
     selection: string,
 } | {
     type: 'updateAction',
     id: string,
+    target: PipelineTarget,
     action: Action
-} | {
-    type: 'updatePipelineInfo',
-    info: PipelineInfo,
 } | {
     type: 'updateVisibleOnQAM',
     id: string,
+    target: PipelineTarget,
     visible: boolean,
 };
 
@@ -103,6 +108,7 @@ export async function patchPipeline(pipeline: PipelineDefinition, update: Pipeli
             id: update.id,
             pipeline,
             update: u,
+            target: update.target
         });
 
         return res.map((v) => v.pipeline);

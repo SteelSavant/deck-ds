@@ -1,7 +1,7 @@
 import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
-import { Fragment, ReactElement, useContext } from "react";
+import { Fragment, ReactElement, createContext, useContext } from "react";
 import { ProfileContext } from ".";
-import { Action, ActionOneOf, DependencyError, PipelineAction, RuntimeSelection } from "../../backend";
+import { Action, ActionOneOf, DependencyError, PipelineAction, PipelineTarget, RuntimeSelection } from "../../backend";
 import ActionIcon from "../../components/ActionIcon";
 import ConfigErrorWarning from "../../components/ConfigErrorWarning";
 import { useAppState } from "../../context/appContext";
@@ -9,15 +9,21 @@ import { ConfigErrorContext } from "../../context/configErrorContext";
 import { MaybeString } from "../../types/short";
 import QAMEditAction from "./QAMEditAction";
 
-export default function QAMPipelineTargetDisplay({ root }: {
+
+const PipelineTargetContext = createContext<PipelineTarget>("Desktop");
+
+export default function QAMPipelineTargetDisplay({ root, target }: {
     root: RuntimeSelection,
+    target: PipelineTarget
 }): ReactElement {
 
     return (
         <DialogBody style={{ marginBottom: '10px' }}>
             <DialogControlsSection>
                 <Field focusable={false} />
-                {buildRootSelection('root', root)}
+                <PipelineTargetContext.Provider value={target}>
+                    {buildRootSelection('root', root)}
+                </PipelineTargetContext.Provider>
             </DialogControlsSection>
         </DialogBody>
     )
@@ -44,6 +50,7 @@ function buildAction(id: string, externalProfile: MaybeString, action: Action): 
     console.log("building action:", action);
     const { dispatchUpdate } = useAppState();
     const profileId = useContext(ProfileContext);
+    const target = useContext(PipelineTargetContext);
 
     // invoked as a function to allow seeing if the component returns null,
     // so we can ignore rendering things that aren't configurable in the QAM
@@ -61,6 +68,7 @@ function buildAction(id: string, externalProfile: MaybeString, action: Action): 
                 update: {
                     type: 'updateAction',
                     id: id,
+                    target: target,
                     action: updatedAction,
                 }
             });
@@ -97,6 +105,8 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
 
     const profileBeingOverridden = useContext(ProfileContext);
     const configErrors = useContext(ConfigErrorContext);
+    const target = useContext(PipelineTargetContext);
+
 
     if (!action.is_visible_on_qam) {
         return <div />
@@ -156,6 +166,7 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                                                 update: {
                                                     type: 'updateOneOf',
                                                     id: action.id,
+                                                    target: target,
                                                     selection: option.data,
                                                 }
                                             })
@@ -198,6 +209,8 @@ interface HeaderProps {
 
 function FromProfileComponent({ action }: { action: any }) {
     const profileBeingOverridden = useContext(ProfileContext);
+    const target = useContext(PipelineTargetContext);
+
     const { dispatchUpdate } = useAppState();
 
     return <Field focusable={false} label="Use per-game profile">
@@ -208,6 +221,7 @@ function FromProfileComponent({ action }: { action: any }) {
                     update: {
                         type: 'updateProfileOverride',
                         id: action.id,
+                        target: target,
                         profileOverride: value
                             ? null
                             : profileBeingOverridden
@@ -220,6 +234,7 @@ function FromProfileComponent({ action }: { action: any }) {
 
 function EnabledComponent({ isEnabled, forcedEnabled, action }: HeaderProps): ReactElement {
     const profileBeingOverridden = useContext(ProfileContext);
+    const target = useContext(PipelineTargetContext);
     const { dispatchUpdate } = useAppState();
 
     return forcedEnabled
@@ -230,6 +245,7 @@ function EnabledComponent({ isEnabled, forcedEnabled, action }: HeaderProps): Re
                     dispatchUpdate(profileBeingOverridden, {
                         externalProfile: action.profile_override,
                         update: {
+                            target: target,
                             type: 'updateEnabled',
                             id: action.id,
                             isEnabled: value,

@@ -1612,6 +1612,7 @@
       "required": [
         "id",
         "pipeline",
+        "target",
         "update"
       ],
       "properties": {
@@ -1620,6 +1621,9 @@
         },
         "pipeline": {
           "$ref": "#/definitions/PipelineDefinition"
+        },
+        "target": {
+          "$ref": "#/definitions/PipelineTarget"
         },
         "update": {
           "$ref": "#/definitions/PipelineActionUpdate"
