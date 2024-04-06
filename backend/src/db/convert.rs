@@ -52,10 +52,11 @@ impl AppProfile {
                 let profile = profile.reconstruct(ro)?;
 
                 // override the visibility with the profile visibility, since the QAM can't actually set it;
-                // same with name && exit hooks
+                // same with name && platform && exit hooks
 
                 o.register_exit_hooks = profile.pipeline.register_exit_hooks;
                 o.name = profile.pipeline.name;
+                o.platform = profile.pipeline.platform;
 
                 for (action_id, action) in o.actions.actions.iter_mut() {
                     if let Some(profile_action) = profile.pipeline.actions.actions.get(action_id) {
