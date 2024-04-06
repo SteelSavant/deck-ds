@@ -1,4 +1,5 @@
 use std::{
+    borrow::BorrowMut,
     collections::HashMap,
     path::PathBuf,
     sync::{Arc, Mutex},
@@ -16,8 +17,8 @@ use crate::{
         action::{Action, ErasedPipelineAction},
         action_registar::PipelineActionRegistrar,
         data::{
-            Pipeline, PipelineActionId, PipelineDefinition, PipelineDefinitionId, RuntimeSelection,
-            Template,
+            ConfigSelection, Pipeline, PipelineActionId, PipelineDefinition, PipelineDefinitionId,
+            RuntimeSelection, Template,
         },
         dependency::DependencyError,
         executor::PipelineContext,
@@ -359,6 +360,87 @@ pub fn get_default_app_override_pipeline_for_profile(
                     }
                     .to_response(),
                     Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
+                }
+            }
+            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
+        }
+    }
+}
+
+// Patch Pipeline
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+#[serde(tag = "type", content = "value")]
+pub enum PipelineActionUpdate {
+    UpdateEnabled { is_enabled: bool },
+    UpdateProfileOverride { profile_override: Option<ProfileId> },
+    UpdateOneOf { selection: PipelineActionId },
+    UpdateAction { action: Action },
+    UpdateVisibleOnQAM { is_visible: bool },
+}
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct PatchPipelineActionRequest {
+    pipeline: PipelineDefinition,
+    id: PipelineActionId,
+    update: PipelineActionUpdate,
+}
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct PatchPipelineActionResponse {
+    pipeline: PipelineDefinition,
+}
+
+pub fn patch_pipeline_action(
+    request_handler: Arc<Mutex<RequestHandler>>,
+    registrar: PipelineActionRegistrar,
+) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+    move |args: super::ApiParameterType| {
+        log_invoke("patch_pipeline_action", &args);
+
+        let args: Result<PatchPipelineActionRequest, _> = {
+            let mut lock = request_handler
+                .lock()
+                .expect("request handler should not be poisoned");
+
+            lock.resolve(args)
+        };
+
+        match args {
+            Ok(args) => {
+                let registered = registrar.raw(&args.id);
+                if let Some(registered) = registered {
+                    let mut pipeline = args.pipeline;
+                    let pipeline_action = pipeline
+                        .actions
+                        .actions
+                        .entry(args.id)
+                        .or_insert(registered.clone().settings.into());
+
+                    match args.update {
+                        PipelineActionUpdate::UpdateEnabled { is_enabled } => {
+                            pipeline_action.enabled = Some(is_enabled);
+                        }
+                        PipelineActionUpdate::UpdateProfileOverride { profile_override } => {
+                            pipeline_action.profile_override = profile_override
+                        }
+                        PipelineActionUpdate::UpdateOneOf { selection } => {
+                            pipeline_action.selection = ConfigSelection::OneOf { selection }
+                        }
+                        PipelineActionUpdate::UpdateAction { action } => {
+                            pipeline_action.selection = ConfigSelection::Action(action)
+                        }
+                        PipelineActionUpdate::UpdateVisibleOnQAM { is_visible } => {
+                            pipeline_action.is_visible_on_qam = is_visible
+                        }
+                    }
+
+                    PatchPipelineActionResponse { pipeline }.to_response()
+                } else {
+                    ResponseErr(
+                        StatusCode::BadRequest,
+                        anyhow::anyhow!("action {:?} not registered", args.id),
+                    )
+                    .to_response()
                 }
             }
             Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),

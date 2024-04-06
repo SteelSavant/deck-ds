@@ -288,6 +288,13 @@ fn main() -> Result<()> {
                     ),
                 )
                 .register(
+                    "patch_pipeline_action",
+                    crate::api::profile::patch_pipeline_action(
+                        request_handler.clone(),
+                        registrar.clone(),
+                    ),
+                )
+                .register(
                     "reify_pipeline",
                     crate::api::profile::reify_pipeline(
                         request_handler.clone(),

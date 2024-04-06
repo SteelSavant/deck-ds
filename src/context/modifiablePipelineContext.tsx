@@ -68,6 +68,9 @@ function modifiablePipelineContainerReducerBuilder(onUpdate?: UpdatePipeline): (
     return modifiablePipelineContainerReducer;
 }
 
+// TODO::as there isn't transient state anymore (no template previews)
+// Change this to do all the edits directly on the server.
+// Make the patchPipeline function a server call.
 function ModifiablePipelineContainerProvider({ children, initialContainer, onPipelineUpdate }: ModifiablePipelineContextProviderProps) {
     const [state, dispatch] = React.useReducer(modifiablePipelineContainerReducerBuilder(onPipelineUpdate), {
         container: initialContainer,

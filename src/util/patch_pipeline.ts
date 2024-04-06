@@ -38,7 +38,7 @@ export interface PipelineInfo {
 }
 
 
-export function patchPipeline(pipeline: PipelineDefinition, update: PipelineUpdate): PipelineDefinition {
+export async function patchPipeline(pipeline: PipelineDefinition, update: PipelineUpdate): Promise<PipelineDefinition> {
     if (update.type === 'updatePipelineInfo') {
         const info = update.info;
 
