@@ -281,7 +281,42 @@ impl PipelineActionRegistarBuilder {
                         }.into()),
                     })
                 })
-                .with_group("display", |group| {
+                .with_group("core_display", |group| {
+                    group.with_action(
+                        "desktop_session",
+                        Some(PipelineTarget::Desktop),
+                        PipelineActionDefinitionBuilder {
+                            name: "Desktop Session".to_string(),
+                            description: Some("Ensures the display resolution and layout are correctly configured before and after executing pipeline actions.".into()),
+                            enabled: None,
+                            is_visible_on_qam: false,
+                            profile_override: None,
+                            selection: DesktopSessionHandler {
+                                id: ActionId::nil(),
+                                teardown_external_settings: ExternalDisplaySettings::Previous,
+                                teardown_deck_location: Some(RelativeLocation::Below),
+                                deck_is_primary_display: true,
+                            } .into(),
+                        },
+                    )
+                })
+                .with_group("single_screen_platform", |group| {
+                    group.with_action("display_config", Some(PipelineTarget::Desktop), 
+                PipelineActionDefinitionBuilder {
+                            name: "Display Config".to_string(),
+                            description: Some("Configures displays in desktop mode.".to_string()),
+                            enabled: None,
+                            is_visible_on_qam: true,
+                            profile_override: None,
+                            selection: DisplayConfig {
+                                id: ActionId::nil(),
+                                external_display_settings: ExternalDisplaySettings::Previous,
+                                deck_location: None,
+                                deck_is_primary_display: false,
+                            }.into()
+                        })
+                })
+                .with_group("dual_screen_platform", |group| {
                     group.with_action(
                         "desktop_session",
                         Some(PipelineTarget::Desktop),
@@ -342,7 +377,7 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:citra:source"),
                             PipelineActionId::new("core:citra:layout"),
                             PipelineActionId::new("core:citra:multi_window"),
-                            PipelineActionId::new("core:display:display_config"),
+                            PipelineActionId::new("core:dual_screen_platform:display_config"),
                         ]),
                         is_visible_on_qam: true,
                     })
@@ -439,7 +474,7 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:cemu:source"),
                             PipelineActionId::new("core:cemu:layout"),
                             PipelineActionId::new("core:cemu:multi_window"),
-                            PipelineActionId::new("core:display:display_config"),
+                            PipelineActionId::new("core:dual_screen_platform:display_config"),
                         ]),
                         is_visible_on_qam: true,
                     })
@@ -556,7 +591,7 @@ impl PipelineActionRegistarBuilder {
                         selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:melonds:source"),
                             PipelineActionId::new("core:melonds:layout"),
-                            PipelineActionId::new("core:display:virtual_screen"),
+                            PipelineActionId::new("core:dual_screen_platform:virtual_screen"),
                         ]),
                         is_visible_on_qam: true,
                     })
@@ -634,7 +669,7 @@ impl PipelineActionRegistarBuilder {
                         is_visible_on_qam: true,
                         selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:app:multi_window"),
-                            PipelineActionId::new("core:display:display_config"),
+                            PipelineActionId::new("core:single_screen_platform:display_config"),
                         ]),
                     })
                     .with_action("multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
