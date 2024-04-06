@@ -44,8 +44,6 @@ export default function QAM(): ReactElement {
         </PanelSection>
 }
 
-
-
 function DeckDSProfilesForApp({ appDetails, launchActions }: { appDetails: ShortAppDetails, launchActions: LaunchActions[] }): ReactElement {
 
     return launchActions.length > 0

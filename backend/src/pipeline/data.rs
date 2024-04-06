@@ -251,6 +251,7 @@ impl PipelineActionId {
         registrar: &PipelineActionRegistrar,
     ) -> Result<Option<PipelineAction>> {
         let config = pipeline.actions.get(self, target).cloned().or_else(|| {
+            log::warn!("missing action {self:?}; reifying from registry");
             registrar.get(self, target).and_then(|v| {
                 Some(PipelineActionSettings {
                     enabled: v.settings.enabled,
@@ -293,9 +294,17 @@ impl PipelineActionId {
                             .iter()
                             .find(|p| p.id == profile)
                             .and_then(|p| p.pipeline.actions.get(self, target))
-                            .map(|config| (Some(profile), config))
+                            .map(|config| (Some(profile), config.clone()))
+                            .or_else(|| {
+                                // if missing, use the config with the profile
+                                let mut config = config.clone();
+                                config.profile_override = Some(profile);
+                                Some((Some(profile), config))
+                            })
                     })
-                    .unwrap_or((None, &config));
+                    .unwrap_or((None, config));
+
+                log::debug!("reify pipeline action id {self:?} got config {settings:?}");
 
                 let resolved_action = settings.1.reify(
                     settings.0, definition, target, pipeline, profiles, registrar,

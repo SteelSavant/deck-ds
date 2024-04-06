@@ -204,12 +204,12 @@ function FromProfileComponent({ action }: { action: PipelineAction }) {
 
     return <Field focusable={false} label="Use per-game profile">
         <Focusable>
-            <Toggle value={!!action.profile_override} onChange={(value) => {
+            <Toggle value={!action.profile_override} onChange={(value) => {
                 const newOverride = value
-                    ? profileBeingOverridden
-                    : null;
-                console.log('current profile override ', action.profile_override, 'exists:', !!action.profile_override);
-                console.log('setting profile override to ', newOverride)
+                    ? null
+                    : profileBeingOverridden;
+                console.log('current profile override ', action.profile_override, 'value:', !action.profile_override);
+                console.log('changed to', value, ', setting profile override to ', newOverride)
 
                 dispatchUpdate(profileBeingOverridden, {
                     externalProfile: null,
