@@ -1,5 +1,6 @@
-import { DialogButton, PanelSection } from "decky-frontend-lib";
+import { DialogButton, Navigation, PanelSection, Router } from "decky-frontend-lib";
 import { Fragment, ReactElement, createContext } from "react";
+import { FaGear } from "react-icons/fa6";
 import { RiArrowDownSFill, RiArrowRightSFill } from "react-icons/ri";
 import { PipelineTarget, ReifyPipelineResponse } from "../../backend";
 import FocusableRow from "../../components/FocusableRow";
@@ -83,13 +84,46 @@ function AppProfileSection({ launchActions }: { launchActions: LaunchActions }):
 
     const { openViews, setAppViewOpen } = useAppState();
 
+    const openProfileSettings = () => {
+        Navigation.Navigate(`/deck-ds/settings/profiles/${profileId}`);
+        Router.CloseSideMenus();
+    }
+
     return (
         <HandleLoading
             value={reified}
             onOk={(reified) => {
+                const title: any = <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+
+                    }}
+                >
+                    <p>{launchActions.profile.pipeline.name}</p>
+                    <DialogButton
+                        style={{
+                            width: 'fit-content',
+                            minWidth: 'fit-content',
+                            height: 'fit-content',
+                            minHeight: 'fit-content',
+                            paddingLeft: 10,
+                            paddingRight: 10,
+                            paddingTop: 5,
+                            paddingBottom: 5
+                        }}
+                        onClick={openProfileSettings}
+                        onOKButton={openProfileSettings}
+                    >
+                        <FaGear />
+                    </DialogButton>
+                </div>
+
                 return (
                     // TODO::settings button inline with title that takes you to the settings for that app
-                    <PanelSection title={launchActions.profile.pipeline.name}  >
+                    <PanelSection title={title}>
                         {
                             launchActions.targets.filter((v) => reified.pipeline.targets[v.target]).map((t) => {
                                 const isOpen = openViews[profileId]?.[t.target];
@@ -162,8 +196,6 @@ function AppProfileSection({ launchActions }: { launchActions: LaunchActions }):
 
 function QAMTarget({ reified, target }: { reified: ReifyPipelineResponse, target: PipelineTarget }): ReactElement {
     const selection = reified.pipeline.targets[target];
-    console.log('setting QAM errors:', reified.config_errors);
-    console.log('setting QAM selection:', selection);
 
     return (
         selection

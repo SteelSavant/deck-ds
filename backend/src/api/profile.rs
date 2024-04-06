@@ -422,6 +422,12 @@ pub fn patch_pipeline_action(
                             pipeline_action.enabled = Some(is_enabled);
                         }
                         PipelineActionUpdate::UpdateProfileOverride { profile_override } => {
+                            log::info!(
+                                "profile override for {:?} set to {:?}",
+                                args.id,
+                                profile_override
+                            );
+
                             pipeline_action.profile_override = profile_override
                         }
                         PipelineActionUpdate::UpdateOneOf { selection } => {

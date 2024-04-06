@@ -47,7 +47,6 @@ function buildRootSelection(id: string, selection: RuntimeSelection): ReactEleme
 }
 
 function buildAction(id: string, externalProfile: MaybeString, action: Action): ReactElement | null {
-    console.log("building action:", action);
     const { dispatchUpdate } = useAppState();
     const profileId = useContext(ProfileContext);
     const target = useContext(PipelineTargetContext);
@@ -75,21 +74,15 @@ function buildAction(id: string, externalProfile: MaybeString, action: Action): 
         }
     });
 
-    console.log("built action component:", component);
-
     return component;
 }
 
 function buildOneOf(oneOf: ActionOneOf): ReactElement {
-    console.log("building oneOf", oneOf);
-
     const action = oneOf.actions.find((a) => a.id === oneOf.selection)!;
     return buildPipelineAction(action);
 }
 
 function buildAllOf(allOf: PipelineAction[]): ReactElement {
-    console.log("building allOf", allOf);
-
     return (
         <Fragment>
             {allOf.map((action) => buildPipelineAction(action))}
@@ -98,9 +91,6 @@ function buildAllOf(allOf: PipelineAction[]): ReactElement {
 }
 
 function buildPipelineAction(action: PipelineAction): ReactElement {
-    console.log("building pipeline action:", action);
-
-
     const { dispatchUpdate } = useAppState();
 
     const profileBeingOverridden = useContext(ProfileContext);
@@ -147,8 +137,6 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
         case 'OneOf':
             return (
                 <Fragment>
-
-
                     <Header {...props} />
                     {
                         isEnabled
@@ -207,24 +195,29 @@ interface HeaderProps {
 }
 
 
-function FromProfileComponent({ action }: { action: any }) {
+function FromProfileComponent({ action }: { action: PipelineAction }) {
     const profileBeingOverridden = useContext(ProfileContext);
     const target = useContext(PipelineTargetContext);
 
     const { dispatchUpdate } = useAppState();
 
+
     return <Field focusable={false} label="Use per-game profile">
         <Focusable>
-            <Toggle value={!action.profile_override} onChange={(value) => {
+            <Toggle value={!!action.profile_override} onChange={(value) => {
+                const newOverride = value
+                    ? profileBeingOverridden
+                    : null;
+                console.log('current profile override ', action.profile_override, 'exists:', !!action.profile_override);
+                console.log('setting profile override to ', newOverride)
+
                 dispatchUpdate(profileBeingOverridden, {
                     externalProfile: null,
                     update: {
                         type: 'updateProfileOverride',
                         id: action.id,
                         target: target,
-                        profileOverride: value
-                            ? null
-                            : profileBeingOverridden
+                        profileOverride: newOverride
                     }
                 })
             }} />
@@ -260,8 +253,6 @@ function Header(props: HeaderProps): ReactElement {
     const action = props.action;
     const displayName = action.name.toLocaleUpperCase();
     const errors = props.configErrors ?? [];
-
-    console.log('QAM Header got errors:', errors);
 
     return (
         <Fragment>

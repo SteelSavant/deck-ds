@@ -61,13 +61,11 @@ function ModifiablePipelineContainerProvider({ children, initialContainer, onPip
             }
         })();
 
-        setState({ container: newContainer })
-
         if (onPipelineUpdate) {
-            console.log('performing pipeline update');
-
             await onPipelineUpdate(newContainer); // perform arbitrary action, like saving, when the definition changes
         }
+
+        setState({ container: newContainer })
     };
 
 

@@ -103,14 +103,11 @@ const useLaunchActions = (appDetails: ShortAppDetails | null): LaunchActions[] =
                 }
             }
 
-
-
             const res = {
                 profile: p,
                 targets: defaultTargets
             };
 
-            console.log("got launch action: ", res);
             return res;
         });
     }

@@ -77,7 +77,6 @@ export async function patchPipeline(pipeline: PipelineDefinition, update: Pipeli
                         type: 'UpdateAction',
                         value: {
                             action: update.action
-
                         }
                     }
                 case 'updateOneOf':
@@ -88,6 +87,7 @@ export async function patchPipeline(pipeline: PipelineDefinition, update: Pipeli
                         }
                     }
                 case 'updateProfileOverride':
+                    console.log("sending update override action to backend:", update.profileOverride);
                     return {
                         type: 'UpdateProfileOverride',
                         value: {
