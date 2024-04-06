@@ -9,6 +9,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use anyhow::Result;
+use strum::IntoEnumIterator;
 
 use crate::{
     asset::AssetManager,
@@ -17,8 +18,8 @@ use crate::{
         action::{Action, ErasedPipelineAction},
         action_registar::PipelineActionRegistrar,
         data::{
-            ConfigSelection, Pipeline, PipelineActionId, PipelineDefinition, PipelineDefinitionId,
-            RuntimeSelection, Template,
+            ConfigSelection, DefinitionSelection, Pipeline, PipelineActionId, PipelineDefinition,
+            PipelineDefinitionId, PipelineTarget, RuntimeSelection, Template,
         },
         dependency::DependencyError,
         executor::PipelineContext,
@@ -406,43 +407,60 @@ pub fn patch_pipeline_action(
         };
 
         match args {
-            Ok(args) => {
-                let registered = registrar.raw(&args.id);
-                if let Some(registered) = registered {
-                    let mut pipeline = args.pipeline;
-                    let pipeline_action = pipeline
-                        .actions
-                        .actions
-                        .entry(args.id)
-                        .or_insert(registered.clone().settings.into());
+            Ok(mut args) => {
+                let id = &args.id;
 
-                    match args.update {
-                        PipelineActionUpdate::UpdateEnabled { is_enabled } => {
-                            pipeline_action.enabled = Some(is_enabled);
-                        }
-                        PipelineActionUpdate::UpdateProfileOverride { profile_override } => {
-                            pipeline_action.profile_override = profile_override
-                        }
-                        PipelineActionUpdate::UpdateOneOf { selection } => {
-                            pipeline_action.selection = ConfigSelection::OneOf { selection }
-                        }
-                        PipelineActionUpdate::UpdateAction { action } => {
-                            pipeline_action.selection = ConfigSelection::Action(action)
-                        }
-                        PipelineActionUpdate::UpdateVisibleOnQAM { is_visible } => {
-                            pipeline_action.is_visible_on_qam = is_visible
+                fn handle_target(
+                    args: &mut PatchPipelineActionRequest,
+                    t: PipelineTarget,
+                    registrar: &PipelineActionRegistrar,
+                ) -> () {
+                    let registered = registrar.get(&args.id, t);
+
+                    if let Some(registered) = registered {
+                        let pipeline_action = args
+                            .pipeline
+                            .actions
+                            .actions
+                            .entry(args.id.clone())
+                            .or_insert(registered.clone().settings.into());
+
+                        match &args.update {
+                            PipelineActionUpdate::UpdateEnabled { is_enabled } => {
+                                pipeline_action.enabled = Some(*is_enabled);
+                            }
+                            PipelineActionUpdate::UpdateProfileOverride { profile_override } => {
+                                pipeline_action.profile_override = *profile_override
+                            }
+                            PipelineActionUpdate::UpdateOneOf { selection } => {
+                                let selection = registrar.get(&selection, t).unwrap().id.clone();
+                                pipeline_action.selection = ConfigSelection::OneOf { selection }
+                            }
+                            PipelineActionUpdate::UpdateAction { action } => {
+                                pipeline_action.selection = ConfigSelection::Action(action.clone())
+                            }
+                            PipelineActionUpdate::UpdateVisibleOnQAM { is_visible } => {
+                                pipeline_action.is_visible_on_qam = *is_visible
+                            }
                         }
                     }
-
-                    PatchPipelineActionResponse { pipeline }.to_response()
-                } else {
-                    ResponseErr(
-                        StatusCode::BadRequest,
-                        anyhow::anyhow!("action {:?} not registered", args.id),
-                    )
-                    .to_response()
                 }
+
+                match id.get_target() {
+                    Some(t) => handle_target(&mut args, t, &registrar),
+                    None => {
+                        for t in PipelineTarget::iter() {
+                            handle_target(&mut args, t, &registrar)
+                        }
+                    }
+                };
+
+                PatchPipelineActionResponse {
+                    pipeline: args.pipeline,
+                }
+                .to_response()
             }
+
             Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
         }
     }

@@ -156,6 +156,37 @@ export type FlatpakSource = "Cemu" | "Citra" | "MelonDS";
 export type AppImageSource = "Cemu";
 export type EmuDeckSource = "CemuProton";
 export type SecondaryAppWindowingBehavior = "PreferSecondary" | "PreferPrimary" | "Hidden" | "Unmanaged";
+export type PipelineActionUpdate =
+  | {
+      type: "UpdateEnabled";
+      value: {
+        is_enabled: boolean;
+      };
+    }
+  | {
+      type: "UpdateProfileOverride";
+      value: {
+        profile_override?: string | null;
+      };
+    }
+  | {
+      type: "UpdateOneOf";
+      value: {
+        selection: string;
+      };
+    }
+  | {
+      type: "UpdateAction";
+      value: {
+        action: Action;
+      };
+    }
+  | {
+      type: "UpdateVisibleOnQAM";
+      value: {
+        is_visible: boolean;
+      };
+    };
 export type DependencyError =
   | {
       type: "SystemCmdNotFound";
@@ -231,6 +262,8 @@ export interface Api {
   get_profiles_response: GetProfilesResponse;
   get_settings_response: GetSettingsResponse;
   get_templates_response: GetTemplatesResponse;
+  patch_pipeline_action_request: PatchPipelineActionRequest;
+  patch_pipeline_action_response: PatchPipelineActionResponse;
   reify_pipeline_request: ReifyPipelineRequest;
   reify_pipeline_response: ReifyPipelineResponse;
   set_app_profile_override_request: SetAppProfileOverrideRequest;
@@ -456,6 +489,14 @@ export interface GetTemplatesResponse {
 }
 export interface Template {
   id: string;
+  pipeline: PipelineDefinition;
+}
+export interface PatchPipelineActionRequest {
+  id: string;
+  pipeline: PipelineDefinition;
+  update: PipelineActionUpdate;
+}
+export interface PatchPipelineActionResponse {
   pipeline: PipelineDefinition;
 }
 export interface ReifyPipelineRequest {

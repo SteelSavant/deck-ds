@@ -4,7 +4,7 @@ import {
     DeleteProfileRequest, GetAppProfileRequest, GetAppProfileResponse,
     GetDefaultAppOverrideForProfileRequest, GetDefaultAppOverrideForProfileResponse,
     GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetSettingsResponse,
-    GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineAction, PipelineActionSettingsFor_ConfigSelection, PipelineDefinition,
+    GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PatchPipelineActionRequest, PatchPipelineActionResponse, PipelineAction, PipelineActionSettingsFor_ConfigSelection, PipelineDefinition,
     ReifyPipelineRequest, ReifyPipelineResponse,
     SetAppProfileOverrideRequest,
     SetAppProfileSettingsRequest, SetProfileRequest, SetSettingsRequest, Template
@@ -226,15 +226,20 @@ export async function getDefaultAppOverrideForProfileRequest(request: GetDefault
     return await call_backend_typed("get_default_app_override_for_profile_request", request);
 }
 
+export async function patchPipelineAction(request: PatchPipelineActionRequest): Response<PatchPipelineActionResponse> {
+    return await call_backend_typed('patch_pipeline_action', request);
+}
+
+export async function reifyPipeline(request: ReifyPipelineRequest): Response<ReifyPipelineResponse> {
+    return await call_backend_typed('reify_pipeline', request);
+}
+
 // Templates
 
 export async function getTemplates(): Response<GetTemplatesResponse> {
     return await call_backend_typed("get_templates", null);
 }
 
-export async function reifyPipeline(request: ReifyPipelineRequest): Response<ReifyPipelineResponse> {
-    return await call_backend_typed('reify_pipeline', request);
-}
 
 // Settings
 

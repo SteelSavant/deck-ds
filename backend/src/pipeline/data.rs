@@ -44,6 +44,13 @@ impl PipelineActionId {
     pub fn eq_variant(&self, id: &PipelineActionId, target: PipelineTarget) -> bool {
         self == id || *self == id.variant(target)
     }
+
+    pub fn get_target(&self) -> Option<PipelineTarget> {
+        self.0
+            .split_terminator(':')
+            .nth(3)
+            .and_then(|v| serde_json::from_str(v).ok())
+    }
 }
 
 #[derive(

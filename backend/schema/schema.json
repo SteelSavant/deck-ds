@@ -17,6 +17,8 @@
     "get_profiles_response",
     "get_settings_response",
     "get_templates_response",
+    "patch_pipeline_action_request",
+    "patch_pipeline_action_response",
     "reify_pipeline_request",
     "reify_pipeline_response",
     "set_app_profile_override_request",
@@ -63,6 +65,12 @@
     },
     "get_templates_response": {
       "$ref": "#/definitions/GetTemplatesResponse"
+    },
+    "patch_pipeline_action_request": {
+      "$ref": "#/definitions/PatchPipelineActionRequest"
+    },
+    "patch_pipeline_action_response": {
+      "$ref": "#/definitions/PatchPipelineActionResponse"
     },
     "reify_pipeline_request": {
       "$ref": "#/definitions/ReifyPipelineRequest"
@@ -1599,6 +1607,36 @@
         "separate"
       ]
     },
+    "PatchPipelineActionRequest": {
+      "type": "object",
+      "required": [
+        "id",
+        "pipeline",
+        "update"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "pipeline": {
+          "$ref": "#/definitions/PipelineDefinition"
+        },
+        "update": {
+          "$ref": "#/definitions/PipelineActionUpdate"
+        }
+      }
+    },
+    "PatchPipelineActionResponse": {
+      "type": "object",
+      "required": [
+        "pipeline"
+      ],
+      "properties": {
+        "pipeline": {
+          "$ref": "#/definitions/PipelineDefinition"
+        }
+      }
+    },
     "Pipeline": {
       "type": "object",
       "required": [
@@ -1734,6 +1772,141 @@
           ]
         }
       }
+    },
+    "PipelineActionUpdate": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "UpdateEnabled"
+              ]
+            },
+            "value": {
+              "type": "object",
+              "required": [
+                "is_enabled"
+              ],
+              "properties": {
+                "is_enabled": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "UpdateProfileOverride"
+              ]
+            },
+            "value": {
+              "type": "object",
+              "properties": {
+                "profile_override": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "UpdateOneOf"
+              ]
+            },
+            "value": {
+              "type": "object",
+              "required": [
+                "selection"
+              ],
+              "properties": {
+                "selection": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "UpdateAction"
+              ]
+            },
+            "value": {
+              "type": "object",
+              "required": [
+                "action"
+              ],
+              "properties": {
+                "action": {
+                  "$ref": "#/definitions/Action"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "UpdateVisibleOnQAM"
+              ]
+            },
+            "value": {
+              "type": "object",
+              "required": [
+                "is_visible"
+              ],
+              "properties": {
+                "is_visible": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "PipelineDefinition": {
       "type": "object",

@@ -11,7 +11,7 @@ import {
 import { ApiError, AppProfile, getAppProfile, getDefaultAppOverrideForProfileRequest, getProfile, PipelineDefinition, PipelineTarget, reifyPipeline, ReifyPipelineResponse, setAppProfileOverride, setAppProfileSettings, setProfile } from '../backend';
 import { MaybeString } from '../types/short';
 import { Loading } from '../util/loading';
-import { patchPipeline, PipelineUpdate } from '../util/patch_pipeline';
+import { patchPipeline, PipelineUpdate } from "../util/patchPipeline";
 import { Result } from '../util/result';
 
 
@@ -100,13 +100,15 @@ export class ShortAppDetailsState {
 
                 const pipeline = this.appProfile.data.overrides[profileId];
                 if (pipeline) {
-                    const newPipeline = patchPipeline(pipeline, action.update);
+                    await (await patchPipeline(pipeline, action.update)).map(async (newPipeline) => {
+                        return await this.setAppProfileOverride(
+                            appId,
+                            profileId,
+                            newPipeline
+                        )
+                    });
 
-                    await this.setAppProfileOverride(
-                        appId,
-                        profileId,
-                        newPipeline
-                    )
+                    // TODO::error handling
                 } else {
                     console.log('pipeline should already be loaded before updating', pipeline);
                 }
@@ -197,13 +199,15 @@ export class ShortAppDetailsState {
             const profile = profileResponse.data.profile;
             const pipeline = profile?.pipeline;
             if (pipeline) {
-                const newPipeline = patchPipeline(pipeline, update);
-                const res = await setProfile({
-                    profile: {
-                        ...profile,
-                        pipeline: newPipeline
-                    }
+                const res = await (await patchPipeline(pipeline, update)).andThenAsync(async (res) => {
+                    return await setProfile({
+                        profile: {
+                            ...profile,
+                            pipeline: res
+                        }
+                    })
                 });
+
 
                 if (res?.isOk) {
                     this.refetchProfile()

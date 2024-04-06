@@ -44,7 +44,7 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
     }
 
     const loading = templates && settings
-        ? templates.and_then((t) => settings.map((s) => { return { templates: t, globalSettings: s } }))
+        ? templates.andThen((t) => settings.map((s) => { return { templates: t, globalSettings: s } }))
         : undefined
         ;
 

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { PipelineContainer } from '../backend';
-import { PipelineUpdate, patchPipeline } from '../util/patch_pipeline';
+import { PipelineUpdate, patchPipeline } from "../util/patchPipeline";
 
 interface PipelineContainerState {
     container: PipelineContainer,
@@ -16,7 +16,7 @@ export interface StateAction {
     update: PipelineUpdate | ProfileUpdate,
 }
 
-type Dispatch = (action: StateAction) => void
+type Dispatch = (action: StateAction) => Promise<void>
 
 type UpdatePipeline = (pipelineSettings: PipelineContainer) => void;
 
@@ -31,11 +31,16 @@ const ModifiablePipelineContainerStateContext = React.createContext<
 >(undefined)
 
 
-function modifiablePipelineContainerReducerBuilder(onUpdate?: UpdatePipeline): (state: PipelineContainerState, action: StateAction) => PipelineContainerState {
-    function modifiablePipelineContainerReducer(state: PipelineContainerState, action: StateAction): PipelineContainerState {
-        console.log('handling modifiable pipeline dispatch for', action);
+// TODO::as there isn't transient state anymore (no template previews)
+// Change this to do all the edits directly on the server.
+// Make the patchPipeline function a server call.
+function ModifiablePipelineContainerProvider({ children, initialContainer, onPipelineUpdate }: ModifiablePipelineContextProviderProps) {
+    const [state, setState] = React.useState({ container: initialContainer });
 
-        const newContainer: PipelineContainer = (() => {
+    console.log('modifiable pipeline', state.container.pipeline);
+
+    async function dispatch(action: StateAction) {
+        const newContainer: PipelineContainer = await (async () => {
             const pipeline = state.container.pipeline;
 
             const updateType = action.update.type;
@@ -45,38 +50,26 @@ function modifiablePipelineContainerReducerBuilder(onUpdate?: UpdatePipeline): (
                     tags: action.update.tags
                 }
             } else {
-                const newPipeline = patchPipeline(pipeline, action.update);
-                return {
-                    ...state.container,
-                    pipeline: newPipeline,
+                const newPipeline = await patchPipeline(pipeline, action.update);
+                if (newPipeline.isOk) {
+                    return {
+                        ...state.container,
+                        pipeline: newPipeline.data,
+                    }
                 }
+                throw newPipeline.err;
             }
         })();
 
-        console.log('should perform pipeline update:', onUpdate)
+        setState({ container: newContainer })
 
-        if (onUpdate) {
+        if (onPipelineUpdate) {
             console.log('performing pipeline update');
 
-            onUpdate(newContainer); // perform arbitrary action, like saving, when the definition changes
+            await onPipelineUpdate(newContainer); // perform arbitrary action, like saving, when the definition changes
         }
+    };
 
-        return {
-            container: newContainer,
-        }
-    }
-    return modifiablePipelineContainerReducer;
-}
-
-// TODO::as there isn't transient state anymore (no template previews)
-// Change this to do all the edits directly on the server.
-// Make the patchPipeline function a server call.
-function ModifiablePipelineContainerProvider({ children, initialContainer, onPipelineUpdate }: ModifiablePipelineContextProviderProps) {
-    const [state, dispatch] = React.useReducer(modifiablePipelineContainerReducerBuilder(onPipelineUpdate), {
-        container: initialContainer,
-    });
-
-    console.log('modifiable pipeline', state.container.pipeline);
 
     const value = { state, dispatch };
     return (

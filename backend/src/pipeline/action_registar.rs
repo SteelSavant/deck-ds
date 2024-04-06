@@ -56,10 +56,6 @@ impl PipelineActionRegistrar {
         self.actions.get(&variant).or_else(|| self.actions.get(id))
     }
 
-    pub fn raw(&self, id: &PipelineActionId) -> Option<&PipelineActionDefinition> {
-        self.actions.get(id)
-    }
-
     pub fn all(&self) -> Arc<HashMap<PipelineActionId, PipelineActionDefinition>> {
         self.actions.clone()
     }
