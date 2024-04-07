@@ -72,7 +72,7 @@ impl<'a> AssetManager<'a> {
                     ),
                     include_dir::DirEntry::File(file) => entries.insert(
                         dir.path().to_path_buf(),
-                        AssetDirEntry::Dir(file.path().to_path_buf()),
+                        AssetDirEntry::File(file.path().to_path_buf()),
                     ),
                 };
             }
@@ -98,14 +98,18 @@ impl<'a> AssetManager<'a> {
     }
 }
 
+#[derive(Debug)]
 pub enum AssetDirEntry {
     Dir(PathBuf),
     File(PathBuf),
 }
+
+#[derive(Debug)]
 pub struct Asset<'a> {
     asset_impl: AssetType<'a>,
 }
 
+#[derive(Debug)]
 enum AssetType<'a> {
     Internal(&'a File<'a>),
     External(PathBuf),
