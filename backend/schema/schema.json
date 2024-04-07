@@ -644,27 +644,6 @@
               ]
             }
           }
-        },
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "UserDefined"
-              ]
-            },
-            "value": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
         }
       ]
     },
@@ -2082,27 +2061,6 @@
               "type": "string",
               "enum": [
                 "AllOf"
-              ]
-            },
-            "value": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/PipelineAction"
-              }
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "UserDefined"
               ]
             },
             "value": {

@@ -160,7 +160,7 @@ impl ActionImpl for SourceFile {
 
     fn get_dependencies(
         &self,
-        ctx: &mut PipelineContext,
+        ctx: &PipelineContext,
     ) -> Vec<crate::pipeline::dependency::Dependency> {
         let dep = match &self.source {
             FileSource::Flatpak(flatpak) => Dependency::Path {

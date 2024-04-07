@@ -31,7 +31,6 @@ function buildSelection(id: string, selection: RuntimeSelection, indentLevel: nu
         case "OneOf":
             return buildOneOf(selection.value, indentLevel, qamHiddenByParent);
         case "AllOf":
-        case 'UserDefined':
             // TODO::handle userdefined
             return buildAllOf(selection.value, indentLevel, qamHiddenByParent);
         default:

@@ -165,7 +165,7 @@ impl ActionImpl for MultiWindow {
         }
     }
 
-    fn get_dependencies(&self, _ctx: &mut PipelineContext) -> Vec<Dependency> {
+    fn get_dependencies(&self, _ctx: &PipelineContext) -> Vec<Dependency> {
         vec![Dependency::KwinScript(SCRIPT.to_string())]
     }
 

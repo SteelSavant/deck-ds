@@ -36,7 +36,6 @@ function buildRootSelection(id: string, selection: RuntimeSelection): ReactEleme
             return buildAction(id, null, selection.value) ?? <div />;
         case "OneOf":
             return buildOneOf(selection.value);
-        case 'UserDefined':
         case "AllOf":
             // TODO::handle user defined
             return buildAllOf(selection.value);
@@ -116,7 +115,6 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
     }
 
     switch (type) {
-        case 'UserDefined':
         case 'AllOf':
             // TODO::handle userdefined
             if (forcedEnabled || selection.value.length == 0) {

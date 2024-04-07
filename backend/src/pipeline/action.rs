@@ -46,7 +46,7 @@ pub trait ActionImpl: DeserializeOwned + Serialize {
         Ok(())
     }
 
-    fn get_dependencies(&self, _ctx: &mut PipelineContext) -> Vec<Dependency> {
+    fn get_dependencies(&self, _ctx: &PipelineContext) -> Vec<Dependency> {
         // default to no dependencies
         vec![]
     }

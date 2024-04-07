@@ -397,7 +397,6 @@ function patchProfileOverridesForMissing(externalProfileId: string, overrides: P
                 }
                 return;
             case 'AllOf':
-            case 'UserDefined':
                 for (const v of selection.value) {
                     if (!overrides.actions.actions[v.id]) {
                         v.profile_override = externalProfileId

@@ -338,7 +338,7 @@ impl ActionImpl for DesktopSessionHandler {
 
     fn get_dependencies(
         &self,
-        _ctx: &mut PipelineContext,
+        _ctx: &PipelineContext,
     ) -> Vec<crate::pipeline::dependency::Dependency> {
         vec![Dependency::Display]
     }

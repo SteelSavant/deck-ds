@@ -89,7 +89,7 @@ impl ActionImpl for DisplayConfig {
 
     fn get_dependencies(
         &self,
-        _ctx: &mut crate::pipeline::executor::PipelineContext,
+        _ctx: &crate::pipeline::executor::PipelineContext,
     ) -> Vec<crate::pipeline::dependency::Dependency> {
         vec![Dependency::Display]
     }

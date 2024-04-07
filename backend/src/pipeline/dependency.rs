@@ -8,7 +8,10 @@ use which::which;
 
 use crate::{secondary_app::SecondaryAppPresetId, sys::flatpak::list_installed_flatpaks};
 
-use super::executor::PipelineContext;
+use super::{
+    action::{multi_window::secondary_app::LaunchSecondaryFlatpakApp, ActionId, ActionImpl},
+    executor::PipelineContext,
+};
 
 #[derive(Error, Debug, Clone, Serialize, JsonSchema)]
 #[serde(tag = "type", content = "value")]
@@ -87,8 +90,20 @@ impl Dependency {
             Dependency::SecondaryAppPreset(id) => {
                 let presets = ctx.secondary_app.get_presets();
 
-                if presets.contains_key(id) {
-                    Ok(())
+                if let Some(preset) = presets.get(id) {
+                    match &preset.app {
+                        crate::secondary_app::SecondaryApp::Flatpak(app) => {
+                            LaunchSecondaryFlatpakApp {
+                                id: ActionId::nil(),
+                                app: app.clone(),
+                                windowing_behavior: Default::default(),
+                            }
+                            .get_dependencies(ctx)
+                            .into_iter()
+                            .map(|v| v.verify_config(ctx))
+                            .collect()
+                        }
+                    }
                 } else {
                     Err(DependencyError::SecondaryAppPresetNotFound(*id))
                 }

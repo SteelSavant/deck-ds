@@ -22,10 +22,6 @@ export type ConfigSelection =
     }
   | {
       type: "AllOf";
-    }
-  | {
-      type: "UserDefined";
-      value: string[];
     };
 export type Action =
   | {
@@ -238,10 +234,6 @@ export type RuntimeSelection =
     }
   | {
       type: "AllOf";
-      value: PipelineAction[];
-    }
-  | {
-      type: "UserDefined";
       value: PipelineAction[];
     };
 
