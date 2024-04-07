@@ -105,7 +105,6 @@ pub enum DbConfigSelection {
     Action(DbAction),
     OneOf { selection: PipelineActionId },
     AllOf,
-    UserDefined(Vec<PipelineActionId>),
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

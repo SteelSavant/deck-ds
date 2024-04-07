@@ -547,10 +547,6 @@ fn check_config_errors(
                 .iter()
                 .flat_map(|a| collect_actions(&a.selection, &a.id))
                 .collect(),
-            RuntimeSelection::UserDefined(actions) => actions
-                .iter()
-                .flat_map(|a| collect_actions(&a.selection, &a.id))
-                .collect(),
         }
     }
 

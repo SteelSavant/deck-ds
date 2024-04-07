@@ -146,7 +146,6 @@ pub enum DefinitionSelection {
         actions: Vec<PipelineActionId>,
     },
     AllOf(Vec<PipelineActionId>),
-    UserDefined, // TODO::matching rules for which actions can be selected (or just get rid of this)
 }
 
 /// Configured selection for an specific pipeline. Only user values are saved;
@@ -157,7 +156,6 @@ pub enum ConfigSelection {
     Action(Action),
     OneOf { selection: PipelineActionId },
     AllOf,
-    UserDefined(Vec<PipelineActionId>),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
@@ -169,7 +167,6 @@ pub enum RuntimeSelection {
         actions: Vec<PipelineAction>,
     },
     AllOf(Vec<PipelineAction>),
-    UserDefined(Vec<PipelineAction>), // TODO::matching rules for which actions can be selected
 }
 
 impl From<DefinitionSelection> for ConfigSelection {
@@ -178,7 +175,6 @@ impl From<DefinitionSelection> for ConfigSelection {
             DefinitionSelection::Action(action) => ConfigSelection::Action(action),
             DefinitionSelection::OneOf { selection, .. } => ConfigSelection::OneOf { selection },
             DefinitionSelection::AllOf(_) => ConfigSelection::AllOf,
-            DefinitionSelection::UserDefined => ConfigSelection::UserDefined(vec![]),
         }
     }
 }
@@ -273,9 +269,6 @@ impl PipelineActionId {
                             })
                         }
                         DefinitionSelection::AllOf(_) => Some(ConfigSelection::AllOf),
-                        DefinitionSelection::UserDefined => {
-                            Some(ConfigSelection::UserDefined(vec![]))
-                        }
                     }?,
                 })
             })
@@ -381,11 +374,6 @@ impl ConfigSelection {
                     .map(|v| RuntimeSelection::AllOf(v.into_iter().flatten().collect())),
                 _ => Err(anyhow::anyhow!("selection type mismatch in reify config")),
             },
-            ConfigSelection::UserDefined(_actions) => todo!(), // actions
-                                                               //     .iter()
-                                                               //     .map(|a| a.reify(target, pipeline, profiles, registrar))
-                                                               //     .collect::<Result<Vec<_>>>()
-                                                               //     .map(RuntimeSelection::UserDefined(actions.clone())),
         }
     }
 }
@@ -421,9 +409,6 @@ fn actions_have_target(
                         None => false,
                     }
                 }
-                ConfigSelection::UserDefined(values) => values
-                    .into_iter()
-                    .any(|v| search_settings(v, map, target, registrar)),
             },
             None => false,
         }
@@ -530,7 +515,7 @@ mod tests {
                         assert_selection_traversable(&a.selection, target, registrar)
                     }
                 }
-                RuntimeSelection::AllOf(actions) | RuntimeSelection::UserDefined(actions) => {
+                RuntimeSelection::AllOf(actions) => {
                     for a in actions {
                         assert_eq!(registrar.get(&a.id, target).unwrap().id, a.id);
                         assert_selection_traversable(&a.selection, target, registrar)

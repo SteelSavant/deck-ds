@@ -513,16 +513,14 @@ impl Pipeline {
 
                     build_recursive(action.selection)
                 }
-                RuntimeSelection::AllOf(actions) | RuntimeSelection::UserDefined(actions) => {
-                    actions
-                        .into_iter()
-                        .filter_map(|a| match a.enabled {
-                            None | Some(true) => Some(a.selection),
-                            Some(false) => None,
-                        })
-                        .flat_map(build_recursive)
-                        .collect()
-                }
+                RuntimeSelection::AllOf(actions) => actions
+                    .into_iter()
+                    .filter_map(|a| match a.enabled {
+                        None | Some(true) => Some(a.selection),
+                        Some(false) => None,
+                    })
+                    .flat_map(build_recursive)
+                    .collect(),
             }
         }
 

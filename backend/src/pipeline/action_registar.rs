@@ -81,7 +81,7 @@ impl PipelineActionRegistrar {
             target: PipelineTarget,
         ) -> HashSet<(PipelineActionId, PipelineTarget)> {
             match selection {
-                DefinitionSelection::Action(_) | DefinitionSelection::UserDefined => HashSet::new(),
+                DefinitionSelection::Action(_) => HashSet::new(),
                 DefinitionSelection::OneOf { actions, .. }
                 | DefinitionSelection::AllOf(actions) => {
                     let mut ids: HashSet<_> = actions

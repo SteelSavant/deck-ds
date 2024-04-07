@@ -77,9 +77,6 @@ impl DbConfigSelection {
                 selection: selection.clone(),
             },
             DbConfigSelection::AllOf => ConfigSelection::AllOf,
-            DbConfigSelection::UserDefined(actions) => {
-                ConfigSelection::UserDefined(actions.clone())
-            }
         };
 
         Ok(selection)
