@@ -414,7 +414,7 @@ fn actions_have_target(
         }
     }
 
-    search_settings(&root, map, target, registrar)
+    search_settings(root, map, target, registrar)
 }
 
 #[cfg(test)]

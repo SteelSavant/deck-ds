@@ -1,5 +1,4 @@
 use std::{
-    borrow::BorrowMut,
     collections::HashMap,
     path::PathBuf,
     sync::{Arc, Mutex},
@@ -17,8 +16,8 @@ use crate::{
         action::{Action, ErasedPipelineAction},
         action_registar::PipelineActionRegistrar,
         data::{
-            ConfigSelection, DefinitionSelection, Pipeline, PipelineActionId, PipelineDefinition,
-            PipelineDefinitionId, PipelineTarget, RuntimeSelection, Template,
+            ConfigSelection, Pipeline, PipelineActionId, PipelineDefinition, PipelineDefinitionId,
+            PipelineTarget, RuntimeSelection, Template,
         },
         dependency::DependencyError,
         executor::PipelineContext,
@@ -442,7 +441,7 @@ pub fn patch_pipeline_action(
                     }
 
                     if let ConfigSelection::OneOf { selection } = &mut pipeline_action.selection {
-                        let reified = registrar.get(&selection, args.target).unwrap().id.clone();
+                        let reified = registrar.get(selection, args.target).unwrap().id.clone();
                         *selection = reified
                     }
 

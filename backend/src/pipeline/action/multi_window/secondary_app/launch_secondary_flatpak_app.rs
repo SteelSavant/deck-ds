@@ -11,7 +11,7 @@ use crate::{
         dependency::Dependency,
         executor::PipelineContext,
     },
-    secondary_app::{FlatpakApp, SecondaryApp},
+    secondary_app::{FlatpakApp},
     sys::{flatpak::check_running_flatpaks, windowing::get_window_info_from_pid},
 };
 
@@ -66,7 +66,7 @@ impl ActionImpl for LaunchSecondaryFlatpakApp {
         }
     }
 
-    fn get_dependencies(&self, ctx: &mut PipelineContext) -> Vec<Dependency> {
+    fn get_dependencies(&self, _ctx: &mut PipelineContext) -> Vec<Dependency> {
         self.app.get_dependencies()
     }
 }

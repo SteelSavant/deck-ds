@@ -1,7 +1,7 @@
 use strum::IntoEnumIterator;
 
 use crate::{
-    secondary_app::{FlatpakApp, SecondaryApp, SecondaryAppPreset, SecondaryAppPresetId},
+    secondary_app::{FlatpakApp, SecondaryAppPresetId},
     settings::ProfileId,
 };
 
