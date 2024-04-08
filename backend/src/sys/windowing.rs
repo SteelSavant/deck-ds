@@ -1,4 +1,8 @@
-use std::process::Command;
+use std::{
+    process::Command,
+    thread::sleep,
+    time::{Duration, Instant},
+};
 
 use nix::unistd::Pid;
 
@@ -10,9 +14,46 @@ pub struct WindowInfo {
     pub classes: Vec<String>,
 }
 
+pub fn get_active_window_info() -> Result<WindowInfo> {
+    let cmd = Command::new("xdotool")
+        .args(["getactivewindow", "getwindowname", "getwindowclassname"])
+        .output()?;
+
+    if cmd.status.success() {
+        let out = String::from_utf8_lossy(&cmd.stdout);
+        let mut lines = out.lines();
+        let name = lines.next().unwrap().to_string();
+
+        Ok(WindowInfo {
+            name,
+            classes: lines.map(|v| v.to_string()).collect(),
+        })
+    } else {
+        let err = String::from_utf8_lossy(&cmd.stderr).to_string();
+        Err(anyhow::anyhow!(err.clone()))
+            .with_context(|| format!("failed to get info for active window: {err}"))
+    }
+}
+
 pub fn get_window_info_from_pid(pid: Pid) -> Result<WindowInfo> {
     let id = get_window_id_from_pid(pid)?;
     get_window_info_for_window_id(id)
+}
+
+pub fn get_window_info_from_pid_default_active_after(
+    pid: Pid,
+    timeout: Duration,
+) -> Result<WindowInfo> {
+    let mut window_info = get_window_info_from_pid(pid);
+
+    let timer = Instant::now();
+
+    while timer.elapsed() < timeout && window_info.is_err() {
+        window_info = get_window_info_from_pid(pid);
+        sleep(Duration::from_millis(100));
+    }
+
+    window_info.or_else(|_| get_active_window_info())
 }
 
 fn get_window_id_from_pid(pid: Pid) -> Result<usize> {
@@ -21,11 +62,12 @@ fn get_window_id_from_pid(pid: Pid) -> Result<usize> {
         .output()?;
 
     if cmd.status.success() {
-        Ok(str::parse(&String::from_utf8_lossy(&cmd.stdout))?)
+        let out = String::from_utf8_lossy(&cmd.stdout);
+        Ok(str::parse(&out).with_context(|| format!("failed to parse pid {}", out))?)
     } else {
-        Err(anyhow::anyhow!(
-            String::from_utf8_lossy(&cmd.stderr).to_string()
-        ))
+        let err = String::from_utf8_lossy(&cmd.stderr).to_string();
+        Err(anyhow::anyhow!(err.clone()))
+            .with_context(|| format!("failed to get window id from pid: {err}"))
     }
 }
 

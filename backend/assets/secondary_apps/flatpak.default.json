@@ -5,7 +5,7 @@
             "type": "Flatpak",
             "app_id": "com.google.Chrome",
             "args": [
-                "--start-fullscreen",
+                "--kiosk",
                 "--new-window",
                 "youtube.com"
             ]
@@ -17,8 +17,8 @@
             "type": "Flatpak",
             "app_id": "org.mozilla.firefox",
             "args": [
-                "--kiosk",
                 "--new-window",
+                "--kiosk",
                 "youtube.com"
             ]
         }
@@ -29,7 +29,7 @@
             "type": "Flatpak",
             "app_id": "com.google.Chrome",
             "args": [
-                "--start-fullscreen",
+                "--kiosk",
                 "--new-window",
                 "netflix.com"
             ]
@@ -41,8 +41,8 @@
             "type": "Flatpak",
             "app_id": "org.mozilla.firefox",
             "args": [
-                "--kiosk",
                 "--new-window",
+                "--kiosk",
                 "netflix.com"
             ]
         }
@@ -53,7 +53,7 @@
             "type": "Flatpak",
             "app_id": "com.google.Chrome",
             "args": [
-                "--start-fullscreen",
+                "--kiosk",
                 "--new-window",
                 "amazon.com/gp/video/storefront"
             ]
@@ -65,8 +65,8 @@
             "type": "Flatpak",
             "app_id": "org.mozilla.firefox",
             "args": [
-                "--kiosk",
                 "--new-window",
+                "--kiosk",
                 "amazon.com/gp/video/storefront"
             ]
         }
