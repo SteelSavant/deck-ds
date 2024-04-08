@@ -264,8 +264,8 @@ impl<'a> PipelineContext<'a> {
         self.state.insert::<StateKey<P, P::State>>(state)
     }
 
-    pub fn send_ui_event(&self, event: UiEvent) {
-        let ui_state = self.get_state::<DesktopSessionHandler>();
+    pub fn send_ui_event(&mut self, event: UiEvent) {
+        let ui_state = self.get_state_mut::<DesktopSessionHandler>();
         if let Some(ui_state) = ui_state {
             ui_state.send_ui_event(event);
         }

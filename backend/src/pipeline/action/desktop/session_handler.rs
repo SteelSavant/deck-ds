@@ -154,10 +154,16 @@ impl<'de> Deserialize<'de> for DisplayState {
 }
 
 impl DisplayState {
-    pub fn send_ui_event(&self, event: UiEvent) {
+    pub fn send_ui_event(&mut self, event: UiEvent) {
+        let is_close = matches!(event, UiEvent::Close);
+
         if let Some(state) = self.runtime_state.as_ref() {
             let _ = state.ui_tx.send(event);
             state.ui_ctx.request_repaint();
+        }
+
+        if is_close {
+            self.runtime_state = None
         }
     }
 }
