@@ -1,5 +1,7 @@
 use std::{
+    os::unix::thread,
     sync::mpsc::{self, Receiver, Sender},
+    thread::sleep,
     time::Duration,
 };
 
@@ -236,6 +238,8 @@ impl ActionImpl for DesktopSessionHandler {
             });
         }
 
+        sleep(Duration::from_millis(500));
+
         log::debug!("session handler setup complete");
 
         Ok(())
@@ -338,6 +342,8 @@ impl ActionImpl for DesktopSessionHandler {
         };
 
         ctx.display = Some(display);
+
+        ctx.send_ui_event(UiEvent::Close);
 
         res
     }

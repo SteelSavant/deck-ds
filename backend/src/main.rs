@@ -159,6 +159,8 @@ fn main() -> Result<()> {
 
     match mode {
         Modes::Autostart => {
+            sleep(Duration::from_millis(500));
+
             // build the executor
             let executor = AutoStart::new(settings.clone())
                 .load()
@@ -196,8 +198,6 @@ fn main() -> Result<()> {
 
                     use crate::sys::steamos_session_select::{steamos_session_select, Session};
                     let res = steamos_session_select(Session::Gamescope).and(exec_result);
-
-                    std::thread::sleep(Duration::from_secs(10)); // implicitly keep UI up during session switch
 
                     res
                 }

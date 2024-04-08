@@ -31,6 +31,7 @@ use crate::pipeline::data::RuntimeSelection;
 use crate::secondary_app::SecondaryAppManager;
 use crate::settings::{AppId, GameId};
 use crate::sys::app_process::AppProcess;
+use crate::sys::flatpak::check_running_flatpaks;
 use crate::sys::kwin::KWin;
 use crate::sys::x_display::XDisplay;
 
@@ -443,6 +444,7 @@ impl<'a> PipelineExecutor<'a> {
 
         while app_process.is_alive() {
             std::thread::sleep(std::time::Duration::from_millis(100));
+
             if !should_register_exit_hooks {
                 continue;
             }

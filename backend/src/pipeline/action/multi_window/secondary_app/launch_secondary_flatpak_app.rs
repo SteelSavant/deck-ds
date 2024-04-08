@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 use nix::unistd::Pid;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::thread::sleep;
 
 use crate::{
     pipeline::{
@@ -83,7 +84,11 @@ impl ActionImpl for LaunchSecondaryFlatpakApp {
 
 impl FlatpakApp {
     fn setup(&self) -> Result<Option<Pid>> {
-        log::info!("launching secondary flatpak app: {:?}", self.args);
+        log::info!(
+            "launching secondary flatpak app: {:?} {:?}",
+            self.app_id,
+            self.args
+        );
 
         let mut child = Command::new("flatpak")
             .args(
@@ -94,6 +99,8 @@ impl FlatpakApp {
                 .concat(),
             )
             .spawn()?;
+
+        sleep(Duration::from_millis(200));
 
         match child.try_wait() {
             Ok(Some(v)) => {
@@ -123,11 +130,14 @@ impl FlatpakApp {
                 .status()?;
 
             if status.success() {
+                log::debug!("Closed flatpak with pid {pid}");
+
                 Ok(())
             } else {
                 Err(anyhow::anyhow!("failed to kill flatpak {}", self.app_id))
             }
         } else {
+            log::debug!("Failed to find running flatpak with pid {pid} in {running:?}");
             Ok(())
         }
     }

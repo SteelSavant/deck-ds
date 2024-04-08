@@ -20,6 +20,9 @@ pub use citra_options::CitraWindowOptions;
 pub use custom_options::CustomWindowOptions;
 pub use dolphin_options::DolphinWindowOptions;
 
+// This technically could be generic over the app type and just support one app,
+// but it adds a lot of boilerplate elsewhere, and I don't feel like dealing with it.
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct MultiWindow {
     pub id: ActionId,

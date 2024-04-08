@@ -3,6 +3,7 @@ use std::process::Command;
 use anyhow::{Context, Result};
 use nix::unistd::Pid;
 
+#[derive(Debug)]
 pub struct FlatpakStatus {
     pub app_id: String,
     pub pid: Pid,
@@ -14,7 +15,7 @@ pub fn check_running_flatpaks() -> Result<Vec<FlatpakStatus>> {
     if output.status.success() {
         let status = String::from_utf8_lossy(&output.stdout)
             .lines()
-            .skip(1)
+            // .skip(1)
             .map(|v| v.split_ascii_whitespace())
             .map(|mut v| {
                 let status = FlatpakStatus {
@@ -49,7 +50,6 @@ pub fn list_installed_flatpaks() -> Result<Vec<FlatpakInfo>> {
     if output.status.success() {
         let status = String::from_utf8_lossy(&output.stdout)
             .lines()
-            .skip(1)
             .map(|v| v.split_ascii_whitespace())
             .map(|mut v| {
                 let status = FlatpakInfo {
