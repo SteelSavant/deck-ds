@@ -8,9 +8,7 @@ use super::{LimitedMultiWindowLayout, MultiWindowLayout, OptionsRW, SCRIPT};
 use anyhow::Result;
 #[derive(Debug, Clone, SmartDefault, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct CustomWindowOptions {
-    pub primary_window_override: Option<String>,
-    // secondary windows will be scraped from secondary apps after launch,
-    // but secondary windows for the main app are registered here
+    pub primary_window_matcher: Option<String>,
     pub secondary_window_matcher: Option<String>,
     pub classes: Vec<String>,
     pub single_screen_layout: LimitedMultiWindowLayout,
@@ -23,7 +21,7 @@ impl OptionsRW for CustomWindowOptions {
     where
         Self: Sized,
     {
-        let primary_window_override = kwin
+        let primary_window_matcher = kwin
             .get_script_string_setting(SCRIPT, "customPrimaryWindowMatcher")?
             .map(|v| v.trim().to_string())
             .and_then(|v| if v.is_empty() { None } else { Some(v) });
@@ -59,7 +57,7 @@ impl OptionsRW for CustomWindowOptions {
             .unwrap_or(MultiWindowLayout::Separate);
 
         Ok(Self {
-            primary_window_override,
+            primary_window_matcher,
             secondary_window_matcher,
             classes,
             single_screen_layout,
@@ -90,7 +88,7 @@ impl OptionsRW for CustomWindowOptions {
         kwin.set_script_string_setting(
             SCRIPT,
             "customPrimaryWindowMatcher",
-            self.primary_window_override.as_deref().unwrap_or(""),
+            self.primary_window_matcher.as_deref().unwrap_or(""),
         )?;
 
         kwin.set_script_string_setting(

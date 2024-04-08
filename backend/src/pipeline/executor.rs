@@ -2,6 +2,8 @@ use anyhow::{anyhow, Context, Result};
 use either::Either;
 use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
+use nix::unistd::Pid;
+use strum::IntoEnumIterator;
 use type_reg::untagged::{TypeMap as SerdeMap, TypeReg};
 
 use std::marker::PhantomData;
@@ -16,6 +18,7 @@ use crate::pipeline::action::cemu_layout::CemuLayout;
 use crate::pipeline::action::citra_layout::CitraLayout;
 use crate::pipeline::action::display_config::DisplayConfig;
 use crate::pipeline::action::melonds_layout::MelonDSLayout;
+use crate::pipeline::action::multi_window::main_app_automatic_windowing::MainAppAutomaticWindowing;
 use crate::pipeline::action::multi_window::primary_windowing::MultiWindow;
 use crate::pipeline::action::multi_window::secondary_app::{
     LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp,
@@ -23,7 +26,7 @@ use crate::pipeline::action::multi_window::secondary_app::{
 use crate::pipeline::action::session_handler::DesktopSessionHandler;
 use crate::pipeline::action::source_file::SourceFile;
 use crate::pipeline::action::virtual_screen::VirtualScreen;
-use crate::pipeline::action::ActionType;
+use crate::pipeline::action::{ActionImpl, ActionType};
 use crate::pipeline::data::RuntimeSelection;
 use crate::secondary_app::SecondaryAppManager;
 use crate::settings::{AppId, GameId};
@@ -35,14 +38,14 @@ use super::action::session_handler::UiEvent;
 use super::action::{Action, ErasedPipelineAction};
 use super::data::{Pipeline, PipelineTarget};
 
-use super::action::ActionImpl;
-
 pub struct PipelineExecutor<'a> {
     game_id: Either<AppId, GameId>,
     pipeline: Option<Pipeline>,
     target: PipelineTarget,
     ctx: PipelineContext<'a>,
 }
+
+type OnLaunchCallback = Box<dyn Fn(Pid, &mut PipelineContext) -> Result<()>>;
 
 pub struct PipelineContext<'a> {
     /// path to directory containing the user's home directory
@@ -59,6 +62,7 @@ pub struct PipelineContext<'a> {
     have_run: Vec<Action>,
     /// pipeline state
     state: TypeMap,
+    on_launch_callbacks: Vec<OnLaunchCallback>,
 }
 
 // state impl
@@ -84,7 +88,12 @@ impl<'a> PipelineContext<'a> {
             have_run: vec![],
             secondary_app: SecondaryAppManager::new(assets_manager),
             should_register_exit_hooks: true,
+            on_launch_callbacks: vec![],
         }
+    }
+
+    pub fn register_on_launch_callback(&mut self, callback: OnLaunchCallback) {
+        self.on_launch_callbacks.push(callback);
     }
 
     pub fn load(
@@ -114,8 +123,6 @@ impl<'a> PipelineContext<'a> {
             type_reg.register::<(T, Option<<T as ActionImpl>::State>)>(T::TYPE.to_string());
         }
 
-        type_reg.register::<Vec<String>>("__actions__".to_string());
-
         register_type::<DesktopSessionHandler>(&mut type_reg);
         register_type::<VirtualScreen>(&mut type_reg);
         register_type::<MultiWindow>(&mut type_reg);
@@ -124,6 +131,17 @@ impl<'a> PipelineContext<'a> {
         register_type::<CitraLayout>(&mut type_reg);
         register_type::<MelonDSLayout>(&mut type_reg);
         register_type::<DisplayConfig>(&mut type_reg);
+        register_type::<LaunchSecondaryAppPreset>(&mut type_reg);
+        register_type::<LaunchSecondaryFlatpakApp>(&mut type_reg);
+        register_type::<MainAppAutomaticWindowing>(&mut type_reg);
+
+        assert_eq!(
+            type_reg.keys().count(),
+            ActionType::iter().count(),
+            "not all actions have been registered"
+        );
+
+        type_reg.register::<Vec<String>>("__actions__".to_string());
 
         let mut deserializer = serde_json::Deserializer::from_str(&persisted);
         let type_map: SerdeMap<String> = type_reg
@@ -160,6 +178,9 @@ impl<'a> PipelineContext<'a> {
                     }
                     ActionType::LaunchSecondaryAppPreset => {
                         load_state::<LaunchSecondaryAppPreset>(&mut default, &type_map)
+                    }
+                    ActionType::MainAppAutomaticWindowing => {
+                        load_state::<MainAppAutomaticWindowing>(&mut default, &type_map)
                     }
                 },
                 Err(err) => {
@@ -214,6 +235,7 @@ impl<'a> PipelineContext<'a> {
                 Action::SourceFile(a) => insert_action(self, &mut map, a),
                 Action::LaunchSecondaryFlatpakApp(a) => insert_action(self, &mut map, a),
                 Action::LaunchSecondaryAppPreset(a) => insert_action(self, &mut map, a),
+                Action::MainAppAutomaticWindowing(a) => insert_action(self, &mut map, a),
             };
         }
 
@@ -379,7 +401,7 @@ impl<'a> PipelineExecutor<'a> {
         }
     }
 
-    fn run_app(&self, should_register_exit_hooks: bool) -> Result<()> {
+    fn run_app(&mut self, should_register_exit_hooks: bool) -> Result<()> {
         let (app_id, launch_type) = match (self.game_id.as_ref(), self.target) {
             (Either::Right(id), PipelineTarget::Desktop) => (id.raw(), "rungameid"),
             (Either::Right(id), _) => (id.raw(), "launch"),
@@ -398,6 +420,15 @@ impl<'a> PipelineExecutor<'a> {
         }
 
         let app_process = AppProcess::find(Duration::from_secs(30))?;
+
+        let mut tmp = vec![];
+        std::mem::swap(&mut tmp, &mut self.ctx.on_launch_callbacks);
+
+        for callback in tmp.iter() {
+            callback(app_process.get_pid(), &mut self.ctx)?;
+        }
+
+        std::mem::swap(&mut tmp, &mut self.ctx.on_launch_callbacks);
 
         let mut gilrs = gilrs::Gilrs::new().unwrap();
         let mut state = IndexMap::<GamepadId, (bool, bool, Option<Instant>)>::new();

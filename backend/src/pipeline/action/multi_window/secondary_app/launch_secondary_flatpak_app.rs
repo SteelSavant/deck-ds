@@ -15,6 +15,7 @@ use crate::{
     sys::{
         flatpak::check_running_flatpaks, windowing::get_window_info_from_pid_default_active_after,
     },
+    util::escape_string_for_regex,
 };
 
 use super::{
@@ -137,14 +138,4 @@ impl FlatpakApp {
             Dependency::System("xdotool".to_string()),
         ]
     }
-}
-
-fn escape_string_for_regex(mut s: String) -> String {
-    for c in [
-        '\\', '^', '$', '*', '+', '?', '.', '(', ')', '|', '{', '}', '[', ']',
-    ] {
-        s = s.replace(c, &format!("\\{c}"));
-    }
-
-    s
 }

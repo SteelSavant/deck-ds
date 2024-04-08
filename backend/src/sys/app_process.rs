@@ -30,6 +30,10 @@ impl AppProcess {
         Ok(Self { pid })
     }
 
+    pub fn get_pid(&self) -> Pid {
+        self.pid
+    }
+
     pub fn is_alive(&self) -> bool {
         Self::is_pid_alive(self.pid)
     }

@@ -63,6 +63,10 @@ export type Action =
   | {
       type: "LaunchSecondaryAppPreset";
       value: LaunchSecondaryAppPreset;
+    }
+  | {
+      type: "MainAppAutomaticWindowing";
+      value: MainAppAutomaticWindowing;
     };
 export type RelativeLocation = "Above" | "Below" | "LeftOf" | "RightOf" | "SameAs";
 export type ExternalDisplaySettings =
@@ -356,7 +360,7 @@ export interface CustomWindowOptions {
   classes: string[];
   multi_screen_multi_secondary_layout: MultiWindowLayout;
   multi_screen_single_secondary_layout: MultiWindowLayout;
-  primary_window_override?: string | null;
+  primary_window_matcher?: string | null;
   secondary_window_matcher?: string | null;
   single_screen_layout: LimitedMultiWindowLayout;
 }
@@ -421,6 +425,10 @@ export interface LaunchSecondaryAppPreset {
   id: string;
   preset: string;
   windowing_behavior: SecondaryAppWindowingBehavior;
+}
+export interface MainAppAutomaticWindowing {
+  general: GeneralOptions;
+  id: string;
 }
 export interface CreateProfileResponse {
   profile_id: string;

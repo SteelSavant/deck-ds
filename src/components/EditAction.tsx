@@ -450,6 +450,8 @@ export function InternalEditAction({
                 </Fragment>
             );
         }
+        case 'MainAppAutomaticWindowing':
+        // TODO::this
         case 'VirtualScreen':
             return notConfigurable;
         default:

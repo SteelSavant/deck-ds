@@ -12,9 +12,9 @@ use super::{
         display_config::DisplayConfig,
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
         multi_window::{
+            main_app_automatic_windowing::MainAppAutomaticWindowing,
             primary_windowing::{
-                CemuWindowOptions, CitraWindowOptions, CustomWindowOptions, GeneralOptions,
-                MultiWindow,
+                CemuWindowOptions, CitraWindowOptions, GeneralOptions, MultiWindow,
             },
             secondary_app::{LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp},
         },
@@ -678,13 +678,9 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: false,
                         profile_override: None,
-                        selection: MultiWindow {
+                        selection: MainAppAutomaticWindowing{
                             id: ActionId::nil(),
-                            general: GeneralOptions::default(),
-                            cemu: None,
-                            citra: None,
-                            dolphin: None,
-                            custom: Some(CustomWindowOptions::default()),
+                            general: Default::default(),
                         }.into(),
                     })
                 })

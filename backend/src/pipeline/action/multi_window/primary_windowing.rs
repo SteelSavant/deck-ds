@@ -95,6 +95,7 @@ impl OptionsRW for MultiWindowOptions {
 
 #[derive(Debug, Clone, SmartDefault, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct GeneralOptions {
+    #[default(false)]
     pub swap_screens: bool,
     #[default(true)]
     pub keep_above: bool,

@@ -4,6 +4,7 @@ use crate::sys::kwin::KWin;
 
 use super::{ActionId, ActionImpl, ActionType};
 
+pub mod main_app_automatic_windowing;
 pub mod primary_windowing;
 pub mod secondary_app;
 

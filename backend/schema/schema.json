@@ -273,6 +273,24 @@
               "$ref": "#/definitions/LaunchSecondaryAppPreset"
             }
           }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "MainAppAutomaticWindowing"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/MainAppAutomaticWindowing"
+            }
+          }
         }
       ]
     },
@@ -713,7 +731,7 @@
         "multi_screen_single_secondary_layout": {
           "$ref": "#/definitions/MultiWindowLayout"
         },
-        "primary_window_override": {
+        "primary_window_matcher": {
           "type": [
             "string",
             "null"
@@ -1366,6 +1384,22 @@
         "square-right",
         "square-left"
       ]
+    },
+    "MainAppAutomaticWindowing": {
+      "type": "object",
+      "required": [
+        "general",
+        "id"
+      ],
+      "properties": {
+        "general": {
+          "$ref": "#/definitions/GeneralOptions"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
     },
     "MelonDSLayout": {
       "type": "object",

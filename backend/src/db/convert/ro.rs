@@ -7,9 +7,9 @@ use native_db::transaction::RTransaction;
 use crate::{
     db::model::{
         DbAction, DbCemuLayout, DbCitraLayout, DbConfigSelection, DbDesktopSessionHandler,
-        DbDisplayConfig, DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset, DbMelonDSLayout,
-        DbMultiWindow, DbPipelineActionSettings, DbPipelineDefinition, DbSourceFile,
-        DbVirtualScreen,
+        DbDisplayConfig, DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset,
+        DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings,
+        DbPipelineDefinition, DbSourceFile, DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionType},
@@ -62,6 +62,10 @@ impl DbAction {
             ActionType::LaunchSecondaryAppPreset => {
                 let action = ro.get().primary::<DbLaunchSecondaryAppPreset>(id)?;
                 action.map(|a| Action::LaunchSecondaryAppPreset(a.into()))
+            }
+            ActionType::MainAppAutomaticWindowing => {
+                let action = ro.get().primary::<DbMainAppAutomaticWindowing>(id)?;
+                action.map(|a| Action::MainAppAutomaticWindowing(a.into()))
             }
         };
 

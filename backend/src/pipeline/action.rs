@@ -2,11 +2,12 @@ use std::fmt::Debug;
 
 use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use strum::{Display, EnumString};
+use strum::{Display, EnumIter, EnumString};
 
 use crate::macros::newtype_uuid;
 
 use self::display_config::DisplayConfig;
+use self::multi_window::main_app_automatic_windowing::MainAppAutomaticWindowing;
 use self::multi_window::secondary_app::{LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp};
 use self::{
     cemu_layout::CemuLayout, citra_layout::CitraLayout, melonds_layout::MelonDSLayout,
@@ -118,6 +119,7 @@ pub enum Action {
     SourceFile(SourceFile),
     LaunchSecondaryFlatpakApp(LaunchSecondaryFlatpakApp),
     LaunchSecondaryAppPreset(LaunchSecondaryAppPreset),
+    MainAppAutomaticWindowing(MainAppAutomaticWindowing),
 }
 
 impl<T: Into<Action>> From<T> for DefinitionSelection {
@@ -157,18 +159,24 @@ impl Action {
             Action::LaunchSecondaryAppPreset(a) => {
                 Action::LaunchSecondaryAppPreset(LaunchSecondaryAppPreset { id, ..a.clone() })
             }
+            Action::MainAppAutomaticWindowing(a) => {
+                Action::MainAppAutomaticWindowing(MainAppAutomaticWindowing { id, ..a.clone() })
+            }
         }
     }
 }
 
 /// This effectively acts as a typename for the action, and thus variants CANNOT be renamed without breaking things
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Display, EnumString)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Display, EnumString, EnumIter,
+)]
 pub enum ActionType {
     CemuLayout,
     CitraLayout,
     DesktopSessionHandler,
     DisplayConfig,
     MultiWindow,
+    MainAppAutomaticWindowing,
     MelonDSLayout,
     SourceFile,
     VirtualScreen,

@@ -13,6 +13,7 @@ use crate::{
             display_config::DisplayConfig,
             melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
             multi_window::{
+                main_app_automatic_windowing::MainAppAutomaticWindowing,
                 primary_windowing::{
                     CemuWindowOptions, CitraWindowOptions, CustomWindowOptions,
                     DolphinWindowOptions, GeneralOptions,
@@ -117,7 +118,7 @@ pub struct DbAction {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 101, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1001, version = 1, with = NativeModelJSON)]
 pub struct DbCemuLayout {
     #[primary_key]
     pub id: ActionId,
@@ -149,7 +150,7 @@ impl From<DbCemuLayout> for CemuLayout {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[native_db]
-#[native_model(id = 102, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1002, version = 1, with = NativeModelJSON)]
 pub struct DbCitraLayout {
     #[primary_key]
     pub id: ActionId,
@@ -212,7 +213,7 @@ pub enum DbCitraLayoutOption {
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 103, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1003, version = 1, with = NativeModelJSON)]
 pub struct DbMelonDSLayout {
     #[primary_key]
     pub id: ActionId,
@@ -287,7 +288,7 @@ pub enum DbMelonDSSizingOption {
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 104, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1004, version = 1, with = NativeModelJSON)]
 pub struct DbDesktopSessionHandler {
     #[primary_key]
     pub id: ActionId,
@@ -511,7 +512,7 @@ pub enum DbAspectRatioOption {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 105, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1005, version = 1, with = NativeModelJSON)]
 pub struct DbMultiWindow {
     #[primary_key]
     pub id: ActionId,
@@ -550,7 +551,7 @@ pub struct DbMultiWindowDolphinOptions {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DbMultiWindowCustomOptions {
-    pub primary_window_override: Option<String>,
+    pub primary_window_matcher: Option<String>,
     pub secondary_window_matcher: Option<String>,
     pub classes: Vec<String>,
     pub single_screen_layout: DbLimitedMultiWindowLayout,
@@ -625,10 +626,7 @@ impl From<MultiWindow> for DbMultiWindow {
     fn from(value: MultiWindow) -> Self {
         Self {
             id: value.id,
-            general: DbMultiWindowGeneralOptions {
-                keep_above: value.general.keep_above,
-                swap_screens: value.general.swap_screens,
-            },
+            general: value.general.into(),
             cemu: value.cemu.map(|v| DbMultiWindowCemuOptions {
                 single_screen_layout: v.single_screen_layout.into(),
                 multi_screen_layout: v.multi_screen_layout.into(),
@@ -644,7 +642,7 @@ impl From<MultiWindow> for DbMultiWindow {
                 gba_blacklist: v.gba_blacklist,
             }),
             custom: value.custom.map(|v| DbMultiWindowCustomOptions {
-                primary_window_override: v.primary_window_override.clone(),
+                primary_window_matcher: v.primary_window_matcher.clone(),
                 secondary_window_matcher: v.secondary_window_matcher.clone(),
                 classes: v.classes.clone(),
                 single_screen_layout: v.single_screen_layout.into(),
@@ -659,10 +657,7 @@ impl From<DbMultiWindow> for MultiWindow {
     fn from(value: DbMultiWindow) -> Self {
         Self {
             id: value.id,
-            general: GeneralOptions {
-                keep_above: value.general.keep_above,
-                swap_screens: value.general.swap_screens,
-            },
+            general: value.general.into(),
             cemu: value.cemu.map(|v| CemuWindowOptions {
                 single_screen_layout: v.single_screen_layout.into(),
                 multi_screen_layout: v.multi_screen_layout.into(),
@@ -678,7 +673,7 @@ impl From<DbMultiWindow> for MultiWindow {
                 gba_blacklist: v.gba_blacklist,
             }),
             custom: value.custom.map(|v| CustomWindowOptions {
-                primary_window_override: v.primary_window_override.clone(),
+                primary_window_matcher: v.primary_window_matcher.clone(),
                 secondary_window_matcher: v.secondary_window_matcher.clone(),
                 classes: v.classes.clone(),
                 single_screen_layout: v.single_screen_layout.into(),
@@ -689,9 +684,27 @@ impl From<DbMultiWindow> for MultiWindow {
     }
 }
 
+impl From<GeneralOptions> for DbMultiWindowGeneralOptions {
+    fn from(value: GeneralOptions) -> Self {
+        Self {
+            keep_above: value.keep_above,
+            swap_screens: value.swap_screens,
+        }
+    }
+}
+
+impl From<DbMultiWindowGeneralOptions> for GeneralOptions {
+    fn from(value: DbMultiWindowGeneralOptions) -> Self {
+        Self {
+            keep_above: value.keep_above,
+            swap_screens: value.swap_screens,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize)]
 #[native_db]
-#[native_model(id = 106, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1006, version = 1, with = NativeModelJSON)]
 pub struct DbSourceFile {
     #[primary_key]
     pub id: ActionId,
@@ -784,7 +797,7 @@ pub enum DbAppImageSource {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 107, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1007, version = 1, with = NativeModelJSON)]
 pub struct DbVirtualScreen {
     #[primary_key]
     pub id: ActionId,
@@ -804,7 +817,7 @@ impl From<DbVirtualScreen> for VirtualScreen {
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 108, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1008, version = 1, with = NativeModelJSON)]
 pub struct DbDisplayConfig {
     #[primary_key]
     pub id: ActionId,
@@ -837,7 +850,7 @@ impl From<DbDisplayConfig> for DisplayConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 109, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1009, version = 1, with = NativeModelJSON)]
 pub struct DbLaunchSecondaryFlatpakApp {
     #[primary_key]
     pub id: ActionId,
@@ -950,7 +963,7 @@ impl From<DbSecondaryAppWindowingBehavior> for SecondaryAppWindowingBehavior {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 110, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1010, version = 1, with = NativeModelJSON)]
 pub struct DbLaunchSecondaryAppPreset {
     #[primary_key]
     pub id: ActionId,
@@ -974,6 +987,33 @@ impl From<DbLaunchSecondaryAppPreset> for LaunchSecondaryAppPreset {
             id: value.id,
             preset: value.preset,
             windowing_behavior: value.windowing_behavior.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[native_db]
+#[native_model(id = 1011, version = 1, with = NativeModelJSON)]
+pub struct DbMainAppAutomaticWindowing {
+    #[primary_key]
+    id: ActionId,
+    general: DbMultiWindowGeneralOptions,
+}
+
+impl From<MainAppAutomaticWindowing> for DbMainAppAutomaticWindowing {
+    fn from(value: MainAppAutomaticWindowing) -> Self {
+        Self {
+            id: value.id,
+            general: value.general.into(),
+        }
+    }
+}
+
+impl From<DbMainAppAutomaticWindowing> for MainAppAutomaticWindowing {
+    fn from(value: DbMainAppAutomaticWindowing) -> Self {
+        Self {
+            id: value.id,
+            general: value.general.into(),
         }
     }
 }
