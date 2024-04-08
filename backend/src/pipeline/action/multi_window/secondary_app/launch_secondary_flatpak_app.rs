@@ -39,7 +39,10 @@ impl ActionImpl for LaunchSecondaryFlatpakApp {
     }
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
-        let pid = self.app.setup()?;
+        let pid = self
+            .app
+            .setup()?
+            .with_context(|| format!("secondary app {self:?} not running"))?;
         let options = SecondaryAppWindowOptions::load(&ctx.kwin)
             .with_context(|| "failed to load kwin secondary window options")?;
 
@@ -78,10 +81,10 @@ impl ActionImpl for LaunchSecondaryFlatpakApp {
 }
 
 impl FlatpakApp {
-    fn setup(&self) -> Result<Pid> {
+    fn setup(&self) -> Result<Option<Pid>> {
         log::info!("launching secondary flatpak app: {:?}", self.args);
 
-        let child = Command::new("flatpak")
+        let mut child = Command::new("flatpak")
             .args(
                 [
                     vec!["run".to_string(), self.app_id.to_string()],
@@ -91,24 +94,20 @@ impl FlatpakApp {
             )
             .spawn()?;
 
-        // TODO::maybe check exit status
-
-        // match status.try_wait() {
-        //     Ok(Some(v)) => {
-        //         if v.success() {
-        //             Ok(None)
-        //         } else {
-        //             Err(anyhow::anyhow!(
-        //                 "flatpak run {} exited with error",
-        //                 self.app_id
-        //             ))
-        //         }
-        //     }
-        //     Ok(None) => Ok(Some(Pid::from_raw(status.id() as i32))),
-        //     Err(err) => Err(err)?,
-        // }
-
-        Ok(Pid::from_raw(child.id() as i32))
+        match child.try_wait() {
+            Ok(Some(v)) => {
+                if v.success() {
+                    Ok(None)
+                } else {
+                    Err(anyhow::anyhow!(
+                        "flatpak run {} exited with error",
+                        self.app_id
+                    ))
+                }
+            }
+            Ok(None) => Ok(Some(Pid::from_raw(child.id() as i32))),
+            Err(err) => Err(err)?,
+        }
     }
 
     fn teardown(&self, pid: Pid) -> Result<()> {
