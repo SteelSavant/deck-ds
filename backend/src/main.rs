@@ -21,6 +21,7 @@ use crate::{
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
     db::ProfileDb,
     pipeline::{action_registar::PipelineActionRegistrar, executor::PipelineContext},
+    secondary_app::SecondaryAppManager,
     settings::Settings,
     util::create_dir_all,
 };
@@ -144,6 +145,7 @@ fn main() -> Result<()> {
     let assets_dir = config_dir.join("assets"); // TODO::keep assets with decky plugin, not config
     let assets_manager = AssetManager::new(&ASSETS_DIR, assets_dir.clone());
     let request_handler = Arc::new(Mutex::new(RequestHandler::new()));
+    let secondary_app_manager = SecondaryAppManager::new(assets_manager.clone());
 
     // teardown persisted state
     match PipelineContext::load(assets_manager.clone(), home_dir.clone(), config_dir.clone()) {
@@ -308,6 +310,11 @@ fn main() -> Result<()> {
                 .register(
                     "get_templates",
                     crate::api::profile::get_templates(profiles_db),
+                )
+                // secondary app
+                .register(
+                    "get_secondary_app_info",
+                    crate::api::secondary_app::get_secondary_app_info(secondary_app_manager),
                 )
                 // settings
                 .register(

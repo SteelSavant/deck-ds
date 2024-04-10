@@ -1,11 +1,13 @@
 import { DialogButton, Dropdown, FileSelectionType, TextField, Toggle } from "decky-frontend-lib";
 import _ from "lodash";
-import { Fragment, ReactElement } from "react";
+import { Fragment, ReactElement, useState } from "react";
 import { FaFile } from "react-icons/fa";
-import { Action, CemuWindowOptions, CitraWindowOptions, DolphinWindowOptions, ExternalDisplaySettings, LimitedMultiWindowLayout, MultiWindowLayout, RelativeLocation, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../backend";
+import { Action, CemuWindowOptions, CitraWindowOptions, DolphinWindowOptions, ExternalDisplaySettings, LimitedMultiWindowLayout, MultiWindowLayout, RelativeLocation, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions, secondaryAppWindowingOptions } from "../backend";
 import { useServerApi } from "../context/serverApiContext";
-import { CustomWindowOptions, SecondaryAppWindowingBehavior } from "../types/backend_api";
+import useSecondaryAppInfo from "../hooks/useSecondaryAppPresetInfo";
+import { CustomWindowOptions, LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp } from "../types/backend_api";
 import { ActionChild, ActionChildBuilder } from "./ActionChild";
+import HandleLoading from "./HandleLoading";
 
 
 interface EditActionProps {
@@ -38,7 +40,6 @@ export function InternalEditAction({
     const serverApi = useServerApi();
     const notConfigurable = null;
 
-    const secondaryAppWindowingOptions: SecondaryAppWindowingBehavior[] = ['PreferSecondary', 'PreferPrimary', 'Hidden', 'Unmanaged'];
 
     switch (type) {
         case 'DesktopSessionHandler':
@@ -392,66 +393,39 @@ export function InternalEditAction({
                 }
             </Fragment>;
         case 'LaunchSecondaryFlatpakApp': {
-            const flatpak = cloned.value.app;
-            const windowing = cloned.value.windowing_behavior;
-
-            return (
-                <Fragment>
-                    <Builder indentLevel={indentLevel} label="App Id" description="The app id of the flatpak. Example: net.kuribo64.melonDS">
-                        <TextField value={flatpak.app_id} onChange={(v) => {
-                            flatpak.app_id = v.target.value;
-                            onChange(cloned);
-                        }} />
-                    </Builder >
-                    <Builder indentLevel={indentLevel} label="Args" description="Comma separated list of arguments for the flatpak app.">
-                        <TextField value={flatpak.args.join(',')} onChange={(v) => {
-                            flatpak.args = v.target.value.split(','); // TODO::technically won't handle commas in strings correctly, but that's a later problem.
-                            onChange(cloned);
-                        }} />
-                    </Builder >
-                    <Builder indentLevel={indentLevel - 1} label="Windowing">
-                        <Dropdown
-                            selectedOption={windowing} rgOptions={secondaryAppWindowingOptions.map((a) => {
-                                return {
-                                    label: labelForCamelCase(a),
-                                    data: a
-                                }
-                            })} onChange={(value) => {
-                                cloned.value.windowing_behavior = value.data;
-                                onChange(cloned);
-                            }}
-                        />
-                    </Builder>
-                </Fragment >
-            );
+            return <SecondaryFlatpakApp
+                cloned={cloned}
+                indentLevel={indentLevel}
+                Builder={Builder}
+                onChange={onChange}
+            />
         }
-
         case 'LaunchSecondaryAppPreset': {
-            const windowing = cloned.value.windowing_behavior;
-
+            return <SecondaryAppPreset
+                cloned={cloned}
+                indentLevel={indentLevel}
+                Builder={Builder}
+                onChange={onChange}
+            />
+        }
+        case 'MainAppAutomaticWindowing':
             return (
                 <Fragment>
-                    <Builder indentLevel={indentLevel} label="Selected Preset">
-                        <p>TODO::{cloned.value.preset}</p>
+                    <Builder indentLevel={indentLevel} label="Keep Above" description="Keep emulator windows above others.">
+                        <Toggle value={cloned.value.general.keep_above} onChange={(isEnabled) => {
+                            cloned.value.general.keep_above = isEnabled;
+                            onChange(cloned);
+                        }} />
                     </Builder>
-                    <Builder indentLevel={indentLevel - 1} label="Windowing">
-                        <Dropdown
-                            selectedOption={windowing} rgOptions={secondaryAppWindowingOptions.map((a) => {
-                                return {
-                                    label: labelForCamelCase(a),
-                                    data: a
-                                }
-                            })} onChange={(value) => {
-                                cloned.value.windowing_behavior = value.data;
-                                onChange(cloned);
-                            }}
-                        />
+                    <Builder indentLevel={indentLevel} label="Swap Screens" description="Use the Deck's embedded display as the main display, instead of as the secondary display.">
+                        <Toggle value={cloned.value.general.swap_screens} onChange={(isEnabled) => {
+                            cloned.value.general.swap_screens = isEnabled;
+                            onChange(cloned);
+                        }} />
                     </Builder>
                 </Fragment>
             );
-        }
-        case 'MainAppAutomaticWindowing':
-        // TODO::this
+
         case 'VirtualScreen':
             return notConfigurable;
         default:
@@ -485,4 +459,134 @@ function labelForCamelCase(s: string, separator = ' '): string {
 
 function labelForKebabCase(s: string): string {
     return s.split('-').map((v) => v[0].toUpperCase() + v.slice(1).toLowerCase()).join('-');
+}
+
+interface LaunchSecondaryFlatpakAppProps {
+    cloned: { type: 'LaunchSecondaryFlatpakApp', value: LaunchSecondaryFlatpakApp }, indentLevel: number, onChange: (action: Action) => void, Builder: ActionChildBuilder
+
+}
+
+function SecondaryFlatpakApp({ cloned, indentLevel, onChange, Builder }: LaunchSecondaryFlatpakAppProps): ReactElement {
+    const secondaryInfo = useSecondaryAppInfo();
+
+    return (
+        <HandleLoading
+            value={secondaryInfo}
+            onOk={(secondaryInfo) => {
+
+                // TODO::per-arg reorderable list (likely in a popup-menu), rather than a comma-separated list
+
+                const flatpak = cloned.value.app;
+                const windowing = cloned.value.windowing_behavior;
+                const textStyle = { minWidth: '24rem', maxWidth: Number.POSITIVE_INFINITY };
+
+                return (
+                    <Fragment>
+                        <Builder indentLevel={indentLevel} label="Flatpak App" description="The flatpak to run.">
+                            <Dropdown
+                                selectedOption={cloned.value.app.app_id}
+                                rgOptions={secondaryInfo.installed_flatpaks.map((v) => {
+                                    return {
+                                        label: `${v.name} (${v.app_id})`,
+                                        data: v.app_id
+                                    }
+                                })}
+                                onChange={(value) => {
+                                    cloned.value.app.app_id = value.data
+                                    onChange(cloned);
+                                }}
+                            />
+                        </Builder >
+                        <Builder indentLevel={indentLevel} label="Args" description="Comma separated list of arguments for the flatpak app.">
+                            <TextField style={textStyle} value={flatpak.args.join(',')} onChange={(v) => {
+                                flatpak.args = v.target.value.split(','); // TODO::technically won't handle commas in strings correctly, but that's a later problem.
+                                onChange(cloned);
+                            }} />
+                        </Builder >
+                        <Builder indentLevel={indentLevel - 1} label="Windowing">
+                            <Dropdown
+                                selectedOption={windowing} rgOptions={secondaryAppWindowingOptions.map((a) => {
+                                    return {
+                                        label: labelForCamelCase(a),
+                                        data: a
+                                    }
+                                })} onChange={(value) => {
+                                    cloned.value.windowing_behavior = value.data;
+                                    onChange(cloned);
+                                }}
+                            />
+                        </Builder>
+                    </Fragment >
+                );
+            }} />
+    )
+}
+
+
+interface SecondaryAppPresetProps {
+    cloned: { type: 'LaunchSecondaryAppPreset', value: LaunchSecondaryAppPreset }, indentLevel: number, onChange: (action: Action) => void, Builder: ActionChildBuilder
+}
+
+function SecondaryAppPreset({ cloned, indentLevel, onChange, Builder }: SecondaryAppPresetProps): ReactElement {
+    const secondaryInfo = useSecondaryAppInfo();
+    const [filtered, setFiltered] = useState(true);
+
+    // TODO::ability to create new presets
+
+    return (
+        <HandleLoading
+            value={secondaryInfo}
+            onOk={(secondaryInfo) => {
+                const options = [];
+
+                for (const k in secondaryInfo.presets) {
+                    const preset = secondaryInfo.presets[k];
+                    const flatpakInstalled = (preset.app.type === 'Flatpak' && secondaryInfo.installed_flatpaks.find((v) => v.app_id === preset.app.app_id));
+                    const shouldPush = !filtered || flatpakInstalled;
+
+                    if (shouldPush) {
+                        options.push({
+                            label: preset.name,
+                            data: k,
+                        })
+                    }
+                }
+
+                options.sort((a, b) => a.label.localeCompare(b.label));
+
+                return (
+                    <Fragment>
+                        <Builder indentLevel={indentLevel} label="Filter By Installed">
+                            <Toggle value={filtered} onChange={(isEnabled) => {
+                                setFiltered(isEnabled);
+                            }} />
+                        </Builder>
+                        <Builder indentLevel={indentLevel} label="Selected Preset">
+                            <Dropdown
+                                selectedOption={cloned.value.preset}
+                                rgOptions={options}
+                                onChange={(value) => {
+                                    cloned.value.preset = value.data;
+                                    onChange(cloned);
+                                }}
+                            />
+                        </Builder>
+                        <Builder indentLevel={indentLevel - 1} label="Windowing">
+                            <Dropdown
+                                selectedOption={cloned.value.windowing_behavior} rgOptions={secondaryAppWindowingOptions.map((a) => {
+                                    return {
+                                        label: labelForCamelCase(a),
+                                        data: a
+                                    }
+                                })} onChange={(value) => {
+                                    cloned.value.windowing_behavior = value.data;
+                                    onChange(cloned);
+                                }}
+                            />
+                        </Builder>
+                    </Fragment>
+                )
+            }}
+        />
+    )
 }

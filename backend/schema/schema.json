@@ -15,6 +15,7 @@
     "get_profile_request",
     "get_profile_response",
     "get_profiles_response",
+    "get_secondary_app_info",
     "get_settings_response",
     "get_templates_response",
     "patch_pipeline_action_request",
@@ -59,6 +60,9 @@
     },
     "get_profiles_response": {
       "$ref": "#/definitions/GetProfilesResponse"
+    },
+    "get_secondary_app_info": {
+      "$ref": "#/definitions/GetSecondaryAppInfoResponse"
     },
     "get_settings_response": {
       "$ref": "#/definitions/GetSettingsResponse"
@@ -1168,6 +1172,21 @@
         }
       }
     },
+    "FlatpakInfo": {
+      "type": "object",
+      "required": [
+        "app_id",
+        "name"
+      ],
+      "properties": {
+        "app_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
     "FlatpakSource": {
       "type": "string",
       "enum": [
@@ -1277,6 +1296,27 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/CategoryProfile"
+          }
+        }
+      }
+    },
+    "GetSecondaryAppInfoResponse": {
+      "type": "object",
+      "required": [
+        "installed_flatpaks",
+        "presets"
+      ],
+      "properties": {
+        "installed_flatpaks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FlatpakInfo"
+          }
+        },
+        "presets": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/SecondaryAppPreset"
           }
         }
       }
@@ -2106,6 +2146,50 @@
           }
         }
       ]
+    },
+    "SecondaryApp": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "app_id",
+            "args",
+            "type"
+          ],
+          "properties": {
+            "app_id": {
+              "type": "string"
+            },
+            "args": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "Flatpak"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "SecondaryAppPreset": {
+      "type": "object",
+      "required": [
+        "app",
+        "name"
+      ],
+      "properties": {
+        "app": {
+          "$ref": "#/definitions/SecondaryApp"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
     },
     "SecondaryAppWindowingBehavior": {
       "type": "string",

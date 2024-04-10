@@ -31,7 +31,6 @@ use crate::pipeline::data::RuntimeSelection;
 use crate::secondary_app::SecondaryAppManager;
 use crate::settings::{AppId, GameId};
 use crate::sys::app_process::AppProcess;
-use crate::sys::flatpak::check_running_flatpaks;
 use crate::sys::kwin::KWin;
 use crate::sys::x_display::XDisplay;
 

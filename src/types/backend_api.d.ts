@@ -156,6 +156,11 @@ export type FlatpakSource = "Cemu" | "Citra" | "MelonDS";
 export type AppImageSource = "Cemu";
 export type EmuDeckSource = "CemuProton";
 export type SecondaryAppWindowingBehavior = "PreferSecondary" | "PreferPrimary" | "Hidden" | "Unmanaged";
+export type SecondaryApp = {
+  app_id: string;
+  args: string[];
+  type: "Flatpak";
+};
 export type PipelineActionUpdate =
   | {
       type: "UpdateEnabled";
@@ -256,6 +261,7 @@ export interface Api {
   get_profile_request: GetProfileRequest;
   get_profile_response: GetProfileResponse;
   get_profiles_response: GetProfilesResponse;
+  get_secondary_app_info: GetSecondaryAppInfoResponse;
   get_settings_response: GetSettingsResponse;
   get_templates_response: GetTemplatesResponse;
   patch_pipeline_action_request: PatchPipelineActionRequest;
@@ -468,6 +474,20 @@ export interface CategoryProfile {
 }
 export interface GetProfilesResponse {
   profiles: CategoryProfile[];
+}
+export interface GetSecondaryAppInfoResponse {
+  installed_flatpaks: FlatpakInfo[];
+  presets: {
+    [k: string]: SecondaryAppPreset;
+  };
+}
+export interface FlatpakInfo {
+  app_id: string;
+  name: string;
+}
+export interface SecondaryAppPreset {
+  app: SecondaryApp;
+  name: string;
 }
 export interface GetSettingsResponse {
   global_settings: GlobalConfig;

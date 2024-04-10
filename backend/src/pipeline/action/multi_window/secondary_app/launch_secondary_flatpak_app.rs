@@ -93,7 +93,7 @@ impl FlatpakApp {
         let mut child = Command::new("flatpak")
             .args(
                 [
-                    vec!["run".to_string(), self.app_id.to_string()],
+                    vec!["run".to_string(), "-p".to_string(), self.app_id.to_string()],
                     self.args.clone(),
                 ]
                 .concat(),

@@ -3,9 +3,10 @@ import {
     CreateProfileRequest, CreateProfileResponse,
     DeleteProfileRequest, GetAppProfileRequest, GetAppProfileResponse,
     GetDefaultAppOverrideForProfileRequest, GetDefaultAppOverrideForProfileResponse,
-    GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetSettingsResponse,
+    GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetSecondaryAppInfoResponse, GetSettingsResponse,
     GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PatchPipelineActionRequest, PatchPipelineActionResponse, PipelineAction, PipelineActionSettingsFor_ConfigSelection, PipelineDefinition,
     ReifyPipelineRequest, ReifyPipelineResponse,
+    SecondaryAppWindowingBehavior,
     SetAppProfileOverrideRequest,
     SetAppProfileSettingsRequest, SetProfileRequest, SetSettingsRequest, Template
 } from "./types/backend_api";
@@ -16,11 +17,14 @@ export {
     Action, AppProfile, AutoStartRequest, CategoryProfile, CemuWindowOptions, CitraWindowOptions, ConfigSelection, CreateProfileRequest,
     CreateProfileResponse, DeleteProfileRequest, DependencyError, DolphinWindowOptions, ExternalDisplaySettings, GetProfileRequest,
     GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, GlobalConfig, LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp, LimitedMultiWindowLayout, MultiWindowLayout, PipelineAction, PipelineDefinition, PipelineTarget, ReifyPipelineRequest,
-    ReifyPipelineResponse, RelativeLocation, RuntimeSelection, SetProfileRequest, Template
+    ReifyPipelineResponse, RelativeLocation, RuntimeSelection, SecondaryAppWindowingBehavior, SetProfileRequest, Template
 } from "./types/backend_api";
 
 
 const USDPL_PORT: number = 44666;
+
+export const secondaryAppWindowingOptions: SecondaryAppWindowingBehavior[] = ['PreferSecondary', 'PreferPrimary', 'Hidden', 'Unmanaged'];
+
 
 
 // Pipeline
@@ -238,6 +242,12 @@ export async function reifyPipeline(request: ReifyPipelineRequest): Response<Rei
 
 export async function getTemplates(): Response<GetTemplatesResponse> {
     return await call_backend_typed("get_templates", null);
+}
+
+// Secondary Apps
+
+export async function getSecondaryAppInfo(): Response<GetSecondaryAppInfoResponse> {
+    return await call_backend_typed("get_secondary_app_info", null);
 }
 
 

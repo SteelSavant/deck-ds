@@ -2,6 +2,7 @@ pub mod autostart;
 pub mod general;
 pub mod profile;
 pub mod request_handler;
+pub mod secondary_app;
 
 use schemars::{schema::RootSchema, JsonSchema};
 use usdpl_back::core::serdes::Primitive;
@@ -17,6 +18,7 @@ use self::{
         PatchPipelineActionResponse, ReifyPipelineRequest, ReifyPipelineResponse,
         SetAppProfileOverrideRequest, SetAppProfileSettingsRequest, SetProfileRequest,
     },
+    secondary_app::GetSecondaryAppInfoResponse,
 };
 
 pub(super) type ApiParameterType = Vec<Primitive>;
@@ -96,6 +98,9 @@ pub struct Api {
     pub reify_pipeline_request: ReifyPipelineRequest,
     pub reify_pipeline_response: ReifyPipelineResponse,
     pub get_templates_response: GetTemplatesResponse,
+
+    // secondary app
+    pub get_secondary_app_info: GetSecondaryAppInfoResponse,
 
     // settings
     pub get_settings_response: GetSettingsResponse,

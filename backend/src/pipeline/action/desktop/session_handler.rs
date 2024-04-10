@@ -1,5 +1,4 @@
 use std::{
-    os::unix::thread,
     sync::mpsc::{self, Receiver, Sender},
     thread::sleep,
     time::Duration,
