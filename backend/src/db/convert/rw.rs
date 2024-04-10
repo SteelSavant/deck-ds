@@ -4,13 +4,14 @@ use native_db::transaction::RwTransaction;
 
 use crate::{
     db::model::{
-        DbAction, DbAppOverride, DbCategoryProfile, DbCemuLayout, DbCitraLayout,
-        DbDesktopSessionHandler, DbDisplayConfig, DbMelonDSLayout, DbMultiWindow,
-        DbPipelineActionSettings, DbSelection, DbSourceFile, DbVirtualScreen,
+        DbAction, DbAppOverride, DbCategoryProfile, DbCemuLayout, DbCitraLayout, DbConfigSelection,
+        DbDesktopSessionHandler, DbDisplayConfig, DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset,
+        DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings,
+        DbSourceFile, DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionId, ActionType, ErasedPipelineAction},
-        data::{PipelineActionId, PipelineActionLookup, PipelineDefinitionId, Selection},
+        data::{ConfigSelection, PipelineActionId, PipelineActionLookup, PipelineDefinitionId},
     },
 };
 
@@ -56,6 +57,15 @@ impl Action {
             Action::SourceFile(action) => {
                 rw.insert::<DbSourceFile>(action.into())?;
             }
+            Action::LaunchSecondaryFlatpakApp(action) => {
+                rw.insert::<DbLaunchSecondaryApp>(action.into())?;
+            }
+            Action::LaunchSecondaryAppPreset(action) => {
+                rw.insert::<DbLaunchSecondaryAppPreset>(action.into())?;
+            }
+            Action::MainAppAutomaticWindowing(action) => {
+                rw.insert::<DbMainAppAutomaticWindowing>(action.into())?;
+            }
         };
 
         Ok(DbAction {
@@ -66,16 +76,17 @@ impl Action {
     }
 }
 
-impl Selection<PipelineActionId> {
+impl ConfigSelection {
     /// Saves the [Selection]. Because it may set new ids internally, `save_all_and_transform` cosumes self.
-    fn save_all_and_transform(self, rw: &RwTransaction) -> Result<DbSelection> {
+    fn save_all_and_transform(self, rw: &RwTransaction) -> Result<DbConfigSelection> {
         let selection = match self {
-            Selection::Action(action) => DbSelection::Action(action.save_and_transform(rw)?),
-            Selection::OneOf { selection, actions } => DbSelection::OneOf {
+            ConfigSelection::Action(action) => {
+                DbConfigSelection::Action(action.save_and_transform(rw)?)
+            }
+            ConfigSelection::OneOf { selection } => DbConfigSelection::OneOf {
                 selection: selection.clone(),
-                actions: actions.clone(),
             },
-            Selection::AllOf(actions) => DbSelection::AllOf(actions.clone()),
+            ConfigSelection::AllOf => DbConfigSelection::AllOf,
         };
 
         Ok(selection)
@@ -128,13 +139,11 @@ impl DbCategoryProfile {
     }
 }
 
-impl DbSelection {
+impl DbConfigSelection {
     pub fn remove_all(&self, rw: &RwTransaction) -> Result<()> {
-        match self {
-            DbSelection::Action(action) => action.remove(rw)?,
-            DbSelection::OneOf { .. } => (),
-            DbSelection::AllOf(_) => (),
-        };
+        if let DbConfigSelection::Action(action) = self {
+            action.remove(rw)?
+        }
 
         Ok(())
     }
@@ -176,6 +185,18 @@ impl DbAction {
             }
             ActionType::SourceFile => {
                 let action = rw.get().primary::<DbSourceFile>(id)?;
+                action.map(|a| rw.remove(a))
+            }
+            ActionType::LaunchSecondaryFlatpakApp => {
+                let action = rw.get().primary::<DbLaunchSecondaryApp>(id)?;
+                action.map(|a| rw.remove(a))
+            }
+            ActionType::LaunchSecondaryAppPreset => {
+                let action = rw.get().primary::<DbLaunchSecondaryAppPreset>(id)?;
+                action.map(|a| rw.remove(a))
+            }
+            ActionType::MainAppAutomaticWindowing => {
+                let action = rw.get().primary::<DbMainAppAutomaticWindowing>(id)?;
                 action.map(|a| rw.remove(a))
             }
         }

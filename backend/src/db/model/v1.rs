@@ -2,7 +2,6 @@ use native_db::*;
 use native_model::{native_model, Model};
 use serde::{Deserialize, Serialize};
 
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 use crate::{
@@ -13,12 +12,23 @@ use crate::{
             citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
             display_config::DisplayConfig,
             melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
-            multi_window::{CemuOptions, CitraOptions, DolphinOptions, GeneralOptions},
+            multi_window::{
+                main_app_automatic_windowing::MainAppAutomaticWindowing,
+                primary_windowing::{
+                    CemuWindowOptions, CitraWindowOptions, CustomWindowOptions,
+                    DolphinWindowOptions, GeneralOptions,
+                },
+                secondary_app::{
+                    LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp,
+                    SecondaryAppWindowingBehavior,
+                },
+            },
             session_handler::DesktopSessionHandler,
             ActionId,
         },
-        data::{PipelineActionId, PipelineDefinitionId, PipelineTarget, TemplateId, TemplateInfo},
+        data::{PipelineActionId, PipelineDefinitionId, PipelineTarget},
     },
+    secondary_app::{FlatpakApp, SecondaryApp, SecondaryAppPresetId},
     settings::{AppId, ProfileId},
 };
 
@@ -26,7 +36,9 @@ use crate::{
 
 use crate::{
     pipeline::action::{
-        multi_window::{LimitedMultiWindowLayout, MultiWindow, MultiWindowLayout},
+        multi_window::primary_windowing::{
+            LimitedMultiWindowLayout, MultiWindow, MultiWindowLayout,
+        },
         session_handler::{ExternalDisplaySettings, RelativeLocation},
         source_file::{
             AppImageSource, CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile,
@@ -71,36 +83,10 @@ pub struct DbPipelineDefinition {
     #[primary_key]
     pub id: PipelineDefinitionId,
     pub name: String,
-    pub source_template: DbTemplateInfo,
-    pub description: String,
     pub register_exit_hooks: bool,
     pub primary_target_override: Option<PipelineTarget>,
-    pub targets: HashMap<PipelineTarget, Vec<PipelineActionId>>,
+    pub platform: PipelineActionId,
     pub actions: Vec<PipelineActionId>,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct DbTemplateInfo {
-    pub id: TemplateId,
-    pub version: u32,
-}
-
-impl From<TemplateInfo> for DbTemplateInfo {
-    fn from(value: TemplateInfo) -> Self {
-        Self {
-            id: value.id,
-            version: value.version,
-        }
-    }
-}
-
-impl From<DbTemplateInfo> for TemplateInfo {
-    fn from(value: DbTemplateInfo) -> Self {
-        Self {
-            id: value.id,
-            version: value.version,
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -112,17 +98,14 @@ pub struct DbPipelineActionSettings {
     pub enabled: Option<bool>,
     pub is_visible_on_qam: bool,
     pub profile_override: Option<ProfileId>,
-    pub selection: DbSelection,
+    pub selection: DbConfigSelection,
 }
 
 #[derive(Serialize, Deserialize)]
-pub enum DbSelection {
+pub enum DbConfigSelection {
     Action(DbAction),
-    OneOf {
-        selection: PipelineActionId,
-        actions: Vec<PipelineActionId>,
-    },
-    AllOf(Vec<PipelineActionId>),
+    OneOf { selection: PipelineActionId },
+    AllOf,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -135,7 +118,7 @@ pub struct DbAction {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 101, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1001, version = 1, with = NativeModelJSON)]
 pub struct DbCemuLayout {
     #[primary_key]
     pub id: ActionId,
@@ -167,7 +150,7 @@ impl From<DbCemuLayout> for CemuLayout {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[native_db]
-#[native_model(id = 102, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1002, version = 1, with = NativeModelJSON)]
 pub struct DbCitraLayout {
     #[primary_key]
     pub id: ActionId,
@@ -230,7 +213,7 @@ pub enum DbCitraLayoutOption {
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 103, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1003, version = 1, with = NativeModelJSON)]
 pub struct DbMelonDSLayout {
     #[primary_key]
     pub id: ActionId,
@@ -305,7 +288,7 @@ pub enum DbMelonDSSizingOption {
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 104, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1004, version = 1, with = NativeModelJSON)]
 pub struct DbDesktopSessionHandler {
     #[primary_key]
     pub id: ActionId,
@@ -529,7 +512,7 @@ pub enum DbAspectRatioOption {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 105, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1005, version = 1, with = NativeModelJSON)]
 pub struct DbMultiWindow {
     #[primary_key]
     pub id: ActionId,
@@ -537,6 +520,7 @@ pub struct DbMultiWindow {
     pub cemu: Option<DbMultiWindowCemuOptions>,
     pub citra: Option<DbMultiWindowCitraOptions>,
     pub dolphin: Option<DbMultiWindowDolphinOptions>,
+    pub custom: Option<DbMultiWindowCustomOptions>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -563,6 +547,16 @@ pub struct DbMultiWindowDolphinOptions {
     multi_screen_single_secondary_layout: DbMultiWindowLayout,
     multi_screen_multi_secondary_layout: DbMultiWindowLayout,
     gba_blacklist: Vec<u8>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DbMultiWindowCustomOptions {
+    pub primary_window_matcher: Option<String>,
+    pub secondary_window_matcher: Option<String>,
+    pub classes: Vec<String>,
+    pub single_screen_layout: DbLimitedMultiWindowLayout,
+    pub multi_screen_single_secondary_layout: DbMultiWindowLayout,
+    pub multi_screen_multi_secondary_layout: DbMultiWindowLayout,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
@@ -632,10 +626,7 @@ impl From<MultiWindow> for DbMultiWindow {
     fn from(value: MultiWindow) -> Self {
         Self {
             id: value.id,
-            general: DbMultiWindowGeneralOptions {
-                keep_above: value.general.keep_above,
-                swap_screens: value.general.swap_screens,
-            },
+            general: value.general.into(),
             cemu: value.cemu.map(|v| DbMultiWindowCemuOptions {
                 single_screen_layout: v.single_screen_layout.into(),
                 multi_screen_layout: v.multi_screen_layout.into(),
@@ -650,6 +641,14 @@ impl From<MultiWindow> for DbMultiWindow {
                 multi_screen_multi_secondary_layout: v.multi_screen_multi_secondary_layout.into(),
                 gba_blacklist: v.gba_blacklist,
             }),
+            custom: value.custom.map(|v| DbMultiWindowCustomOptions {
+                primary_window_matcher: v.primary_window_matcher.clone(),
+                secondary_window_matcher: v.secondary_window_matcher.clone(),
+                classes: v.classes.clone(),
+                single_screen_layout: v.single_screen_layout.into(),
+                multi_screen_single_secondary_layout: v.multi_screen_single_secondary_layout.into(),
+                multi_screen_multi_secondary_layout: v.multi_screen_multi_secondary_layout.into(),
+            }),
         }
     }
 }
@@ -658,31 +657,54 @@ impl From<DbMultiWindow> for MultiWindow {
     fn from(value: DbMultiWindow) -> Self {
         Self {
             id: value.id,
-            general: GeneralOptions {
-                keep_above: value.general.keep_above,
-                swap_screens: value.general.swap_screens,
-            },
-            cemu: value.cemu.map(|v| CemuOptions {
+            general: value.general.into(),
+            cemu: value.cemu.map(|v| CemuWindowOptions {
                 single_screen_layout: v.single_screen_layout.into(),
                 multi_screen_layout: v.multi_screen_layout.into(),
             }),
-            citra: value.citra.map(|v| CitraOptions {
+            citra: value.citra.map(|v| CitraWindowOptions {
                 single_screen_layout: v.single_screen_layout.into(),
                 multi_screen_layout: v.multi_screen_layout.into(),
             }),
-            dolphin: value.dolphin.map(|v| DolphinOptions {
+            dolphin: value.dolphin.map(|v| DolphinWindowOptions {
                 single_screen_layout: v.single_screen_layout.into(),
                 multi_screen_single_secondary_layout: v.multi_screen_single_secondary_layout.into(),
                 multi_screen_multi_secondary_layout: v.multi_screen_multi_secondary_layout.into(),
                 gba_blacklist: v.gba_blacklist,
             }),
+            custom: value.custom.map(|v| CustomWindowOptions {
+                primary_window_matcher: v.primary_window_matcher.clone(),
+                secondary_window_matcher: v.secondary_window_matcher.clone(),
+                classes: v.classes.clone(),
+                single_screen_layout: v.single_screen_layout.into(),
+                multi_screen_single_secondary_layout: v.multi_screen_single_secondary_layout.into(),
+                multi_screen_multi_secondary_layout: v.multi_screen_multi_secondary_layout.into(),
+            }),
+        }
+    }
+}
+
+impl From<GeneralOptions> for DbMultiWindowGeneralOptions {
+    fn from(value: GeneralOptions) -> Self {
+        Self {
+            keep_above: value.keep_above,
+            swap_screens: value.swap_screens,
+        }
+    }
+}
+
+impl From<DbMultiWindowGeneralOptions> for GeneralOptions {
+    fn from(value: DbMultiWindowGeneralOptions) -> Self {
+        Self {
+            keep_above: value.keep_above,
+            swap_screens: value.swap_screens,
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize)]
 #[native_db]
-#[native_model(id = 106, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1006, version = 1, with = NativeModelJSON)]
 pub struct DbSourceFile {
     #[primary_key]
     pub id: ActionId,
@@ -775,7 +797,7 @@ pub enum DbAppImageSource {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 107, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1007, version = 1, with = NativeModelJSON)]
 pub struct DbVirtualScreen {
     #[primary_key]
     pub id: ActionId,
@@ -795,7 +817,7 @@ impl From<DbVirtualScreen> for VirtualScreen {
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 108, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1008, version = 1, with = NativeModelJSON)]
 pub struct DbDisplayConfig {
     #[primary_key]
     pub id: ActionId,
@@ -809,7 +831,7 @@ impl From<DisplayConfig> for DbDisplayConfig {
         Self {
             id: value.id,
             external_display_settings: value.external_display_settings.into(),
-            deck_location: value.deck_location.map(|v| v.into()),
+            deck_location: value.deck_location.map(std::convert::Into::into),
             deck_is_primary_display: value.deck_is_primary_display,
         }
     }
@@ -820,8 +842,178 @@ impl From<DbDisplayConfig> for DisplayConfig {
         Self {
             id: value.id,
             external_display_settings: value.external_display_settings.into(),
-            deck_location: value.deck_location.map(|v| v.into()),
+            deck_location: value.deck_location.map(std::convert::Into::into),
             deck_is_primary_display: value.deck_is_primary_display,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[native_db]
+#[native_model(id = 1009, version = 1, with = NativeModelJSON)]
+pub struct DbLaunchSecondaryFlatpakApp {
+    #[primary_key]
+    pub id: ActionId,
+    pub app: DbSecondaryFlatpakApp,
+    pub windowing_behavior: DbSecondaryAppWindowingBehavior,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum DbSecondaryApp {
+    Flatpak(DbSecondaryFlatpakApp),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DbSecondaryFlatpakApp {
+    app_id: String,
+    args: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum DbSecondaryAppWindowingBehavior {
+    PreferSecondary,
+    PreferPrimary,
+    Hidden,
+    Unmanaged,
+}
+
+impl From<FlatpakApp> for DbSecondaryFlatpakApp {
+    fn from(value: FlatpakApp) -> Self {
+        Self {
+            app_id: value.app_id,
+            args: value.args,
+        }
+    }
+}
+
+impl From<DbSecondaryFlatpakApp> for FlatpakApp {
+    fn from(value: DbSecondaryFlatpakApp) -> Self {
+        Self {
+            app_id: value.app_id,
+            args: value.args,
+        }
+    }
+}
+
+impl From<LaunchSecondaryFlatpakApp> for DbLaunchSecondaryFlatpakApp {
+    fn from(value: LaunchSecondaryFlatpakApp) -> Self {
+        Self {
+            id: value.id,
+            app: value.app.into(),
+            windowing_behavior: value.windowing_behavior.into(),
+        }
+    }
+}
+
+impl From<DbLaunchSecondaryFlatpakApp> for LaunchSecondaryFlatpakApp {
+    fn from(value: DbLaunchSecondaryFlatpakApp) -> Self {
+        Self {
+            id: value.id,
+            app: value.app.into(),
+            windowing_behavior: value.windowing_behavior.into(),
+        }
+    }
+}
+
+impl From<SecondaryApp> for DbSecondaryApp {
+    fn from(value: SecondaryApp) -> Self {
+        match value {
+            SecondaryApp::Flatpak(app) => DbSecondaryApp::Flatpak(app.into()),
+        }
+    }
+}
+
+impl From<DbSecondaryApp> for SecondaryApp {
+    fn from(value: DbSecondaryApp) -> Self {
+        match value {
+            DbSecondaryApp::Flatpak(app) => SecondaryApp::Flatpak(app.into()),
+        }
+    }
+}
+
+impl From<SecondaryAppWindowingBehavior> for DbSecondaryAppWindowingBehavior {
+    fn from(value: SecondaryAppWindowingBehavior) -> Self {
+        match value {
+            SecondaryAppWindowingBehavior::PreferSecondary => {
+                DbSecondaryAppWindowingBehavior::PreferSecondary
+            }
+            SecondaryAppWindowingBehavior::PreferPrimary => {
+                DbSecondaryAppWindowingBehavior::PreferPrimary
+            }
+            SecondaryAppWindowingBehavior::Hidden => DbSecondaryAppWindowingBehavior::Hidden,
+            SecondaryAppWindowingBehavior::Unmanaged => DbSecondaryAppWindowingBehavior::Unmanaged,
+        }
+    }
+}
+
+impl From<DbSecondaryAppWindowingBehavior> for SecondaryAppWindowingBehavior {
+    fn from(value: DbSecondaryAppWindowingBehavior) -> Self {
+        match value {
+            DbSecondaryAppWindowingBehavior::PreferSecondary => {
+                SecondaryAppWindowingBehavior::PreferSecondary
+            }
+            DbSecondaryAppWindowingBehavior::PreferPrimary => {
+                SecondaryAppWindowingBehavior::PreferPrimary
+            }
+            DbSecondaryAppWindowingBehavior::Hidden => SecondaryAppWindowingBehavior::Hidden,
+            DbSecondaryAppWindowingBehavior::Unmanaged => SecondaryAppWindowingBehavior::Unmanaged,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[native_db]
+#[native_model(id = 1010, version = 1, with = NativeModelJSON)]
+pub struct DbLaunchSecondaryAppPreset {
+    #[primary_key]
+    pub id: ActionId,
+    pub preset: SecondaryAppPresetId,
+    pub windowing_behavior: DbSecondaryAppWindowingBehavior,
+}
+
+impl From<LaunchSecondaryAppPreset> for DbLaunchSecondaryAppPreset {
+    fn from(value: LaunchSecondaryAppPreset) -> Self {
+        Self {
+            id: value.id,
+            preset: value.preset,
+            windowing_behavior: value.windowing_behavior.into(),
+        }
+    }
+}
+
+impl From<DbLaunchSecondaryAppPreset> for LaunchSecondaryAppPreset {
+    fn from(value: DbLaunchSecondaryAppPreset) -> Self {
+        Self {
+            id: value.id,
+            preset: value.preset,
+            windowing_behavior: value.windowing_behavior.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[native_db]
+#[native_model(id = 1011, version = 1, with = NativeModelJSON)]
+pub struct DbMainAppAutomaticWindowing {
+    #[primary_key]
+    id: ActionId,
+    general: DbMultiWindowGeneralOptions,
+}
+
+impl From<MainAppAutomaticWindowing> for DbMainAppAutomaticWindowing {
+    fn from(value: MainAppAutomaticWindowing) -> Self {
+        Self {
+            id: value.id,
+            general: value.general.into(),
+        }
+    }
+}
+
+impl From<DbMainAppAutomaticWindowing> for MainAppAutomaticWindowing {
+    fn from(value: DbMainAppAutomaticWindowing) -> Self {
+        Self {
+            id: value.id,
+            general: value.general.into(),
         }
     }
 }

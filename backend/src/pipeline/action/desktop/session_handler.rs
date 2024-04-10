@@ -1,5 +1,6 @@
 use std::{
     sync::mpsc::{self, Receiver, Sender},
+    thread::sleep,
     time::Duration,
 };
 
@@ -154,10 +155,16 @@ impl<'de> Deserialize<'de> for DisplayState {
 }
 
 impl DisplayState {
-    pub fn send_ui_event(&self, event: UiEvent) {
+    pub fn send_ui_event(&mut self, event: UiEvent) {
+        let is_close = matches!(event, UiEvent::Close);
+
         if let Some(state) = self.runtime_state.as_ref() {
             let _ = state.ui_tx.send(event);
             state.ui_ctx.request_repaint();
+        }
+
+        if is_close {
+            self.runtime_state = None
         }
     }
 }
@@ -229,6 +236,8 @@ impl ActionImpl for DesktopSessionHandler {
                 runtime_state: Some(RuntimeDisplayState { ui_ctx, ui_tx }),
             });
         }
+
+        sleep(Duration::from_millis(500));
 
         log::debug!("session handler setup complete");
 
@@ -333,12 +342,14 @@ impl ActionImpl for DesktopSessionHandler {
 
         ctx.display = Some(display);
 
+        ctx.send_ui_event(UiEvent::Close);
+
         res
     }
 
     fn get_dependencies(
         &self,
-        _ctx: &mut PipelineContext,
+        _ctx: &PipelineContext,
     ) -> Vec<crate::pipeline::dependency::Dependency> {
         vec![Dependency::Display]
     }

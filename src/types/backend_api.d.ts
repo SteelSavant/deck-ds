@@ -6,7 +6,10 @@
  */
 
 export type PipelineTarget = "Desktop" | "Gamemode";
-export type SelectionFor_String =
+/**
+ * Configured selection for an specific pipeline. Only user values are saved; everything else is pulled at runtime to ensure it's up to date.
+ */
+export type ConfigSelection =
   | {
       type: "Action";
       value: Action;
@@ -14,13 +17,11 @@ export type SelectionFor_String =
   | {
       type: "OneOf";
       value: {
-        actions: string[];
         selection: string;
       };
     }
   | {
       type: "AllOf";
-      value: string[];
     };
 export type Action =
   | {
@@ -54,6 +55,18 @@ export type Action =
   | {
       type: "SourceFile";
       value: SourceFile;
+    }
+  | {
+      type: "LaunchSecondaryFlatpakApp";
+      value: LaunchSecondaryFlatpakApp;
+    }
+  | {
+      type: "LaunchSecondaryAppPreset";
+      value: LaunchSecondaryAppPreset;
+    }
+  | {
+      type: "MainAppAutomaticWindowing";
+      value: MainAppAutomaticWindowing;
     };
 export type RelativeLocation = "Above" | "Below" | "LeftOf" | "RightOf" | "SameAs";
 export type ExternalDisplaySettings =
@@ -142,6 +155,43 @@ export type FileSource =
 export type FlatpakSource = "Cemu" | "Citra" | "MelonDS";
 export type AppImageSource = "Cemu";
 export type EmuDeckSource = "CemuProton";
+export type SecondaryAppWindowingBehavior = "PreferSecondary" | "PreferPrimary" | "Hidden" | "Unmanaged";
+export type SecondaryApp = {
+  app_id: string;
+  args: string[];
+  type: "Flatpak";
+};
+export type PipelineActionUpdate =
+  | {
+      type: "UpdateEnabled";
+      value: {
+        is_enabled: boolean;
+      };
+    }
+  | {
+      type: "UpdateProfileOverride";
+      value: {
+        profile_override?: string | null;
+      };
+    }
+  | {
+      type: "UpdateOneOf";
+      value: {
+        selection: string;
+      };
+    }
+  | {
+      type: "UpdateAction";
+      value: {
+        action: Action;
+      };
+    }
+  | {
+      type: "UpdateVisibleOnQAM";
+      value: {
+        is_visible: boolean;
+      };
+    };
 export type DependencyError =
   | {
       type: "SystemCmdNotFound";
@@ -170,8 +220,16 @@ export type DependencyError =
   | {
       type: "FieldNotSet";
       value: string;
+    }
+  | {
+      type: "FlatpakNotFound";
+      value: string;
+    }
+  | {
+      type: "SecondaryAppPresetNotFound";
+      value: string;
     };
-export type SelectionFor_PipelineAction =
+export type RuntimeSelection =
   | {
       type: "Action";
       value: Action;
@@ -203,8 +261,11 @@ export interface Api {
   get_profile_request: GetProfileRequest;
   get_profile_response: GetProfileResponse;
   get_profiles_response: GetProfilesResponse;
+  get_secondary_app_info: GetSecondaryAppInfoResponse;
   get_settings_response: GetSettingsResponse;
   get_templates_response: GetTemplatesResponse;
+  patch_pipeline_action_request: PatchPipelineActionRequest;
+  patch_pipeline_action_response: PatchPipelineActionResponse;
   reify_pipeline_request: ReifyPipelineRequest;
   reify_pipeline_response: ReifyPipelineResponse;
   set_app_profile_override_request: SetAppProfileOverrideRequest;
@@ -223,22 +284,18 @@ export interface CreateProfileRequest {
 }
 export interface PipelineDefinition {
   actions: PipelineActionLookup;
-  description: string;
   id: string;
   name: string;
+  platform: string;
   primary_target_override?: PipelineTarget | null;
   register_exit_hooks: boolean;
-  source_template: TemplateInfo;
-  targets: {
-    [k: string]: string[];
-  };
 }
 export interface PipelineActionLookup {
   actions: {
-    [k: string]: PipelineActionSettings;
+    [k: string]: PipelineActionSettingsFor_ConfigSelection;
   };
 }
-export interface PipelineActionSettings {
+export interface PipelineActionSettingsFor_ConfigSelection {
   /**
    * Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
    */
@@ -254,7 +311,7 @@ export interface PipelineActionSettings {
   /**
    * The value of the pipeline action
    */
-  selection: SelectionFor_String;
+  selection: ConfigSelection;
 }
 export interface DesktopSessionHandler {
   deck_is_primary_display: boolean;
@@ -284,27 +341,36 @@ export interface MultiWindow {
   /**
    * Some(options) if Cemu is configurable, None otherwise
    */
-  cemu?: CemuOptions | null;
+  cemu?: CemuWindowOptions | null;
   /**
    * Some(options) if Citra is configurable, None otherwise
    */
-  citra?: CitraOptions | null;
+  citra?: CitraWindowOptions | null;
+  custom?: CustomWindowOptions | null;
   /**
    * Some(options) if Dolphin is configurable, None otherwise
    */
-  dolphin?: DolphinOptions | null;
+  dolphin?: DolphinWindowOptions | null;
   general: GeneralOptions;
   id: string;
 }
-export interface CemuOptions {
+export interface CemuWindowOptions {
   multi_screen_layout: MultiWindowLayout;
   single_screen_layout: LimitedMultiWindowLayout;
 }
-export interface CitraOptions {
+export interface CitraWindowOptions {
   multi_screen_layout: MultiWindowLayout;
   single_screen_layout: LimitedMultiWindowLayout;
 }
-export interface DolphinOptions {
+export interface CustomWindowOptions {
+  classes: string[];
+  multi_screen_multi_secondary_layout: MultiWindowLayout;
+  multi_screen_single_secondary_layout: MultiWindowLayout;
+  primary_window_matcher?: string | null;
+  secondary_window_matcher?: string | null;
+  single_screen_layout: LimitedMultiWindowLayout;
+}
+export interface DolphinWindowOptions {
   gba_blacklist: number[];
   multi_screen_multi_secondary_layout: MultiWindowLayout;
   multi_screen_single_secondary_layout: MultiWindowLayout;
@@ -352,12 +418,23 @@ export interface CustomFileOptions {
    */
   valid_ext: string[];
 }
-export interface TemplateInfo {
+export interface LaunchSecondaryFlatpakApp {
+  app: FlatpakApp;
   id: string;
-  /**
-   * The template's version; should be updated each time an action is moved, added, or removed
-   */
-  version: number;
+  windowing_behavior: SecondaryAppWindowingBehavior;
+}
+export interface FlatpakApp {
+  app_id: string;
+  args: string[];
+}
+export interface LaunchSecondaryAppPreset {
+  id: string;
+  preset: string;
+  windowing_behavior: SecondaryAppWindowingBehavior;
+}
+export interface MainAppAutomaticWindowing {
+  general: GeneralOptions;
+  id: string;
 }
 export interface CreateProfileResponse {
   profile_id: string;
@@ -398,6 +475,20 @@ export interface CategoryProfile {
 export interface GetProfilesResponse {
   profiles: CategoryProfile[];
 }
+export interface GetSecondaryAppInfoResponse {
+  installed_flatpaks: FlatpakInfo[];
+  presets: {
+    [k: string]: SecondaryAppPreset;
+  };
+}
+export interface FlatpakInfo {
+  app_id: string;
+  name: string;
+}
+export interface SecondaryAppPreset {
+  app: SecondaryApp;
+  name: string;
+}
 export interface GetSettingsResponse {
   global_settings: GlobalConfig;
 }
@@ -419,10 +510,15 @@ export interface GetTemplatesResponse {
 export interface Template {
   id: string;
   pipeline: PipelineDefinition;
-  /**
-   * The template's version; should be updated each time an action is moved, added, or removed
-   */
-  version: number;
+}
+export interface PatchPipelineActionRequest {
+  id: string;
+  pipeline: PipelineDefinition;
+  target: PipelineTarget;
+  update: PipelineActionUpdate;
+}
+export interface PatchPipelineActionResponse {
+  pipeline: PipelineDefinition;
 }
 export interface ReifyPipelineRequest {
   pipeline: PipelineDefinition;
@@ -439,7 +535,7 @@ export interface Pipeline {
   primary_target_override?: PipelineTarget | null;
   register_exit_hooks: boolean;
   targets: {
-    [k: string]: SelectionFor_PipelineAction;
+    [k: string]: RuntimeSelection;
   };
 }
 export interface PipelineAction {
@@ -461,7 +557,7 @@ export interface PipelineAction {
   /**
    * The value of the pipeline action
    */
-  selection: SelectionFor_PipelineAction;
+  selection: RuntimeSelection;
 }
 export interface SetAppProfileOverrideRequest {
   app_id: string;

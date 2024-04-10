@@ -2,6 +2,8 @@ use anyhow::{anyhow, Context, Result};
 use either::Either;
 use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
+use nix::unistd::Pid;
+use strum::IntoEnumIterator;
 use type_reg::untagged::{TypeMap as SerdeMap, TypeReg};
 
 use std::marker::PhantomData;
@@ -16,12 +18,17 @@ use crate::pipeline::action::cemu_layout::CemuLayout;
 use crate::pipeline::action::citra_layout::CitraLayout;
 use crate::pipeline::action::display_config::DisplayConfig;
 use crate::pipeline::action::melonds_layout::MelonDSLayout;
-use crate::pipeline::action::multi_window::MultiWindow;
+use crate::pipeline::action::multi_window::main_app_automatic_windowing::MainAppAutomaticWindowing;
+use crate::pipeline::action::multi_window::primary_windowing::MultiWindow;
+use crate::pipeline::action::multi_window::secondary_app::{
+    LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp,
+};
 use crate::pipeline::action::session_handler::DesktopSessionHandler;
 use crate::pipeline::action::source_file::SourceFile;
 use crate::pipeline::action::virtual_screen::VirtualScreen;
-use crate::pipeline::action::ActionType;
-use crate::pipeline::data::{PipelineAction, Selection};
+use crate::pipeline::action::{ActionImpl, ActionType};
+use crate::pipeline::data::RuntimeSelection;
+use crate::secondary_app::SecondaryAppManager;
 use crate::settings::{AppId, GameId};
 use crate::sys::app_process::AppProcess;
 use crate::sys::kwin::KWin;
@@ -31,14 +38,14 @@ use super::action::session_handler::UiEvent;
 use super::action::{Action, ErasedPipelineAction};
 use super::data::{Pipeline, PipelineTarget};
 
-use super::action::ActionImpl;
-
 pub struct PipelineExecutor<'a> {
     game_id: Either<AppId, GameId>,
     pipeline: Option<Pipeline>,
     target: PipelineTarget,
     ctx: PipelineContext<'a>,
 }
+
+type OnLaunchCallback = Box<dyn Fn(Pid, &mut PipelineContext) -> Result<()>>;
 
 pub struct PipelineContext<'a> {
     /// path to directory containing the user's home directory
@@ -50,10 +57,12 @@ pub struct PipelineContext<'a> {
     /// Display handler,
     pub display: Option<XDisplay>,
     pub should_register_exit_hooks: bool,
+    pub secondary_app: SecondaryAppManager<'a>,
     /// actions that have run
     have_run: Vec<Action>,
     /// pipeline state
     state: TypeMap,
+    on_launch_callbacks: Vec<OnLaunchCallback>,
 }
 
 // state impl
@@ -73,12 +82,18 @@ impl<'a> PipelineContext<'a> {
         PipelineContext {
             home_dir,
             config_dir,
-            kwin: KWin::new(assets_manager),
+            kwin: KWin::new(assets_manager.clone()),
             display: XDisplay::new().ok(),
             state: TypeMap::new(),
             have_run: vec![],
+            secondary_app: SecondaryAppManager::new(assets_manager),
             should_register_exit_hooks: true,
+            on_launch_callbacks: vec![],
         }
+    }
+
+    pub fn register_on_launch_callback(&mut self, callback: OnLaunchCallback) {
+        self.on_launch_callbacks.push(callback);
     }
 
     pub fn load(
@@ -108,8 +123,6 @@ impl<'a> PipelineContext<'a> {
             type_reg.register::<(T, Option<<T as ActionImpl>::State>)>(T::TYPE.to_string());
         }
 
-        type_reg.register::<Vec<String>>("__actions__".to_string());
-
         register_type::<DesktopSessionHandler>(&mut type_reg);
         register_type::<VirtualScreen>(&mut type_reg);
         register_type::<MultiWindow>(&mut type_reg);
@@ -118,6 +131,17 @@ impl<'a> PipelineContext<'a> {
         register_type::<CitraLayout>(&mut type_reg);
         register_type::<MelonDSLayout>(&mut type_reg);
         register_type::<DisplayConfig>(&mut type_reg);
+        register_type::<LaunchSecondaryAppPreset>(&mut type_reg);
+        register_type::<LaunchSecondaryFlatpakApp>(&mut type_reg);
+        register_type::<MainAppAutomaticWindowing>(&mut type_reg);
+
+        assert_eq!(
+            type_reg.keys().count(),
+            ActionType::iter().count(),
+            "not all actions have been registered"
+        );
+
+        type_reg.register::<Vec<String>>("__actions__".to_string());
 
         let mut deserializer = serde_json::Deserializer::from_str(&persisted);
         let type_map: SerdeMap<String> = type_reg
@@ -148,6 +172,15 @@ impl<'a> PipelineContext<'a> {
                     }
                     ActionType::DisplayConfig => {
                         load_state::<DisplayConfig>(&mut default, &type_map)
+                    }
+                    ActionType::LaunchSecondaryFlatpakApp => {
+                        load_state::<LaunchSecondaryFlatpakApp>(&mut default, &type_map)
+                    }
+                    ActionType::LaunchSecondaryAppPreset => {
+                        load_state::<LaunchSecondaryAppPreset>(&mut default, &type_map)
+                    }
+                    ActionType::MainAppAutomaticWindowing => {
+                        load_state::<MainAppAutomaticWindowing>(&mut default, &type_map)
                     }
                 },
                 Err(err) => {
@@ -200,6 +233,9 @@ impl<'a> PipelineContext<'a> {
                 Action::CemuLayout(a) => insert_action(self, &mut map, a),
                 Action::MelonDSLayout(a) => insert_action(self, &mut map, a),
                 Action::SourceFile(a) => insert_action(self, &mut map, a),
+                Action::LaunchSecondaryFlatpakApp(a) => insert_action(self, &mut map, a),
+                Action::LaunchSecondaryAppPreset(a) => insert_action(self, &mut map, a),
+                Action::MainAppAutomaticWindowing(a) => insert_action(self, &mut map, a),
             };
         }
 
@@ -228,8 +264,8 @@ impl<'a> PipelineContext<'a> {
         self.state.insert::<StateKey<P, P::State>>(state)
     }
 
-    pub fn send_ui_event(&self, event: UiEvent) {
-        let ui_state = self.get_state::<DesktopSessionHandler>();
+    pub fn send_ui_event(&mut self, event: UiEvent) {
+        let ui_state = self.get_state_mut::<DesktopSessionHandler>();
         if let Some(ui_state) = ui_state {
             ui_state.send_ui_event(event);
         }
@@ -365,7 +401,7 @@ impl<'a> PipelineExecutor<'a> {
         }
     }
 
-    fn run_app(&self, should_register_exit_hooks: bool) -> Result<()> {
+    fn run_app(&mut self, should_register_exit_hooks: bool) -> Result<()> {
         let (app_id, launch_type) = match (self.game_id.as_ref(), self.target) {
             (Either::Right(id), PipelineTarget::Desktop) => (id.raw(), "rungameid"),
             (Either::Right(id), _) => (id.raw(), "launch"),
@@ -385,6 +421,15 @@ impl<'a> PipelineExecutor<'a> {
 
         let app_process = AppProcess::find(Duration::from_secs(30))?;
 
+        let mut tmp = vec![];
+        std::mem::swap(&mut tmp, &mut self.ctx.on_launch_callbacks);
+
+        for callback in tmp.iter() {
+            callback(app_process.get_pid(), &mut self.ctx)?;
+        }
+
+        std::mem::swap(&mut tmp, &mut self.ctx.on_launch_callbacks);
+
         let mut gilrs = gilrs::Gilrs::new().unwrap();
         let mut state = IndexMap::<GamepadId, (bool, bool, Option<Instant>)>::new();
 
@@ -398,6 +443,7 @@ impl<'a> PipelineExecutor<'a> {
 
         while app_process.is_alive() {
             std::thread::sleep(std::time::Duration::from_millis(100));
+
             if !should_register_exit_hooks {
                 continue;
             }
@@ -488,10 +534,10 @@ enum ExecActionType {
 
 impl Pipeline {
     fn build_actions(mut self, target: PipelineTarget) -> Vec<Action> {
-        fn build_recursive(selection: Selection<PipelineAction>) -> Vec<Action> {
+        fn build_recursive(selection: RuntimeSelection) -> Vec<Action> {
             match selection {
-                Selection::Action(action) => vec![action],
-                Selection::OneOf { selection, actions } => {
+                RuntimeSelection::Action(action) => vec![action],
+                RuntimeSelection::OneOf { selection, actions } => {
                     let action = actions
                         .into_iter()
                         .find(|a| a.id == selection)
@@ -499,7 +545,7 @@ impl Pipeline {
 
                     build_recursive(action.selection)
                 }
-                Selection::AllOf(actions) => actions
+                RuntimeSelection::AllOf(actions) => actions
                     .into_iter()
                     .filter_map(|a| match a.enabled {
                         None | Some(true) => Some(a.selection),
@@ -545,9 +591,9 @@ mod tests {
             citra_layout::{CitraLayoutOption, CitraLayoutState, CitraState},
             display_config::DisplayConfig,
             melonds_layout::{MelonDSLayoutOption, MelonDSLayoutState, MelonDSSizingOption},
-            multi_window::{
-                CemuOptions, CitraOptions, DolphinOptions, GeneralOptions,
-                LimitedMultiWindowLayout, MultiWindowLayout, MultiWindowOptions,
+            multi_window::primary_windowing::{
+                CemuWindowOptions, CitraWindowOptions, CustomWindowOptions, DolphinWindowOptions,
+                GeneralOptions, LimitedMultiWindowLayout, MultiWindowLayout, MultiWindowOptions,
             },
             session_handler::{DisplayState, ExternalDisplaySettings, RelativeLocation},
             source_file::{FileSource, FlatpakSource},
@@ -595,6 +641,7 @@ mod tests {
                 cemu: None,
                 citra: None,
                 dolphin: None,
+                custom: None,
             }
             .into(),
             SourceFile {
@@ -634,20 +681,21 @@ mod tests {
         ctx.set_state::<MultiWindow>(MultiWindowOptions {
             enabled: true,
             general: GeneralOptions::default(),
-            cemu: CemuOptions {
+            cemu: CemuWindowOptions {
                 single_screen_layout: LimitedMultiWindowLayout::ColumnLeft,
                 multi_screen_layout: MultiWindowLayout::Separate,
             },
-            citra: CitraOptions {
+            citra: CitraWindowOptions {
                 single_screen_layout: LimitedMultiWindowLayout::ColumnRight,
                 multi_screen_layout: MultiWindowLayout::Separate,
             },
-            dolphin: DolphinOptions {
+            dolphin: DolphinWindowOptions {
                 single_screen_layout: LimitedMultiWindowLayout::SquareLeft,
                 multi_screen_single_secondary_layout: MultiWindowLayout::SquareRight,
                 multi_screen_multi_secondary_layout: MultiWindowLayout::Separate,
                 gba_blacklist: vec![1, 2, 3, 4],
             },
+            custom: CustomWindowOptions::default(),
         });
         ctx.set_state::<SourceFile>("some_random_path".into());
         ctx.set_state::<CemuLayout>(CemuLayoutState {

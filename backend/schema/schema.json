@@ -15,8 +15,11 @@
     "get_profile_request",
     "get_profile_response",
     "get_profiles_response",
+    "get_secondary_app_info",
     "get_settings_response",
     "get_templates_response",
+    "patch_pipeline_action_request",
+    "patch_pipeline_action_response",
     "reify_pipeline_request",
     "reify_pipeline_response",
     "set_app_profile_override_request",
@@ -58,11 +61,20 @@
     "get_profiles_response": {
       "$ref": "#/definitions/GetProfilesResponse"
     },
+    "get_secondary_app_info": {
+      "$ref": "#/definitions/GetSecondaryAppInfoResponse"
+    },
     "get_settings_response": {
       "$ref": "#/definitions/GetSettingsResponse"
     },
     "get_templates_response": {
       "$ref": "#/definitions/GetTemplatesResponse"
+    },
+    "patch_pipeline_action_request": {
+      "$ref": "#/definitions/PatchPipelineActionRequest"
+    },
+    "patch_pipeline_action_response": {
+      "$ref": "#/definitions/PatchPipelineActionResponse"
     },
     "reify_pipeline_request": {
       "$ref": "#/definitions/ReifyPipelineRequest"
@@ -229,6 +241,60 @@
               "$ref": "#/definitions/SourceFile"
             }
           }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "LaunchSecondaryFlatpakApp"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/LaunchSecondaryFlatpakApp"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "LaunchSecondaryAppPreset"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/LaunchSecondaryAppPreset"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "MainAppAutomaticWindowing"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/MainAppAutomaticWindowing"
+            }
+          }
         }
       ]
     },
@@ -367,7 +433,7 @@
         }
       }
     },
-    "CemuOptions": {
+    "CemuWindowOptions": {
       "type": "object",
       "required": [
         "multi_screen_layout",
@@ -525,7 +591,7 @@
         }
       }
     },
-    "CitraOptions": {
+    "CitraWindowOptions": {
       "type": "object",
       "required": [
         "multi_screen_layout",
@@ -539,6 +605,69 @@
           "$ref": "#/definitions/LimitedMultiWindowLayout"
         }
       }
+    },
+    "ConfigSelection": {
+      "description": "Configured selection for an specific pipeline. Only user values are saved; everything else is pulled at runtime to ensure it's up to date.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Action"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/Action"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "OneOf"
+              ]
+            },
+            "value": {
+              "type": "object",
+              "required": [
+                "selection"
+              ],
+              "properties": {
+                "selection": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "AllOf"
+              ]
+            }
+          }
+        }
+      ]
     },
     "CreateProfileRequest": {
       "type": "object",
@@ -582,6 +711,44 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "CustomWindowOptions": {
+      "type": "object",
+      "required": [
+        "classes",
+        "multi_screen_multi_secondary_layout",
+        "multi_screen_single_secondary_layout",
+        "single_screen_layout"
+      ],
+      "properties": {
+        "classes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "multi_screen_multi_secondary_layout": {
+          "$ref": "#/definitions/MultiWindowLayout"
+        },
+        "multi_screen_single_secondary_layout": {
+          "$ref": "#/definitions/MultiWindowLayout"
+        },
+        "primary_window_matcher": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "secondary_window_matcher": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "single_screen_layout": {
+          "$ref": "#/definitions/LimitedMultiWindowLayout"
         }
       }
     },
@@ -724,6 +891,43 @@
               "type": "string"
             }
           }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "FlatpakNotFound"
+              ]
+            },
+            "value": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "SecondaryAppPresetNotFound"
+              ]
+            },
+            "value": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
         }
       ]
     },
@@ -787,7 +991,7 @@
         }
       }
     },
-    "DolphinOptions": {
+    "DolphinWindowOptions": {
       "type": "object",
       "required": [
         "gba_blacklist",
@@ -950,6 +1154,39 @@
         }
       ]
     },
+    "FlatpakApp": {
+      "type": "object",
+      "required": [
+        "app_id",
+        "args"
+      ],
+      "properties": {
+        "app_id": {
+          "type": "string"
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "FlatpakInfo": {
+      "type": "object",
+      "required": [
+        "app_id",
+        "name"
+      ],
+      "properties": {
+        "app_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
     "FlatpakSource": {
       "type": "string",
       "enum": [
@@ -1063,6 +1300,27 @@
         }
       }
     },
+    "GetSecondaryAppInfoResponse": {
+      "type": "object",
+      "required": [
+        "installed_flatpaks",
+        "presets"
+      ],
+      "properties": {
+        "installed_flatpaks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FlatpakInfo"
+          }
+        },
+        "presets": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/SecondaryAppPreset"
+          }
+        }
+      }
+    },
     "GetSettingsResponse": {
       "type": "object",
       "required": [
@@ -1117,6 +1375,47 @@
         }
       }
     },
+    "LaunchSecondaryAppPreset": {
+      "type": "object",
+      "required": [
+        "id",
+        "preset",
+        "windowing_behavior"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "preset": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "windowing_behavior": {
+          "$ref": "#/definitions/SecondaryAppWindowingBehavior"
+        }
+      }
+    },
+    "LaunchSecondaryFlatpakApp": {
+      "type": "object",
+      "required": [
+        "app",
+        "id",
+        "windowing_behavior"
+      ],
+      "properties": {
+        "app": {
+          "$ref": "#/definitions/FlatpakApp"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "windowing_behavior": {
+          "$ref": "#/definitions/SecondaryAppWindowingBehavior"
+        }
+      }
+    },
     "LimitedMultiWindowLayout": {
       "type": "string",
       "enum": [
@@ -1125,6 +1424,22 @@
         "square-right",
         "square-left"
       ]
+    },
+    "MainAppAutomaticWindowing": {
+      "type": "object",
+      "required": [
+        "general",
+        "id"
+      ],
+      "properties": {
+        "general": {
+          "$ref": "#/definitions/GeneralOptions"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
     },
     "MelonDSLayout": {
       "type": "object",
@@ -1287,7 +1602,7 @@
           "description": "Some(options) if Cemu is configurable, None otherwise",
           "anyOf": [
             {
-              "$ref": "#/definitions/CemuOptions"
+              "$ref": "#/definitions/CemuWindowOptions"
             },
             {
               "type": "null"
@@ -1298,7 +1613,17 @@
           "description": "Some(options) if Citra is configurable, None otherwise",
           "anyOf": [
             {
-              "$ref": "#/definitions/CitraOptions"
+              "$ref": "#/definitions/CitraWindowOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "custom": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CustomWindowOptions"
             },
             {
               "type": "null"
@@ -1309,7 +1634,7 @@
           "description": "Some(options) if Dolphin is configurable, None otherwise",
           "anyOf": [
             {
-              "$ref": "#/definitions/DolphinOptions"
+              "$ref": "#/definitions/DolphinWindowOptions"
             },
             {
               "type": "null"
@@ -1334,6 +1659,40 @@
         "square-left",
         "separate"
       ]
+    },
+    "PatchPipelineActionRequest": {
+      "type": "object",
+      "required": [
+        "id",
+        "pipeline",
+        "target",
+        "update"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "pipeline": {
+          "$ref": "#/definitions/PipelineDefinition"
+        },
+        "target": {
+          "$ref": "#/definitions/PipelineTarget"
+        },
+        "update": {
+          "$ref": "#/definitions/PipelineActionUpdate"
+        }
+      }
+    },
+    "PatchPipelineActionResponse": {
+      "type": "object",
+      "required": [
+        "pipeline"
+      ],
+      "properties": {
+        "pipeline": {
+          "$ref": "#/definitions/PipelineDefinition"
+        }
+      }
     },
     "Pipeline": {
       "type": "object",
@@ -1366,7 +1725,7 @@
         "targets": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/Selection_for_PipelineAction"
+            "$ref": "#/definitions/RuntimeSelection"
           }
         }
       }
@@ -1415,7 +1774,7 @@
           "description": "The value of the pipeline action",
           "allOf": [
             {
-              "$ref": "#/definitions/Selection_for_PipelineAction"
+              "$ref": "#/definitions/RuntimeSelection"
             }
           ]
         }
@@ -1430,12 +1789,12 @@
         "actions": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/PipelineActionSettings"
+            "$ref": "#/definitions/PipelineActionSettings_for_ConfigSelection"
           }
         }
       }
     },
-    "PipelineActionSettings": {
+    "PipelineActionSettings_for_ConfigSelection": {
       "type": "object",
       "required": [
         "is_visible_on_qam",
@@ -1465,35 +1824,168 @@
           "description": "The value of the pipeline action",
           "allOf": [
             {
-              "$ref": "#/definitions/Selection_for_String"
+              "$ref": "#/definitions/ConfigSelection"
             }
           ]
         }
       }
     },
+    "PipelineActionUpdate": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "UpdateEnabled"
+              ]
+            },
+            "value": {
+              "type": "object",
+              "required": [
+                "is_enabled"
+              ],
+              "properties": {
+                "is_enabled": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "UpdateProfileOverride"
+              ]
+            },
+            "value": {
+              "type": "object",
+              "properties": {
+                "profile_override": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "UpdateOneOf"
+              ]
+            },
+            "value": {
+              "type": "object",
+              "required": [
+                "selection"
+              ],
+              "properties": {
+                "selection": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "UpdateAction"
+              ]
+            },
+            "value": {
+              "type": "object",
+              "required": [
+                "action"
+              ],
+              "properties": {
+                "action": {
+                  "$ref": "#/definitions/Action"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "UpdateVisibleOnQAM"
+              ]
+            },
+            "value": {
+              "type": "object",
+              "required": [
+                "is_visible"
+              ],
+              "properties": {
+                "is_visible": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
     "PipelineDefinition": {
       "type": "object",
       "required": [
         "actions",
-        "description",
         "id",
         "name",
-        "register_exit_hooks",
-        "source_template",
-        "targets"
+        "platform",
+        "register_exit_hooks"
       ],
       "properties": {
         "actions": {
           "$ref": "#/definitions/PipelineActionLookup"
-        },
-        "description": {
-          "type": "string"
         },
         "id": {
           "type": "string",
           "format": "uuid"
         },
         "name": {
+          "type": "string"
+        },
+        "platform": {
           "type": "string"
         },
         "primary_target_override": {
@@ -1508,18 +2000,6 @@
         },
         "register_exit_hooks": {
           "type": "boolean"
-        },
-        "source_template": {
-          "$ref": "#/definitions/TemplateInfo"
-        },
-        "targets": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
         }
       }
     },
@@ -1591,7 +2071,7 @@
         }
       }
     },
-    "Selection_for_PipelineAction": {
+    "RuntimeSelection": {
       "oneOf": [
         {
           "type": "object",
@@ -1667,80 +2147,57 @@
         }
       ]
     },
-    "Selection_for_String": {
+    "SecondaryApp": {
       "oneOf": [
         {
           "type": "object",
           "required": [
-            "type",
-            "value"
+            "app_id",
+            "args",
+            "type"
           ],
           "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Action"
-              ]
+            "app_id": {
+              "type": "string"
             },
-            "value": {
-              "$ref": "#/definitions/Action"
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "OneOf"
-              ]
-            },
-            "value": {
-              "type": "object",
-              "required": [
-                "actions",
-                "selection"
-              ],
-              "properties": {
-                "actions": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                "selection": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "AllOf"
-              ]
-            },
-            "value": {
+            "args": {
               "type": "array",
               "items": {
                 "type": "string"
               }
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "Flatpak"
+              ]
             }
           }
         }
+      ]
+    },
+    "SecondaryAppPreset": {
+      "type": "object",
+      "required": [
+        "app",
+        "name"
+      ],
+      "properties": {
+        "app": {
+          "$ref": "#/definitions/SecondaryApp"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "SecondaryAppWindowingBehavior": {
+      "type": "string",
+      "enum": [
+        "PreferSecondary",
+        "PreferPrimary",
+        "Hidden",
+        "Unmanaged"
       ]
     },
     "SetAppProfileOverrideRequest": {
@@ -1823,8 +2280,7 @@
       "type": "object",
       "required": [
         "id",
-        "pipeline",
-        "version"
+        "pipeline"
       ],
       "properties": {
         "id": {
@@ -1833,31 +2289,6 @@
         },
         "pipeline": {
           "$ref": "#/definitions/PipelineDefinition"
-        },
-        "version": {
-          "description": "The template's version; should be updated each time an action is moved, added, or removed",
-          "type": "integer",
-          "format": "uint32",
-          "minimum": 0.0
-        }
-      }
-    },
-    "TemplateInfo": {
-      "type": "object",
-      "required": [
-        "id",
-        "version"
-      ],
-      "properties": {
-        "id": {
-          "type": "string",
-          "format": "uuid"
-        },
-        "version": {
-          "description": "The template's version; should be updated each time an action is moved, added, or removed",
-          "type": "integer",
-          "format": "uint32",
-          "minimum": 0.0
         }
       }
     },

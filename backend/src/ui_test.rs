@@ -7,7 +7,7 @@ use crate::{
     pipeline::{
         self,
         action::{
-            multi_window::{GeneralOptions, MultiWindow},
+            multi_window::primary_windowing::{GeneralOptions, MultiWindow},
             session_handler::{DesktopSessionHandler, ExternalDisplaySettings},
             ActionId, ActionImpl,
         },
@@ -47,6 +47,7 @@ pub fn ui_test() -> Result<()> {
         cemu: None,
         citra: None,
         dolphin: None,
+        custom: None,
     };
 
     let duration = Duration::from_secs(10);

@@ -1,7 +1,8 @@
-import { DialogButton, PanelSection } from "decky-frontend-lib";
+import { DialogButton, Navigation, PanelSection, Router } from "decky-frontend-lib";
 import { Fragment, ReactElement, createContext } from "react";
+import { FaGear } from "react-icons/fa6";
 import { RiArrowDownSFill, RiArrowRightSFill } from "react-icons/ri";
-import { PipelineTarget } from "../../backend";
+import { PipelineTarget, ReifyPipelineResponse } from "../../backend";
 import FocusableRow from "../../components/FocusableRow";
 import HandleLoading from "../../components/HandleLoading";
 import { IconForTarget } from "../../components/IconForTarget";
@@ -43,8 +44,6 @@ export default function QAM(): ReactElement {
         </PanelSection>
 }
 
-
-
 function DeckDSProfilesForApp({ appDetails, launchActions }: { appDetails: ShortAppDetails, launchActions: LaunchActions[] }): ReactElement {
 
     return launchActions.length > 0
@@ -77,92 +76,129 @@ function AppProfileSection({ launchActions }: { launchActions: LaunchActions }):
     const margin = '5px';
     const profileId = launchActions.profile.id;
 
+    useEnsureAppOverridePipeline(profileId);
+    const { reifiedPipelines } = useAppState();
+    const reified = reifiedPipelines[profileId];
+
     const { openViews, setAppViewOpen } = useAppState();
 
-    return (
-        <PanelSection title={launchActions.profile.pipeline.name} >
-            {
-                launchActions.targets.map((t) => {
-                    const isOpen = openViews[profileId]?.[t.target];
-                    return (
-                        <FocusableRow>
-                            <DialogButton
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'row',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    width: "90%",
-                                    maxWidth: "90%",
-                                    minWidth: 0,
-                                    height,
-                                    marginRight: margin,
-                                    marginBottom: margin,
-                                    borderTopRightRadius: 0,
-                                    borderBottomRightRadius: 0
-                                }}
-                                onClick={t.action}
-                                onOKButton={t.action}
-                            >
-                                <IconForTarget target={t.target} />
-                                {t.target}
-                            </DialogButton>
-                            <DialogButton
-                                style={{
-                                    alignItems: 'center',
-                                    justifyItems: 'center',
-                                    width: "10%",
-                                    minWidth: 0,
-                                    height,
-                                    marginBottom: margin,
-                                    borderTopLeftRadius: 0,
-                                    borderBottomLeftRadius: 0,
-                                    padding: 0,
-                                    backgroundColor: isOpen
-                                        ? 'lightgreen'
-                                        : undefined
-                                }}
-                                onClick={() => {
-                                    setAppViewOpen(profileId, t.target, !isOpen)
-                                }}
-                            >
-                                {
-                                    isOpen
-                                        ? <RiArrowDownSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill' }} />
-                                        : <RiArrowRightSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill' }} />
-                                }
-                            </DialogButton>
+    const openProfileSettings = () => {
+        Navigation.Navigate(`/deck-ds/settings/profiles/${profileId}`);
+        Router.CloseSideMenus();
+    }
 
-                            {
-                                isOpen ?
-                                    <QAMTarget profileId={profileId} target={t.target} />
-                                    : <div />
-                            }
-                        </FocusableRow>
-                    )
-                })
-            }
-        </PanelSection>
+    return (
+        <HandleLoading
+            value={reified}
+            onOk={(reified) => {
+                const title: any = <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
+                >
+                    <p>{launchActions.profile.pipeline.name}</p>
+                    <DialogButton
+                        style={{
+                            width: 'fit-content',
+                            minWidth: 'fit-content',
+                            height: 'fit-content',
+                            minHeight: 'fit-content',
+                            paddingLeft: 10,
+                            paddingRight: 10,
+                            paddingTop: 5,
+                            paddingBottom: 5
+                        }}
+                        onClick={openProfileSettings}
+                        onOKButton={openProfileSettings}
+                    >
+                        <FaGear />
+                    </DialogButton>
+                </div>
+
+                return (
+                    // TODO::settings button inline with title that takes you to the settings for that app
+                    <PanelSection title={title}>
+                        {
+                            launchActions.targets.filter((v) => reified.pipeline.targets[v.target]).map((t) => {
+                                const isOpen = openViews[profileId]?.[t.target];
+                                return (
+                                    <Fragment>
+                                        <FocusableRow>
+                                            <DialogButton
+                                                style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'row',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    width: "90%",
+                                                    maxWidth: "90%",
+                                                    minWidth: 0,
+                                                    height,
+                                                    marginRight: margin,
+                                                    marginBottom: margin,
+                                                    borderTopRightRadius: 0,
+                                                    borderBottomRightRadius: 0
+                                                }}
+                                                onClick={t.action}
+                                                onOKButton={t.action}
+                                            >
+                                                <IconForTarget target={t.target} />
+                                                {t.target}
+                                            </DialogButton>
+                                            <DialogButton
+                                                style={{
+                                                    alignItems: 'center',
+                                                    justifyItems: 'center',
+                                                    width: "10%",
+                                                    minWidth: 0,
+                                                    height,
+                                                    marginBottom: margin,
+                                                    borderTopLeftRadius: 0,
+                                                    borderBottomLeftRadius: 0,
+                                                    padding: 0,
+                                                    backgroundColor: isOpen
+                                                        ? 'lightgreen'
+                                                        : undefined
+                                                }}
+                                                onClick={() => {
+                                                    setAppViewOpen(profileId, t.target, !isOpen)
+                                                }}
+                                            >
+                                                {
+                                                    isOpen
+                                                        ? <RiArrowDownSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill' }} />
+                                                        : <RiArrowRightSFill style={{ padding: 0, margin: 0, minWidth: 0, objectFit: 'fill' }} />
+                                                }
+                                            </DialogButton>
+
+
+                                        </FocusableRow>
+                                        {
+                                            isOpen ?
+                                                <QAMTarget reified={reified} target={t.target} />
+                                                : <div />
+                                        }
+                                    </Fragment>
+                                )
+                            })
+                        }
+                    </PanelSection>
+                )
+            }} />
     );
 }
 
-function QAMTarget({ profileId, target }: { profileId: string, target: PipelineTarget }): ReactElement {
-    useEnsureAppOverridePipeline(profileId);
-    const { reifiedPipelines } = useAppState();
+function QAMTarget({ reified, target }: { reified: ReifyPipelineResponse, target: PipelineTarget }): ReactElement {
+    const selection = reified.pipeline.targets[target];
 
-    const reified = reifiedPipelines[profileId];
-
-    return <HandleLoading
-        value={reified}
-        onOk={(reified) => {
-            const selection = reified.pipeline.targets[target];
-            console.log('setting QAM errors:', reified.config_errors);
-            return (
-                <ConfigErrorContext.Provider value={reified.config_errors} >
-                    <QAMPipelineTargetDisplay root={selection} />
-                </ConfigErrorContext.Provider>
-            )
-        }}
-    />
-
+    return (
+        selection
+            ? <ConfigErrorContext.Provider value={reified.config_errors} >
+                <QAMPipelineTargetDisplay root={selection} target={target} />
+            </ConfigErrorContext.Provider>
+            : <Fragment />
+    );
 }

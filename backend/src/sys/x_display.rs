@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, process::Command, str::FromStr, time::Duration};
+use std::{cmp::Ordering, process::Command, str::FromStr, thread::sleep, time::Duration};
 
 use float_cmp::approx_eq;
 use regex::Regex;
@@ -196,6 +196,8 @@ impl XDisplay {
             self.set_output_position(embedded, relative, to_output)
                 .with_context(|| "reset position failed")?;
         }
+
+        sleep(Duration::from_millis(500));
 
         Ok(())
     }

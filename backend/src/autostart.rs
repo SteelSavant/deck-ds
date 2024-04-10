@@ -7,7 +7,7 @@ use std::{
 use crate::{
     asset::AssetManager,
     pipeline::{
-        data::{PipelineAction, PipelineActionId, PipelineTarget, Selection},
+        data::{PipelineAction, PipelineActionId, PipelineTarget, RuntimeSelection},
         executor::PipelineExecutor,
     },
     settings::Settings,
@@ -42,7 +42,7 @@ impl AutoStart {
                 if let Some(desktop) = desktop {
                     a.pipeline.targets.insert(
                         PipelineTarget::Desktop,
-                        Selection::AllOf(
+                        RuntimeSelection::AllOf(
                             vec![config.display_restoration.into(), desktop]
                                 .into_iter()
                                 .enumerate()
@@ -79,7 +79,7 @@ impl LoadedAutoStart {
         Self { autostart, target }
     }
 
-    // TODO::teardown leftover
+    // TODO::teardown leftover?
 
     pub fn build_executor(
         self,

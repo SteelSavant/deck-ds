@@ -9,7 +9,7 @@ pub type DbCategoryProfile = v1::DbCategoryProfile;
 pub type DbAppOverride = v1::DbAppOverride;
 pub type DbAppSettings = v1::DbAppSettings;
 pub type DbPipelineDefinition = v1::DbPipelineDefinition;
-pub type DbSelection = v1::DbSelection;
+pub type DbConfigSelection = v1::DbConfigSelection;
 pub type DbAction = v1::DbAction;
 pub type DbPipelineActionSettings = v1::DbPipelineActionSettings;
 
@@ -23,6 +23,9 @@ pub type DbMultiWindow = v1::DbMultiWindow;
 pub type DbSourceFile = v1::DbSourceFile;
 pub type DbVirtualScreen = v1::DbVirtualScreen;
 pub type DbDisplayConfig = v1::DbDisplayConfig;
+pub type DbLaunchSecondaryApp = v1::DbLaunchSecondaryFlatpakApp;
+pub type DbLaunchSecondaryAppPreset = v1::DbLaunchSecondaryAppPreset;
+pub type DbMainAppAutomaticWindowing = v1::DbMainAppAutomaticWindowing;
 
 pub static DATABASE_BUILDER: Lazy<native_db::DatabaseBuilder> = Lazy::new(|| {
     let mut builder = DatabaseBuilder::new();
@@ -72,6 +75,15 @@ pub static DATABASE_BUILDER: Lazy<native_db::DatabaseBuilder> = Lazy::new(|| {
         builder
             .define::<v1::DbDisplayConfig>()
             .expect("failed to define DbDisplayConfig v1");
+        builder
+            .define::<v1::DbLaunchSecondaryFlatpakApp>()
+            .expect("failed to define LaunchSecondaryApp v1");
+        builder
+            .define::<v1::DbLaunchSecondaryAppPreset>()
+            .expect("failed to define LaunchSecondaryAppPreset v1");
+        builder
+            .define::<v1::DbMainAppAutomaticWindowing>()
+            .expect("failed to define LaunchSecondaryAppPreset v1");
     }
 
     builder

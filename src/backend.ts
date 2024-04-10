@@ -1,33 +1,38 @@
 import {
-    AutoStartRequest, CategoryProfile, CitraLayoutOption, CreateProfileRequest, CreateProfileResponse,
+    AutoStartRequest, CategoryProfile, CitraLayoutOption,
+    CreateProfileRequest, CreateProfileResponse,
     DeleteProfileRequest, GetAppProfileRequest, GetAppProfileResponse,
     GetDefaultAppOverrideForProfileRequest, GetDefaultAppOverrideForProfileResponse,
-    GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetSettingsResponse,
-    GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PipelineAction, PipelineDefinition,
-    ReifyPipelineRequest, ReifyPipelineResponse, SelectionFor_PipelineAction, SelectionFor_String, SetAppProfileOverrideRequest,
+    GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetSecondaryAppInfoResponse, GetSettingsResponse,
+    GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PatchPipelineActionRequest, PatchPipelineActionResponse, PipelineAction, PipelineActionSettingsFor_ConfigSelection, PipelineDefinition,
+    ReifyPipelineRequest, ReifyPipelineResponse,
+    SecondaryAppWindowingBehavior,
+    SetAppProfileOverrideRequest,
     SetAppProfileSettingsRequest, SetProfileRequest, SetSettingsRequest, Template
 } from "./types/backend_api";
 import { call_backend, init_embedded, init_usdpl, target_usdpl } from "./usdpl_front";
 import { Err, Ok, Result } from "./util/result";
 
 export {
-    Action, AppProfile, AutoStartRequest, CategoryProfile, CemuOptions, CitraOptions, CreateProfileRequest,
-    CreateProfileResponse, DeleteProfileRequest, DependencyError, DolphinOptions, ExternalDisplaySettings, GetProfileRequest,
-    GetProfileResponse,
-    GetProfilesResponse, GetTemplatesResponse, GlobalConfig, LimitedMultiWindowLayout, MultiWindowLayout, PipelineAction, PipelineActionSettings, PipelineDefinition, PipelineTarget, ReifyPipelineRequest,
-    ReifyPipelineResponse, RelativeLocation, SetProfileRequest, Template
+    Action, AppProfile, AutoStartRequest, CategoryProfile, CemuWindowOptions, CitraWindowOptions, ConfigSelection, CreateProfileRequest,
+    CreateProfileResponse, DeleteProfileRequest, DependencyError, DolphinWindowOptions, ExternalDisplaySettings, GetProfileRequest,
+    GetProfileResponse, GetProfilesResponse, GetTemplatesResponse, GlobalConfig, LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp, LimitedMultiWindowLayout, MultiWindowLayout, PipelineAction, PipelineDefinition, PipelineTarget, ReifyPipelineRequest,
+    ReifyPipelineResponse, RelativeLocation, RuntimeSelection, SecondaryAppWindowingBehavior, SetProfileRequest, Template
 } from "./types/backend_api";
 
 
 const USDPL_PORT: number = 44666;
 
+export const secondaryAppWindowingOptions: SecondaryAppWindowingBehavior[] = ['PreferSecondary', 'PreferPrimary', 'Hidden', 'Unmanaged'];
+
+
 
 // Pipeline
 export type ActionOneOf = { selection: string, actions: PipelineAction[] }
-export type ActionSelection = SelectionFor_PipelineAction;
 
 export type DefinitionOneOf = { selection: string, actions: string[] }
-export type DefinitionSelection = SelectionFor_String;
+
+export type PipelineActionSettings = PipelineActionSettingsFor_ConfigSelection;
 
 export interface AppProfileOveride {
     profileId: string,
@@ -225,15 +230,26 @@ export async function getDefaultAppOverrideForProfileRequest(request: GetDefault
     return await call_backend_typed("get_default_app_override_for_profile_request", request);
 }
 
+export async function patchPipelineAction(request: PatchPipelineActionRequest): Response<PatchPipelineActionResponse> {
+    return await call_backend_typed('patch_pipeline_action', request);
+}
+
+export async function reifyPipeline(request: ReifyPipelineRequest): Response<ReifyPipelineResponse> {
+    return await call_backend_typed('reify_pipeline', request);
+}
+
 // Templates
 
 export async function getTemplates(): Response<GetTemplatesResponse> {
     return await call_backend_typed("get_templates", null);
 }
 
-export async function reifyPipeline(request: ReifyPipelineRequest): Response<ReifyPipelineResponse> {
-    return await call_backend_typed('reify_pipeline', request);
+// Secondary Apps
+
+export async function getSecondaryAppInfo(): Response<GetSecondaryAppInfoResponse> {
+    return await call_backend_typed("get_secondary_app_info", null);
 }
+
 
 // Settings
 

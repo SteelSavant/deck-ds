@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Debug};
+use std::fmt::Debug;
 
 newtype_uuid!(ProfileId);
 newtype_strid!("", AppId);
@@ -6,14 +6,10 @@ newtype_strid!("", AppId);
 use crate::{
     macros::{newtype_strid, newtype_uuid},
     pipeline::{
-        action::{
-            display_config::DisplayConfig, session_handler::ExternalDisplaySettings, Action,
-            ActionId,
-        },
         action_registar::PipelineActionRegistrar,
         data::{
             PipelineActionId, PipelineDefinition, PipelineDefinitionId, PipelineTarget, Template,
-            TemplateId, TemplateInfo,
+            TemplateId,
         },
     },
 };
@@ -21,51 +17,28 @@ use crate::{
 pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
     struct TemplateBuilder {
         id: TemplateId,
-        version: u32,
-        name: String,
-        description: String,
-        targets: HashMap<PipelineTarget, Vec<PipelineActionId>>,
-        action_overrides: HashMap<PipelineActionId, Action>,
-        enabled_overrides: HashMap<PipelineActionId, Option<bool>>,
-        is_visible_on_qam_overrides: HashMap<PipelineActionId, bool>,
+        /// Root action in the tree. Should be a platform action.
+        platform: PipelineActionId,
+        // action_overrides: HashMap<PipelineActionId, Action>,
+        // enabled_overrides: HashMap<PipelineActionId, Option<bool>>,
+        // is_visible_on_qam_overrides: HashMap<PipelineActionId, bool>,
     }
 
     impl TemplateBuilder {
         fn build(self, registrar: &PipelineActionRegistrar) -> Template {
-            let mut actions = registrar.make_lookup(&self.targets);
-            for (id, action) in self.action_overrides {
-                actions
-                    .actions
-                    .entry(id)
-                    .and_modify(|v| v.selection = action.into());
-            }
+            let actions = registrar.make_lookup(&self.platform);
 
-            for (id, enabled) in self.enabled_overrides {
-                actions
-                    .actions
-                    .entry(id)
-                    .and_modify(|v| v.enabled = enabled);
-            }
-
-            for (id, enabled) in self.is_visible_on_qam_overrides {
-                actions
-                    .actions
-                    .entry(id)
-                    .and_modify(|v| v.is_visible_on_qam = enabled);
-            }
+            let root_action = registrar
+                .get(&self.platform, PipelineTarget::Desktop)
+                .or_else(|| registrar.get(&self.platform, PipelineTarget::Gamemode))
+                .unwrap();
 
             Template {
                 id: self.id,
-                version: self.version,
                 pipeline: PipelineDefinition {
                     id: PipelineDefinitionId::nil(),
-                    source_template: TemplateInfo {
-                        id: self.id,
-                        version: self.version,
-                    },
-                    name: self.name,
-                    description: self.description,
-                    targets: self.targets,
+                    name: root_action.name.clone(),
+                    platform: self.platform,
                     primary_target_override: None,
                     register_exit_hooks: true,
                     actions,
@@ -78,93 +51,23 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
         // melonDS
         TemplateBuilder {
             id: TemplateId::parse("c6430131-50e0-435e-a917-5ae3cfa46e3c"),
-            version: 0,
-            name: "melonDS".to_string(),
-            description: "Maps the internal and external monitor to a single virtual screen, as melonDS does not currently support multiple windows. Allows optional melonDS layout configuration.".to_string(),
-            targets: HashMap::from_iter([
-                (PipelineTarget::Desktop, vec![
-                    PipelineActionId::new("core:melonds:config"),
-                    PipelineActionId::new("core:display:virtual_screen"),
-                ]),
-                (PipelineTarget::Gamemode, vec![
-                    PipelineActionId::new("core:melonds:config"),
-                ])
-            ]),
-            action_overrides: Default::default(),
-            enabled_overrides: Default::default(),
-            is_visible_on_qam_overrides: Default::default(),
+            platform: PipelineActionId::new("core:melonds:platform"),
         },
-
         // Citra
         TemplateBuilder {
             id: TemplateId::parse("fe82be74-22b9-4135-b7a0-cb6d8f51aecd"),
-            version: 0,
-            name: "Citra".to_string(),
-            description: "Maps primary and secondary windows to different screens for Citra. Allows optional Citra layout configuration.".to_string(),
-            targets: HashMap::from_iter([
-                (PipelineTarget::Desktop, vec![
-                    PipelineActionId::new("core:citra:config"),
-                    PipelineActionId::new("core:citra:multi_window"),
-                    PipelineActionId::new("core:display:display_config"),
-                ]),
-                (PipelineTarget::Gamemode, vec![
-                    PipelineActionId::new("core:citra:config"),
-                ])
-            ]),
-            action_overrides: Default::default(),
-            enabled_overrides: Default::default(),
-            is_visible_on_qam_overrides: Default::default(),
+            platform: PipelineActionId::new("core:citra:platform"),
         },
-
         // Cemu
         TemplateBuilder {
             id: TemplateId::parse("33c863e5-2739-4bc3-b9bc-4798bac8682d"),
-            version: 0,
-            name: "Cemu".to_string(),
-            description: "Maps primary and secondary windows to different screens for Cemu.".to_string(),
-            targets: HashMap::from_iter([
-                (PipelineTarget::Desktop,
-                    vec![
-                        PipelineActionId::new("core:cemu:config"),
-                        PipelineActionId::new("core:cemu:multi_window"),
-                        PipelineActionId::new("core:display:display_config"),
-                ]),
-                (PipelineTarget::Gamemode,
-                    vec![
-                        PipelineActionId::new("core:cemu:config")
-                ])
-            ]),
-            action_overrides: Default::default(),
-            enabled_overrides: Default::default(),
-            is_visible_on_qam_overrides: Default::default(),
+            platform: PipelineActionId::new("core:cemu:platform"),
         },
-
-        // Simple Desktop
+        // App
         TemplateBuilder {
             id: TemplateId::parse("84f870e9-9491-41a9-8837-d5a6f591f687"),
-            version: 0,
-            name: "Simple Desktop".to_string(),
-            description: "Launches an application in desktop mode.".to_string(),
-            targets: HashMap::from_iter([
-                (PipelineTarget::Desktop,
-                    vec![
-                        PipelineActionId::new("core:display:display_config"),
-                    ]
-                )
-            ]),
-            action_overrides: HashMap::from_iter([
-                (PipelineActionId::new("core:display:display_config:desktop"), Action::DisplayConfig(DisplayConfig{
-                    id: ActionId::nil(),
-                    external_display_settings: ExternalDisplaySettings::Previous,
-                    deck_location: None,
-                    deck_is_primary_display: false
-                }))
-            ]),
-            enabled_overrides: Default::default(),
-            is_visible_on_qam_overrides: HashMap::from_iter([
-                (PipelineActionId::new("core:display:display_config:desktop"), true)
-            ]),
-        }
+            platform: PipelineActionId::new("core:app:platform"),
+        },
     ];
 
     templates.into_iter().map(|t| t.build(&registrar)).collect()

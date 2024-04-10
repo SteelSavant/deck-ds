@@ -1,10 +1,13 @@
-import { DialogButton, Dropdown, FileSelectionType, Toggle } from "decky-frontend-lib";
+import { DialogButton, Dropdown, FileSelectionType, TextField, Toggle } from "decky-frontend-lib";
 import _ from "lodash";
-import { Fragment, ReactElement } from "react";
+import { Fragment, ReactElement, useState } from "react";
 import { FaFile } from "react-icons/fa";
-import { Action, CemuOptions, CitraOptions, DolphinOptions, ExternalDisplaySettings, LimitedMultiWindowLayout, MultiWindowLayout, RelativeLocation, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions } from "../backend";
+import { Action, CemuWindowOptions, CitraWindowOptions, DolphinWindowOptions, ExternalDisplaySettings, LimitedMultiWindowLayout, MultiWindowLayout, RelativeLocation, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions, secondaryAppWindowingOptions } from "../backend";
 import { useServerApi } from "../context/serverApiContext";
+import useSecondaryAppInfo from "../hooks/useSecondaryAppPresetInfo";
+import { CustomWindowOptions, LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp } from "../types/backend_api";
 import { ActionChild, ActionChildBuilder } from "./ActionChild";
+import HandleLoading from "./HandleLoading";
 
 
 interface EditActionProps {
@@ -37,13 +40,14 @@ export function InternalEditAction({
     const serverApi = useServerApi();
     const notConfigurable = null;
 
+
     switch (type) {
         case 'DesktopSessionHandler':
             const display = cloned.value;
             const locations: RelativeLocation[] = ['Above', 'Below', 'LeftOf', 'RightOf']; // SameAs excluded because it doesn't really make sense
             const externalSettings: ExternalDisplaySettings[] = [{ type: 'Previous' }, { type: 'Native' }] // Preference excluded because its a pain to configure, and I'm pretty sure doesn't work
             return (
-                <div>
+                <Fragment>
                     <Builder indentLevel={indentLevel} label="External Display Settings" description="External display settings (resolution, refresh rate, etc.).">
                         <Dropdown selectedOption={display.teardown_external_settings.type} rgOptions={externalSettings.map((setting) => {
                             return {
@@ -86,15 +90,15 @@ export function InternalEditAction({
                             </Builder>
                             : <div />
                     }
-                </div>
+                </Fragment>
             );
         case 'DisplayConfig': {
-            // TODO::This is largely a duplicate of the above; refactor when Preference gets configured in UI.
+            // TODO::This is largely a duplicate of the above DesktopSessionHandler; refactor when Preference gets configured in UI.
             const display = cloned.value;
             const locations: RelativeLocation[] = ['Above', 'Below', 'LeftOf', 'RightOf']; // SameAs excluded because it doesn't really make sense
             const externalSettings: ExternalDisplaySettings[] = [{ type: 'Previous' }, { type: 'Native' }] // Preference excluded because its a pain to configure, and I'm pretty sure doesn't work
             return (
-                <div>
+                <Fragment>
                     <Builder indentLevel={indentLevel} label="External Display Settings" description="External display settings.">
                         <Dropdown selectedOption={display.external_display_settings.type} rgOptions={externalSettings.map((setting) => {
                             return {
@@ -137,23 +141,23 @@ export function InternalEditAction({
                             </Builder>
                             : <div />
                     }
-                </div>
+                </Fragment>
             );
         }
         case 'CemuLayout':
             return (
-                <div>
+                <Fragment>
                     <Builder indentLevel={indentLevel} label="Separate Gamepad View">
                         <Toggle value={cloned.value.layout.separate_gamepad_view} onChange={(isEnabled) => {
                             cloned.value.layout.separate_gamepad_view = isEnabled;
                             onChange(cloned);
                         }} />
                     </Builder>
-                </div>
+                </Fragment>
             );
         case 'CitraLayout':
             return (
-                <div>
+                <Fragment>
                     <Builder indentLevel={indentLevel} label="Layout Option">
                         <Dropdown selectedOption={cloned.value.layout.layout_option.type} rgOptions={citraLayoutOptions.map((a) => {
                             return {
@@ -171,11 +175,11 @@ export function InternalEditAction({
                             onChange(cloned);
                         }} />
                     </Builder>
-                </div>
+                </Fragment>
             );
         case 'MelonDSLayout':
             return (
-                <div>
+                <Fragment>
                     <Builder indentLevel={indentLevel} label="Layout Option">
                         <Dropdown selectedOption={cloned.value.layout_option} rgOptions={melonDSLayoutOptions.map((a) => {
                             return {
@@ -210,7 +214,7 @@ export function InternalEditAction({
                             onChange(cloned);
                         }} />
                     </Builder>
-                </div >
+                </Fragment >
             );
         case 'SourceFile':
             const sourceValue = cloned.value;
@@ -246,7 +250,7 @@ export function InternalEditAction({
                     return notConfigurable;
             }
         case 'MultiWindow':
-            const options = [cloned.value.cemu, cloned.value.citra, cloned.value.dolphin]
+            const options = [cloned.value.cemu, cloned.value.citra, cloned.value.dolphin, cloned.value.custom]
                 .filter((v) => v)
                 .map((v) => v!);
 
@@ -255,9 +259,14 @@ export function InternalEditAction({
                 return <p> invalid multi-window configuration; must have exactly one option</p>
             }
 
-            function isDolphin(o: DolphinOptions | CemuOptions | CitraOptions): o is DolphinOptions {
-                return !!(o as DolphinOptions).gba_blacklist;
+            function isDolphin(o: DolphinWindowOptions | CemuWindowOptions | CitraWindowOptions | CustomWindowOptions): o is DolphinWindowOptions {
+                return !!(o as DolphinWindowOptions).gba_blacklist;
             }
+
+            function isCustom(o: DolphinWindowOptions | CemuWindowOptions | CitraWindowOptions | CustomWindowOptions): o is CustomWindowOptions {
+                return !!(o as CustomWindowOptions).classes;
+            }
+
 
             const option = options[0];
             const layoutOptions: MultiWindowLayout[] = ['column-right', 'column-left', 'square-right', 'square-left', 'separate'];
@@ -267,38 +276,75 @@ export function InternalEditAction({
                 ? dolphinLimitedLayoutOptions
                 : dsLimitedLayoutOptions;
 
-            function DolphinAction(option: DolphinOptions): ReactElement {
+            function DolphinAction(option: DolphinWindowOptions): ReactElement {
                 return (
-                    <Builder indentLevel={indentLevel} label="Multi-Screen Layout" description="Layout when the Deck's embedded display is enabled and an external display is connected." >
-                        <Fragment>
-                            <Builder indentLevel={indentLevel + 1} label="Single-GBA Layout" description="Layout when a single GBA window is visible.">
-                                <Dropdown selectedOption={option.multi_screen_single_secondary_layout} rgOptions={layoutOptions.map((a) => {
-                                    return {
-                                        label: labelForKebabCase(a),
-                                        data: a
-                                    }
-                                })} onChange={(value) => {
-                                    option.multi_screen_single_secondary_layout = value.data;
-                                    onChange(cloned);
-                                }} />
-                            </Builder>
-                            <Builder indentLevel={indentLevel + 1} label="Multi-GBA Layout" description="Layout when multiple GBA windows are visible.">
-                                <Dropdown selectedOption={option.multi_screen_multi_secondary_layout} rgOptions={layoutOptions.map((a) => {
-                                    return {
-                                        label: labelForKebabCase(a),
-                                        data: a
-                                    }
-                                })} onChange={(value) => {
-                                    option.multi_screen_multi_secondary_layout = value.data;
-                                    onChange(cloned);
-                                }} />
-                            </Builder>
-                        </Fragment>
-                    </Builder>
+                    <Fragment>
+                        <Builder indentLevel={indentLevel} label="Multi-Screen Layout" description="Layout when the Deck's embedded display is enabled and an external display is connected." >
+                            <Fragment />
+                        </Builder>
+                        <Builder indentLevel={indentLevel + 1} label="Single-GBA Layout" description="Layout when a single GBA window is visible.">
+                            <Dropdown selectedOption={option.multi_screen_single_secondary_layout} rgOptions={layoutOptions.map((a) => {
+                                return {
+                                    label: labelForKebabCase(a),
+                                    data: a
+                                }
+                            })} onChange={(value) => {
+                                option.multi_screen_single_secondary_layout = value.data;
+                                onChange(cloned);
+                            }} />
+                        </Builder>
+                        <Builder indentLevel={indentLevel + 1} label="Multi-GBA Layout" description="Layout when multiple GBA windows are visible.">
+                            <Dropdown selectedOption={option.multi_screen_multi_secondary_layout} rgOptions={layoutOptions.map((a) => {
+                                return {
+                                    label: labelForKebabCase(a),
+                                    data: a
+                                }
+                            })} onChange={(value) => {
+                                option.multi_screen_multi_secondary_layout = value.data;
+                                onChange(cloned);
+                            }} />
+                        </Builder>
+                    </Fragment>
+
                 );
             }
 
-            function DsAction(option: CemuOptions | CitraOptions): ReactElement {
+            function CustomAction(option: CustomWindowOptions): ReactElement {
+                // Note: classes, etc. aren't set by the user, but instead reconfigured at runtime
+                // In the future, we may consider using the fields as overrides to the automatic scraping
+
+                return (
+                    <Fragment>
+                        <Builder indentLevel={indentLevel} label="Multi-Screen Layout" description="Layout when the Deck's embedded display is enabled and an external display is connected." >
+                            <Fragment />
+                        </Builder>
+                        <Builder indentLevel={indentLevel + 1} label="Single-Window Layout" description="Layout when a single alternate window is visible.">
+                            <Dropdown selectedOption={option.multi_screen_single_secondary_layout} rgOptions={layoutOptions.map((a) => {
+                                return {
+                                    label: labelForKebabCase(a),
+                                    data: a
+                                }
+                            })} onChange={(value) => {
+                                option.multi_screen_single_secondary_layout = value.data;
+                                onChange(cloned);
+                            }} />
+                        </Builder>
+                        <Builder indentLevel={indentLevel + 1} label="Multi-Window Layout" description="Layout when multiple alternate windows are visible.">
+                            <Dropdown selectedOption={option.multi_screen_multi_secondary_layout} rgOptions={layoutOptions.map((a) => {
+                                return {
+                                    label: labelForKebabCase(a),
+                                    data: a
+                                }
+                            })} onChange={(value) => {
+                                option.multi_screen_multi_secondary_layout = value.data;
+                                onChange(cloned);
+                            }} />
+                        </Builder>
+                    </Fragment>
+                );
+            }
+
+            function DsAction(option: CemuWindowOptions | CitraWindowOptions): ReactElement {
                 return (
                     <Builder indentLevel={indentLevel} label="Multi-Screen Layout" description="Layout when the Deck's embedded display is enabled and an external display is connected.">
                         <Dropdown selectedOption={option.multi_screen_layout} rgOptions={layoutOptions.map((a) => {
@@ -341,11 +387,45 @@ export function InternalEditAction({
                 {
                     isDolphin(option)
                         ? DolphinAction(option)
-                        : DsAction(option)
+                        : isCustom(option)
+                            ? CustomAction(option)
+                            : DsAction(option)
                 }
+            </Fragment>;
+        case 'LaunchSecondaryFlatpakApp': {
+            return <SecondaryFlatpakApp
+                cloned={cloned}
+                indentLevel={indentLevel}
+                Builder={Builder}
+                onChange={onChange}
+            />
+        }
+        case 'LaunchSecondaryAppPreset': {
+            return <SecondaryAppPreset
+                cloned={cloned}
+                indentLevel={indentLevel}
+                Builder={Builder}
+                onChange={onChange}
+            />
+        }
+        case 'MainAppAutomaticWindowing':
+            return (
+                <Fragment>
+                    <Builder indentLevel={indentLevel} label="Keep Above" description="Keep emulator windows above others.">
+                        <Toggle value={cloned.value.general.keep_above} onChange={(isEnabled) => {
+                            cloned.value.general.keep_above = isEnabled;
+                            onChange(cloned);
+                        }} />
+                    </Builder>
+                    <Builder indentLevel={indentLevel} label="Swap Screens" description="Use the Deck's embedded display as the main display, instead of as the secondary display.">
+                        <Toggle value={cloned.value.general.swap_screens} onChange={(isEnabled) => {
+                            cloned.value.general.swap_screens = isEnabled;
+                            onChange(cloned);
+                        }} />
+                    </Builder>
+                </Fragment>
+            );
 
-
-            </Fragment>
         case 'VirtualScreen':
             return notConfigurable;
         default:
@@ -379,4 +459,134 @@ function labelForCamelCase(s: string, separator = ' '): string {
 
 function labelForKebabCase(s: string): string {
     return s.split('-').map((v) => v[0].toUpperCase() + v.slice(1).toLowerCase()).join('-');
+}
+
+interface LaunchSecondaryFlatpakAppProps {
+    cloned: { type: 'LaunchSecondaryFlatpakApp', value: LaunchSecondaryFlatpakApp }, indentLevel: number, onChange: (action: Action) => void, Builder: ActionChildBuilder
+
+}
+
+function SecondaryFlatpakApp({ cloned, indentLevel, onChange, Builder }: LaunchSecondaryFlatpakAppProps): ReactElement {
+    const secondaryInfo = useSecondaryAppInfo();
+
+    return (
+        <HandleLoading
+            value={secondaryInfo}
+            onOk={(secondaryInfo) => {
+
+                // TODO::per-arg reorderable list (likely in a popup-menu), rather than a comma-separated list
+
+                const flatpak = cloned.value.app;
+                const windowing = cloned.value.windowing_behavior;
+                const textStyle = { minWidth: '24rem', maxWidth: Number.POSITIVE_INFINITY };
+
+                return (
+                    <Fragment>
+                        <Builder indentLevel={indentLevel} label="Flatpak App" description="The flatpak to run.">
+                            <Dropdown
+                                selectedOption={cloned.value.app.app_id}
+                                rgOptions={secondaryInfo.installed_flatpaks.map((v) => {
+                                    return {
+                                        label: `${v.name} (${v.app_id})`,
+                                        data: v.app_id
+                                    }
+                                })}
+                                onChange={(value) => {
+                                    cloned.value.app.app_id = value.data
+                                    onChange(cloned);
+                                }}
+                            />
+                        </Builder >
+                        <Builder indentLevel={indentLevel} label="Args" description="Comma separated list of arguments for the flatpak app.">
+                            <TextField style={textStyle} value={flatpak.args.join(',')} onChange={(v) => {
+                                flatpak.args = v.target.value.split(','); // TODO::technically won't handle commas in strings correctly, but that's a later problem.
+                                onChange(cloned);
+                            }} />
+                        </Builder >
+                        <Builder indentLevel={indentLevel - 1} label="Windowing">
+                            <Dropdown
+                                selectedOption={windowing} rgOptions={secondaryAppWindowingOptions.map((a) => {
+                                    return {
+                                        label: labelForCamelCase(a),
+                                        data: a
+                                    }
+                                })} onChange={(value) => {
+                                    cloned.value.windowing_behavior = value.data;
+                                    onChange(cloned);
+                                }}
+                            />
+                        </Builder>
+                    </Fragment >
+                );
+            }} />
+    )
+}
+
+
+interface SecondaryAppPresetProps {
+    cloned: { type: 'LaunchSecondaryAppPreset', value: LaunchSecondaryAppPreset }, indentLevel: number, onChange: (action: Action) => void, Builder: ActionChildBuilder
+}
+
+function SecondaryAppPreset({ cloned, indentLevel, onChange, Builder }: SecondaryAppPresetProps): ReactElement {
+    const secondaryInfo = useSecondaryAppInfo();
+    const [filtered, setFiltered] = useState(true);
+
+    // TODO::ability to create new presets (probably as a separate main toplevel tab, and a "convert to preset" option on "custom")
+
+    return (
+        <HandleLoading
+            value={secondaryInfo}
+            onOk={(secondaryInfo) => {
+                const options = [];
+
+                for (const k in secondaryInfo.presets) {
+                    const preset = secondaryInfo.presets[k];
+                    const flatpakInstalled = (preset.app.type === 'Flatpak' && secondaryInfo.installed_flatpaks.find((v) => v.app_id === preset.app.app_id));
+                    const shouldPush = !filtered || flatpakInstalled;
+
+                    if (shouldPush) {
+                        options.push({
+                            label: preset.name,
+                            data: k,
+                        })
+                    }
+                }
+
+                options.sort((a, b) => a.label.localeCompare(b.label));
+
+                return (
+                    <Fragment>
+                        <Builder indentLevel={indentLevel} label="Filter By Installed">
+                            <Toggle value={filtered} onChange={(isEnabled) => {
+                                setFiltered(isEnabled);
+                            }} />
+                        </Builder>
+                        <Builder indentLevel={indentLevel} label="Selected Preset">
+                            <Dropdown
+                                selectedOption={cloned.value.preset}
+                                rgOptions={options}
+                                onChange={(value) => {
+                                    cloned.value.preset = value.data;
+                                    onChange(cloned);
+                                }}
+                            />
+                        </Builder>
+                        <Builder indentLevel={indentLevel - 1} label="Windowing">
+                            <Dropdown
+                                selectedOption={cloned.value.windowing_behavior} rgOptions={secondaryAppWindowingOptions.map((a) => {
+                                    return {
+                                        label: labelForCamelCase(a),
+                                        data: a
+                                    }
+                                })} onChange={(value) => {
+                                    cloned.value.windowing_behavior = value.data;
+                                    onChange(cloned);
+                                }}
+                            />
+                        </Builder>
+                    </Fragment>
+                )
+            }}
+        />
+    )
 }

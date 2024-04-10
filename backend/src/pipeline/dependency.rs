@@ -6,7 +6,12 @@ use thiserror::Error;
 use anyhow::Result;
 use which::which;
 
-use super::executor::PipelineContext;
+use crate::{secondary_app::SecondaryAppPresetId, sys::flatpak::list_installed_flatpaks};
+
+use super::{
+    action::{multi_window::secondary_app::LaunchSecondaryFlatpakApp, ActionId, ActionImpl},
+    executor::PipelineContext,
+};
 
 #[derive(Error, Debug, Clone, Serialize, JsonSchema)]
 #[serde(tag = "type", content = "value")]
@@ -25,6 +30,10 @@ pub enum DependencyError {
     KwinScriptFailedInstall(String),
     #[error("required field `{0}` must be set")]
     FieldNotSet(String),
+    #[error("required flatpak `{0}` must be installed")]
+    FlatpakNotFound(String),
+    #[error("required secondary app preset `{0:?}` must exist")]
+    SecondaryAppPresetNotFound(SecondaryAppPresetId),
 }
 
 pub enum Dependency {
@@ -32,6 +41,8 @@ pub enum Dependency {
     Path { path: PathBuf, is_file: bool },
     KwinScript(String),
     ConfigField(String),
+    Flatpak(String),
+    SecondaryAppPreset(SecondaryAppPresetId),
     Display,
 }
 
@@ -67,6 +78,36 @@ impl Dependency {
             }
             Dependency::ConfigField(field) => Err(DependencyError::FieldNotSet(field.clone())),
             Dependency::Display => verify_system_deps(&["xrandr", "cvt", "kscreen-doctor"], ctx),
+            Dependency::Flatpak(app_id) => {
+                Dependency::System("flatpak".into()).verify_config(ctx)?;
+                let apps = list_installed_flatpaks().expect("list flatpaks should work");
+                if apps.into_iter().any(|v| v.app_id == *app_id) {
+                    Ok(())
+                } else {
+                    Err(DependencyError::FlatpakNotFound(app_id.clone()))
+                }
+            }
+            Dependency::SecondaryAppPreset(id) => {
+                let presets = ctx.secondary_app.get_presets();
+
+                if let Some(preset) = presets.get(id) {
+                    match &preset.app {
+                        crate::secondary_app::SecondaryApp::Flatpak(app) => {
+                            LaunchSecondaryFlatpakApp {
+                                id: ActionId::nil(),
+                                app: app.clone(),
+                                windowing_behavior: Default::default(),
+                            }
+                            .get_dependencies(ctx)
+                            .into_iter()
+                            .map(|v| v.verify_config(ctx))
+                            .collect()
+                        }
+                    }
+                } else {
+                    Err(DependencyError::SecondaryAppPresetNotFound(*id))
+                }
+            }
         }
     }
 

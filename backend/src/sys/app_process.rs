@@ -15,7 +15,7 @@ pub struct AppProcess {
 }
 
 impl AppProcess {
-    // TODO::search by app args; for now, assume the first "SteamLaunch is what we want"
+    // TODO::search by app args; for now, assume the first "SteamLaunch" is what we want
     pub fn find(timeout: Duration) -> Result<Self> {
         let pid = {
             let now = Instant::now();
@@ -28,6 +28,10 @@ impl AppProcess {
         }?;
 
         Ok(Self { pid })
+    }
+
+    pub fn get_pid(&self) -> Pid {
+        self.pid
     }
 
     pub fn is_alive(&self) -> bool {

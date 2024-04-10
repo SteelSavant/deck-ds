@@ -16,8 +16,8 @@ use crate::{
         action::{Action, ErasedPipelineAction},
         action_registar::PipelineActionRegistrar,
         data::{
-            Pipeline, PipelineAction, PipelineActionId, PipelineDefinition, PipelineDefinitionId,
-            Selection, Template,
+            ConfigSelection, Pipeline, PipelineActionId, PipelineDefinition, PipelineDefinitionId,
+            PipelineTarget, RuntimeSelection, Template,
         },
         dependency::DependencyError,
         executor::PipelineContext,
@@ -340,7 +340,7 @@ pub fn get_default_app_override_pipeline_for_profile(
                         pipeline: profile.map(|profile| {
                             let pipeline = profile.pipeline;
 
-                            let mut lookup = registrar.make_lookup(&pipeline.targets);
+                            let mut lookup = registrar.make_lookup(&pipeline.platform);
 
                             for (id, action) in lookup.actions.iter_mut() {
                                 action.profile_override = Some(args.profile_id);
@@ -359,6 +359,99 @@ pub fn get_default_app_override_pipeline_for_profile(
                     }
                     .to_response(),
                     Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
+                }
+            }
+            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
+        }
+    }
+}
+
+// Patch Pipeline
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+#[serde(tag = "type", content = "value")]
+pub enum PipelineActionUpdate {
+    UpdateEnabled { is_enabled: bool },
+    UpdateProfileOverride { profile_override: Option<ProfileId> },
+    UpdateOneOf { selection: PipelineActionId },
+    UpdateAction { action: Action },
+    UpdateVisibleOnQAM { is_visible: bool },
+}
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct PatchPipelineActionRequest {
+    pipeline: PipelineDefinition,
+    id: PipelineActionId,
+    target: PipelineTarget,
+    update: PipelineActionUpdate,
+}
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct PatchPipelineActionResponse {
+    pipeline: PipelineDefinition,
+}
+
+pub fn patch_pipeline_action(
+    request_handler: Arc<Mutex<RequestHandler>>,
+    registrar: PipelineActionRegistrar,
+) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+    move |args: super::ApiParameterType| {
+        log_invoke("patch_pipeline_action", &args);
+
+        let args: Result<PatchPipelineActionRequest, _> = {
+            let mut lock = request_handler
+                .lock()
+                .expect("request handler should not be poisoned");
+
+            lock.resolve(args)
+        };
+
+        match args {
+            Ok(args) => {
+                let registered = registrar.get(&args.id, args.target);
+                if let Some(registered) = registered {
+                    let mut pipeline = args.pipeline;
+                    let pipeline_action = pipeline
+                        .actions
+                        .actions
+                        .entry(args.id.clone())
+                        .or_insert(registered.clone().settings.into());
+
+                    match args.update {
+                        PipelineActionUpdate::UpdateEnabled { is_enabled } => {
+                            pipeline_action.enabled = Some(is_enabled);
+                        }
+                        PipelineActionUpdate::UpdateProfileOverride { profile_override } => {
+                            log::info!(
+                                "profile override for {:?} set to {:?}",
+                                args.id,
+                                profile_override
+                            );
+
+                            pipeline_action.profile_override = profile_override
+                        }
+                        PipelineActionUpdate::UpdateOneOf { selection } => {
+                            pipeline_action.selection = ConfigSelection::OneOf { selection }
+                        }
+                        PipelineActionUpdate::UpdateAction { action } => {
+                            pipeline_action.selection = ConfigSelection::Action(action)
+                        }
+                        PipelineActionUpdate::UpdateVisibleOnQAM { is_visible } => {
+                            pipeline_action.is_visible_on_qam = is_visible
+                        }
+                    }
+
+                    if let ConfigSelection::OneOf { selection } = &mut pipeline_action.selection {
+                        let reified = registrar.get(selection, args.target).unwrap().id.clone();
+                        *selection = reified
+                    }
+
+                    PatchPipelineActionResponse { pipeline }.to_response()
+                } else {
+                    ResponseErr(
+                        StatusCode::BadRequest,
+                        anyhow::anyhow!("action {:?} not registered", args.id),
+                    )
+                    .to_response()
                 }
             }
             Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
@@ -432,22 +525,24 @@ fn check_config_errors(
     ctx: &mut PipelineContext,
 ) -> HashMap<PipelineActionId, Vec<DependencyError>> {
     fn collect_actions<'a>(
-        selection: &'a Selection<PipelineAction>,
+        selection: &'a RuntimeSelection,
         parent_id: &PipelineActionId,
     ) -> Vec<(PipelineActionId, &'a Action)> {
         match selection {
-            crate::pipeline::data::Selection::Action(action) => {
+            RuntimeSelection::Action(action) => {
                 vec![(parent_id.clone(), action)]
             }
-            crate::pipeline::data::Selection::OneOf { selection, actions } => {
+            RuntimeSelection::OneOf { selection, actions } => {
                 let action = actions
                     .iter()
-                    .find(|a| a.id == *selection)
-                    .expect("selected action should exist");
+                    .find(|a| a.id.no_variant() == selection.no_variant()) // TODO:: These shouldn't be required to filter by no_variant
+                    .unwrap_or_else(|| {
+                        panic!("selected action {selection:?} should exist in {actions:?}")
+                    });
 
                 collect_actions(&action.selection, &action.id)
             }
-            crate::pipeline::data::Selection::AllOf(actions) => actions
+            RuntimeSelection::AllOf(actions) => actions
                 .iter()
                 .flat_map(|a| collect_actions(&a.selection, &a.id))
                 .collect(),

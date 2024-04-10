@@ -38,13 +38,12 @@ const useLaunchActions = (appDetails: ShortAppDetails | null): LaunchActions[] =
         });
 
         return validProfiles.map((p) => {
-            const targets = p.pipeline.targets
 
             const defaultTargets: LaunchTarget[] = []
+            const pipelineTargets: PipelineTarget[] = ['Desktop', 'Gamemode'];
 
-            for (const key in targets) {
+            for (const key of pipelineTargets) {
                 const action = async () => {
-
                     // HACK: QAM does weird caching that means the profile can be outdated, 
                     // so we reload the profile in the action to ensure it is current
                     const currentPipeline = await getProfile({
@@ -104,10 +103,12 @@ const useLaunchActions = (appDetails: ShortAppDetails | null): LaunchActions[] =
                 }
             }
 
-            return {
+            const res = {
                 profile: p,
                 targets: defaultTargets
             };
+
+            return res;
         });
     }
 

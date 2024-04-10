@@ -21,6 +21,7 @@ use crate::{
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
     db::ProfileDb,
     pipeline::{action_registar::PipelineActionRegistrar, executor::PipelineContext},
+    secondary_app::SecondaryAppManager,
     settings::Settings,
     util::create_dir_all,
 };
@@ -34,6 +35,7 @@ pub mod db;
 mod macros;
 mod native_model_serde_json;
 pub mod pipeline;
+pub mod secondary_app;
 pub mod sys;
 pub mod util;
 
@@ -101,6 +103,7 @@ fn main() -> Result<()> {
         std::fs::File::create(&log_filepath).unwrap(),
     )
     .unwrap();
+    log_panics::init();
 
     log::info!("Starting back-end ({} v{})", PACKAGE_NAME, PACKAGE_VERSION);
     println!("Starting back-end ({} v{})", PACKAGE_NAME, PACKAGE_VERSION);
@@ -142,6 +145,7 @@ fn main() -> Result<()> {
     let assets_dir = config_dir.join("assets"); // TODO::keep assets with decky plugin, not config
     let assets_manager = AssetManager::new(&ASSETS_DIR, assets_dir.clone());
     let request_handler = Arc::new(Mutex::new(RequestHandler::new()));
+    let secondary_app_manager = SecondaryAppManager::new(assets_manager.clone());
 
     // teardown persisted state
     match PipelineContext::load(assets_manager.clone(), home_dir.clone(), config_dir.clone()) {
@@ -157,6 +161,8 @@ fn main() -> Result<()> {
 
     match mode {
         Modes::Autostart => {
+            sleep(Duration::from_millis(500));
+
             // build the executor
             let executor = AutoStart::new(settings.clone())
                 .load()
@@ -194,8 +200,6 @@ fn main() -> Result<()> {
 
                     use crate::sys::steamos_session_select::{steamos_session_select, Session};
                     let res = steamos_session_select(Session::Gamescope).and(exec_result);
-
-                    std::thread::sleep(Duration::from_secs(10)); // implicitly keep UI up during session switch
 
                     res
                 }
@@ -286,6 +290,13 @@ fn main() -> Result<()> {
                     ),
                 )
                 .register(
+                    "patch_pipeline_action",
+                    crate::api::profile::patch_pipeline_action(
+                        request_handler.clone(),
+                        registrar.clone(),
+                    ),
+                )
+                .register(
                     "reify_pipeline",
                     crate::api::profile::reify_pipeline(
                         request_handler.clone(),
@@ -299,6 +310,11 @@ fn main() -> Result<()> {
                 .register(
                     "get_templates",
                     crate::api::profile::get_templates(profiles_db),
+                )
+                // secondary app
+                .register(
+                    "get_secondary_app_info",
+                    crate::api::secondary_app::get_secondary_app_info(secondary_app_manager),
                 )
                 // settings
                 .register(

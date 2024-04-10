@@ -117,3 +117,13 @@ pub fn create_dir_all<A: AsRef<Path> + std::fmt::Debug>(path: A) -> Result<()> {
         Ok(())
     }
 }
+
+pub fn escape_string_for_regex(mut s: String) -> String {
+    for c in [
+        '\\', '^', '$', '*', '+', '?', '.', '(', ')', '|', '{', '}', '[', ']',
+    ] {
+        s = s.replace(c, &format!("\\{c}"));
+    }
+
+    s
+}

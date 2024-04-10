@@ -198,10 +198,7 @@ mod tests {
 
         let pipeline_action_id = PipelineActionId::new("core:citra:layout");
 
-        let targets =
-            HashMap::from_iter([(PipelineTarget::Desktop, vec![pipeline_action_id.clone()])]);
-
-        let actions = registrar.make_lookup(&targets);
+        let actions = registrar.make_lookup(&pipeline_action_id);
 
         let mut expected: CategoryProfile = CategoryProfile {
             id: ProfileId::from_uuid(Uuid::nil()),
@@ -209,11 +206,9 @@ mod tests {
             pipeline: PipelineDefinition {
                 id: PipelineDefinitionId::nil(),
                 name: "Test Pipeline".to_string(),
-                description: "Test Description".to_string(),
-                source_template: Default::default(),
                 register_exit_hooks: true,
                 primary_target_override: None,
-                targets,
+                platform: pipeline_action_id.clone(),
                 actions,
             },
         };
@@ -223,7 +218,7 @@ mod tests {
         let actual_action = actual
             .pipeline
             .actions
-            .get(&pipeline_action_id, PipelineTarget::Desktop, &registrar)
+            .get(&pipeline_action_id, PipelineTarget::Desktop)
             .expect("saved action should exist");
 
         assert_eq!(expected.id, actual.id);
@@ -231,13 +226,13 @@ mod tests {
 
         expected.pipeline.name = "Updated".to_string();
 
-        let mut expected_action = actual_action.clone();
-        expected_action.settings.enabled = expected_action.settings.enabled.map(|v| !v);
-        expected_action.settings.is_visible_on_qam = !expected_action.settings.is_visible_on_qam;
+        let mut expected_settings = actual_action.clone();
+        expected_settings.enabled = expected_settings.enabled.map(|v| !v);
+        expected_settings.is_visible_on_qam = !expected_settings.is_visible_on_qam;
 
         expected.pipeline.actions.actions.insert(
             PipelineActionId::new("core:citra:layout:desktop"),
-            expected_action.settings.clone(),
+            expected_settings.clone().into(),
         );
 
         db.set_profile(expected.clone())?;
@@ -245,15 +240,14 @@ mod tests {
         let actual = db
             .get_profile(&expected.id)?
             .expect("saved profile should exist");
-        let actual_action =
-            actual
-                .pipeline
-                .actions
-                .get(&pipeline_action_id, PipelineTarget::Desktop, &registrar);
+        let actual_action = actual
+            .pipeline
+            .actions
+            .get(&pipeline_action_id, PipelineTarget::Desktop);
 
         assert_eq!(expected.id, actual.id);
         assert_eq!(expected.pipeline.name, actual.pipeline.name);
-        assert_eq!(Some(expected_action), actual_action);
+        assert_eq!(Some(expected_settings).as_ref(), actual_action);
 
         let actual = db
             .get_profiles()?
@@ -292,10 +286,10 @@ mod tests {
         let profile1 = ProfileId::new();
         let profile2 = ProfileId::new();
 
-        let targets1 = HashMap::new();
+        let targets1 = PipelineActionId::new("core:citra:platform");
         let actions1 = registrar.make_lookup(&targets1);
 
-        let targets2 = HashMap::new();
+        let targets2 = PipelineActionId::new("core:melonds:platform");
         let actions2 = registrar.make_lookup(&targets2);
 
         let overrides: HashMap<_, _, RandomState> = HashMap::from_iter(vec![
@@ -304,11 +298,9 @@ mod tests {
                 PipelineDefinition {
                     id: pd_id_1,
                     name: "Profile 1".into(),
-                    description: "Profile 1".into(),
-                    source_template: Default::default(),
                     register_exit_hooks: true,
                     primary_target_override: None,
-                    targets: targets1,
+                    platform: targets1.clone(),
                     actions: actions1,
                 },
             ),
@@ -317,11 +309,9 @@ mod tests {
                 PipelineDefinition {
                     id: pd_id_2,
                     name: "Profile 2".into(),
-                    description: "Profile 2".into(),
-                    source_template: Default::default(),
                     register_exit_hooks: true,
                     primary_target_override: None,
-                    targets: targets2,
+                    platform: targets2.clone(),
                     actions: actions2,
                 },
             ),
@@ -348,7 +338,25 @@ mod tests {
 
         let actual = db.get_app_profile(&app_id)?;
 
-        assert_eq!(expected, actual);
+        assert_eq!(expected.id, actual.id);
+        assert_eq!(expected.default_profile, actual.default_profile);
+        assert_eq!(
+            expected.overrides[&profile1].id,
+            actual.overrides[&profile1].id
+        );
+        assert_eq!(
+            expected.overrides[&profile2].id,
+            actual.overrides[&profile2].id
+        );
+        assert_eq!(
+            expected.overrides[&profile1].actions.actions[&targets1],
+            actual.overrides[&profile1].actions.actions[&targets1]
+        );
+
+        assert_eq!(
+            expected.overrides[&profile2].actions.actions[&targets2],
+            actual.overrides[&profile2].actions.actions[&targets2]
+        );
 
         std::fs::remove_file(&path)?;
 

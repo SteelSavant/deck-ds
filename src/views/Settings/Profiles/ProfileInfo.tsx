@@ -5,6 +5,7 @@ import { CategoryProfile, PipelineContainer, isCategoryProfile } from "../../../
 import HandleLoading from "../../../components/HandleLoading";
 import { useModifiablePipelineContainer } from "../../../context/modifiablePipelineContext";
 import useGlobalSettings from "../../../hooks/useGlobalSettings";
+import useTemplates from "../../../hooks/useTemplates";
 import AddProfileTagModal from "./modals/AddProfileTagModal";
 
 export default function ProfileInfo(container: PipelineContainer): ReactElement {
@@ -17,6 +18,8 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
     const { dispatch } = useModifiablePipelineContainer();
 
     const { settings } = useGlobalSettings();
+
+    const templates = useTemplates();
 
     function removeTag(tag: string) {
         dispatch({
@@ -40,12 +43,43 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
         }} />)
     }
 
+    const loading = templates && settings
+        ? templates.andThen((t) => settings.map((s) => { return { templates: t, globalSettings: s } }))
+        : undefined
+        ;
+
     // TODO::make description editable
     return <HandleLoading
-        value={settings}
-        onOk={(globalSettings) => (
+        value={loading}
+        onOk={({ templates, globalSettings }) => (
             <div>
-                <Field focusable={false} description={profile.pipeline.description} />
+                <Field
+                    focusable={false}
+                // description={profile.pipeline.description}
+                />
+                <Field
+                    focusable={false}
+                    label='Platform'
+                    description='Platform on which the application runs. Native apps and a selection of emulators are supported.'
+                >
+                    <Dropdown
+                        selectedOption={container.pipeline.platform}
+                        rgOptions={templates.map((t) => {
+                            return {
+                                label: t.pipeline.name,
+                                data: t.pipeline.platform
+                            }
+                        })}
+                        onChange={(v) => {
+                            dispatch({
+                                update: {
+                                    type: 'updatePlatform',
+                                    platform: v.data
+                                }
+                            })
+                        }}
+                    />
+                </Field>
                 <Field
                     focusable={false}
                     label='Collections'

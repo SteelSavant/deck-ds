@@ -1,7 +1,7 @@
 import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
-import { Fragment, ReactElement, useContext } from "react";
+import { Fragment, ReactElement, createContext, useContext } from "react";
 import { ProfileContext } from ".";
-import { Action, ActionOneOf, ActionSelection, DependencyError, PipelineAction } from "../../backend";
+import { Action, ActionOneOf, DependencyError, PipelineAction, PipelineTarget, RuntimeSelection } from "../../backend";
 import ActionIcon from "../../components/ActionIcon";
 import ConfigErrorWarning from "../../components/ConfigErrorWarning";
 import { useAppState } from "../../context/appContext";
@@ -9,34 +9,46 @@ import { ConfigErrorContext } from "../../context/configErrorContext";
 import { MaybeString } from "../../types/short";
 import QAMEditAction from "./QAMEditAction";
 
-export default function QAMPipelineTargetDisplay({ root }: {
-    root: ActionSelection,
+
+const PipelineTargetContext = createContext<PipelineTarget>("Desktop");
+
+export default function QAMPipelineTargetDisplay({ root, target }: {
+    root: RuntimeSelection,
+    target: PipelineTarget
 }): ReactElement {
 
     return (
         <DialogBody style={{ marginBottom: '10px' }}>
             <DialogControlsSection>
                 <Field focusable={false} />
-                {buildRootSelection('root', root) ?? <div />}
+                <PipelineTargetContext.Provider value={target}>
+                    {buildRootSelection('root', root)}
+                </PipelineTargetContext.Provider>
             </DialogControlsSection>
         </DialogBody>
     )
 }
 
-function buildRootSelection(id: string, selection: ActionSelection): ReactElement | null {
-    switch (selection.type) {
+function buildRootSelection(id: string, selection: RuntimeSelection): ReactElement {
+    const type = selection.type;
+    switch (type) {
         case "Action":
-            return buildAction(id, null, selection.value);
+            return buildAction(id, null, selection.value) ?? <div />;
         case "OneOf":
             return buildOneOf(selection.value);
         case "AllOf":
+            // TODO::handle user defined
             return buildAllOf(selection.value);
+        default:
+            const typecheck: never = type;
+            throw typecheck ?? 'buildSelection switch failed to typecheck';
     }
 }
 
 function buildAction(id: string, externalProfile: MaybeString, action: Action): ReactElement | null {
     const { dispatchUpdate } = useAppState();
     const profileId = useContext(ProfileContext);
+    const target = useContext(PipelineTargetContext);
 
     // invoked as a function to allow seeing if the component returns null,
     // so we can ignore rendering things that aren't configurable in the QAM
@@ -54,6 +66,7 @@ function buildAction(id: string, externalProfile: MaybeString, action: Action): 
                 update: {
                     type: 'updateAction',
                     id: id,
+                    target: target,
                     action: updatedAction,
                 }
             });
@@ -81,6 +94,8 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
 
     const profileBeingOverridden = useContext(ProfileContext);
     const configErrors = useContext(ConfigErrorContext);
+    const target = useContext(PipelineTargetContext);
+
 
     if (!action.is_visible_on_qam) {
         return <div />
@@ -101,6 +116,7 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
 
     switch (type) {
         case 'AllOf':
+            // TODO::handle userdefined
             if (forcedEnabled || selection.value.length == 0) {
                 return buildAllOf(selection.value);
             } else {
@@ -136,6 +152,7 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                                                 update: {
                                                     type: 'updateOneOf',
                                                     id: action.id,
+                                                    target: target,
                                                     selection: option.data,
                                                 }
                                             })
@@ -162,7 +179,6 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                 return <Fragment />
             }
 
-
         default:
             const typecheck: never = type;
             throw typecheck ?? 'action type failed to typecheck'
@@ -177,21 +193,29 @@ interface HeaderProps {
 }
 
 
-function FromProfileComponent({ action }: { action: any }) {
+function FromProfileComponent({ action }: { action: PipelineAction }) {
     const profileBeingOverridden = useContext(ProfileContext);
+    const target = useContext(PipelineTargetContext);
+
     const { dispatchUpdate } = useAppState();
+
 
     return <Field focusable={false} label="Use per-game profile">
         <Focusable>
             <Toggle value={!action.profile_override} onChange={(value) => {
+                const newOverride = value
+                    ? null
+                    : profileBeingOverridden;
+                console.log('current profile override ', action.profile_override, 'value:', !action.profile_override);
+                console.log('changed to', value, ', setting profile override to ', newOverride)
+
                 dispatchUpdate(profileBeingOverridden, {
                     externalProfile: null,
                     update: {
                         type: 'updateProfileOverride',
                         id: action.id,
-                        profileOverride: value
-                            ? null
-                            : profileBeingOverridden
+                        target: target,
+                        profileOverride: newOverride
                     }
                 })
             }} />
@@ -201,6 +225,7 @@ function FromProfileComponent({ action }: { action: any }) {
 
 function EnabledComponent({ isEnabled, forcedEnabled, action }: HeaderProps): ReactElement {
     const profileBeingOverridden = useContext(ProfileContext);
+    const target = useContext(PipelineTargetContext);
     const { dispatchUpdate } = useAppState();
 
     return forcedEnabled
@@ -211,6 +236,7 @@ function EnabledComponent({ isEnabled, forcedEnabled, action }: HeaderProps): Re
                     dispatchUpdate(profileBeingOverridden, {
                         externalProfile: action.profile_override,
                         update: {
+                            target: target,
                             type: 'updateEnabled',
                             id: action.id,
                             isEnabled: value,
@@ -225,8 +251,6 @@ function Header(props: HeaderProps): ReactElement {
     const action = props.action;
     const displayName = action.name.toLocaleUpperCase();
     const errors = props.configErrors ?? [];
-
-    console.log('QAM Header got errors:', errors);
 
     return (
         <Fragment>

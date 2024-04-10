@@ -24,7 +24,6 @@ import patchLibraryApp from "./patch/patchLibraryApp";
 import QAM from "./views/QAM";
 import ProfileRoute from "./views/Settings/Profiles/ProfileRoute";
 import SettingsRouter from "./views/Settings/SettingsRouter";
-import TemplatePreviewRoute from "./views/Settings/Templates/TemplatePreviewRoute";
 
 const appDetailsState = new ShortAppDetailsState();
 
@@ -103,16 +102,7 @@ export default definePlugin((serverApi: ServerAPI) => {
 
   const libraryPatch = patchLibraryApp(serverApi, appDetailsState);
 
-  // Template Preview Route
-  serverApi.routerHook.addRoute("/deck-ds/settings/templates/:templateid", () =>
-    <ShortAppDetailsStateContextProvider ShortAppDetailsStateClass={appDetailsState} >
-      <ServerApiProvider serverApi={serverApi}>
-        <TemplatePreviewRoute />
-      </ServerApiProvider>
-    </ShortAppDetailsStateContextProvider>, {
-    exact: true
-  });
-
+  // Profiles route
   serverApi.routerHook.addRoute("/deck-ds/settings/profiles/:profileid", () =>
     <ShortAppDetailsStateContextProvider ShortAppDetailsStateClass={appDetailsState} >
       <ServerApiProvider serverApi={serverApi}>

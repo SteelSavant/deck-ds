@@ -2,18 +2,21 @@ use std::fmt::Debug;
 
 use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use strum::{Display, EnumString};
+use strum::{Display, EnumIter, EnumString};
 
 use crate::macros::newtype_uuid;
 
 use self::display_config::DisplayConfig;
+use self::multi_window::main_app_automatic_windowing::MainAppAutomaticWindowing;
+use self::multi_window::secondary_app::{LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp};
 use self::{
     cemu_layout::CemuLayout, citra_layout::CitraLayout, melonds_layout::MelonDSLayout,
-    multi_window::MultiWindow, session_handler::DesktopSessionHandler, source_file::SourceFile,
-    virtual_screen::VirtualScreen,
+    multi_window::primary_windowing::MultiWindow, session_handler::DesktopSessionHandler,
+    source_file::SourceFile, virtual_screen::VirtualScreen,
 };
 
-use super::{data::Selection, dependency::Dependency, executor::PipelineContext};
+use super::data::{ConfigSelection, DefinitionSelection, RuntimeSelection};
+use super::{dependency::Dependency, executor::PipelineContext};
 use anyhow::Result;
 
 pub mod cemu_layout;
@@ -44,7 +47,7 @@ pub trait ActionImpl: DeserializeOwned + Serialize {
         Ok(())
     }
 
-    fn get_dependencies(&self, _ctx: &mut PipelineContext) -> Vec<Dependency> {
+    fn get_dependencies(&self, _ctx: &PipelineContext) -> Vec<Dependency> {
         // default to no dependencies
         vec![]
     }
@@ -114,11 +117,26 @@ pub enum Action {
     CemuLayout(CemuLayout),
     MelonDSLayout(MelonDSLayout),
     SourceFile(SourceFile),
+    LaunchSecondaryFlatpakApp(LaunchSecondaryFlatpakApp),
+    LaunchSecondaryAppPreset(LaunchSecondaryAppPreset),
+    MainAppAutomaticWindowing(MainAppAutomaticWindowing),
 }
 
-impl<T: Into<Action>, R> From<T> for Selection<R> {
+impl<T: Into<Action>> From<T> for DefinitionSelection {
     fn from(value: T) -> Self {
-        Selection::Action(value.into())
+        Self::Action(value.into())
+    }
+}
+
+impl<T: Into<Action>> From<T> for ConfigSelection {
+    fn from(value: T) -> Self {
+        Self::Action(value.into())
+    }
+}
+
+impl<T: Into<Action>> From<T> for RuntimeSelection {
+    fn from(value: T) -> Self {
+        Self::Action(value.into())
     }
 }
 
@@ -135,19 +153,33 @@ impl Action {
             Action::CemuLayout(a) => Action::CemuLayout(CemuLayout { id, ..*a }),
             Action::MelonDSLayout(a) => Action::MelonDSLayout(MelonDSLayout { id, ..*a }),
             Action::SourceFile(a) => Action::SourceFile(SourceFile { id, ..a.clone() }),
+            Action::LaunchSecondaryFlatpakApp(a) => {
+                Action::LaunchSecondaryFlatpakApp(LaunchSecondaryFlatpakApp { id, ..a.clone() })
+            }
+            Action::LaunchSecondaryAppPreset(a) => {
+                Action::LaunchSecondaryAppPreset(LaunchSecondaryAppPreset { id, ..a.clone() })
+            }
+            Action::MainAppAutomaticWindowing(a) => {
+                Action::MainAppAutomaticWindowing(MainAppAutomaticWindowing { id, ..a.clone() })
+            }
         }
     }
 }
 
 /// This effectively acts as a typename for the action, and thus variants CANNOT be renamed without breaking things
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Display, EnumString)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Display, EnumString, EnumIter,
+)]
 pub enum ActionType {
     CemuLayout,
     CitraLayout,
     DesktopSessionHandler,
     DisplayConfig,
     MultiWindow,
+    MainAppAutomaticWindowing,
     MelonDSLayout,
     SourceFile,
     VirtualScreen,
+    LaunchSecondaryFlatpakApp,
+    LaunchSecondaryAppPreset,
 }

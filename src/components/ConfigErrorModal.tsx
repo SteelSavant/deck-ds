@@ -33,6 +33,10 @@ function DisplayError(error: DependencyError): ReactElement {
                 return `Bundled kwinscript "${error.value}" failed to install`
             case "FieldNotSet":
                 return `Field "${error.value}" must be set`
+            case "FlatpakNotFound":
+                return `Required flatpak  ${error.value} must be installed`;
+            case "SecondaryAppPresetNotFound":
+                return `required secondary app preset ${error.value} must exist`;
             default:
                 const typecheck: never = type;
                 throw typecheck ?? 'DependencyError failed to typecheck';

@@ -1,8 +1,7 @@
 import { Focusable, Tabs } from "decky-frontend-lib";
 import { ReactElement, useEffect, useRef, useState } from "react";
-import { ActionSelection, PipelineContainer, PipelineTarget } from "../../backend";
+import { PipelineContainer, RuntimeSelection } from "../../backend";
 import HandleLoading from "../../components/HandleLoading";
-import { IconForTarget } from "../../components/IconForTarget";
 import { ConfigErrorContext } from "../../context/configErrorContext";
 import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
 import useReifiedPipeline from "../../hooks/useReifiedPipeline";
@@ -35,33 +34,18 @@ export default function PipelineDisplay({ header, general, secondaryAction, seco
                 ({ pipeline, config_errors }) => {
                     interface TargetDescriptor {
                         target: string,
-                        root: ActionSelection,
-                        description: ReactElement,
+                        root: RuntimeSelection,
                     }
 
                     const defaultTargets: TargetDescriptor[] = [];
                     const extraTargets: TargetDescriptor[] = [] // no real intention of actually supporting extra targets, but...
 
-                    const descriptions: { [k: string]: string } = {
-                        ['Gamemode']: 'Game',
-                        ['Desktop']: 'Desktop'
-                    }
+
 
                     for (const key in pipeline.targets) {
                         const value: TargetDescriptor = {
                             target: key,
                             root: pipeline.targets[key],
-                            description: <div
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'row',
-                                    alignItems: 'center'
-                                }}
-                            >
-                                <p>Action that run when launched in {descriptions[key]} (</p>
-                                {<IconForTarget target={key as PipelineTarget} />}
-                                <p>) mode.</p>
-                            </div>
                         };
 
                         if (key === 'Gamemode') {
@@ -75,9 +59,6 @@ export default function PipelineDisplay({ header, general, secondaryAction, seco
 
 
                     const allTargets = defaultTargets.concat(extraTargets);
-
-                    console.log('config errors to pass: ', config_errors);
-
                     const tabs = [
                         {
                             title: 'General',
@@ -90,7 +71,7 @@ export default function PipelineDisplay({ header, general, secondaryAction, seco
                                 title: kv.target,
                                 content: (
                                     <ConfigErrorContext.Provider value={config_errors} >
-                                        <PipelineTargetDisplay root={kv.root} description={kv.description} />
+                                        <PipelineTargetDisplay root={kv.root} />
                                     </ConfigErrorContext.Provider>
                                 ),
                                 id: kv.target.toLowerCase(),
@@ -123,6 +104,7 @@ export default function PipelineDisplay({ header, general, secondaryAction, seco
                                         setCurrentTabRoute(tabID);
                                     }}
                                     tabs={tabs}
+                                // TODO::look into footer on tab for "Save as new profile" Action on templates page
                                 />
                             </div>
                         </div>

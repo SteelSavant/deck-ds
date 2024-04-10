@@ -1,0 +1,74 @@
+{
+    "20f75c64-3105-41b9-8d40-a84e4ff5a3ac": {
+        "name": "YouTube [Chrome]",
+        "app": {
+            "type": "Flatpak",
+            "app_id": "com.google.Chrome",
+            "args": [
+                "--kiosk",
+                "--new-window",
+                "youtube.com"
+            ]
+        }
+    },
+    "fd811b3f-4e09-4828-92aa-9220239c274b": {
+        "name": "YouTube [Firefox]",
+        "app": {
+            "type": "Flatpak",
+            "app_id": "org.mozilla.firefox",
+            "args": [
+                "--new-window",
+                "--kiosk",
+                "youtube.com"
+            ]
+        }
+    },
+    "5d27c8dc-1504-45ef-a5d7-49e8545c62c4": {
+        "name": "Netflix [Chrome]",
+        "app": {
+            "type": "Flatpak",
+            "app_id": "com.google.Chrome",
+            "args": [
+                "--kiosk",
+                "--new-window",
+                "netflix.com"
+            ]
+        }
+    },
+    "d518dc5a-13b8-4993-b09d-139fd7bf9ba3": {
+        "name": "Netflix [Firefox]",
+        "app": {
+            "type": "Flatpak",
+            "app_id": "org.mozilla.firefox",
+            "args": [
+                "--new-window",
+                "--kiosk",
+                "netflix.com"
+            ]
+        }
+    },
+    "3775b25c-220a-4764-bd72-52d8bf303301": {
+        "name": "Amazon Prime Video [Chrome]",
+        "app": {
+            "type": "Flatpak",
+            "app_id": "com.google.Chrome",
+            "args": [
+                "--kiosk",
+                "--new-window",
+                "amazon.com/gp/video/storefront"
+            ]
+        }
+    },
+    "e90133d6-82b0-433b-ac28-24a26f9f9f1d": {
+        "name": "Amazon Prime Video [Firefox]",
+        "app": {
+            "type": "Flatpak",
+            "app_id": "org.mozilla.firefox",
+            "args": [
+                "--new-window",
+                "--kiosk",
+                "amazon.com/gp/video/storefront"
+            ]
+        }
+    }
+}

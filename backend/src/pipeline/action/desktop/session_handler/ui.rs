@@ -111,6 +111,7 @@ impl DeckDsUi {
 
     pub fn run(self) -> Result<(), eframe::Error> {
         let options = eframe::NativeOptions {
+            hardware_acceleration: eframe::HardwareAcceleration::Preferred,
             viewport: build_viewport(self.primary_position, self.primary_size, self.window_level),
             event_loop_builder: Some(Box::new(|builder| {
                 builder.with_any_thread(true);

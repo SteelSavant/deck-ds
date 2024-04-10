@@ -7,7 +7,7 @@ use native_db::transaction::{RTransaction, RwTransaction};
 
 use crate::{
     db::model::{DbAppOverride, DbCategoryProfile, DbPipelineActionSettings, DbPipelineDefinition},
-    pipeline::data::{PipelineDefinition, PipelineDefinitionId},
+    pipeline::data::{PipelineActionId, PipelineDefinition, PipelineDefinitionId},
     settings::{AppId, AppProfile, CategoryProfile},
 };
 
@@ -52,11 +52,11 @@ impl AppProfile {
                 let profile = profile.reconstruct(ro)?;
 
                 // override the visibility with the profile visibility, since the QAM can't actually set it;
-                // same with name && exit hooks
+                // same with name && platform && exit hooks
 
                 o.register_exit_hooks = profile.pipeline.register_exit_hooks;
                 o.name = profile.pipeline.name;
-                o.description = profile.pipeline.description;
+                o.platform = profile.pipeline.platform;
 
                 for (action_id, action) in o.actions.actions.iter_mut() {
                     if let Some(profile_action) = profile.pipeline.actions.actions.get(action_id) {
@@ -93,11 +93,9 @@ impl PipelineDefinition {
         let db_pipeline = DbPipelineDefinition {
             id,
             name: self.name.clone(),
-            description: self.description.clone(),
-            source_template: self.source_template.clone().into(),
             register_exit_hooks: self.register_exit_hooks,
             primary_target_override: self.primary_target_override,
-            targets: self.targets.clone(),
+            platform: self.platform.clone(),
             actions,
         };
 
@@ -111,7 +109,7 @@ impl DbCategoryProfile {
     pub fn remove_all(mut self, rw: &RwTransaction) -> Result<()> {
         self.remove_app_overrides(rw)?;
 
-        let mut ids: Vec<_> = self.pipeline.targets.into_values().flatten().collect();
+        let mut ids = vec![self.pipeline.platform];
         let mut actions = self.pipeline.actions;
         ids.append(&mut actions);
 
@@ -124,7 +122,7 @@ impl DbCategoryProfile {
             }
         }
 
-        self.pipeline.targets = HashMap::new();
+        self.pipeline.platform = PipelineActionId::new("");
         self.pipeline.actions = vec![];
 
         Ok(rw.remove(self)?)

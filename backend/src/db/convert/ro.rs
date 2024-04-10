@@ -6,16 +6,14 @@ use native_db::transaction::RTransaction;
 
 use crate::{
     db::model::{
-        DbAction, DbCemuLayout, DbCitraLayout, DbDesktopSessionHandler, DbDisplayConfig,
-        DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings, DbPipelineDefinition,
-        DbSelection, DbSourceFile, DbVirtualScreen,
+        DbAction, DbCemuLayout, DbCitraLayout, DbConfigSelection, DbDesktopSessionHandler,
+        DbDisplayConfig, DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset,
+        DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings,
+        DbPipelineDefinition, DbSourceFile, DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionType},
-        data::{
-            PipelineActionId, PipelineActionLookup, PipelineActionSettings, PipelineDefinition,
-            Selection,
-        },
+        data::{ConfigSelection, PipelineActionLookup, PipelineActionSettings, PipelineDefinition},
     },
 };
 
@@ -57,21 +55,32 @@ impl DbAction {
                 let action = ro.get().primary::<DbSourceFile>(id)?;
                 action.map(|a| Action::SourceFile(a.into()))
             }
+            ActionType::LaunchSecondaryFlatpakApp => {
+                let action = ro.get().primary::<DbLaunchSecondaryApp>(id)?;
+                action.map(|a| Action::LaunchSecondaryFlatpakApp(a.into()))
+            }
+            ActionType::LaunchSecondaryAppPreset => {
+                let action = ro.get().primary::<DbLaunchSecondaryAppPreset>(id)?;
+                action.map(|a| Action::LaunchSecondaryAppPreset(a.into()))
+            }
+            ActionType::MainAppAutomaticWindowing => {
+                let action = ro.get().primary::<DbMainAppAutomaticWindowing>(id)?;
+                action.map(|a| Action::MainAppAutomaticWindowing(a.into()))
+            }
         };
 
         transformed.with_context(|| format!("failed to recover action {id:?}"))
     }
 }
 
-impl DbSelection {
-    fn transform(&self, ro: &RTransaction) -> Result<Selection<PipelineActionId>> {
+impl DbConfigSelection {
+    fn transform(&self, ro: &RTransaction) -> Result<ConfigSelection> {
         let selection = match self {
-            DbSelection::Action(action) => Selection::Action(action.transform(ro)?),
-            DbSelection::OneOf { selection, actions } => Selection::OneOf {
+            DbConfigSelection::Action(action) => ConfigSelection::Action(action.transform(ro)?),
+            DbConfigSelection::OneOf { selection } => ConfigSelection::OneOf {
                 selection: selection.clone(),
-                actions: actions.clone(),
             },
-            DbSelection::AllOf(actions) => Selection::AllOf(actions.clone()),
+            DbConfigSelection::AllOf => ConfigSelection::AllOf,
         };
 
         Ok(selection)
@@ -113,11 +122,9 @@ impl DbPipelineDefinition {
         Ok(PipelineDefinition {
             id: self.id,
             name: self.name.clone(),
-            description: self.description.clone(),
-            source_template: self.source_template.into(),
             register_exit_hooks: self.register_exit_hooks,
             primary_target_override: self.primary_target_override,
-            targets: self.targets.clone(),
+            platform: self.platform.clone(),
             actions: PipelineActionLookup { actions },
         })
     }

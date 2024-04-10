@@ -8,10 +8,10 @@ import {
     useEffect,
     useState
 } from 'react';
-import { ApiError, AppProfile, getAppProfile, getDefaultAppOverrideForProfileRequest, getProfile, PipelineDefinition, PipelineTarget, reifyPipeline, ReifyPipelineResponse, setAppProfileOverride, setAppProfileSettings, setProfile } from '../backend';
+import { ApiError, AppProfile, getAppProfile, getDefaultAppOverrideForProfileRequest, getProfile, PipelineDefinition, PipelineTarget, reifyPipeline, ReifyPipelineResponse, RuntimeSelection, setAppProfileOverride, setAppProfileSettings, setProfile } from '../backend';
 import { MaybeString } from '../types/short';
 import { Loading } from '../util/loading';
-import { patchPipeline, PipelineUpdate } from '../util/patch_pipeline';
+import { patchPipeline, PipelineUpdate } from "../util/patchPipeline";
 import { Result } from '../util/result';
 
 
@@ -100,30 +100,36 @@ export class ShortAppDetailsState {
 
                 const pipeline = this.appProfile.data.overrides[profileId];
                 if (pipeline) {
-                    const newPipeline = patchPipeline(pipeline, action.update);
+                    let res = (await patchPipeline(pipeline, action.update)).map(async (newPipeline) => {
+                        return await this.setAppProfileOverride(
+                            appId,
+                            profileId,
+                            newPipeline
+                        )
+                    });
 
-                    await this.setAppProfileOverride(
-                        appId,
-                        profileId,
-                        newPipeline
-                    )
+                    if (res.isOk) {
+                        await res.data;
+                    } else {
+                        console.log("error updating profile", res.err);
+                    }
                 } else {
                     console.log('pipeline should already be loaded before updating', pipeline);
                 }
             }
         }
 
-        await this.refetchProfile(appId)
+        await this.refetchProfile(profileId, appId)
     }
 
-    async setAppProfileDefault(appDetails: ShortAppDetails, defaultProfileId: string | null) {
+    async setAppProfileDefault(appDetails: ShortAppDetails, defaultProfileId: string) {
         const res = await setAppProfileSettings({
             app_id: appDetails.appId.toString(),
             default_profile: defaultProfileId
         });
 
         if (res?.isOk) {
-            this.refetchProfile(appDetails.appId)
+            this.refetchProfile(defaultProfileId, appDetails.appId)
         } else {
             console.log('failed to set app(', appDetails.appId, ') default to', defaultProfileId);
         }
@@ -141,6 +147,8 @@ export class ShortAppDetailsState {
                 });
                 if (res.isOk && res.data.pipeline) {
                     overrides[profileId] = res.data.pipeline;
+
+
                     console.log('set override for', profileId, 'to', overrides[profileId]);
                     shouldUpdate = true;
                 }
@@ -150,8 +158,9 @@ export class ShortAppDetailsState {
             }
 
             if (overrides[profileId]) {
-                this.reifiedPipelines[profileId] = (await reifyPipeline({ pipeline: overrides[profileId] }));
-
+                const res = (await reifyPipeline({ pipeline: overrides[profileId] })).map((res) =>
+                    patchProfileOverridesForMissing(profileId, overrides[profileId], res));
+                this.reifiedPipelines[profileId] = res
                 console.log('load reified to:', this.reifiedPipelines[profileId]);
                 shouldUpdate = true;
             }
@@ -181,7 +190,7 @@ export class ShortAppDetailsState {
                     overrides,
                 }
             })
-            this.refetchProfile(appId)
+            this.refetchProfile(profileId, appId)
         } else {
             console.log('failed to set app(', appId, ') override for', profileId);
         }
@@ -197,16 +206,18 @@ export class ShortAppDetailsState {
             const profile = profileResponse.data.profile;
             const pipeline = profile?.pipeline;
             if (pipeline) {
-                const newPipeline = patchPipeline(pipeline, update);
-                const res = await setProfile({
-                    profile: {
-                        ...profile,
-                        pipeline: newPipeline
-                    }
+                const res = await (await patchPipeline(pipeline, update)).andThenAsync(async (res) => {
+                    return await setProfile({
+                        profile: {
+                            ...profile,
+                            pipeline: res
+                        }
+                    })
                 });
 
+
                 if (res?.isOk) {
-                    this.refetchProfile()
+                    this.refetchProfile(profileId)
                 } else {
                     console.log('failed to set external profile', profileId)
                 }
@@ -221,7 +232,7 @@ export class ShortAppDetailsState {
         // TODO::error handling
     }
 
-    private async refetchProfile(appIdToMatch?: number) {
+    private async refetchProfile(externalProfileId: string, appIdToMatch?: number) {
         const internal = async () => {
             if (this.appDetails && (!appIdToMatch || this.appDetails?.appId == appIdToMatch)) {
                 const newProfile = (await getAppProfile({
@@ -240,9 +251,11 @@ export class ShortAppDetailsState {
                 } else {
                     const overrides = this.appProfile.data.overrides;
                     for (const k in overrides) {
-                        this.reifiedPipelines[k] = (await reifyPipeline({
+                        let reified = (await reifyPipeline({
                             pipeline: overrides[k]
-                        }));
+                        })).map((response) => patchProfileOverridesForMissing(externalProfileId, overrides[k], response));
+
+                        this.reifiedPipelines[k] = reified;
                     }
 
                     console.log('refetched; updating to', this.appProfile.data?.overrides);
@@ -328,7 +341,7 @@ export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
     const setOnAppPage = (appDetails: ShortAppDetails) =>
         ShortAppDetailsStateClass.setOnAppPage(appDetails)
 
-    const setAppProfileDefault = async (appDetails: ShortAppDetails, defaultProfileId: string | null) => {
+    const setAppProfileDefault = async (appDetails: ShortAppDetails, defaultProfileId: string) => {
         ShortAppDetailsStateClass.setAppProfileDefault(appDetails, defaultProfileId);
     }
 
@@ -358,4 +371,46 @@ export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
             {children}
         </AppContext.Provider>
     )
+}
+
+function patchProfileOverridesForMissing(externalProfileId: string, overrides: PipelineDefinition, response: ReifyPipelineResponse): ReifyPipelineResponse {
+    const pipeline = response.pipeline;
+
+
+    function patch(selection: RuntimeSelection) {
+        const type = selection.type
+        switch (type) {
+            case 'Action':
+                return;
+            case 'OneOf':
+                for (const v of selection.value.actions) {
+                    if (!overrides.actions.actions[v.id]) {
+                        v.profile_override = externalProfileId
+                    }
+                    patch(v.selection)
+                }
+                return;
+            case 'AllOf':
+                for (const v of selection.value) {
+                    if (!overrides.actions.actions[v.id]) {
+                        v.profile_override = externalProfileId
+                    }
+                    patch(v.selection)
+                }
+                return;
+
+            default:
+                const typecheck: never = type;
+                throw typecheck ?? 'runtime selection failed to typecheck';
+        }
+    }
+
+    for (const target in pipeline.targets) {
+        let selection = pipeline.targets[target];
+        patch(selection)
+    }
+
+    console.log('reify response after patch: ', response.pipeline);
+
+    return response;
 }
