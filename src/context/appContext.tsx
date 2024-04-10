@@ -159,13 +159,7 @@ export class ShortAppDetailsState {
 
             if (overrides[profileId]) {
                 const res = (await reifyPipeline({ pipeline: overrides[profileId] })).map((res) =>
-                    patchProfileOverridesForMissing(profileId, {
-                        actions: { actions: {} },
-                        id: '',
-                        name: '',
-                        platform: '',
-                        register_exit_hooks: false
-                    }, res));
+                    patchProfileOverridesForMissing(profileId, overrides[profileId], res));
                 this.reifiedPipelines[profileId] = res
                 console.log('load reified to:', this.reifiedPipelines[profileId]);
                 shouldUpdate = true;

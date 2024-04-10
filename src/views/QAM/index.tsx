@@ -97,7 +97,6 @@ function AppProfileSection({ launchActions }: { launchActions: LaunchActions }):
                         flexDirection: 'row',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-
                     }}
                 >
                     <p>{launchActions.profile.pipeline.name}</p>
