@@ -8,22 +8,30 @@ The `DS` in the name is of dual significance, and stands for both Dual-Screen, a
 
 This plugin allows applications to be launched in Desktop mode, from Game mode. Additionally, DeckDS has specialized support for emulators for systems with multiple screens, configured as best as possible to use an external monitor as a second screen for a near-native dual-screen experience.
 
+### App Support
+
+DeckDS allows launching Steam applications (both Steam and non-Steam titles are supported) in desktop mode. Additionally, the plugin supports launching a secondary application (currently only flatpaks are supported) simultaneously, allowing the user to play a game while interacting with an application like YouTube or Discord on the second display.
+
 ### Emulator Support
 
 Configuration and display/window management for a small selection of emulators are currently supported. The following table lists the support status of supported emulators by install source:
-
-
-|              | Flatpak  | AppImage | Emudeck (Proton) | Other Portable/Binary | RetroArch 
-|--------------|----------|----------|------------------|-----------------------|-----------
-| Dolphin/mGBA | 🚧       | 🚧       | ➖               |  🚧                  | ❌         
-| Cemu         | ✅       | ✅       | ✅               | ☑️                    | ❌         
-| Citra        | ✅       | ☑️        | ➖               | ☑️                    | ❌        
-| MelonDS      | ✅       | ☑️        | ➖               | ☑️                    | ❌        
 
 - ✅ : Supported
 - ☑️  : If it exists, should work if the emulator settings location is configured
 - 🚧 : Planned/In-Progress
 - ❌ : Not Supported/Not Planned
+
+|              | Flatpak  | AppImage | Emudeck (Proton) | Other Portable/Binary | RetroArch 
+|--------------|----------|----------|------------------|-----------------------|-----------
+| Dolphin/mGBA | 🚧       | 🚧       | ➖               |  🚧                  | ❌         
+| Cemu         | ✅       | ✅       | ✅               | ☑️                    | ❌         
+| Citra        | ✅       | ☑️        | ➖               | ☑️                    | ❌   
+| Citra forks*  | ➖       |      ➖  | ➖               |  ☑️                   | ❌   
+| MelonDS      | ✅       | ☑️        | ➖               | ☑️                    | ❌        
+
+
+*Citra forks include, but may not be limited to, [Lemonade](https://github.com/Lemonade-emu/Lemonade) and [Lime3DS](https://lime3ds.github.io/).
+
 
 ### Configuration 
 
@@ -31,7 +39,7 @@ Configuration profiles can be made from existing templates, and then customized 
 
 Profiles can be applied to Steam categories, and can be overridden per-game to provide the best experience.
 
-Configurations each have two launch targets: Desktop, and Gamemode. This allows customizing settings, such as display layout, per-profile and per-game; useful for Nintendo DS and 3DS emulators specifically.
+Configurations each have (up to) two launch targets: Desktop, and Gamemode. This allows customizing settings, such as display layout, per-profile and per-game; useful for Nintendo DS and 3DS emulators specifically.
 
 ### Desktop Display Settings
 
