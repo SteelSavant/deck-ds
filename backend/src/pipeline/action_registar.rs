@@ -312,7 +312,7 @@ impl PipelineActionRegistarBuilder {
                                 id: ActionId::nil(),
                                 external_display_settings: ExternalDisplaySettings::Previous,
                                 deck_location: None,
-                                deck_is_primary_display: false,
+                                deck_is_primary_display: true,
                             }.into()
                         })
                 })
