@@ -531,7 +531,7 @@ function SecondaryAppPreset({ cloned, indentLevel, onChange, Builder }: Secondar
     const secondaryInfo = useSecondaryAppInfo();
     const [filtered, setFiltered] = useState(true);
 
-    // TODO::ability to create new presets
+    // TODO::ability to create new presets (probably as a separate main toplevel tab, and a "convert to preset" option on "custom")
 
     return (
         <HandleLoading
