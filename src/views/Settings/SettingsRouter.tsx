@@ -2,8 +2,9 @@ import {
     SidebarNavigation
 } from "decky-frontend-lib";
 import { VFC } from "react";
-import { FaGears } from "react-icons/fa6";
+import { FaGears, FaPuzzlePiece } from "react-icons/fa6";
 import { HiFolder } from "react-icons/hi";
+import About from "./About";
 import { GlobalSettingsPage } from "./GlobalSettings";
 import { ProfilesPage } from "./Profiles";
 
@@ -23,6 +24,13 @@ const SettingsRouter: VFC = () => {
             hideTitle: true,
             identifier: 'global',
         },
+        {
+            title: 'About',
+            content: <div> <About /> </div>,
+            icon: <FaPuzzlePiece />,
+            hideTitle: false,
+            identifier: 'about'
+        }
     ].map((p) => {
         return {
             route: `/deck-ds/settings/${p.identifier}`,
