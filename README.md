@@ -17,7 +17,7 @@ DeckDS allows launching Steam applications (both Steam and non-Steam titles are 
 Configuration and display/window management for a small selection of emulators are currently supported. The following table lists the support status of supported emulators by install source:
 
 - ✅ : Supported
-- ☑️  : If it exists, should work if the emulator settings location is configured
+- ☑️  : If it exists, should work if the emulator settings location is configured. 
 - 🚧 : Planned/In-Progress
 - ❌ : Not Supported/Not Planned
 
@@ -26,20 +26,22 @@ Configuration and display/window management for a small selection of emulators a
 | Dolphin/mGBA | 🚧       | 🚧       | ➖               |  🚧                  | ❌         
 | Cemu         | ✅       | ✅       | ✅               | ☑️                    | ❌         
 | Citra        | ✅       | ☑️        | ➖               | ☑️                    | ❌   
-| Citra forks*  | ➖       |      ➖  | ➖               |  ☑️                   | ❌   
+| Citra forks* | ☑️        | ☑️        | ➖               | ☑️                    | ❌   
 | MelonDS      | ✅       | ☑️        | ➖               | ☑️                    | ❌        
 
 
-*Citra forks include, but may not be limited to, [Lemonade](https://github.com/Lemonade-emu/Lemonade) and [Lime3DS](https://lime3ds.github.io/).
+*Citra forks include, but may not be limited to, [Lemonade](https://github.com/Lemonade-emu/Lemonade) and [Lime3DS](https://lime3ds.github.io/). Compatibility not guaranteed.
 
 
 ### Configuration 
 
-Configuration profiles can be made from existing templates, and then customized as needed. Currently, only the emulator install source and layout options are configurable. 
+Configuration is handled through profiles. Profiles can be applied to Steam categories, and can be overridden per-game to provide the best experience.
 
-Profiles can be applied to Steam categories, and can be overridden per-game to provide the best experience.
+Each profile allows configuring the application platform (either native or an emulator), as well as settings specific to each launch target.
 
-Configurations each have (up to) two launch targets: Desktop, and Gamemode. This allows customizing settings, such as display layout, per-profile and per-game; useful for Nintendo DS and 3DS emulators specifically.
+Profiles each have (up to) two launch targets: Desktop, and Gamemode. This allows customizing settings, such as display layout, per-profile and per-game, with different settings for Desktop and Gamemode; useful for Nintendo DS and 3DS emulators specifically.
+
+Currently, only display settings and (for emulators) emulator install source and layout options are configurable.
 
 ### Desktop Display Settings
 
