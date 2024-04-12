@@ -56,16 +56,24 @@ impl AppProfile {
 
                 o.register_exit_hooks = profile.pipeline.register_exit_hooks;
                 o.name = profile.pipeline.name;
-                o.platform = profile.pipeline.platform;
+                o.platform = profile.pipeline.platform.clone();
 
-                let tl_actions = Some(&mut o.platform)
-                    .iter()
-                    .chain(o.toplevel.iter_mut().map(|v| &v));
+                let platform = &mut o.platform;
 
-                let profile_tl_actions = Some(profile.pipeline.platform)
-                    .iter()
-                    .chain(profile.pipeline.toplevel.iter())
-                    .collect::<Vec<_>>();
+                let mut tl_actions = vec![platform];
+                tl_actions.append(&mut o.toplevel.iter_mut().collect::<Vec<_>>());
+
+                let profile_platform = &profile.pipeline.platform;
+
+                let mut profile_tl_actions = vec![profile_platform];
+                profile_tl_actions.append(
+                    &mut profile
+                        .pipeline
+                        .toplevel
+                        .iter()
+                        .chain(profile.pipeline.toplevel.iter())
+                        .collect::<Vec<_>>(),
+                );
 
                 for tl in tl_actions {
                     let profile_tl = profile_tl_actions.iter().find(|v| v.id == tl.id);
@@ -107,8 +115,7 @@ impl PipelineDefinition {
         let toplevel = self
             .toplevel
             .into_iter()
-            .enumerate()
-            .map(|(i, v)| v.save_all_and_transform(id, rw))
+            .map(|v| v.save_all_and_transform(id, rw))
             .collect::<Result<_>>()?;
 
         let db_pipeline = DbPipelineDefinition {
@@ -151,6 +158,7 @@ impl DbCategoryProfile {
             root: PipelineActionId::new(""),
             actions: vec![],
         };
+        self.pipeline.toplevel = vec![];
 
         Ok(rw.remove(self)?)
     }

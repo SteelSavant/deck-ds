@@ -221,11 +221,17 @@ impl PipelineDefinition {
     ) -> Result<Pipeline> {
         let targets = PipelineTarget::iter()
             .map(|t: PipelineTarget| {
-                let toplevel = Some(self.platform).iter().chain(self.toplevel.iter());
+                let platform_ref = &self.platform;
+                let toplevel = vec![
+                    vec![platform_ref],
+                    self.toplevel.iter().map(|v| v).collect(),
+                ]
+                .concat();
 
                 let reified: Vec<_> = toplevel
+                    .iter()
                     .enumerate()
-                    .filter(|(i, v)| actions_have_target(&v.root, &v.actions, t, registrar))
+                    .filter(|(_, v)| actions_have_target(&v.root, &v.actions, t, registrar))
                     .map(|(i, v)| v.reify(i, t, self, profiles, registrar))
                     .filter_map(|v| v.transpose())
                     .collect::<Result<_>>()?;
@@ -489,6 +495,8 @@ fn actions_have_target(
 
 #[cfg(test)]
 mod tests {
+    use pretty_assertions::assert_eq;
+
     use strum::IntoEnumIterator;
 
     use crate::{

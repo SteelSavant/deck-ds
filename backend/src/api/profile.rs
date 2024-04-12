@@ -17,7 +17,7 @@ use crate::{
         action_registar::PipelineActionRegistrar,
         data::{
             ConfigSelection, Pipeline, PipelineActionId, PipelineDefinition, PipelineDefinitionId,
-            PipelineTarget, RuntimeSelection, Template,
+            PipelineTarget, RuntimeSelection, Template, TopLevelDefinition, TopLevelId,
         },
         dependency::DependencyError,
         executor::PipelineContext,
@@ -340,19 +340,50 @@ pub fn get_default_app_override_pipeline_for_profile(
                         pipeline: profile.map(|profile| {
                             let pipeline = profile.pipeline;
 
-                            let mut lookup = registrar.make_lookup(&pipeline.platform);
+                            let mut platform_lookup =
+                                registrar.make_lookup(&pipeline.platform.root);
 
-                            for (id, action) in lookup.actions.iter_mut() {
+                            for (id, action) in platform_lookup.actions.iter_mut() {
                                 action.profile_override = Some(args.profile_id);
                                 // override the visibility with the profile visibility, since the QAM can't actually set it
-                                if let Some(profile_action) = pipeline.actions.actions.get(id) {
+                                if let Some(profile_action) =
+                                    pipeline.platform.actions.actions.get(id)
+                                {
                                     action.is_visible_on_qam = profile_action.is_visible_on_qam;
                                 }
                             }
 
+                            let toplevel = pipeline
+                                .toplevel
+                                .iter()
+                                .map(|v| {
+                                    let mut lookup = registrar.make_lookup(&pipeline.platform.root);
+
+                                    for (id, action) in lookup.actions.iter_mut() {
+                                        action.profile_override = Some(args.profile_id);
+                                        // override the visibility with the profile visibility, since the QAM can't actually set it
+                                        if let Some(profile_action) =
+                                            pipeline.platform.actions.actions.get(id)
+                                        {
+                                            action.is_visible_on_qam =
+                                                profile_action.is_visible_on_qam;
+                                        }
+                                    }
+
+                                    TopLevelDefinition {
+                                        actions: lookup,
+                                        ..v.clone()
+                                    }
+                                })
+                                .collect();
+
                             PipelineDefinition {
                                 id: PipelineDefinitionId::nil(),
-                                actions: lookup,
+                                platform: TopLevelDefinition {
+                                    actions: platform_lookup,
+                                    ..pipeline.platform
+                                },
+                                toplevel,
                                 ..pipeline
                             }
                         }),
@@ -380,7 +411,8 @@ pub enum PipelineActionUpdate {
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct PatchPipelineActionRequest {
     pipeline: PipelineDefinition,
-    id: PipelineActionId,
+    toplevel_id: TopLevelId,
+    action_id: PipelineActionId,
     target: PipelineTarget,
     update: PipelineActionUpdate,
 }
@@ -407,49 +439,73 @@ pub fn patch_pipeline_action(
 
         match args {
             Ok(args) => {
-                let registered = registrar.get(&args.id, args.target);
+                let registered = registrar.get(&args.action_id, args.target);
                 if let Some(registered) = registered {
                     let mut pipeline = args.pipeline;
-                    let pipeline_action = pipeline
-                        .actions
-                        .actions
-                        .entry(args.id.clone())
-                        .or_insert(registered.clone().settings.into());
+                    let tl = if pipeline.platform.id == args.toplevel_id {
+                        Some(&mut pipeline.platform)
+                    } else {
+                        pipeline
+                            .toplevel
+                            .iter_mut()
+                            .find(|v| v.id == args.toplevel_id)
+                    };
 
-                    match args.update {
-                        PipelineActionUpdate::UpdateEnabled { is_enabled } => {
-                            pipeline_action.enabled = Some(is_enabled);
-                        }
-                        PipelineActionUpdate::UpdateProfileOverride { profile_override } => {
-                            log::info!(
-                                "profile override for {:?} set to {:?}",
-                                args.id,
-                                profile_override
-                            );
+                    match tl {
+                        Some(tl) => {
+                            let pipeline_action = tl
+                                .actions
+                                .actions
+                                .entry(args.action_id.clone())
+                                .or_insert(registered.clone().settings.into());
 
-                            pipeline_action.profile_override = profile_override
+                            match args.update {
+                                PipelineActionUpdate::UpdateEnabled { is_enabled } => {
+                                    pipeline_action.enabled = Some(is_enabled);
+                                }
+                                PipelineActionUpdate::UpdateProfileOverride {
+                                    profile_override,
+                                } => {
+                                    log::info!(
+                                        "profile override for {:?} set to {:?}",
+                                        args.action_id,
+                                        profile_override
+                                    );
+
+                                    pipeline_action.profile_override = profile_override
+                                }
+                                PipelineActionUpdate::UpdateOneOf { selection } => {
+                                    pipeline_action.selection = ConfigSelection::OneOf { selection }
+                                }
+                                PipelineActionUpdate::UpdateAction { action } => {
+                                    pipeline_action.selection = ConfigSelection::Action(action)
+                                }
+                                PipelineActionUpdate::UpdateVisibleOnQAM { is_visible } => {
+                                    pipeline_action.is_visible_on_qam = is_visible
+                                }
+                            }
+
+                            if let ConfigSelection::OneOf { selection } =
+                                &mut pipeline_action.selection
+                            {
+                                let reified =
+                                    registrar.get(selection, args.target).unwrap().id.clone();
+                                *selection = reified
+                            }
+
+                            PatchPipelineActionResponse { pipeline }.to_response()
                         }
-                        PipelineActionUpdate::UpdateOneOf { selection } => {
-                            pipeline_action.selection = ConfigSelection::OneOf { selection }
-                        }
-                        PipelineActionUpdate::UpdateAction { action } => {
-                            pipeline_action.selection = ConfigSelection::Action(action)
-                        }
-                        PipelineActionUpdate::UpdateVisibleOnQAM { is_visible } => {
-                            pipeline_action.is_visible_on_qam = is_visible
-                        }
+                        // TODO::Notfound
+                        None => ResponseErr(
+                            StatusCode::BadRequest,
+                            anyhow::anyhow!("toplevel {:?} to registered", args.toplevel_id),
+                        )
+                        .to_response(),
                     }
-
-                    if let ConfigSelection::OneOf { selection } = &mut pipeline_action.selection {
-                        let reified = registrar.get(selection, args.target).unwrap().id.clone();
-                        *selection = reified
-                    }
-
-                    PatchPipelineActionResponse { pipeline }.to_response()
                 } else {
                     ResponseErr(
                         StatusCode::BadRequest,
-                        anyhow::anyhow!("action {:?} not registered", args.id),
+                        anyhow::anyhow!("action {:?} not registered", args.action_id),
                     )
                     .to_response()
                 }
