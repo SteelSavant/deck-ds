@@ -175,7 +175,10 @@ mod tests {
     use crate::{
         pipeline::{
             action_registar::PipelineActionRegistrar,
-            data::{PipelineActionId, PipelineDefinitionId, PipelineTarget},
+            data::{
+                PipelineActionId, PipelineDefinitionId, PipelineTarget, TopLevelDefinition,
+                TopLevelId,
+            },
         },
         util::create_dir_all,
     };
@@ -208,8 +211,12 @@ mod tests {
                 name: "Test Pipeline".to_string(),
                 register_exit_hooks: true,
                 primary_target_override: None,
-                platform: pipeline_action_id.clone(),
-                actions,
+                platform: TopLevelDefinition {
+                    id: TopLevelId::nil(),
+                    root: pipeline_action_id.clone(),
+                    actions,
+                },
+                toplevel: vec![],
             },
         };
 
@@ -217,6 +224,7 @@ mod tests {
         let actual = db.get_profile(&expected.id)?.expect("profile should exist");
         let actual_action = actual
             .pipeline
+            .platform
             .actions
             .get(&pipeline_action_id, PipelineTarget::Desktop)
             .expect("saved action should exist");
@@ -230,7 +238,7 @@ mod tests {
         expected_settings.enabled = expected_settings.enabled.map(|v| !v);
         expected_settings.is_visible_on_qam = !expected_settings.is_visible_on_qam;
 
-        expected.pipeline.actions.actions.insert(
+        expected.pipeline.platform.actions.actions.insert(
             PipelineActionId::new("core:citra:layout:desktop"),
             expected_settings.clone().into(),
         );
@@ -242,6 +250,7 @@ mod tests {
             .expect("saved profile should exist");
         let actual_action = actual
             .pipeline
+            .platform
             .actions
             .get(&pipeline_action_id, PipelineTarget::Desktop);
 
@@ -286,9 +295,11 @@ mod tests {
         let profile1 = ProfileId::new();
         let profile2 = ProfileId::new();
 
+        let toplevel1 = TopLevelId::new();
         let targets1 = PipelineActionId::new("core:citra:platform");
         let actions1 = registrar.make_lookup(&targets1);
 
+        let toplevel2 = TopLevelId::new();
         let targets2 = PipelineActionId::new("core:melonds:platform");
         let actions2 = registrar.make_lookup(&targets2);
 
@@ -300,8 +311,12 @@ mod tests {
                     name: "Profile 1".into(),
                     register_exit_hooks: true,
                     primary_target_override: None,
-                    platform: targets1.clone(),
-                    actions: actions1,
+                    platform: TopLevelDefinition {
+                        id: toplevel1,
+                        root: targets1.clone(),
+                        actions: actions1,
+                    },
+                    toplevel: vec![],
                 },
             ),
             (
@@ -311,8 +326,12 @@ mod tests {
                     name: "Profile 2".into(),
                     register_exit_hooks: true,
                     primary_target_override: None,
-                    platform: targets2.clone(),
-                    actions: actions2,
+                    platform: TopLevelDefinition {
+                        id: toplevel2,
+                        root: targets2.clone(),
+                        actions: actions2,
+                    },
+                    toplevel: vec![],
                 },
             ),
         ]);
@@ -349,13 +368,13 @@ mod tests {
             actual.overrides[&profile2].id
         );
         assert_eq!(
-            expected.overrides[&profile1].actions.actions[&targets1],
-            actual.overrides[&profile1].actions.actions[&targets1]
+            expected.overrides[&profile1].platform.actions.actions[&targets1],
+            actual.overrides[&profile1].platform.actions.actions[&targets1]
         );
 
         assert_eq!(
-            expected.overrides[&profile2].actions.actions[&targets2],
-            actual.overrides[&profile2].actions.actions[&targets2]
+            expected.overrides[&profile2].platform.actions.actions[&targets2],
+            actual.overrides[&profile2].platform.actions.actions[&targets2]
         );
 
         std::fs::remove_file(&path)?;

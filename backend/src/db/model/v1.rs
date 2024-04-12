@@ -26,7 +26,7 @@ use crate::{
             session_handler::DesktopSessionHandler,
             ActionId,
         },
-        data::{PipelineActionId, PipelineDefinitionId, PipelineTarget},
+        data::{PipelineActionId, PipelineDefinitionId, PipelineTarget, TopLevelId},
     },
     secondary_app::{FlatpakApp, SecondaryApp, SecondaryAppPresetId},
     settings::{AppId, ProfileId},
@@ -85,7 +85,14 @@ pub struct DbPipelineDefinition {
     pub name: String,
     pub register_exit_hooks: bool,
     pub primary_target_override: Option<PipelineTarget>,
-    pub platform: PipelineActionId,
+    pub platform: DbTopLevelDefinition,
+    pub toplevel: Vec<DbTopLevelDefinition>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct DbTopLevelDefinition {
+    pub id: TopLevelId,
+    pub root: PipelineActionId,
     pub actions: Vec<PipelineActionId>,
 }
 
@@ -94,7 +101,7 @@ pub struct DbPipelineDefinition {
 #[native_model(id = 5, version = 1, with = NativeModelJSON)]
 pub struct DbPipelineActionSettings {
     #[primary_key]
-    pub id: (PipelineDefinitionId, PipelineActionId),
+    pub id: (PipelineDefinitionId, TopLevelId, PipelineActionId),
     pub enabled: Option<bool>,
     pub is_visible_on_qam: bool,
     pub profile_override: Option<ProfileId>,

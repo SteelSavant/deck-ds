@@ -9,11 +9,14 @@ use crate::{
         DbAction, DbCemuLayout, DbCitraLayout, DbConfigSelection, DbDesktopSessionHandler,
         DbDisplayConfig, DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset,
         DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings,
-        DbPipelineDefinition, DbSourceFile, DbVirtualScreen,
+        DbPipelineDefinition, DbSourceFile, DbTopLevelDefinition, DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionType},
-        data::{ConfigSelection, PipelineActionLookup, PipelineActionSettings, PipelineDefinition},
+        data::{
+            ConfigSelection, PipelineActionLookup, PipelineActionSettings, PipelineDefinition,
+            TopLevelDefinition,
+        },
     },
 };
 
@@ -89,19 +92,39 @@ impl DbConfigSelection {
 
 impl DbPipelineDefinition {
     pub fn transform(&self, ro: &RTransaction) -> Result<PipelineDefinition> {
+        let platform = self.platform.transform(ro)?;
+        let toplevel = self
+            .toplevel
+            .iter()
+            .map(|v| v.transform(ro))
+            .collect::<Result<_>>()?;
+
+        Ok(PipelineDefinition {
+            id: self.id,
+            name: self.name.clone(),
+            register_exit_hooks: self.register_exit_hooks,
+            primary_target_override: self.primary_target_override,
+            platform,
+            toplevel,
+        })
+    }
+}
+
+impl DbTopLevelDefinition {
+    fn transform(&self, ro: &RTransaction) -> Result<TopLevelDefinition> {
         let actions = self
             .actions
             .iter()
             .filter_map(|v| {
                 ro.get()
-                    .primary::<DbPipelineActionSettings>((self.id, v.clone()))
+                    .primary::<DbPipelineActionSettings>((self.id, v.clone(), v.clone()))
                     .transpose()
             })
             .map(|v| {
                 v.map(|v| {
                     v.selection.transform(ro).map(|s| {
                         (
-                            v.id.1,
+                            v.id.2,
                             PipelineActionSettings {
                                 enabled: v.enabled,
                                 is_visible_on_qam: v.is_visible_on_qam,
@@ -119,13 +142,10 @@ impl DbPipelineDefinition {
             })
             .collect::<Result<HashMap<_, _>>>()?;
 
-        Ok(PipelineDefinition {
+        Ok(TopLevelDefinition {
             id: self.id,
-            name: self.name.clone(),
-            register_exit_hooks: self.register_exit_hooks,
-            primary_target_override: self.primary_target_override,
-            platform: self.platform.clone(),
-            actions: PipelineActionLookup { actions },
+            root: self.root.clone(),
+            actions: PipelineActionLookup { actions: actions },
         })
     }
 }

@@ -9,7 +9,7 @@ use crate::{
         action_registar::PipelineActionRegistrar,
         data::{
             PipelineActionId, PipelineDefinition, PipelineDefinitionId, PipelineTarget, Template,
-            TemplateId,
+            TemplateId, TopLevelDefinition, TopLevelId,
         },
     },
 };
@@ -38,10 +38,14 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                 pipeline: PipelineDefinition {
                     id: PipelineDefinitionId::nil(),
                     name: root_action.name.clone(),
-                    platform: self.platform,
+                    platform: TopLevelDefinition {
+                        id: TopLevelId::nil(),
+                        root: self.platform,
+                        actions,
+                    },
                     primary_target_override: None,
                     register_exit_hooks: true,
-                    actions,
+                    toplevel: vec![],
                 },
             }
         }

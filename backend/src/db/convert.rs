@@ -7,11 +7,11 @@ use native_db::transaction::{RTransaction, RwTransaction};
 
 use crate::{
     db::model::{DbAppOverride, DbCategoryProfile, DbPipelineActionSettings, DbPipelineDefinition},
-    pipeline::data::{PipelineActionId, PipelineDefinition, PipelineDefinitionId},
+    pipeline::data::{PipelineActionId, PipelineDefinition, PipelineDefinitionId, TopLevelId},
     settings::{AppId, AppProfile, CategoryProfile},
 };
 
-use super::model::DbAppSettings;
+use super::model::{DbAppSettings, DbTopLevelDefinition};
 
 mod ro;
 mod rw;
@@ -58,9 +58,24 @@ impl AppProfile {
                 o.name = profile.pipeline.name;
                 o.platform = profile.pipeline.platform;
 
-                for (action_id, action) in o.actions.actions.iter_mut() {
-                    if let Some(profile_action) = profile.pipeline.actions.actions.get(action_id) {
-                        action.is_visible_on_qam = profile_action.is_visible_on_qam
+                let tl_actions = Some(&mut o.platform)
+                    .iter()
+                    .chain(o.toplevel.iter_mut().map(|v| &v));
+
+                let profile_tl_actions = Some(profile.pipeline.platform)
+                    .iter()
+                    .chain(profile.pipeline.toplevel.iter())
+                    .collect::<Vec<_>>();
+
+                for tl in tl_actions {
+                    let profile_tl = profile_tl_actions.iter().find(|v| v.id == tl.id);
+                    if let Some(profile_tl) = profile_tl {
+                        for (action_id, action) in tl.actions.actions.iter_mut() {
+                            if let Some(profile_action) = profile_tl.actions.actions.get(action_id)
+                            {
+                                action.is_visible_on_qam = profile_action.is_visible_on_qam
+                            }
+                        }
                     }
                 }
             }
@@ -88,15 +103,21 @@ impl PipelineDefinition {
             self.id
         };
 
-        let actions = self.actions.save_all_and_transform(id, rw)?;
+        let platform = self.platform.save_all_and_transform(id, rw)?;
+        let toplevel = self
+            .toplevel
+            .into_iter()
+            .enumerate()
+            .map(|(i, v)| v.save_all_and_transform(id, rw))
+            .collect::<Result<_>>()?;
 
         let db_pipeline = DbPipelineDefinition {
             id,
             name: self.name.clone(),
             register_exit_hooks: self.register_exit_hooks,
             primary_target_override: self.primary_target_override,
-            platform: self.platform.clone(),
-            actions,
+            platform,
+            toplevel,
         };
 
         Ok(db_pipeline)
@@ -109,21 +130,27 @@ impl DbCategoryProfile {
     pub fn remove_all(mut self, rw: &RwTransaction) -> Result<()> {
         self.remove_app_overrides(rw)?;
 
-        let mut ids = vec![self.pipeline.platform];
-        let mut actions = self.pipeline.actions;
-        ids.append(&mut actions);
+        let actions = Some(self.pipeline.platform)
+            .into_iter()
+            .chain(self.pipeline.toplevel.into_iter())
+            .enumerate();
 
-        for id in actions {
-            let action: Option<DbPipelineActionSettings> =
-                rw.get().primary((self.pipeline.id, id))?;
-            if let Some(action) = action {
-                action.selection.remove_all(rw)?;
-                rw.remove(action)?;
+        for (i, tl) in actions {
+            for id in tl.actions {
+                let action: Option<DbPipelineActionSettings> =
+                    rw.get().primary((self.pipeline.id, id, i as u32))?;
+                if let Some(action) = action {
+                    action.selection.remove_all(rw)?;
+                    rw.remove(action)?;
+                }
             }
         }
 
-        self.pipeline.platform = PipelineActionId::new("");
-        self.pipeline.actions = vec![];
+        self.pipeline.platform = DbTopLevelDefinition {
+            id: TopLevelId::nil(),
+            root: PipelineActionId::new(""),
+            actions: vec![],
+        };
 
         Ok(rw.remove(self)?)
     }
