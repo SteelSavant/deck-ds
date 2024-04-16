@@ -410,16 +410,32 @@ function patchProfileOverridesForMissing(externalProfileId: string, overrides: P
     for (const target in pipeline.targets) {
         let selection = pipeline.targets[target];
         if (selection.type === 'AllOf') {
+            const actions = selection.value;
             let skip = 0;
-            for (const v in selection.value) {
+            for (const v in actions) {
                 const i = parseInt(v);
 
-                // handle case where ids mismatch because a toplevel action is invalid for a target
-                while (selection.value[i].id !== toplevel[i + skip].root && i + skip < toplevel.length) {
-                    skip += 1;
+                console.log('before action:', actions[i], 'toplevel:', toplevel[i + skip]);
+
+                function idsEqual(a: string, b: string, target: string): boolean {
+                    const lower = target.toLowerCase();
+                    return a === b
+                        || `${a}:${lower}` === b
+                        || `${b}:${lower}` === a
+                        || `${a}:${lower}` === `${b}:${lower}`
+                        ;
                 }
 
-                patch(selection.value[i].selection, toplevel[i + skip].actions);
+                // handle case where ids mismatch because a toplevel action is invalid for a target
+                while (!idsEqual(actions[i].id, toplevel[i + skip]?.root, target) && i + skip < toplevel.length) {
+
+                    skip += 1;
+                    console.log('skip: ', skip);
+                }
+
+                console.log('after action:', actions[i], 'toplevel:', toplevel[i + skip]);
+
+                patch(actions[i].selection, toplevel[i + skip].actions);
             }
         } else {
             throw 'expected toplevel action to be AllOf'

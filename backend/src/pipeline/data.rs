@@ -231,7 +231,7 @@ impl PipelineDefinition {
                 let reified: Vec<_> = toplevel
                     .iter()
                     .enumerate()
-                    .filter(|(_, v)| actions_have_target(&v.root, &v.actions, t, registrar))
+                    .filter(|(_, v)| actions_have_target(&v.root, t, registrar))
                     .map(|(i, v)| v.reify(i, t, self, profiles, registrar))
                     .filter_map(|v| v.transpose())
                     .collect::<Result<_>>()?;
@@ -456,41 +456,33 @@ impl ConfigSelection {
 
 fn actions_have_target(
     root: &PipelineActionId,
-    map: &PipelineActionLookup,
     target: PipelineTarget,
     registrar: &PipelineActionRegistrar,
 ) -> bool {
     fn search_settings(
         id: &PipelineActionId,
-        map: &PipelineActionLookup,
         target: PipelineTarget,
         registrar: &PipelineActionRegistrar,
     ) -> bool {
-        let settings = map.get(id, target);
+        let settings = registrar.get(id, target);
 
-        match settings {
-            Some(PipelineActionSettings { selection, .. }) => match selection {
-                ConfigSelection::Action(_) => true,
-                ConfigSelection::AllOf | ConfigSelection::OneOf { .. } => {
-                    match registrar.get(id, target) {
-                        Some(values) => match &values.settings.selection {
-                            DefinitionSelection::AllOf(values)
-                            | DefinitionSelection::OneOf {
-                                actions: values, ..
-                            } => values
-                                .iter()
-                                .any(|v| search_settings(v, map, target, registrar)),
-                            _ => panic!(),
-                        },
+        match settings.as_ref() {
+            Some(PipelineActionDefinition { settings, .. }) => match &settings.selection {
+                DefinitionSelection::Action(_) => true,
+                DefinitionSelection::OneOf { actions, .. }
+                | DefinitionSelection::AllOf(actions) => actions
+                    .iter()
+                    .map(|id| match registrar.get(id, target) {
+                        Some(_) => search_settings(id, target, registrar),
                         None => false,
-                    }
-                }
+                    })
+                    .any(|v| v),
             },
             None => false,
         }
     }
 
-    search_settings(root, map, target, registrar)
+    search_settings(root, target, registrar)
 }
 
 #[cfg(test)]
@@ -529,12 +521,7 @@ mod tests {
                 Ok(p) => {
                     assert_eq!(tp.name, p.name);
                     let target_count = PipelineTarget::iter().fold(0, |a, v| {
-                        if actions_have_target(
-                            &tp.platform.root,
-                            &tp.platform.actions,
-                            v,
-                            &registrar,
-                        ) {
+                        if actions_have_target(&tp.platform.root, v, &registrar) {
                             a + 1
                         } else {
                             a

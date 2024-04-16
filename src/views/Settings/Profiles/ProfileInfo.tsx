@@ -63,11 +63,11 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                     description='Platform on which the application runs. Native apps and a selection of emulators are supported.'
                 >
                     <Dropdown
-                        selectedOption={container.pipeline.platform}
+                        selectedOption={container.pipeline.platform.root}
                         rgOptions={templates.map((t) => {
                             return {
                                 label: t.pipeline.name,
-                                data: t.pipeline.platform
+                                data: t.pipeline.platform.root
                             }
                         })}
                         onChange={(v) => {
