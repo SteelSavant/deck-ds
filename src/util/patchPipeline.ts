@@ -11,27 +11,32 @@ export type PipelineUpdate = {
     info: PipelineInfo,
 } | {
     type: 'updateProfileOverride',
-    id: string,
+    action_id: string,
+    toplevel_id: string,
     target: PipelineTarget,
     profileOverride: MaybeString
 } | {
     type: 'updateEnabled',
-    id: string,
+    action_id: string,
+    toplevel_id: string,
     target: PipelineTarget,
     isEnabled: boolean
 } | {
     type: 'updateOneOf',
-    id: string,
+    action_id: string,
+    toplevel_id: string,
     target: PipelineTarget,
     selection: string,
 } | {
     type: 'updateAction',
-    id: string,
+    action_id: string,
+    toplevel_id: string,
     target: PipelineTarget,
     action: Action
 } | {
     type: 'updateVisibleOnQAM',
-    id: string,
+    action_id: string,
+    toplevel_id: string,
     target: PipelineTarget,
     visible: boolean,
 };
@@ -59,7 +64,10 @@ export async function patchPipeline(pipeline: PipelineDefinition, update: Pipeli
     } else if (update.type === 'updatePlatform') {
         return Ok({
             ...pipeline,
-            platform: update.platform,
+            platform: {
+                ...pipeline.platform,
+                root: update.platform
+            }
         })
     }
     else {
@@ -105,7 +113,8 @@ export async function patchPipeline(pipeline: PipelineDefinition, update: Pipeli
         })();
 
         const res = await patchPipelineAction({
-            id: update.id,
+            action_id: update.action_id,
+            toplevel_id: update.toplevel_id,
             pipeline,
             update: u,
             target: update.target
