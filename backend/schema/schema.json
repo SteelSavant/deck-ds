@@ -1741,7 +1741,8 @@
         "id",
         "is_visible_on_qam",
         "name",
-        "selection"
+        "selection",
+        "toplevel_id"
       ],
       "properties": {
         "description": {
@@ -1782,6 +1783,10 @@
               "$ref": "#/definitions/RuntimeSelection"
             }
           ]
+        },
+        "toplevel_id": {
+          "type": "string",
+          "format": "uuid"
         }
       }
     },

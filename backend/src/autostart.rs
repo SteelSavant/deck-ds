@@ -7,7 +7,7 @@ use std::{
 use crate::{
     asset::AssetManager,
     pipeline::{
-        data::{PipelineAction, PipelineActionId, PipelineTarget, RuntimeSelection},
+        data::{PipelineAction, PipelineActionId, PipelineTarget, RuntimeSelection, TopLevelId},
         executor::PipelineExecutor,
     },
     settings::Settings,
@@ -50,6 +50,7 @@ impl AutoStart {
                                     let id = format!("internal:{index}");
                                     PipelineAction {
                                         id: PipelineActionId::new(&id),
+                                        toplevel_id: TopLevelId::nil(),
                                         name: id,
                                         description: None,
                                         enabled: None,

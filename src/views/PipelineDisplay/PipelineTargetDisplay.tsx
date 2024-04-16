@@ -30,10 +30,10 @@ function buildSelection(action_id: string, toplevel_id: MaybeString, selection: 
         case "Action":
             return buildAction(action_id, toplevel_id!, selection.value, indentLevel);
         case "OneOf":
-            return buildOneOf(selection.value, toplevel_id!, indentLevel, qamHiddenByParent);
+            return buildOneOf(selection.value, indentLevel, qamHiddenByParent);
         case "AllOf":
             // TODO::handle userdefined
-            return buildAllOf(selection.value, toplevel_id, indentLevel, qamHiddenByParent);
+            return buildAllOf(selection.value, indentLevel, qamHiddenByParent);
         default:
             const typecheck: never = type;
             throw typecheck ?? 'buildSelection switch failed to typecheck';
@@ -61,20 +61,20 @@ function buildAction(action_id: string, toplevel_id: string, action: Action, ind
     })
 }
 
-function buildOneOf(oneOf: ActionOneOf, toplevel_id: string, indentLevel: number, qamHiddenByParent: boolean): ReactElement {
+function buildOneOf(oneOf: ActionOneOf, indentLevel: number, qamHiddenByParent: boolean): ReactElement {
     const action = oneOf.actions.find((a) => a.id === oneOf.selection)!;
-    return buildPipelineAction(action, toplevel_id, indentLevel + 1, qamHiddenByParent);
+    return buildPipelineAction(action, indentLevel + 1, qamHiddenByParent);
 }
 
-function buildAllOf(allOf: PipelineAction[], toplevel_id: MaybeString, indentLevel: number, qamHiddenByParent: boolean): ReactElement {
+function buildAllOf(allOf: PipelineAction[], indentLevel: number, qamHiddenByParent: boolean): ReactElement {
     return (
         <Fragment>
-            {allOf.map((action) => buildPipelineAction(action, toplevel_id ?? action.id, indentLevel + 1, qamHiddenByParent))}
+            {allOf.map((action) => buildPipelineAction(action, indentLevel + 1, qamHiddenByParent))}
         </Fragment>
     );
 }
 
-function buildPipelineAction(action: PipelineAction, toplevel_id: string, indentLevel: number, qamHiddenByParent: boolean): ReactElement {
+function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHiddenByParent: boolean): ReactElement {
     const { dispatch } = useModifiablePipelineContainer();
     const configErrors = useContext(ConfigErrorContext);
     const target = useContext(PipelineTargetContext);
@@ -91,7 +91,7 @@ function buildPipelineAction(action: PipelineAction, toplevel_id: string, indent
             update: {
                 type: 'updateVisibleOnQAM',
                 action_id: action.id,
-                toplevel_id: toplevel_id,
+                toplevel_id: action.toplevel_id,
                 visible: !action.is_visible_on_qam,
                 target,
             }
@@ -104,7 +104,7 @@ function buildPipelineAction(action: PipelineAction, toplevel_id: string, indent
         : indentLevel;
 
     const childAction =
-        isEnabled || forcedEnabled ? buildSelection(action.id, toplevel_id, action.selection, newIndentLevel, hideQamForChildren) : null;
+        isEnabled || forcedEnabled ? buildSelection(action.id, action.toplevel_id, action.selection, newIndentLevel, hideQamForChildren) : null;
     const childActionIsConfigurable = childAction !== null;
     const hasError = configErrors[action.id]?.length ?? 0 > 0;
 
@@ -128,7 +128,7 @@ function buildPipelineAction(action: PipelineAction, toplevel_id: string, indent
                                             update: {
                                                 type: 'updateEnabled',
                                                 action_id: action.id,
-                                                toplevel_id,
+                                                toplevel_id: action.toplevel_id,
                                                 isEnabled: value,
                                                 target,
                                             }
@@ -146,7 +146,7 @@ function buildPipelineAction(action: PipelineAction, toplevel_id: string, indent
                                         dispatch({
                                             update: {
                                                 type: 'updateOneOf',
-                                                toplevel_id,
+                                                toplevel_id: action.toplevel_id,
                                                 action_id: action.id,
                                                 selection: option.data,
                                                 target,

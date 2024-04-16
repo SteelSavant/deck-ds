@@ -111,6 +111,7 @@ pub struct PipelineAction {
     pub name: String,
     pub description: Option<String>,
     pub id: PipelineActionId,
+    pub toplevel_id: TopLevelId,
     /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
     pub enabled: Option<bool>,
     /// Whether or not the pipeline action is hidden on the QAM
@@ -273,6 +274,7 @@ impl TopLevelDefinition {
         self.root.reify(&ReificationCtx {
             root_id: &self.root,
             toplevel_index,
+            toplevel_id: self.id,
             target,
             pipeline,
             actions: &self.actions,
@@ -287,6 +289,7 @@ struct ReificationCtx<'a> {
     root_id: &'a PipelineActionId,
     /// 0 for platform, otherwise (index - 1) into the toplevel array
     toplevel_index: usize,
+    toplevel_id: TopLevelId,
     target: PipelineTarget,
     pipeline: &'a PipelineDefinition,
     actions: &'a PipelineActionLookup,
@@ -409,6 +412,7 @@ impl PipelineActionSettings<ConfigSelection> {
             name: definition.name.clone(),
             description: definition.description.clone(),
             id: definition.id.clone(),
+            toplevel_id: ctx.toplevel_id,
             enabled: self.enabled,
             is_visible_on_qam: self.is_visible_on_qam,
             profile_override,

@@ -567,6 +567,7 @@ export interface PipelineAction {
    * The value of the pipeline action
    */
   selection: RuntimeSelection;
+  toplevel_id: string;
 }
 export interface SetAppProfileOverrideRequest {
   app_id: string;
