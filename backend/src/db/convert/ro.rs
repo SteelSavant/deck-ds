@@ -15,7 +15,7 @@ use crate::{
         action::{Action, ActionType},
         data::{
             ConfigSelection, PipelineActionLookup, PipelineActionSettings, PipelineDefinition,
-            TopLevelDefinition,
+            PipelineDefinitionId, TopLevelDefinition,
         },
     },
 };
@@ -92,11 +92,11 @@ impl DbConfigSelection {
 
 impl DbPipelineDefinition {
     pub fn transform(&self, ro: &RTransaction) -> Result<PipelineDefinition> {
-        let platform = self.platform.transform(ro)?;
+        let platform = self.platform.transform(self.id, ro)?;
         let toplevel = self
             .toplevel
             .iter()
-            .map(|v| v.transform(ro))
+            .map(|v| v.transform(self.id, ro))
             .collect::<Result<_>>()?;
 
         Ok(PipelineDefinition {
@@ -111,13 +111,21 @@ impl DbPipelineDefinition {
 }
 
 impl DbTopLevelDefinition {
-    fn transform(&self, ro: &RTransaction) -> Result<TopLevelDefinition> {
+    fn transform(
+        &self,
+        pipeline_definition_id: PipelineDefinitionId,
+        ro: &RTransaction,
+    ) -> Result<TopLevelDefinition> {
         let actions = self
             .actions
             .iter()
             .filter_map(|v| {
                 ro.get()
-                    .primary::<DbPipelineActionSettings>((self.id, v.clone(), v.clone()))
+                    .primary::<DbPipelineActionSettings>((
+                        pipeline_definition_id,
+                        self.id,
+                        v.clone(),
+                    ))
                     .transpose()
             })
             .map(|v| {
