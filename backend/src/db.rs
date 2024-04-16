@@ -176,8 +176,8 @@ mod tests {
         pipeline::{
             action_registar::PipelineActionRegistrar,
             data::{
-                PipelineActionId, PipelineDefinitionId, PipelineTarget, TopLevelDefinition,
-                TopLevelId,
+                PipelineActionId, PipelineActionLookup, PipelineDefinitionId, PipelineTarget,
+                TopLevelDefinition, TopLevelId,
             },
         },
         util::create_dir_all,
@@ -216,7 +216,11 @@ mod tests {
                     root: pipeline_action_id.clone(),
                     actions,
                 },
-                toplevel: vec![],
+                toplevel: vec![TopLevelDefinition {
+                    id: TopLevelId::nil(),
+                    root: PipelineActionId::new("core:toplevel:secondary"),
+                    actions: PipelineActionLookup::empty(),
+                }],
             },
         };
 

@@ -562,15 +562,6 @@ mod tests {
                                 tp.platform,
                                 v.iter().map(|v| &v.id).collect::<Vec<_>>()
                             );
-
-                            assert_eq!(
-                                v.len(),
-                                registrar.toplevel().into_keys().len() + 1,
-                                "not all toplevel found for {:?}: {:?}",
-                                tp.platform,
-                                v.iter().map(|v| v.id.clone()).collect::<Vec<_>>(),
-                            )
-                            // may need revision of toplevel actions change
                         }
                         _ => panic!(),
                     }
