@@ -9,6 +9,7 @@ import {
     useState
 } from 'react';
 import { ApiError, AppProfile, getAppProfile, getDefaultAppOverrideForProfileRequest, getProfile, PipelineDefinition, PipelineTarget, reifyPipeline, ReifyPipelineResponse, RuntimeSelection, setAppProfileOverride, setAppProfileSettings, setProfile } from '../backend';
+import { PipelineActionLookup } from '../types/backend_api';
 import { MaybeString } from '../types/short';
 import { Loading } from '../util/loading';
 import { patchPipeline, PipelineUpdate } from "../util/patchPipeline";
@@ -376,26 +377,27 @@ export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
 function patchProfileOverridesForMissing(externalProfileId: string, overrides: PipelineDefinition, response: ReifyPipelineResponse): ReifyPipelineResponse {
     const pipeline = response.pipeline;
 
+    const toplevel = [overrides.platform].concat(overrides.toplevel);
 
-    function patch(selection: RuntimeSelection) {
+    function patch(selection: RuntimeSelection, actions: PipelineActionLookup) {
         const type = selection.type
         switch (type) {
             case 'Action':
                 return;
             case 'OneOf':
                 for (const v of selection.value.actions) {
-                    if (!overrides.actions.actions[v.id]) {
+                    if (!actions.actions[v.id]) {
                         v.profile_override = externalProfileId
                     }
-                    patch(v.selection)
+                    patch(v.selection, actions)
                 }
                 return;
             case 'AllOf':
                 for (const v of selection.value) {
-                    if (!overrides.actions.actions[v.id]) {
+                    if (!actions.actions[v.id]) {
                         v.profile_override = externalProfileId
                     }
-                    patch(v.selection)
+                    patch(v.selection, actions)
                 }
                 return;
 
@@ -407,7 +409,21 @@ function patchProfileOverridesForMissing(externalProfileId: string, overrides: P
 
     for (const target in pipeline.targets) {
         let selection = pipeline.targets[target];
-        patch(selection)
+        if (selection.type === 'AllOf') {
+            let skip = 0;
+            for (const v in selection.value) {
+                const i = parseInt(v);
+
+                // handle case where ids mismatch because a toplevel action is invalid for a target
+                while (selection.value[i].id !== toplevel[i + skip].root && i + skip < toplevel.length) {
+                    skip += 1;
+                }
+
+                patch(selection.value[i].selection, toplevel[i + skip].actions);
+            }
+        } else {
+            throw 'expected toplevel action to be AllOf'
+        }
     }
 
     console.log('reify response after patch: ', response.pipeline);

@@ -1663,13 +1663,14 @@
     "PatchPipelineActionRequest": {
       "type": "object",
       "required": [
-        "id",
+        "action_id",
         "pipeline",
         "target",
+        "toplevel_id",
         "update"
       ],
       "properties": {
-        "id": {
+        "action_id": {
           "type": "string"
         },
         "pipeline": {
@@ -1677,6 +1678,10 @@
         },
         "target": {
           "$ref": "#/definitions/PipelineTarget"
+        },
+        "toplevel_id": {
+          "type": "string",
+          "format": "uuid"
         },
         "update": {
           "$ref": "#/definitions/PipelineActionUpdate"
@@ -1968,16 +1973,13 @@
     "PipelineDefinition": {
       "type": "object",
       "required": [
-        "actions",
         "id",
         "name",
         "platform",
-        "register_exit_hooks"
+        "register_exit_hooks",
+        "toplevel"
       ],
       "properties": {
-        "actions": {
-          "$ref": "#/definitions/PipelineActionLookup"
-        },
         "id": {
           "type": "string",
           "format": "uuid"
@@ -1986,7 +1988,7 @@
           "type": "string"
         },
         "platform": {
-          "type": "string"
+          "$ref": "#/definitions/TopLevelDefinition"
         },
         "primary_target_override": {
           "anyOf": [
@@ -2000,6 +2002,12 @@
         },
         "register_exit_hooks": {
           "type": "boolean"
+        },
+        "toplevel": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TopLevelDefinition"
+          }
         }
       }
     },
@@ -2289,6 +2297,27 @@
         },
         "pipeline": {
           "$ref": "#/definitions/PipelineDefinition"
+        }
+      }
+    },
+    "TopLevelDefinition": {
+      "description": "Defines a top-level action, with a root id and a unique set of actions. This allows multiple top-level actions of the same type, without complicating the structure too much.",
+      "type": "object",
+      "required": [
+        "actions",
+        "id",
+        "root"
+      ],
+      "properties": {
+        "actions": {
+          "$ref": "#/definitions/PipelineActionLookup"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "root": {
+          "type": "string"
         }
       }
     },

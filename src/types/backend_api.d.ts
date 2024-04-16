@@ -283,12 +283,20 @@ export interface CreateProfileRequest {
   pipeline: PipelineDefinition;
 }
 export interface PipelineDefinition {
-  actions: PipelineActionLookup;
   id: string;
   name: string;
-  platform: string;
+  platform: TopLevelDefinition;
   primary_target_override?: PipelineTarget | null;
   register_exit_hooks: boolean;
+  toplevel: TopLevelDefinition[];
+}
+/**
+ * Defines a top-level action, with a root id and a unique set of actions. This allows multiple top-level actions of the same type, without complicating the structure too much.
+ */
+export interface TopLevelDefinition {
+  actions: PipelineActionLookup;
+  id: string;
+  root: string;
 }
 export interface PipelineActionLookup {
   actions: {
@@ -512,9 +520,10 @@ export interface Template {
   pipeline: PipelineDefinition;
 }
 export interface PatchPipelineActionRequest {
-  id: string;
+  action_id: string;
   pipeline: PipelineDefinition;
   target: PipelineTarget;
+  toplevel_id: string;
   update: PipelineActionUpdate;
 }
 export interface PatchPipelineActionResponse {
