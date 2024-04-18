@@ -8,6 +8,7 @@ import useGlobalSettings from "../../../hooks/useGlobalSettings";
 import useTemplates from "../../../hooks/useTemplates";
 import useToplevel from "../../../hooks/useToplevel";
 import AddProfileTagModal from "./modals/AddProfileTagModal";
+import AddToplevelActionModal from "./modals/AddToplevelActionModal";
 
 export default function ProfileInfo(container: PipelineContainer): ReactElement {
     if (!isCategoryProfile(container)) {
@@ -43,6 +44,30 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                 }
             })
         }} />)
+    }
+
+    function addTopLevelAction() {
+        showModal(<AddToplevelActionModal
+            onSave={(info) => {
+                dispatch({
+                    update: {
+                        type: 'addTopLevel',
+                        action_id: info.id,
+                    }
+                })
+            }}
+
+        />)
+    }
+
+    function deleteToplevelAction(id: string): void {
+        // TODO::make this a confirm modal
+        dispatch({
+            update: {
+                type: 'removeTopLevel',
+                id: id,
+            },
+        })
     }
 
     const loading = templates && settings && toplevel
@@ -95,7 +120,7 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                 >
                     {profile.pipeline.toplevel.map((v) => {
                         const match = toplevel.find((tl) => tl.id === v.id);
-                        return <Field label={match?.name} description={match?.description}>
+                        return <Field indentLevel={1} label={match?.name} description={match?.description}>
                             <DialogButton style={{
                                 backgroundColor: 'red',
                                 height: '40px',
@@ -106,16 +131,18 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                                 flexDirection: 'column',
                                 justifyContent: 'center',
                             }}
-                                onOKButton={deleteProfileWithConfirmation}
-                                onClick={deleteProfileWithConfirmation}
+                                onOKButton={() => deleteToplevelAction(v.id)}
+                                onClick={() => deleteToplevelAction(v.id)}
                             >
                                 <FaTrash />
                             </DialogButton>
                         </Field>
-
                     })}
-                    <DialogButton>
-
+                    <DialogButton
+                        onOKButton={addTopLevelAction}
+                        onClick={addTopLevelAction}
+                    >
+                        Add Action
                     </DialogButton>
 
                 </Field>

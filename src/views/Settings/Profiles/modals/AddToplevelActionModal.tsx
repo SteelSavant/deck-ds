@@ -4,13 +4,7 @@ import HandleLoading from "../../../../components/HandleLoading";
 import useToplevel from "../../../../hooks/useToplevel";
 import { ToplevelInfo } from "../../../../types/backend_api";
 
-
-
-
-
-
-
-export default function AddToplevelActionModal({ onChange, closeModal }: { onChange: (info: ToplevelInfo) => void, closeModal?: () => void }): ReactElement {
+export default function AddToplevelActionModal({ onSave, closeModal }: { onSave: (info: ToplevelInfo) => void, closeModal?: () => void }): ReactElement {
     const toplevel = useToplevel();
     const [state, setState] = useState<ToplevelInfo | null | undefined>(null);
 
@@ -22,7 +16,7 @@ export default function AddToplevelActionModal({ onChange, closeModal }: { onCha
         strTitle="Add Action" bAlertDialog={true}
         onOK={state
             ? () => {
-                onChange(state)
+                onSave(state)
                 closeModal?.call([])
             }
             : undefined

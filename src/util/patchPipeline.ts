@@ -7,6 +7,12 @@ export type PipelineUpdate = {
     type: 'updatePlatform',
     platform: string,
 } | {
+    type: 'addTopLevel',
+    action_id: string,
+} | {
+    type: 'removeTopLevel',
+    id: string,
+} | {
     type: 'updatePipelineInfo',
     info: PipelineInfo,
 } | {
@@ -50,6 +56,7 @@ export interface PipelineInfo {
 
 
 export async function patchPipeline(pipeline: PipelineDefinition, update: PipelineUpdate): Promise<Result<PipelineDefinition, ApiError>> {
+
     if (update.type === 'updatePipelineInfo') {
         const info = update.info;
 
@@ -69,6 +76,20 @@ export async function patchPipeline(pipeline: PipelineDefinition, update: Pipeli
                 root: update.platform
             }
         })
+    } else if (update.type === 'addTopLevel') {
+        return Ok({
+            ...pipeline,
+            toplevel: pipeline.toplevel.concat([{
+                id: '00000000-0000-0000-0000-000000000000',
+                root: update.action_id,
+                actions: { actions: {} }
+            }])
+        })
+    } else if (update.type === 'removeTopLevel') {
+        return Ok({
+            ...pipeline,
+            toplevel: pipeline.toplevel.filter((v) => v.id != update.id)
+        });
     }
     else {
         const u: PipelineActionUpdate = (function () {
