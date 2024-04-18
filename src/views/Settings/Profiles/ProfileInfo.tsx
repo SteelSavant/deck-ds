@@ -34,16 +34,18 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
     }
 
     function addTag() {
-        showModal(<AddProfileTagModal onSave={(tag) => {
-            const unique = new Set(profile.tags);
-            unique.delete(tag);
-            dispatch({
-                update: {
-                    type: 'updateTags',
-                    tags: [...unique, tag], // set unique tags; no duplicates. If tag exists in 
-                }
-            })
-        }} />)
+        showModal(<AddProfileTagModal
+            onSave={(tag) => {
+                const unique = new Set(profile.tags);
+                unique.delete(tag);
+                dispatch({
+                    update: {
+                        type: 'updateTags',
+                        tags: [...unique, tag], // set unique tags; no duplicates. If tag exists in 
+                    }
+                })
+            }}
+        />)
     }
 
     function addTopLevelAction() {
@@ -56,7 +58,6 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                     }
                 })
             }}
-
         />)
     }
 
@@ -116,28 +117,10 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                     focusable={false}
                     label={"Additional Actions"}
                     description={"Additional top-level actions to run, such as launching a secondary app."}
-                    childrenLayout="below"
+                    bottomSeparator="none"
                 >
-                    {profile.pipeline.toplevel.map((v) => {
-                        const match = toplevel.find((tl) => tl.id === v.id);
-                        return <Field indentLevel={1} label={match?.name} description={match?.description}>
-                            <DialogButton style={{
-                                backgroundColor: 'red',
-                                height: '40px',
-                                width: '40px',
-                                padding: '10px 12px',
-                                minWidth: '40px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'center',
-                            }}
-                                onOKButton={() => deleteToplevelAction(v.id)}
-                                onClick={() => deleteToplevelAction(v.id)}
-                            >
-                                <FaTrash />
-                            </DialogButton>
-                        </Field>
-                    })}
+
+
                     <DialogButton
                         onOKButton={addTopLevelAction}
                         onClick={addTopLevelAction}
@@ -146,6 +129,32 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                     </DialogButton>
 
                 </Field>
+                {profile.pipeline.toplevel.map((v) => {
+                    const match = toplevel.find((tl) => tl.id === v.root);
+
+                    if (!match) {
+                        return null;
+                    }
+
+                    return <Field focusable={false} indentLevel={1} label={match.name} description={match.description}>
+                        <DialogButton style={{
+                            backgroundColor: 'red',
+                            height: '40px',
+                            width: '40px',
+                            padding: '10px 12px',
+                            minWidth: '40px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            marginRight: '10px'
+                        }}
+                            onOKButton={() => deleteToplevelAction(v.id)}
+                            onClick={() => deleteToplevelAction(v.id)}
+                        >
+                            <FaTrash />
+                        </DialogButton>
+                    </Field>
+                })}
                 <Field
                     focusable={false}
                     label='Collections'

@@ -1,5 +1,5 @@
 /// Data transforms between working data and the database format
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use anyhow::Result;
 
@@ -112,11 +112,35 @@ impl PipelineDefinition {
         };
 
         let platform = self.platform.save_all_and_transform(id, rw)?;
+        let existing_toplevel = rw
+            .scan()
+            .primary()?
+            .all()
+            .filter_map(|v: DbPipelineActionSettings| {
+                if v.id.0 == id && v.id.1 != platform.id {
+                    Some(v.id)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
         let toplevel = self
             .toplevel
             .into_iter()
             .map(|v| v.save_all_and_transform(id, rw))
-            .collect::<Result<_>>()?;
+            .collect::<Result<Vec<_>>>()?;
+
+        // remove removed toplevel items from DB
+        for etl in existing_toplevel.iter() {
+            if !toplevel.iter().any(|v| v.id == etl.1) {
+                let item = rw.get().primary::<DbPipelineActionSettings>(etl.clone())?;
+
+                if let Some(item) = item {
+                    rw.remove(item)?;
+                }
+            }
+        }
 
         let db_pipeline = DbPipelineDefinition {
             id,

@@ -6,21 +6,18 @@ import { ToplevelInfo } from "../../../../types/backend_api";
 
 export default function AddToplevelActionModal({ onSave, closeModal }: { onSave: (info: ToplevelInfo) => void, closeModal?: () => void }): ReactElement {
     const toplevel = useToplevel();
-    const [state, setState] = useState<ToplevelInfo | null | undefined>(null);
-
-    if (!state && toplevel?.isOk) {
-        setState(toplevel.data[0])
-    }
+    const [state, setState] = useState<ToplevelInfo | null>(null);
 
     return <ConfirmModal
-        strTitle="Add Action" bAlertDialog={true}
-        onOK={state
-            ? () => {
-                onSave(state)
-                closeModal?.call([])
+        strTitle="Add Action"
+        onOK={() => {
+            if (state) {
+                onSave(state);
+            } else if (toplevel?.isOk && toplevel.data[0]) {
+                onSave(toplevel.data[0]);
             }
-            : undefined
-        }
+            closeModal!()
+        }}
         onCancel={closeModal}
         onEscKeypress={closeModal}
     >
@@ -28,7 +25,7 @@ export default function AddToplevelActionModal({ onSave, closeModal }: { onSave:
             value={toplevel}
             onOk={(toplevel) => {
                 return <Dropdown
-                    selectedOption={state}
+                    selectedOption={state ?? toplevel[0]}
                     rgOptions={toplevel.map((v) => {
                         return {
                             label: v.name,

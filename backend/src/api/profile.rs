@@ -16,9 +16,8 @@ use crate::{
         action::{Action, ErasedPipelineAction},
         action_registar::PipelineActionRegistrar,
         data::{
-            ConfigSelection, Pipeline, PipelineActionDefinition, PipelineActionId,
-            PipelineDefinition, PipelineDefinitionId, PipelineTarget, RuntimeSelection, Template,
-            TopLevelDefinition, TopLevelId,
+            ConfigSelection, Pipeline, PipelineActionId, PipelineDefinition, PipelineDefinitionId,
+            PipelineTarget, RuntimeSelection, Template, TopLevelDefinition, TopLevelId,
         },
         dependency::DependencyError,
         executor::PipelineContext,
