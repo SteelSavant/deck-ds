@@ -14,7 +14,7 @@ use self::{
         CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, GetAppProfileRequest,
         GetAppProfileResponse, GetDefaultAppOverrideForProfileRequest,
         GetDefaultAppOverrideForProfileResponse, GetProfileRequest, GetProfileResponse,
-        GetProfilesResponse, GetTemplatesResponse, PatchPipelineActionRequest,
+        GetProfilesResponse, GetTemplatesResponse, GetTopLevelResponse, PatchPipelineActionRequest,
         PatchPipelineActionResponse, ReifyPipelineRequest, ReifyPipelineResponse,
         SetAppProfileOverrideRequest, SetAppProfileSettingsRequest, SetProfileRequest,
     },
@@ -97,6 +97,7 @@ pub struct Api {
     pub patch_pipeline_action_response: PatchPipelineActionResponse,
     pub reify_pipeline_request: ReifyPipelineRequest,
     pub reify_pipeline_response: ReifyPipelineResponse,
+    pub get_toplevel_response: GetTopLevelResponse,
     pub get_templates_response: GetTemplatesResponse,
 
     // secondary app

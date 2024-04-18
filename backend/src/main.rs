@@ -308,6 +308,10 @@ fn main() -> Result<()> {
                     ),
                 )
                 .register(
+                    "get_toplevel",
+                    crate::api::profile::get_toplevel(registrar.clone()),
+                )
+                .register(
                     "get_templates",
                     crate::api::profile::get_templates(profiles_db),
                 )

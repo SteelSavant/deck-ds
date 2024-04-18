@@ -1,11 +1,12 @@
 import { DialogButton, Dropdown, Field, Focusable, Toggle, showModal } from "decky-frontend-lib";
 import { ReactElement } from "react";
-import { FaPlus, FaX } from "react-icons/fa6";
+import { FaPlus, FaTrash, FaX } from "react-icons/fa6";
 import { CategoryProfile, PipelineContainer, isCategoryProfile } from "../../../backend";
 import HandleLoading from "../../../components/HandleLoading";
 import { useModifiablePipelineContainer } from "../../../context/modifiablePipelineContext";
 import useGlobalSettings from "../../../hooks/useGlobalSettings";
 import useTemplates from "../../../hooks/useTemplates";
+import useToplevel from "../../../hooks/useToplevel";
 import AddProfileTagModal from "./modals/AddProfileTagModal";
 
 export default function ProfileInfo(container: PipelineContainer): ReactElement {
@@ -20,6 +21,7 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
     const { settings } = useGlobalSettings();
 
     const templates = useTemplates();
+    const toplevel = useToplevel();
 
     function removeTag(tag: string) {
         dispatch({
@@ -43,15 +45,20 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
         }} />)
     }
 
-    const loading = templates && settings
-        ? templates.andThen((t) => settings.map((s) => { return { templates: t, globalSettings: s } }))
+    const loading = templates && settings && toplevel
+        ? templates.andThen((t) => settings.map((s) => { return { templates: t, globalSettings: s } })).andThen((ts) => toplevel.map((tl) => {
+            return {
+                ...ts,
+                toplevel: tl
+            }
+        }))
         : undefined
         ;
 
     // TODO::make description editable
     return <HandleLoading
         value={loading}
-        onOk={({ templates, globalSettings }) => (
+        onOk={({ templates, globalSettings, toplevel }) => (
             <div>
                 <Field
                     focusable={false}
@@ -79,6 +86,38 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                             })
                         }}
                     />
+                </Field>
+                <Field
+                    focusable={false}
+                    label={"Additional Actions"}
+                    description={"Additional top-level actions to run, such as launching a secondary app."}
+                    childrenLayout="below"
+                >
+                    {profile.pipeline.toplevel.map((v) => {
+                        const match = toplevel.find((tl) => tl.id === v.id);
+                        return <Field label={match?.name} description={match?.description}>
+                            <DialogButton style={{
+                                backgroundColor: 'red',
+                                height: '40px',
+                                width: '40px',
+                                padding: '10px 12px',
+                                minWidth: '40px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                            }}
+                                onOKButton={deleteProfileWithConfirmation}
+                                onClick={deleteProfileWithConfirmation}
+                            >
+                                <FaTrash />
+                            </DialogButton>
+                        </Field>
+
+                    })}
+                    <DialogButton>
+
+                    </DialogButton>
+
                 </Field>
                 <Field
                     focusable={false}

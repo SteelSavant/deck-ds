@@ -18,6 +18,7 @@
     "get_secondary_app_info",
     "get_settings_response",
     "get_templates_response",
+    "get_toplevel_response",
     "patch_pipeline_action_request",
     "patch_pipeline_action_response",
     "reify_pipeline_request",
@@ -69,6 +70,9 @@
     },
     "get_templates_response": {
       "$ref": "#/definitions/GetTemplatesResponse"
+    },
+    "get_toplevel_response": {
+      "$ref": "#/definitions/GetTopLevelResponse"
     },
     "patch_pipeline_action_request": {
       "$ref": "#/definitions/PatchPipelineActionRequest"
@@ -1346,6 +1350,20 @@
         }
       }
     },
+    "GetTopLevelResponse": {
+      "type": "object",
+      "required": [
+        "toplevel"
+      ],
+      "properties": {
+        "toplevel": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ToplevelInfo"
+          }
+        }
+      }
+    },
     "GlobalConfig": {
       "type": "object",
       "required": [
@@ -2322,6 +2340,27 @@
           "format": "uuid"
         },
         "root": {
+          "type": "string"
+        }
+      }
+    },
+    "ToplevelInfo": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
           "type": "string"
         }
       }

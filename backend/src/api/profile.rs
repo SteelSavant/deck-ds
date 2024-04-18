@@ -16,8 +16,9 @@ use crate::{
         action::{Action, ErasedPipelineAction},
         action_registar::PipelineActionRegistrar,
         data::{
-            ConfigSelection, Pipeline, PipelineActionId, PipelineDefinition, PipelineDefinitionId,
-            PipelineTarget, RuntimeSelection, Template, TopLevelDefinition, TopLevelId,
+            ConfigSelection, Pipeline, PipelineActionDefinition, PipelineActionId,
+            PipelineDefinition, PipelineDefinitionId, PipelineTarget, RuntimeSelection, Template,
+            TopLevelDefinition, TopLevelId,
         },
         dependency::DependencyError,
         executor::PipelineContext,
@@ -631,6 +632,42 @@ fn check_config_errors(
             )
         })
         .collect()
+}
+
+// Toplevel
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct ToplevelInfo {
+    pub id: PipelineActionId,
+    pub name: String,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct GetTopLevelResponse {
+    toplevel: Vec<ToplevelInfo>,
+}
+
+pub fn get_toplevel(
+    registrar: PipelineActionRegistrar,
+) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+    move |args: super::ApiParameterType| {
+        log_invoke("get_toplevel", &args);
+
+        let mut toplevel = registrar
+            .toplevel()
+            .into_values()
+            .map(|v| ToplevelInfo {
+                id: v.id.clone(),
+                name: v.name.clone(),
+                description: v.description.clone(),
+            })
+            .collect::<Vec<_>>();
+
+        toplevel.sort_by_key(|k| k.name.clone());
+
+        GetTopLevelResponse { toplevel }.to_response()
+    }
 }
 
 // Templates

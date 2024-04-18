@@ -264,6 +264,7 @@ export interface Api {
   get_secondary_app_info: GetSecondaryAppInfoResponse;
   get_settings_response: GetSettingsResponse;
   get_templates_response: GetTemplatesResponse;
+  get_toplevel_response: GetTopLevelResponse;
   patch_pipeline_action_request: PatchPipelineActionRequest;
   patch_pipeline_action_response: PatchPipelineActionResponse;
   reify_pipeline_request: ReifyPipelineRequest;
@@ -518,6 +519,14 @@ export interface GetTemplatesResponse {
 export interface Template {
   id: string;
   pipeline: PipelineDefinition;
+}
+export interface GetTopLevelResponse {
+  toplevel: ToplevelInfo[];
+}
+export interface ToplevelInfo {
+  description?: string | null;
+  id: string;
+  name: string;
 }
 export interface PatchPipelineActionRequest {
   action_id: string;

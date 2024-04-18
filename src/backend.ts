@@ -4,7 +4,7 @@ import {
     DeleteProfileRequest, GetAppProfileRequest, GetAppProfileResponse,
     GetDefaultAppOverrideForProfileRequest, GetDefaultAppOverrideForProfileResponse,
     GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetSecondaryAppInfoResponse, GetSettingsResponse,
-    GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PatchPipelineActionRequest, PatchPipelineActionResponse, PipelineAction, PipelineActionSettingsFor_ConfigSelection, PipelineDefinition,
+    GetTemplatesResponse, GetTopLevelResponse, MelonDSLayoutOption, MelonDSSizingOption, PatchPipelineActionRequest, PatchPipelineActionResponse, PipelineAction, PipelineActionSettingsFor_ConfigSelection, PipelineDefinition,
     ReifyPipelineRequest, ReifyPipelineResponse,
     SecondaryAppWindowingBehavior,
     SetAppProfileOverrideRequest,
@@ -236,6 +236,10 @@ export async function patchPipelineAction(request: PatchPipelineActionRequest): 
 
 export async function reifyPipeline(request: ReifyPipelineRequest): Response<ReifyPipelineResponse> {
     return await call_backend_typed('reify_pipeline', request);
+}
+
+export async function getToplevel(): Response<GetTopLevelResponse> {
+    return await call_backend_typed("get_toplevel", null);
 }
 
 // Templates
