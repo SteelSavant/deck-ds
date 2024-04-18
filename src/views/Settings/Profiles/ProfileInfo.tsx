@@ -119,8 +119,6 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                     description={"Additional top-level actions to run, such as launching a secondary app."}
                     bottomSeparator="none"
                 >
-
-
                     <DialogButton
                         onOKButton={addTopLevelAction}
                         onClick={addTopLevelAction}

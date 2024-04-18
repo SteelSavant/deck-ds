@@ -1,5 +1,5 @@
 /// Data transforms between working data and the database format
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use anyhow::Result;
 
@@ -7,7 +7,10 @@ use native_db::transaction::{RTransaction, RwTransaction};
 
 use crate::{
     db::model::{DbAppOverride, DbCategoryProfile, DbPipelineActionSettings, DbPipelineDefinition},
-    pipeline::data::{PipelineActionId, PipelineDefinition, PipelineDefinitionId, TopLevelId},
+    pipeline::data::{
+        PipelineActionId, PipelineActionLookup, PipelineDefinition, PipelineDefinitionId,
+        TopLevelDefinition, TopLevelId,
+    },
     settings::{AppId, AppProfile, CategoryProfile},
 };
 
@@ -66,17 +69,11 @@ impl AppProfile {
                 let profile_platform = &profile.pipeline.platform;
 
                 let mut profile_tl_actions = vec![profile_platform];
-                profile_tl_actions.append(
-                    &mut profile
-                        .pipeline
-                        .toplevel
-                        .iter()
-                        .chain(profile.pipeline.toplevel.iter())
-                        .collect::<Vec<_>>(),
-                );
+                profile_tl_actions
+                    .append(&mut profile.pipeline.toplevel.iter().collect::<Vec<_>>());
 
-                for tl in tl_actions {
-                    let profile_tl = profile_tl_actions.iter().find(|v| v.id == tl.id);
+                for tl in tl_actions.iter_mut() {
+                    let profile_tl = profile_tl_actions.iter_mut().find(|v| v.id == tl.id);
                     if let Some(profile_tl) = profile_tl {
                         for (action_id, action) in tl.actions.actions.iter_mut() {
                             if let Some(profile_action) = profile_tl.actions.actions.get(action_id)
@@ -86,6 +83,24 @@ impl AppProfile {
                         }
                     }
                 }
+                let mut actual_toplevel = vec![];
+
+                for ptl in profile_tl_actions.into_iter().skip(1) {
+                    if let Some(action) = tl_actions
+                        .iter()
+                        .find(|v| v.id == ptl.id)
+                        .map(|v| (**v).clone())
+                    {
+                        actual_toplevel.push(action);
+                    } else {
+                        actual_toplevel.push(TopLevelDefinition {
+                            actions: PipelineActionLookup::empty(),
+                            ..ptl.clone()
+                        });
+                    }
+                }
+
+                o.toplevel = actual_toplevel;
             }
         }
 
