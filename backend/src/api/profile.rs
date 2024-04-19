@@ -281,7 +281,7 @@ pub fn set_app_profile_override(
     profiles: &'static ProfileDb,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
-        log_invoke("get_app_profile", &args);
+        log_invoke("set_app_profile_override", &args);
 
         let args: Result<SetAppProfileOverrideRequest, _> = {
             let mut lock = request_handler

@@ -102,7 +102,7 @@ export class ShortAppDetailsState {
                 const pipeline = this.appProfile.data.overrides[profileId];
                 if (pipeline) {
                     let res = (await patchPipeline(pipeline, action.update)).map(async (newPipeline) => {
-                        return await this.setAppProfileOverride(
+                        return await this.setAppProfileOverrideInternal(
                             appId,
                             profileId,
                             newPipeline
@@ -170,7 +170,7 @@ export class ShortAppDetailsState {
         }
     }
 
-    private async setAppProfileOverride(appId: number, profileId: string, pipeline: PipelineDefinition) {
+    private async setAppProfileOverrideInternal(appId: number, profileId: string, pipeline: PipelineDefinition) {
         const res = await setAppProfileOverride({
             app_id: appId.toString(),
             profile_id: profileId,
