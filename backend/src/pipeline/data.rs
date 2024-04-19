@@ -491,6 +491,7 @@ fn actions_have_target(
 
 #[cfg(test)]
 mod tests {
+    use anyhow::Result;
     use pretty_assertions::assert_eq;
 
     use strum::IntoEnumIterator;
@@ -561,6 +562,78 @@ mod tests {
             }
         }
     }
+
+    // #[cfg(test)]
+    // fn test_toplevel_reification_for_override() -> Result<()> {
+    //     use crate::settings::{AppId, AppProfile};
+
+    //     let registrar = PipelineActionRegistrar::builder().with_core().build();
+    //     let profiles = ProfileDb::new(
+    //         "test/out/.config/DeckDS/toplevel_reification.db".into(),
+    //         registrar,
+    //     );
+
+    //     let registrar = PipelineActionRegistrar::builder().with_core().build();
+
+    //     let platform_root = PipelineActionId("core:app:platform".to_string());
+    //     let toplevel_root = PipelineActionId("core:toplevel:secondary".to_string());
+
+    //     let profile_pipeline = PipelineDefinition {
+    //         id: PipelineDefinitionId::new(),
+    //         name: "ToplevelProfile".to_string(),
+    //         register_exit_hooks: false,
+    //         primary_target_override: None,
+    //         platform: TopLevelDefinition {
+    //             id: TopLevelId::new(),
+    //             actions: registrar.make_lookup(&platform_root),
+    //             root: platform_root.clone(),
+    //         },
+    //         toplevel: vec![TopLevelDefinition {
+    //             id: TopLevelId::new(),
+    //             actions: registrar.make_lookup(&toplevel_root),
+    //             root: toplevel_root.clone(),
+    //         }],
+    //     };
+
+    //     let profile_id = ProfileId::new();
+
+    //     let profile = CategoryProfile {
+    //         id: profile_id,
+    //         tags: vec![],
+    //         pipeline: profile_pipeline,
+    //     };
+
+    //     profiles.set_profile(profile)?;
+
+    //     let override_pipeline = PipelineDefinition {
+    //         id: PipelineDefinitionId::new(),
+    //         name: "ToplevelTest".to_string(),
+    //         register_exit_hooks: false,
+    //         primary_target_override: None,
+    //         platform: TopLevelDefinition {
+    //             id: TopLevelId::new(),
+    //             actions: PipelineActionLookup::empty(),
+    //             root: platform_root,
+    //         },
+    //         toplevel: vec![TopLevelDefinition {
+    //             id: TopLevelId::new(),
+    //             actions: PipelineActionLookup::empty(),
+    //             root: toplevel_root,
+    //         }],
+    //     };
+
+    //     let mut reified = override_pipeline.reify(&profiles.get_profiles()?, &registrar)?;
+
+    //     let desktop_target = reified.targets.remove(&PipelineTarget::Desktop).unwrap();
+
+    //     match desktop_target {
+
+    //         RuntimeSelection::AllOf(actions) => actions.iter().skip(1).,
+    //         _ => panic!("expected toplevel selection to be AllOf")
+    //     }
+
+    //     Ok(())
+    // }
 
     fn assert_pipeline_traversable(p: &Pipeline, registrar: &PipelineActionRegistrar) {
         fn assert_selection_traversable(

@@ -357,14 +357,12 @@ pub fn get_default_app_override_pipeline_for_profile(
                                 .toplevel
                                 .iter()
                                 .map(|v| {
-                                    let mut lookup = registrar.make_lookup(&pipeline.platform.root);
+                                    let mut lookup = registrar.make_lookup(&v.root);
 
                                     for (id, action) in lookup.actions.iter_mut() {
                                         action.profile_override = Some(args.profile_id);
                                         // override the visibility with the profile visibility, since the QAM can't actually set it
-                                        if let Some(profile_action) =
-                                            pipeline.platform.actions.actions.get(id)
-                                        {
+                                        if let Some(profile_action) = v.actions.actions.get(id) {
                                             action.is_visible_on_qam =
                                                 profile_action.is_visible_on_qam;
                                         }

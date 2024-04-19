@@ -148,8 +148,6 @@ export class ShortAppDetailsState {
                 });
                 if (res.isOk && res.data.pipeline) {
                     overrides[profileId] = res.data.pipeline;
-
-
                     console.log('set override for', profileId, 'to', overrides[profileId]);
                     shouldUpdate = true;
                 }

@@ -85,18 +85,24 @@ impl AppProfile {
                 }
                 let mut actual_toplevel = vec![];
 
+                log::debug!("profile actions: {profile_tl_actions:?}");
+                log::debug!("found actions: {tl_actions:?}");
+
                 for ptl in profile_tl_actions.into_iter().skip(1) {
                     if let Some(action) = tl_actions
                         .iter()
                         .find(|v| v.id == ptl.id)
                         .map(|v| (**v).clone())
                     {
+                        log::debug!("pushing found toplevel action {action:?}");
                         actual_toplevel.push(action);
                     } else {
-                        actual_toplevel.push(TopLevelDefinition {
+                        let action = TopLevelDefinition {
                             actions: PipelineActionLookup::empty(),
                             ..ptl.clone()
-                        });
+                        };
+                        log::debug!("pushing new toplevel action {action:?}");
+                        actual_toplevel.push(action);
                     }
                 }
 

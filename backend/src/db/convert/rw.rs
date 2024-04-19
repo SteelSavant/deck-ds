@@ -137,7 +137,7 @@ impl PipelineActionLookup {
 
                 rw.insert(settings)?;
 
-                Ok(k.clone())
+                Ok(k)
             })
             .collect::<Result<Vec<_>>>()
     }
