@@ -97,7 +97,7 @@ fn main() -> Result<()> {
         },
         #[cfg(not(debug_assertions))]
         {
-            LevelFilter::Debug
+            LevelFilter::Error
         },
         Default::default(),
         std::fs::File::create(&log_filepath).unwrap(),

@@ -345,9 +345,17 @@ impl PipelineActionId {
                             .and_then(|p| resolve_action_from_profile_override(p, self, &ctx))
                             .map(|config| (Some(profile), config.clone()))
                             .or_else(|| {
-                                // if missing, use the config with the profile
-                                let mut config = config.clone();
+                                // if missing, use the registered defaults
+                                let mut config: PipelineActionSettings<ConfigSelection> = ctx
+                                    .registrar
+                                    .get(&self, ctx.target)
+                                    .expect("action should exist if fetched for profile override")
+                                    .settings
+                                    .clone()
+                                    .into();
+
                                 config.profile_override = Some(profile);
+
                                 Some((Some(profile), config))
                             })
                     })

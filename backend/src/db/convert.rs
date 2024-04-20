@@ -11,7 +11,7 @@ use crate::{
         PipelineActionId, PipelineActionLookup, PipelineDefinition, PipelineDefinitionId,
         TopLevelDefinition, TopLevelId,
     },
-    settings::{AppId, AppProfile, CategoryProfile},
+    settings::{AppId, AppProfile, CategoryProfile, ProfileId},
 };
 
 use super::model::{DbAppSettings, DbTopLevelDefinition};
@@ -24,6 +24,10 @@ mod rw;
 impl CategoryProfile {
     /// Saves the [CategoryProfile]. Because it may set new ids internally, `save_all_and_transform` cosumes self.
     pub fn save_all(self, rw: &RwTransaction) -> Result<()> {
+        log::error!("TMP::saving profile with id {:?}", self.id);
+
+        assert_ne!(self.id, ProfileId::nil());
+
         let db_profile = DbCategoryProfile {
             id: self.id,
             tags: self.tags.clone(),
@@ -132,6 +136,11 @@ impl PipelineDefinition {
             self.id
         };
 
+        log::error!(
+            "TMP::saving pipeline definition with id {id:?}; changed: {}",
+            id != self.id
+        );
+
         let platform = self.platform.save_all_and_transform(id, rw)?;
         let existing_toplevel = rw
             .scan()
@@ -184,13 +193,12 @@ impl DbCategoryProfile {
 
         let actions = Some(self.pipeline.platform)
             .into_iter()
-            .chain(self.pipeline.toplevel.into_iter())
-            .enumerate();
+            .chain(self.pipeline.toplevel.into_iter());
 
-        for (i, tl) in actions {
+        for tl in actions {
             for id in tl.actions {
                 let action: Option<DbPipelineActionSettings> =
-                    rw.get().primary((self.pipeline.id, id, i as u32))?;
+                    rw.get().primary((self.pipeline.id, tl.id, id))?;
                 if let Some(action) = action {
                     action.selection.remove_all(rw)?;
                     rw.remove(action)?;

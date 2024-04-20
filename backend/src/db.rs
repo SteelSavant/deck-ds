@@ -119,6 +119,7 @@ impl ProfileDb {
         definition: PipelineDefinition,
     ) -> Result<()> {
         let rw = self.read_write();
+
         rw.insert(DbAppOverride {
             id: (app_id, profile_id),
             pipeline: definition.save_all_and_transform(&rw)?,

@@ -108,6 +108,13 @@ impl TopLevelDefinition {
             self.id
         };
 
+        log::error!(
+            "TMP::saving toplevel with (pipeline:{:?},toplevel:{:?}); changed: {}",
+            pipeline_id,
+            id,
+            id != self.id,
+        );
+
         Ok(DbTopLevelDefinition {
             id: id,
             root: self.root,
@@ -134,6 +141,8 @@ impl PipelineActionLookup {
                     selection: v.selection.save_all_and_transform(rw)?,
                     is_visible_on_qam: v.is_visible_on_qam,
                 };
+
+                log::error!("TMP::saving action with id:{:?}", settings.id);
 
                 rw.insert(settings)?;
 

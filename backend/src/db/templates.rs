@@ -1,10 +1,9 @@
 use std::fmt::Debug;
 
-newtype_uuid!(ProfileId);
 newtype_strid!("", AppId);
 
 use crate::{
-    macros::{newtype_strid, newtype_uuid},
+    macros::newtype_strid,
     pipeline::{
         action_registar::PipelineActionRegistrar,
         data::{

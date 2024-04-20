@@ -13,7 +13,7 @@ use crate::{
     asset::AssetManager,
     db::ProfileDb,
     pipeline::{
-        action::{Action, ErasedPipelineAction},
+        action::{Action, ActionId, ErasedPipelineAction},
         action_registar::PipelineActionRegistrar,
         data::{
             ConfigSelection, Pipeline, PipelineActionId, PipelineDefinition, PipelineDefinitionId,
@@ -451,6 +451,14 @@ pub fn patch_pipeline_action(
 
                     match tl {
                         Some(tl) => {
+                            let current_id = tl
+                                .actions
+                                .get(&args.action_id, args.target)
+                                .and_then(|v| match &v.selection {
+                                    ConfigSelection::Action(a) => Some(a.get_id()),
+                                    _ => None,
+                                })
+                                .unwrap_or(ActionId::nil());
                             let pipeline_action = tl
                                 .actions
                                 .actions
@@ -476,7 +484,8 @@ pub fn patch_pipeline_action(
                                     pipeline_action.selection = ConfigSelection::OneOf { selection }
                                 }
                                 PipelineActionUpdate::UpdateAction { action } => {
-                                    pipeline_action.selection = ConfigSelection::Action(action)
+                                    pipeline_action.selection =
+                                        ConfigSelection::Action(action.cloned_with_id(current_id))
                                 }
                                 PipelineActionUpdate::UpdateVisibleOnQAM { is_visible } => {
                                     pipeline_action.is_visible_on_qam = is_visible

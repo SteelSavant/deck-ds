@@ -96,7 +96,7 @@ pub struct DbTopLevelDefinition {
     pub actions: Vec<PipelineActionId>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[native_db]
 #[native_model(id = 5, version = 1, with = NativeModelJSON)]
 pub struct DbPipelineActionSettings {
@@ -108,7 +108,7 @@ pub struct DbPipelineActionSettings {
     pub selection: DbConfigSelection,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum DbConfigSelection {
     Action(DbAction),
     OneOf { selection: PipelineActionId },

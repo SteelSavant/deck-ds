@@ -127,6 +127,13 @@ impl DbTopLevelDefinition {
                         v.clone(),
                     ))
                     .transpose()
+                // .inspect(|s| {
+                //     log::error!(
+                //         "TMP::loading action id {:?}: {:?}",
+                //         (pipeline_definition_id, self.id, v),
+                //         s
+                //     );
+                // })
             })
             .map(|v| {
                 v.map(|v| {
