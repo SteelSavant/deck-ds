@@ -41,6 +41,10 @@ impl ActionImpl for LaunchSecondaryFlatpakApp {
     }
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
+        let index = ctx.get_state_index();
+
+        todo!("set secondary app settings per-index");
+
         let pid = self
             .app
             .setup()?

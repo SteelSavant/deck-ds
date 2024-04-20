@@ -205,7 +205,7 @@ mod tests {
         let actions = registrar.make_lookup(&pipeline_action_id);
 
         let mut expected: CategoryProfile = CategoryProfile {
-            id: ProfileId::from_uuid(Uuid::nil()),
+            id: ProfileId::new(),
             tags: vec!["Test".to_string()],
             pipeline: PipelineDefinition {
                 id: PipelineDefinitionId::nil(),
