@@ -8,7 +8,7 @@ use std::thread::sleep;
 
 use crate::{
     pipeline::{
-        action::{multi_window::OptionsRW, ActionId, ActionImpl, ActionType},
+        action::{ActionId, ActionImpl, ActionType},
         dependency::Dependency,
         executor::PipelineContext,
     },
@@ -20,8 +20,8 @@ use crate::{
 };
 
 use super::{
-    secondary_app_options::SecondaryAppWindowOptions, SecondaryAppState,
-    SecondaryAppWindowingBehavior,
+    secondary_app_options::SecondaryAppWindowOptions, SecondaryAppScreenPreference,
+    SecondaryAppState, SecondaryAppWindowingBehavior,
 };
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
@@ -29,6 +29,7 @@ pub struct LaunchSecondaryFlatpakApp {
     pub id: ActionId,
     pub app: FlatpakApp,
     pub windowing_behavior: SecondaryAppWindowingBehavior,
+    pub screen_preference: SecondaryAppScreenPreference,
 }
 
 impl ActionImpl for LaunchSecondaryFlatpakApp {
@@ -41,11 +42,15 @@ impl ActionImpl for LaunchSecondaryFlatpakApp {
     }
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
+        let index = ctx
+            .get_state_index::<Self>()
+            .expect("state slot should exist");
+
         let pid = self
             .app
             .setup()?
             .with_context(|| format!("secondary app {self:?} not running"))?;
-        let options = SecondaryAppWindowOptions::load(&ctx.kwin)
+        let options = SecondaryAppWindowOptions::load(&ctx.kwin, index)
             .with_context(|| "failed to load kwin secondary window options")?;
 
         ctx.set_state::<Self>(SecondaryAppState {
@@ -60,14 +65,19 @@ impl ActionImpl for LaunchSecondaryFlatpakApp {
             window_matcher: escape_string_for_regex(window_info.name),
             classes: window_info.classes,
             windowing_behavior: self.windowing_behavior,
+            screen_preference: self.screen_preference,
         }
-        .write(&ctx.kwin)
+        .write(&ctx.kwin, index)
         .with_context(|| "failed to write kwin secondary window options")
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {
         if let Some(pid) = ctx.get_state::<Self>().and_then(|state| {
-            let _ = state.options.write(&ctx.kwin); // ignore result for now
+            let index = ctx
+                .get_state_index::<Self>()
+                .expect("state slot should exist");
+
+            let _ = state.options.write(&ctx.kwin, index); // ignore result for now
 
             state.pid
         }) {

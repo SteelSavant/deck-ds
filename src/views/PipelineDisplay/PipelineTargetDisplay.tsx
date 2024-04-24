@@ -7,6 +7,7 @@ import ConfigErrorWarning from "../../components/ConfigErrorWarning";
 import { EditAction } from "../../components/EditAction";
 import { ConfigErrorContext } from "../../context/configErrorContext";
 import { useModifiablePipelineContainer } from "../../context/modifiablePipelineContext";
+import { MaybeString } from "../../types/short";
 
 const PipelineTargetContext = createContext<PipelineTarget>("Desktop");
 
@@ -17,17 +18,17 @@ export default function PipelineTargetDisplay({ root, }: {
     return (
         <DialogBody>
             <DialogControlsSection>
-                {buildSelection('root', root, root.type === 'AllOf' ? -1 : 0, false)}
+                {buildSelection('root', null, root, root.type === 'AllOf' ? -1 : 0, false)}
             </DialogControlsSection>
         </DialogBody>
     )
 }
 
-function buildSelection(id: string, selection: RuntimeSelection, indentLevel: number, qamHiddenByParent: boolean): ReactElement | null {
+function buildSelection(action_id: string, toplevel_id: MaybeString, selection: RuntimeSelection, indentLevel: number, qamHiddenByParent: boolean): ReactElement | null {
     const type = selection.type;
     switch (type) {
         case "Action":
-            return buildAction(id, selection.value, indentLevel);
+            return buildAction(action_id, toplevel_id!, selection.value, indentLevel);
         case "OneOf":
             return buildOneOf(selection.value, indentLevel, qamHiddenByParent);
         case "AllOf":
@@ -39,7 +40,7 @@ function buildSelection(id: string, selection: RuntimeSelection, indentLevel: nu
     }
 }
 
-function buildAction(id: string, action: Action, indentLevel: number): ReactElement | null {
+function buildAction(action_id: string, toplevel_id: string, action: Action, indentLevel: number): ReactElement | null {
     const { dispatch } = useModifiablePipelineContainer();
     const target = useContext(PipelineTargetContext);
 
@@ -50,7 +51,8 @@ function buildAction(id: string, action: Action, indentLevel: number): ReactElem
                 {
                     update: {
                         type: 'updateAction',
-                        id: id,
+                        action_id: action_id,
+                        toplevel_id: toplevel_id,
                         action: updatedAction,
                         target,
                     }
@@ -88,7 +90,8 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
         dispatch({
             update: {
                 type: 'updateVisibleOnQAM',
-                id: action.id,
+                action_id: action.id,
+                toplevel_id: action.toplevel_id,
                 visible: !action.is_visible_on_qam,
                 target,
             }
@@ -101,7 +104,7 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
         : indentLevel;
 
     const childAction =
-        isEnabled || forcedEnabled ? buildSelection(action.id, action.selection, newIndentLevel, hideQamForChildren) : null;
+        isEnabled || forcedEnabled ? buildSelection(action.id, action.toplevel_id, action.selection, newIndentLevel, hideQamForChildren) : null;
     const childActionIsConfigurable = childAction !== null;
     const hasError = configErrors[action.id]?.length ?? 0 > 0;
 
@@ -124,7 +127,8 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
                                         dispatch({
                                             update: {
                                                 type: 'updateEnabled',
-                                                id: action.id,
+                                                action_id: action.id,
+                                                toplevel_id: action.toplevel_id,
                                                 isEnabled: value,
                                                 target,
                                             }
@@ -142,7 +146,8 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
                                         dispatch({
                                             update: {
                                                 type: 'updateOneOf',
-                                                id: action.id,
+                                                toplevel_id: action.toplevel_id,
+                                                action_id: action.id,
                                                 selection: option.data,
                                                 target,
                                             }

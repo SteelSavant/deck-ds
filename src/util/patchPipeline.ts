@@ -7,31 +7,42 @@ export type PipelineUpdate = {
     type: 'updatePlatform',
     platform: string,
 } | {
+    type: 'addTopLevel',
+    action_id: string,
+} | {
+    type: 'removeTopLevel',
+    id: string,
+} | {
     type: 'updatePipelineInfo',
     info: PipelineInfo,
 } | {
     type: 'updateProfileOverride',
-    id: string,
+    action_id: string,
+    toplevel_id: string,
     target: PipelineTarget,
     profileOverride: MaybeString
 } | {
     type: 'updateEnabled',
-    id: string,
+    action_id: string,
+    toplevel_id: string,
     target: PipelineTarget,
     isEnabled: boolean
 } | {
     type: 'updateOneOf',
-    id: string,
+    action_id: string,
+    toplevel_id: string,
     target: PipelineTarget,
     selection: string,
 } | {
     type: 'updateAction',
-    id: string,
+    action_id: string,
+    toplevel_id: string,
     target: PipelineTarget,
     action: Action
 } | {
     type: 'updateVisibleOnQAM',
-    id: string,
+    action_id: string,
+    toplevel_id: string,
     target: PipelineTarget,
     visible: boolean,
 };
@@ -45,6 +56,7 @@ export interface PipelineInfo {
 
 
 export async function patchPipeline(pipeline: PipelineDefinition, update: PipelineUpdate): Promise<Result<PipelineDefinition, ApiError>> {
+
     if (update.type === 'updatePipelineInfo') {
         const info = update.info;
 
@@ -59,8 +71,25 @@ export async function patchPipeline(pipeline: PipelineDefinition, update: Pipeli
     } else if (update.type === 'updatePlatform') {
         return Ok({
             ...pipeline,
-            platform: update.platform,
+            platform: {
+                ...pipeline.platform,
+                root: update.platform
+            }
         })
+    } else if (update.type === 'addTopLevel') {
+        return Ok({
+            ...pipeline,
+            toplevel: pipeline.toplevel.concat([{
+                id: '00000000-0000-0000-0000-000000000000',
+                root: update.action_id,
+                actions: { actions: {} }
+            }])
+        })
+    } else if (update.type === 'removeTopLevel') {
+        return Ok({
+            ...pipeline,
+            toplevel: pipeline.toplevel.filter((v) => v.id != update.id)
+        });
     }
     else {
         const u: PipelineActionUpdate = (function () {
@@ -105,7 +134,8 @@ export async function patchPipeline(pipeline: PipelineDefinition, update: Pipeli
         })();
 
         const res = await patchPipelineAction({
-            id: update.id,
+            action_id: update.action_id,
+            toplevel_id: update.toplevel_id,
             pipeline,
             update: u,
             target: update.target

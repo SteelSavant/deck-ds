@@ -9,6 +9,7 @@ import {
     useState
 } from 'react';
 import { ApiError, AppProfile, getAppProfile, getDefaultAppOverrideForProfileRequest, getProfile, PipelineDefinition, PipelineTarget, reifyPipeline, ReifyPipelineResponse, RuntimeSelection, setAppProfileOverride, setAppProfileSettings, setProfile } from '../backend';
+import { PipelineActionLookup } from '../types/backend_api';
 import { MaybeString } from '../types/short';
 import { Loading } from '../util/loading';
 import { patchPipeline, PipelineUpdate } from "../util/patchPipeline";
@@ -101,7 +102,7 @@ export class ShortAppDetailsState {
                 const pipeline = this.appProfile.data.overrides[profileId];
                 if (pipeline) {
                     let res = (await patchPipeline(pipeline, action.update)).map(async (newPipeline) => {
-                        return await this.setAppProfileOverride(
+                        return await this.setAppProfileOverrideInternal(
                             appId,
                             profileId,
                             newPipeline
@@ -147,8 +148,6 @@ export class ShortAppDetailsState {
                 });
                 if (res.isOk && res.data.pipeline) {
                     overrides[profileId] = res.data.pipeline;
-
-
                     console.log('set override for', profileId, 'to', overrides[profileId]);
                     shouldUpdate = true;
                 }
@@ -171,7 +170,7 @@ export class ShortAppDetailsState {
         }
     }
 
-    private async setAppProfileOverride(appId: number, profileId: string, pipeline: PipelineDefinition) {
+    private async setAppProfileOverrideInternal(appId: number, profileId: string, pipeline: PipelineDefinition) {
         const res = await setAppProfileOverride({
             app_id: appId.toString(),
             profile_id: profileId,
@@ -376,26 +375,27 @@ export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
 function patchProfileOverridesForMissing(externalProfileId: string, overrides: PipelineDefinition, response: ReifyPipelineResponse): ReifyPipelineResponse {
     const pipeline = response.pipeline;
 
+    const toplevel = [overrides.platform].concat(overrides.toplevel);
 
-    function patch(selection: RuntimeSelection) {
+    function patch(selection: RuntimeSelection, actions: PipelineActionLookup) {
         const type = selection.type
         switch (type) {
             case 'Action':
                 return;
             case 'OneOf':
                 for (const v of selection.value.actions) {
-                    if (!overrides.actions.actions[v.id]) {
+                    if (!actions.actions[v.id]) {
                         v.profile_override = externalProfileId
                     }
-                    patch(v.selection)
+                    patch(v.selection, actions)
                 }
                 return;
             case 'AllOf':
                 for (const v of selection.value) {
-                    if (!overrides.actions.actions[v.id]) {
+                    if (!actions.actions[v.id]) {
                         v.profile_override = externalProfileId
                     }
-                    patch(v.selection)
+                    patch(v.selection, actions)
                 }
                 return;
 
@@ -407,7 +407,41 @@ function patchProfileOverridesForMissing(externalProfileId: string, overrides: P
 
     for (const target in pipeline.targets) {
         let selection = pipeline.targets[target];
-        patch(selection)
+        if (selection.type === 'AllOf') {
+            const actions = selection.value;
+            let skip = 0;
+            for (const v in actions) {
+                const i = parseInt(v);
+
+                // // console.log('before action:', JSON.stringify(actions[i]), 'toplevel:', toplevel[i + skip]);
+
+                // function idsEqual(a: string, b: string, target: string): boolean {
+                //     const lower = target.toLowerCase();
+                //     return a === b
+                //         || `${a}:${lower}` === b
+                //         || `${b}:${lower}` === a
+                //         || `${a}:${lower}` === `${b}:${lower}`
+                //         ;
+                // }
+
+                // // handle case where ids mismatch because a toplevel action is invalid for a target
+                // while (!idsEqual(actions[i].id, toplevel[i + skip]?.root, target) && i + skip < toplevel.length) {
+
+                //     skip += 1;
+                //     console.log('skip: ', skip);
+                // }
+
+                // // console.log('after action:', actions[i], 'toplevel:', toplevel[i + skip]);
+                const current_action = actions[i];
+                const toplevel_actions = toplevel[i + skip].actions;
+                patch(current_action.selection, toplevel_actions);
+                if (!toplevel_actions.actions[current_action.id]) {
+                    current_action.profile_override = externalProfileId
+                }
+            }
+        } else {
+            throw 'expected toplevel action to be AllOf'
+        }
     }
 
     console.log('reify response after patch: ', response.pipeline);

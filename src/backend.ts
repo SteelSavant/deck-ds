@@ -4,8 +4,9 @@ import {
     DeleteProfileRequest, GetAppProfileRequest, GetAppProfileResponse,
     GetDefaultAppOverrideForProfileRequest, GetDefaultAppOverrideForProfileResponse,
     GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetSecondaryAppInfoResponse, GetSettingsResponse,
-    GetTemplatesResponse, MelonDSLayoutOption, MelonDSSizingOption, PatchPipelineActionRequest, PatchPipelineActionResponse, PipelineAction, PipelineActionSettingsFor_ConfigSelection, PipelineDefinition,
+    GetTemplatesResponse, GetTopLevelResponse, MelonDSLayoutOption, MelonDSSizingOption, PatchPipelineActionRequest, PatchPipelineActionResponse, PipelineAction, PipelineActionSettingsFor_ConfigSelection, PipelineDefinition,
     ReifyPipelineRequest, ReifyPipelineResponse,
+    SecondaryAppScreenPreference,
     SecondaryAppWindowingBehavior,
     SetAppProfileOverrideRequest,
     SetAppProfileSettingsRequest, SetProfileRequest, SetSettingsRequest, Template
@@ -23,9 +24,8 @@ export {
 
 const USDPL_PORT: number = 44666;
 
-export const secondaryAppWindowingOptions: SecondaryAppWindowingBehavior[] = ['PreferSecondary', 'PreferPrimary', 'Hidden', 'Unmanaged'];
-
-
+export const secondaryAppWindowingOptions: SecondaryAppWindowingBehavior[] = ['Fullscreen', 'Maximized', 'Minimized', 'Unmanaged'];
+export const secondaryAppScreenPreferences: SecondaryAppScreenPreference[] = ['PreferSecondary', 'PreferPrimary'];
 
 // Pipeline
 export type ActionOneOf = { selection: string, actions: PipelineAction[] }
@@ -236,6 +236,10 @@ export async function patchPipelineAction(request: PatchPipelineActionRequest): 
 
 export async function reifyPipeline(request: ReifyPipelineRequest): Response<ReifyPipelineResponse> {
     return await call_backend_typed('reify_pipeline', request);
+}
+
+export async function getToplevel(): Response<GetTopLevelResponse> {
+    return await call_backend_typed("get_toplevel", null);
 }
 
 // Templates

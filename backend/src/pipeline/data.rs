@@ -18,6 +18,7 @@ newtype_strid!(
     PipelineActionId
 );
 newtype_uuid!(PipelineDefinitionId);
+newtype_uuid!(TopLevelId);
 newtype_uuid!(TemplateId);
 
 impl PipelineActionId {
@@ -73,7 +74,18 @@ pub struct PipelineDefinition {
     pub name: String,
     pub register_exit_hooks: bool,
     pub primary_target_override: Option<PipelineTarget>,
-    pub platform: PipelineActionId,
+    pub platform: TopLevelDefinition,
+    // Additional top-level actions besides the main platform.
+    pub toplevel: Vec<TopLevelDefinition>,
+}
+
+/// Defines a top-level action, with a root id and a unique set of actions.
+/// This allows multiple top-level actions of the same type, without complicating
+/// the structure too much.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct TopLevelDefinition {
+    pub id: TopLevelId,
+    pub root: PipelineActionId,
     pub actions: PipelineActionLookup,
 }
 
@@ -99,6 +111,7 @@ pub struct PipelineAction {
     pub name: String,
     pub description: Option<String>,
     pub id: PipelineActionId,
+    pub toplevel_id: TopLevelId,
     /// Flags whether the selection is enabled. If None, not optional. If Some(true), optional and enabled, else disabled.
     pub enabled: Option<bool>,
     /// Whether or not the pipeline action is hidden on the QAM
@@ -135,6 +148,14 @@ impl From<PipelineActionSettings<DefinitionSelection>> for PipelineActionSetting
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct PipelineActionLookup {
     pub actions: HashMap<PipelineActionId, PipelineActionSettings<ConfigSelection>>,
+}
+
+impl PipelineActionLookup {
+    pub fn empty() -> Self {
+        Self {
+            actions: Default::default(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -201,15 +222,18 @@ impl PipelineDefinition {
     ) -> Result<Pipeline> {
         let targets = PipelineTarget::iter()
             .map(|t: PipelineTarget| {
-                let mut toplevel: Vec<_> = registrar.toplevel().into_keys().collect();
-
-                toplevel.sort_by(|a, b| a.0.cmp(&b.0));
-                toplevel.insert(0, &self.platform);
+                let platform_ref = &self.platform;
+                let toplevel = vec![
+                    vec![platform_ref],
+                    self.toplevel.iter().map(|v| v).collect(),
+                ]
+                .concat();
 
                 let reified: Vec<_> = toplevel
-                    .into_iter()
-                    .filter(|v| actions_have_target(v, &registrar.make_lookup(v), t, registrar))
-                    .map(|v| v.reify(t, self, profiles, registrar))
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, v)| actions_have_target(&v.root, t, registrar))
+                    .map(|(i, v)| v.reify(i, t, self, profiles, registrar))
                     .filter_map(|v| v.transpose())
                     .collect::<Result<_>>()?;
 
@@ -224,7 +248,7 @@ impl PipelineDefinition {
             .collect();
 
         let description = registrar
-            .get(&self.platform, PipelineTarget::Desktop)
+            .get(&self.platform.root, PipelineTarget::Desktop)
             .and_then(|v| v.description.clone())
             .unwrap_or_default();
 
@@ -238,17 +262,46 @@ impl PipelineDefinition {
     }
 }
 
-impl PipelineActionId {
+impl TopLevelDefinition {
     fn reify(
         &self,
+        toplevel_index: usize,
         target: PipelineTarget,
         pipeline: &PipelineDefinition,
         profiles: &[CategoryProfile],
         registrar: &PipelineActionRegistrar,
     ) -> Result<Option<PipelineAction>> {
-        let config = pipeline.actions.get(self, target).cloned().or_else(|| {
+        self.root.reify(&ReificationCtx {
+            root_id: &self.root,
+            toplevel_index,
+            toplevel_id: self.id,
+            target,
+            pipeline,
+            actions: &self.actions,
+            profiles,
+            registrar,
+        })
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct ReificationCtx<'a> {
+    root_id: &'a PipelineActionId,
+    /// 0 for platform, otherwise (index - 1) into the toplevel array
+    toplevel_index: usize,
+    toplevel_id: TopLevelId,
+    target: PipelineTarget,
+    pipeline: &'a PipelineDefinition,
+    actions: &'a PipelineActionLookup,
+    profiles: &'a [CategoryProfile],
+    registrar: &'a PipelineActionRegistrar,
+}
+
+impl PipelineActionId {
+    fn reify(&self, ctx: &ReificationCtx) -> Result<Option<PipelineAction>> {
+        let config = ctx.actions.get(self, ctx.target).cloned().or_else(|| {
             log::warn!("missing action {self:?}; reifying from registry");
-            registrar.get(self, target).and_then(|v| {
+            ctx.registrar.get(self, ctx.target).and_then(|v| {
                 Some(PipelineActionSettings {
                     enabled: v.settings.enabled,
                     is_visible_on_qam: v.settings.is_visible_on_qam,
@@ -256,10 +309,10 @@ impl PipelineActionId {
                     selection: match &v.settings.selection {
                         DefinitionSelection::Action(a) => Some(ConfigSelection::Action(a.clone())),
                         DefinitionSelection::OneOf { selection, actions } => {
-                            let action = registrar.get(selection, target).or_else(|| {
+                            let action = ctx.registrar.get(selection, ctx.target).or_else(|| {
                                 actions
                                     .iter()
-                                    .map(|v| registrar.get(v, target))
+                                    .map(|v| ctx.registrar.get(v, ctx.target))
                                     .next()
                                     .flatten()
                             });
@@ -276,22 +329,33 @@ impl PipelineActionId {
 
         match config {
             Some(config) => {
-                let definition = registrar.get(self, target).with_context(|| {
-                    format!("Failed to get registered action {:?} @ {}", self, target)
+                let definition = ctx.registrar.get(self, ctx.target).with_context(|| {
+                    format!(
+                        "Failed to get registered action {:?} @ {}",
+                        self, ctx.target
+                    )
                 })?;
 
                 let settings = config
                     .profile_override
                     .and_then(|profile| {
-                        profiles
+                        ctx.profiles
                             .iter()
                             .find(|p| p.id == profile)
-                            .and_then(|p| p.pipeline.actions.get(self, target))
+                            .and_then(|p| resolve_action_from_profile_override(p, self, &ctx))
                             .map(|config| (Some(profile), config.clone()))
                             .or_else(|| {
-                                // if missing, use the config with the profile
-                                let mut config = config.clone();
+                                // if missing, use the registered defaults
+                                let mut config: PipelineActionSettings<ConfigSelection> = ctx
+                                    .registrar
+                                    .get(&self, ctx.target)
+                                    .expect("action should exist if fetched for profile override")
+                                    .settings
+                                    .clone()
+                                    .into();
+
                                 config.profile_override = Some(profile);
+
                                 Some((Some(profile), config))
                             })
                     })
@@ -299,13 +363,47 @@ impl PipelineActionId {
 
                 log::debug!("reify pipeline action id {self:?} got config {settings:?}");
 
-                let resolved_action = settings.1.reify(
-                    settings.0, definition, target, pipeline, profiles, registrar,
-                )?;
+                let resolved_action = settings.1.reify(settings.0, definition, ctx)?;
 
                 Ok(Some(resolved_action))
             }
             None => Ok(None),
+        }
+    }
+}
+
+fn resolve_action_from_profile_override<'a>(
+    profile: &'a CategoryProfile,
+    id: &PipelineActionId,
+    ctx: &ReificationCtx,
+) -> Option<&'a PipelineActionSettings<ConfigSelection>> {
+    if ctx.toplevel_index == 0 {
+        profile.pipeline.platform.actions.get(id, ctx.target)
+    } else {
+        // TODO::maybe match TopLevelId instead of nth
+        let desired_index = ctx.toplevel_index - 1;
+        let mut n = 0;
+
+        for (i, tl) in ctx.pipeline.toplevel.iter().enumerate() {
+            if tl.root == *ctx.root_id {
+                n += 1;
+            }
+
+            if i == desired_index {
+                break;
+            }
+        }
+
+        if n == 0 {
+            None
+        } else {
+            profile
+                .pipeline
+                .toplevel
+                .iter()
+                .filter(|v| v.root == *ctx.root_id)
+                .flat_map(|v| v.actions.get(id, ctx.target))
+                .nth(n - 1)
         }
     }
 }
@@ -315,18 +413,14 @@ impl PipelineActionSettings<ConfigSelection> {
         &self,
         profile_override: Option<ProfileId>,
         definition: &PipelineActionDefinition,
-        target: PipelineTarget,
-        pipeline: &PipelineDefinition,
-        profiles: &[CategoryProfile],
-        registrar: &PipelineActionRegistrar,
+        ctx: &ReificationCtx,
     ) -> Result<PipelineAction> {
-        let selection =
-            self.selection
-                .reify(&definition.id, target, pipeline, profiles, registrar)?;
+        let selection = self.selection.reify(&definition.id, ctx)?;
         Ok(PipelineAction {
             name: definition.name.clone(),
             description: definition.description.clone(),
             id: definition.id.clone(),
+            toplevel_id: ctx.toplevel_id,
             enabled: self.enabled,
             is_visible_on_qam: self.is_visible_on_qam,
             profile_override,
@@ -336,16 +430,10 @@ impl PipelineActionSettings<ConfigSelection> {
 }
 
 impl ConfigSelection {
-    fn reify(
-        &self,
-        id: &PipelineActionId,
-        target: PipelineTarget,
-        pipeline: &PipelineDefinition,
-        profiles: &[CategoryProfile],
-        registrar: &PipelineActionRegistrar,
-    ) -> Result<RuntimeSelection> {
-        let registered_selection = registrar
-            .get(id, target)
+    fn reify(&self, id: &PipelineActionId, ctx: &ReificationCtx) -> Result<RuntimeSelection> {
+        let registered_selection = ctx
+            .registrar
+            .get(id, ctx.target)
             .map(|v| v.settings.selection.clone())
             .with_context(|| {
                 format!("unable to find registered pipline action {id:?} when reifying config")
@@ -357,7 +445,7 @@ impl ConfigSelection {
                 DefinitionSelection::OneOf { actions, .. } => {
                     let actions = actions
                         .iter()
-                        .map(|a| a.reify(target, pipeline, profiles, registrar))
+                        .map(|a| a.reify(ctx))
                         .collect::<Result<Vec<_>>>();
                     actions.map(|actions| RuntimeSelection::OneOf {
                         selection: selection.clone(),
@@ -369,7 +457,7 @@ impl ConfigSelection {
             ConfigSelection::AllOf => match registered_selection {
                 DefinitionSelection::AllOf(actions) => actions
                     .iter()
-                    .map(|a| a.reify(target, pipeline, profiles, registrar))
+                    .map(|a| a.reify(ctx))
                     .collect::<Result<Vec<_>>>()
                     .map(|v| RuntimeSelection::AllOf(v.into_iter().flatten().collect())),
                 _ => Err(anyhow::anyhow!("selection type mismatch in reify config")),
@@ -380,45 +468,40 @@ impl ConfigSelection {
 
 fn actions_have_target(
     root: &PipelineActionId,
-    map: &PipelineActionLookup,
     target: PipelineTarget,
     registrar: &PipelineActionRegistrar,
 ) -> bool {
     fn search_settings(
         id: &PipelineActionId,
-        map: &PipelineActionLookup,
         target: PipelineTarget,
         registrar: &PipelineActionRegistrar,
     ) -> bool {
-        let settings = map.get(id, target);
+        let settings = registrar.get(id, target);
 
-        match settings {
-            Some(PipelineActionSettings { selection, .. }) => match selection {
-                ConfigSelection::Action(_) => true,
-                ConfigSelection::AllOf | ConfigSelection::OneOf { .. } => {
-                    match registrar.get(id, target) {
-                        Some(values) => match &values.settings.selection {
-                            DefinitionSelection::AllOf(values)
-                            | DefinitionSelection::OneOf {
-                                actions: values, ..
-                            } => values
-                                .iter()
-                                .any(|v| search_settings(v, map, target, registrar)),
-                            _ => panic!(),
-                        },
+        match settings.as_ref() {
+            Some(PipelineActionDefinition { settings, .. }) => match &settings.selection {
+                DefinitionSelection::Action(_) => true,
+                DefinitionSelection::OneOf { actions, .. }
+                | DefinitionSelection::AllOf(actions) => actions
+                    .iter()
+                    .map(|id| match registrar.get(id, target) {
+                        Some(_) => search_settings(id, target, registrar),
                         None => false,
-                    }
-                }
+                    })
+                    .any(|v| v),
             },
             None => false,
         }
     }
 
-    search_settings(root, map, target, registrar)
+    search_settings(root, target, registrar)
 }
 
 #[cfg(test)]
 mod tests {
+    use anyhow::Result;
+    use pretty_assertions::assert_eq;
+
     use strum::IntoEnumIterator;
 
     use crate::{
@@ -451,7 +534,7 @@ mod tests {
                 Ok(p) => {
                     assert_eq!(tp.name, p.name);
                     let target_count = PipelineTarget::iter().fold(0, |a, v| {
-                        if actions_have_target(&tp.platform, &tp.actions, v, &registrar) {
+                        if actions_have_target(&tp.platform.root, v, &registrar) {
                             a + 1
                         } else {
                             a
@@ -474,20 +557,11 @@ mod tests {
                         crate::pipeline::data::RuntimeSelection::AllOf(v) => {
                             assert!(
                                 v.iter()
-                                    .any(|v| v.id.no_variant() == tp.platform.no_variant()),
+                                    .any(|v| v.id.no_variant() == tp.platform.root.no_variant()),
                                 "platform not found toplevel for {:?}, got {:?}",
                                 tp.platform,
                                 v.iter().map(|v| &v.id).collect::<Vec<_>>()
                             );
-
-                            assert_eq!(
-                                v.len(),
-                                registrar.toplevel().into_keys().len() + 1,
-                                "not all toplevel found for {:?}: {:?}",
-                                tp.platform,
-                                v.iter().map(|v| v.id.clone()).collect::<Vec<_>>(),
-                            )
-                            // may need revision of toplevel actions change
                         }
                         _ => panic!(),
                     }
@@ -496,6 +570,78 @@ mod tests {
             }
         }
     }
+
+    // #[cfg(test)]
+    // fn test_toplevel_reification_for_override() -> Result<()> {
+    //     use crate::settings::{AppId, AppProfile};
+
+    //     let registrar = PipelineActionRegistrar::builder().with_core().build();
+    //     let profiles = ProfileDb::new(
+    //         "test/out/.config/DeckDS/toplevel_reification.db".into(),
+    //         registrar,
+    //     );
+
+    //     let registrar = PipelineActionRegistrar::builder().with_core().build();
+
+    //     let platform_root = PipelineActionId("core:app:platform".to_string());
+    //     let toplevel_root = PipelineActionId("core:toplevel:secondary".to_string());
+
+    //     let profile_pipeline = PipelineDefinition {
+    //         id: PipelineDefinitionId::new(),
+    //         name: "ToplevelProfile".to_string(),
+    //         register_exit_hooks: false,
+    //         primary_target_override: None,
+    //         platform: TopLevelDefinition {
+    //             id: TopLevelId::new(),
+    //             actions: registrar.make_lookup(&platform_root),
+    //             root: platform_root.clone(),
+    //         },
+    //         toplevel: vec![TopLevelDefinition {
+    //             id: TopLevelId::new(),
+    //             actions: registrar.make_lookup(&toplevel_root),
+    //             root: toplevel_root.clone(),
+    //         }],
+    //     };
+
+    //     let profile_id = ProfileId::new();
+
+    //     let profile = CategoryProfile {
+    //         id: profile_id,
+    //         tags: vec![],
+    //         pipeline: profile_pipeline,
+    //     };
+
+    //     profiles.set_profile(profile)?;
+
+    //     let override_pipeline = PipelineDefinition {
+    //         id: PipelineDefinitionId::new(),
+    //         name: "ToplevelTest".to_string(),
+    //         register_exit_hooks: false,
+    //         primary_target_override: None,
+    //         platform: TopLevelDefinition {
+    //             id: TopLevelId::new(),
+    //             actions: PipelineActionLookup::empty(),
+    //             root: platform_root,
+    //         },
+    //         toplevel: vec![TopLevelDefinition {
+    //             id: TopLevelId::new(),
+    //             actions: PipelineActionLookup::empty(),
+    //             root: toplevel_root,
+    //         }],
+    //     };
+
+    //     let mut reified = override_pipeline.reify(&profiles.get_profiles()?, &registrar)?;
+
+    //     let desktop_target = reified.targets.remove(&PipelineTarget::Desktop).unwrap();
+
+    //     match desktop_target {
+
+    //         RuntimeSelection::AllOf(actions) => actions.iter().skip(1).,
+    //         _ => panic!("expected toplevel selection to be AllOf")
+    //     }
+
+    //     Ok(())
+    // }
 
     fn assert_pipeline_traversable(p: &Pipeline, registrar: &PipelineActionRegistrar) {
         fn assert_selection_traversable(

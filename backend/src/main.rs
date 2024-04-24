@@ -97,7 +97,7 @@ fn main() -> Result<()> {
         },
         #[cfg(not(debug_assertions))]
         {
-            LevelFilter::Debug
+            LevelFilter::Error
         },
         Default::default(),
         std::fs::File::create(&log_filepath).unwrap(),
@@ -306,6 +306,10 @@ fn main() -> Result<()> {
                         home_dir.clone(),
                         config_dir.clone(),
                     ),
+                )
+                .register(
+                    "get_toplevel",
+                    crate::api::profile::get_toplevel(registrar.clone()),
                 )
                 .register(
                     "get_templates",

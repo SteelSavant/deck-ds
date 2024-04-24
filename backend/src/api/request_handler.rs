@@ -46,7 +46,7 @@ impl RequestHandler {
             .with_context(|| format!("Chunks for index {index} not found"))?;
         let json = chunks.join("");
         log::trace!("reconstructed json from chunks: {json}");
-        serde_json::from_str(&json).with_context(|| "failed to parse json from chunks")
+        Ok(serde_json::from_str(&json)?)
     }
 }
 

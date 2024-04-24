@@ -7,11 +7,14 @@ use crate::{
         DbAction, DbAppOverride, DbCategoryProfile, DbCemuLayout, DbCitraLayout, DbConfigSelection,
         DbDesktopSessionHandler, DbDisplayConfig, DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset,
         DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings,
-        DbSourceFile, DbVirtualScreen,
+        DbSourceFile, DbTopLevelDefinition, DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionId, ActionType, ErasedPipelineAction},
-        data::{ConfigSelection, PipelineActionId, PipelineActionLookup, PipelineDefinitionId},
+        data::{
+            ConfigSelection, PipelineActionId, PipelineActionLookup, PipelineDefinitionId,
+            TopLevelDefinition, TopLevelId,
+        },
     },
 };
 
@@ -93,27 +96,57 @@ impl ConfigSelection {
     }
 }
 
+impl TopLevelDefinition {
+    pub fn save_all_and_transform(
+        self,
+        pipeline_id: PipelineDefinitionId,
+        rw: &RwTransaction,
+    ) -> Result<DbTopLevelDefinition> {
+        let id = if self.id == TopLevelId::nil() {
+            TopLevelId::new()
+        } else {
+            self.id
+        };
+
+        log::error!(
+            "TMP::saving toplevel with (pipeline:{:?},toplevel:{:?}); changed: {}",
+            pipeline_id,
+            id,
+            id != self.id,
+        );
+
+        Ok(DbTopLevelDefinition {
+            id: id,
+            root: self.root,
+            actions: self.actions.save_all_and_transform(pipeline_id, id, rw)?,
+        })
+    }
+}
+
 impl PipelineActionLookup {
     /// Saves the [PipelineActionLookup]. Because it may set new ids internally, `save_all_and_transform` cosumes self.
     pub fn save_all_and_transform(
         self,
         pipeline_id: PipelineDefinitionId,
+        toplevel_id: TopLevelId,
         rw: &RwTransaction,
     ) -> Result<Vec<PipelineActionId>> {
         self.actions
             .into_iter()
             .map(|(k, v)| {
                 let settings = DbPipelineActionSettings {
-                    id: (pipeline_id, k.clone()),
+                    id: (pipeline_id, toplevel_id, k.clone()),
                     enabled: v.enabled,
                     profile_override: v.profile_override,
                     selection: v.selection.save_all_and_transform(rw)?,
                     is_visible_on_qam: v.is_visible_on_qam,
                 };
 
+                log::error!("TMP::saving action with id:{:?}", settings.id);
+
                 rw.insert(settings)?;
 
-                Ok(k.clone())
+                Ok(k)
             })
             .collect::<Result<Vec<_>>>()
     }

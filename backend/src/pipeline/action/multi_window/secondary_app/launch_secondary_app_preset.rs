@@ -5,19 +5,22 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     pipeline::{
-        action::{ActionId, ActionImpl, ActionType},
+        action::{Action, ActionId, ActionImpl, ActionType, ErasedPipelineAction},
         dependency::Dependency,
     },
     secondary_app::SecondaryAppPresetId,
 };
 
-use super::{LaunchSecondaryFlatpakApp, SecondaryAppWindowingBehavior};
+use super::{
+    LaunchSecondaryFlatpakApp, SecondaryAppScreenPreference, SecondaryAppWindowingBehavior,
+};
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
 pub struct LaunchSecondaryAppPreset {
     pub id: ActionId,
     pub preset: SecondaryAppPresetId,
     pub windowing_behavior: SecondaryAppWindowingBehavior,
+    pub screen_preference: SecondaryAppScreenPreference,
 }
 
 impl ActionImpl for LaunchSecondaryAppPreset {
@@ -33,12 +36,15 @@ impl ActionImpl for LaunchSecondaryAppPreset {
             .with_context(|| format!("Secondary app preset {:?} should exist", self.preset))?;
 
         match preset.app {
-            crate::secondary_app::SecondaryApp::Flatpak(app) => LaunchSecondaryFlatpakApp {
-                id: self.id,
-                app,
-                windowing_behavior: self.windowing_behavior,
+            crate::secondary_app::SecondaryApp::Flatpak(app) => {
+                Action::from(LaunchSecondaryFlatpakApp {
+                    id: self.id,
+                    app,
+                    windowing_behavior: self.windowing_behavior,
+                    screen_preference: self.screen_preference,
+                })
+                .setup(ctx)
             }
-            .setup(ctx),
         }
     }
 
@@ -50,12 +56,15 @@ impl ActionImpl for LaunchSecondaryAppPreset {
             .with_context(|| format!("Secondary app preset {:?} should exist", self.preset))?;
 
         match preset.app {
-            crate::secondary_app::SecondaryApp::Flatpak(app) => LaunchSecondaryFlatpakApp {
-                id: self.id,
-                app,
-                windowing_behavior: self.windowing_behavior,
+            crate::secondary_app::SecondaryApp::Flatpak(app) => {
+                Action::from(LaunchSecondaryFlatpakApp {
+                    id: self.id,
+                    app,
+                    windowing_behavior: self.windowing_behavior,
+                    screen_preference: self.screen_preference,
+                })
+                .teardown(ctx)
             }
-            .teardown(ctx),
         }
     }
 

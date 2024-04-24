@@ -22,30 +22,31 @@ export default function QAMPipelineTargetDisplay({ root, target }: {
             <DialogControlsSection>
                 <Field focusable={false} />
                 <PipelineTargetContext.Provider value={target}>
-                    {buildRootSelection('root', root)}
+                    {buildRootSelection(root)}
                 </PipelineTargetContext.Provider>
             </DialogControlsSection>
         </DialogBody>
     )
 }
 
-function buildRootSelection(id: string, selection: RuntimeSelection): ReactElement {
+function buildRootSelection(selection: RuntimeSelection): ReactElement {
     const type = selection.type;
     switch (type) {
-        case "Action":
-            return buildAction(id, null, selection.value) ?? <div />;
-        case "OneOf":
-            return buildOneOf(selection.value);
+        // case "Action":
+        //     return buildAction(id, null, selection.value) ?? <div />;
+        // case "OneOf":
+        //     return buildOneOf(selection.value);
         case "AllOf":
             // TODO::handle user defined
             return buildAllOf(selection.value);
         default:
-            const typecheck: never = type;
-            throw typecheck ?? 'buildSelection switch failed to typecheck';
+            throw 'root selection must be an AllOf'
+        // const typecheck: never = type;
+        // throw typecheck ?? 'buildSelection switch failed to typecheck';
     }
 }
 
-function buildAction(id: string, externalProfile: MaybeString, action: Action): ReactElement | null {
+function buildAction(action_id: string, toplevel_id: string, externalProfile: MaybeString, action: Action): ReactElement | null {
     const { dispatchUpdate } = useAppState();
     const profileId = useContext(ProfileContext);
     const target = useContext(PipelineTargetContext);
@@ -57,7 +58,7 @@ function buildAction(id: string, externalProfile: MaybeString, action: Action): 
 
             console.log('dispatching action edit', {
                 type: 'updateAction',
-                id: id,
+                id: action_id,
                 action: updatedAction,
             });
 
@@ -65,7 +66,8 @@ function buildAction(id: string, externalProfile: MaybeString, action: Action): 
                 externalProfile: externalProfile,
                 update: {
                     type: 'updateAction',
-                    id: id,
+                    toplevel_id,
+                    action_id: action_id,
                     target: target,
                     action: updatedAction,
                 }
@@ -151,7 +153,8 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                                                 externalProfile: action.profile_override,
                                                 update: {
                                                     type: 'updateOneOf',
-                                                    id: action.id,
+                                                    action_id: action.id,
+                                                    toplevel_id: action.toplevel_id,
                                                     target: target,
                                                     selection: option.data,
                                                 }
@@ -166,7 +169,7 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                 </Fragment>
             )
         case 'Action':
-            const actionComponent = buildAction(action.id, action.profile_override, selection.value);
+            const actionComponent = buildAction(action.id, action.toplevel_id, action.profile_override, selection.value);
 
             if (actionComponent) {
                 return (
@@ -213,7 +216,8 @@ function FromProfileComponent({ action }: { action: PipelineAction }) {
                     externalProfile: null,
                     update: {
                         type: 'updateProfileOverride',
-                        id: action.id,
+                        action_id: action.id,
+                        toplevel_id: action.toplevel_id,
                         target: target,
                         profileOverride: newOverride
                     }
@@ -237,8 +241,9 @@ function EnabledComponent({ isEnabled, forcedEnabled, action }: HeaderProps): Re
                         externalProfile: action.profile_override,
                         update: {
                             target: target,
+                            toplevel_id: action.toplevel_id,
                             type: 'updateEnabled',
-                            id: action.id,
+                            action_id: action.id,
                             isEnabled: value,
                         }
                     })
@@ -265,7 +270,7 @@ function Header(props: HeaderProps): ReactElement {
                         : <ConfigErrorWarning errors={errors} />
                 }
             </Field>
-            <FromProfileComponent action={action} />
+            <FromProfileComponent {...props} />
             <EnabledComponent {...props} />
         </Fragment>
     );

@@ -18,6 +18,7 @@
     "get_secondary_app_info",
     "get_settings_response",
     "get_templates_response",
+    "get_toplevel_response",
     "patch_pipeline_action_request",
     "patch_pipeline_action_response",
     "reify_pipeline_request",
@@ -69,6 +70,9 @@
     },
     "get_templates_response": {
       "$ref": "#/definitions/GetTemplatesResponse"
+    },
+    "get_toplevel_response": {
+      "$ref": "#/definitions/GetTopLevelResponse"
     },
     "patch_pipeline_action_request": {
       "$ref": "#/definitions/PatchPipelineActionRequest"
@@ -1346,6 +1350,20 @@
         }
       }
     },
+    "GetTopLevelResponse": {
+      "type": "object",
+      "required": [
+        "toplevel"
+      ],
+      "properties": {
+        "toplevel": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ToplevelInfo"
+          }
+        }
+      }
+    },
     "GlobalConfig": {
       "type": "object",
       "required": [
@@ -1380,6 +1398,7 @@
       "required": [
         "id",
         "preset",
+        "screen_preference",
         "windowing_behavior"
       ],
       "properties": {
@@ -1391,6 +1410,9 @@
           "type": "string",
           "format": "uuid"
         },
+        "screen_preference": {
+          "$ref": "#/definitions/SecondaryAppScreenPreference"
+        },
         "windowing_behavior": {
           "$ref": "#/definitions/SecondaryAppWindowingBehavior"
         }
@@ -1401,6 +1423,7 @@
       "required": [
         "app",
         "id",
+        "screen_preference",
         "windowing_behavior"
       ],
       "properties": {
@@ -1410,6 +1433,9 @@
         "id": {
           "type": "string",
           "format": "uuid"
+        },
+        "screen_preference": {
+          "$ref": "#/definitions/SecondaryAppScreenPreference"
         },
         "windowing_behavior": {
           "$ref": "#/definitions/SecondaryAppWindowingBehavior"
@@ -1663,13 +1689,14 @@
     "PatchPipelineActionRequest": {
       "type": "object",
       "required": [
-        "id",
+        "action_id",
         "pipeline",
         "target",
+        "toplevel_id",
         "update"
       ],
       "properties": {
-        "id": {
+        "action_id": {
           "type": "string"
         },
         "pipeline": {
@@ -1677,6 +1704,10 @@
         },
         "target": {
           "$ref": "#/definitions/PipelineTarget"
+        },
+        "toplevel_id": {
+          "type": "string",
+          "format": "uuid"
         },
         "update": {
           "$ref": "#/definitions/PipelineActionUpdate"
@@ -1736,7 +1767,8 @@
         "id",
         "is_visible_on_qam",
         "name",
-        "selection"
+        "selection",
+        "toplevel_id"
       ],
       "properties": {
         "description": {
@@ -1777,6 +1809,10 @@
               "$ref": "#/definitions/RuntimeSelection"
             }
           ]
+        },
+        "toplevel_id": {
+          "type": "string",
+          "format": "uuid"
         }
       }
     },
@@ -1968,16 +2004,13 @@
     "PipelineDefinition": {
       "type": "object",
       "required": [
-        "actions",
         "id",
         "name",
         "platform",
-        "register_exit_hooks"
+        "register_exit_hooks",
+        "toplevel"
       ],
       "properties": {
-        "actions": {
-          "$ref": "#/definitions/PipelineActionLookup"
-        },
         "id": {
           "type": "string",
           "format": "uuid"
@@ -1986,7 +2019,7 @@
           "type": "string"
         },
         "platform": {
-          "type": "string"
+          "$ref": "#/definitions/TopLevelDefinition"
         },
         "primary_target_override": {
           "anyOf": [
@@ -2000,6 +2033,12 @@
         },
         "register_exit_hooks": {
           "type": "boolean"
+        },
+        "toplevel": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TopLevelDefinition"
+          }
         }
       }
     },
@@ -2191,12 +2230,19 @@
         }
       }
     },
-    "SecondaryAppWindowingBehavior": {
+    "SecondaryAppScreenPreference": {
       "type": "string",
       "enum": [
         "PreferSecondary",
-        "PreferPrimary",
-        "Hidden",
+        "PreferPrimary"
+      ]
+    },
+    "SecondaryAppWindowingBehavior": {
+      "type": "string",
+      "enum": [
+        "Fullscreen",
+        "Maximized",
+        "Minimized",
         "Unmanaged"
       ]
     },
@@ -2289,6 +2335,48 @@
         },
         "pipeline": {
           "$ref": "#/definitions/PipelineDefinition"
+        }
+      }
+    },
+    "TopLevelDefinition": {
+      "description": "Defines a top-level action, with a root id and a unique set of actions. This allows multiple top-level actions of the same type, without complicating the structure too much.",
+      "type": "object",
+      "required": [
+        "actions",
+        "id",
+        "root"
+      ],
+      "properties": {
+        "actions": {
+          "$ref": "#/definitions/PipelineActionLookup"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "root": {
+          "type": "string"
+        }
+      }
+    },
+    "ToplevelInfo": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
         }
       }
     },

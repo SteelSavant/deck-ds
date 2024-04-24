@@ -7,11 +7,14 @@ use native_db::transaction::{RTransaction, RwTransaction};
 
 use crate::{
     db::model::{DbAppOverride, DbCategoryProfile, DbPipelineActionSettings, DbPipelineDefinition},
-    pipeline::data::{PipelineActionId, PipelineDefinition, PipelineDefinitionId},
-    settings::{AppId, AppProfile, CategoryProfile},
+    pipeline::data::{
+        PipelineActionId, PipelineActionLookup, PipelineDefinition, PipelineDefinitionId,
+        TopLevelDefinition, TopLevelId,
+    },
+    settings::{AppId, AppProfile, CategoryProfile, ProfileId},
 };
 
-use super::model::DbAppSettings;
+use super::model::{DbAppSettings, DbTopLevelDefinition};
 
 mod ro;
 mod rw;
@@ -21,6 +24,10 @@ mod rw;
 impl CategoryProfile {
     /// Saves the [CategoryProfile]. Because it may set new ids internally, `save_all_and_transform` cosumes self.
     pub fn save_all(self, rw: &RwTransaction) -> Result<()> {
+        log::error!("TMP::saving profile with id {:?}", self.id);
+
+        assert_ne!(self.id, ProfileId::nil());
+
         let db_profile = DbCategoryProfile {
             id: self.id,
             tags: self.tags.clone(),
@@ -52,17 +59,58 @@ impl AppProfile {
                 let profile = profile.reconstruct(ro)?;
 
                 // override the visibility with the profile visibility, since the QAM can't actually set it;
-                // same with name && platform && exit hooks
+                // same with name && platform.root && exit hooks
 
                 o.register_exit_hooks = profile.pipeline.register_exit_hooks;
                 o.name = profile.pipeline.name;
-                o.platform = profile.pipeline.platform;
+                o.platform.root = profile.pipeline.platform.root.clone();
 
-                for (action_id, action) in o.actions.actions.iter_mut() {
-                    if let Some(profile_action) = profile.pipeline.actions.actions.get(action_id) {
-                        action.is_visible_on_qam = profile_action.is_visible_on_qam
+                let platform = &mut o.platform;
+
+                let mut tl_actions = vec![platform];
+                tl_actions.append(&mut o.toplevel.iter_mut().collect::<Vec<_>>());
+
+                let profile_platform = &profile.pipeline.platform;
+
+                let mut profile_tl_actions = vec![profile_platform];
+                profile_tl_actions
+                    .append(&mut profile.pipeline.toplevel.iter().collect::<Vec<_>>());
+
+                for tl in tl_actions.iter_mut() {
+                    let profile_tl = profile_tl_actions.iter_mut().find(|v| v.id == tl.id);
+                    if let Some(profile_tl) = profile_tl {
+                        for (action_id, action) in tl.actions.actions.iter_mut() {
+                            if let Some(profile_action) = profile_tl.actions.actions.get(action_id)
+                            {
+                                action.is_visible_on_qam = profile_action.is_visible_on_qam
+                            }
+                        }
                     }
                 }
+                let mut actual_toplevel = vec![];
+
+                log::debug!("profile actions: {profile_tl_actions:?}");
+                log::debug!("found actions: {tl_actions:?}");
+
+                for ptl in profile_tl_actions.into_iter().skip(1) {
+                    if let Some(action) = tl_actions
+                        .iter()
+                        .find(|v| v.id == ptl.id)
+                        .map(|v| (**v).clone())
+                    {
+                        log::debug!("pushing found toplevel action {action:?}");
+                        actual_toplevel.push(action);
+                    } else {
+                        let action = TopLevelDefinition {
+                            actions: PipelineActionLookup::empty(),
+                            ..ptl.clone()
+                        };
+                        log::debug!("pushing new toplevel action {action:?}");
+                        actual_toplevel.push(action);
+                    }
+                }
+
+                o.toplevel = actual_toplevel;
             }
         }
 
@@ -88,15 +136,49 @@ impl PipelineDefinition {
             self.id
         };
 
-        let actions = self.actions.save_all_and_transform(id, rw)?;
+        log::error!(
+            "TMP::saving pipeline definition with id {id:?}; changed: {}",
+            id != self.id
+        );
+
+        let platform = self.platform.save_all_and_transform(id, rw)?;
+        let existing_toplevel = rw
+            .scan()
+            .primary()?
+            .all()
+            .filter_map(|v: DbPipelineActionSettings| {
+                if v.id.0 == id && v.id.1 != platform.id {
+                    Some(v.id)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        let toplevel = self
+            .toplevel
+            .into_iter()
+            .map(|v| v.save_all_and_transform(id, rw))
+            .collect::<Result<Vec<_>>>()?;
+
+        // remove removed toplevel items from DB
+        for etl in existing_toplevel.iter() {
+            if !toplevel.iter().any(|v| v.id == etl.1) {
+                let item = rw.get().primary::<DbPipelineActionSettings>(etl.clone())?;
+
+                if let Some(item) = item {
+                    rw.remove(item)?;
+                }
+            }
+        }
 
         let db_pipeline = DbPipelineDefinition {
             id,
             name: self.name.clone(),
             register_exit_hooks: self.register_exit_hooks,
             primary_target_override: self.primary_target_override,
-            platform: self.platform.clone(),
-            actions,
+            platform,
+            toplevel,
         };
 
         Ok(db_pipeline)
@@ -109,21 +191,27 @@ impl DbCategoryProfile {
     pub fn remove_all(mut self, rw: &RwTransaction) -> Result<()> {
         self.remove_app_overrides(rw)?;
 
-        let mut ids = vec![self.pipeline.platform];
-        let mut actions = self.pipeline.actions;
-        ids.append(&mut actions);
+        let actions = Some(self.pipeline.platform)
+            .into_iter()
+            .chain(self.pipeline.toplevel.into_iter());
 
-        for id in actions {
-            let action: Option<DbPipelineActionSettings> =
-                rw.get().primary((self.pipeline.id, id))?;
-            if let Some(action) = action {
-                action.selection.remove_all(rw)?;
-                rw.remove(action)?;
+        for tl in actions {
+            for id in tl.actions {
+                let action: Option<DbPipelineActionSettings> =
+                    rw.get().primary((self.pipeline.id, tl.id, id))?;
+                if let Some(action) = action {
+                    action.selection.remove_all(rw)?;
+                    rw.remove(action)?;
+                }
             }
         }
 
-        self.pipeline.platform = PipelineActionId::new("");
-        self.pipeline.actions = vec![];
+        self.pipeline.platform = DbTopLevelDefinition {
+            id: TopLevelId::nil(),
+            root: PipelineActionId::new(""),
+            actions: vec![],
+        };
+        self.pipeline.toplevel = vec![];
 
         Ok(rw.remove(self)?)
     }

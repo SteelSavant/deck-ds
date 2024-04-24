@@ -155,7 +155,8 @@ export type FileSource =
 export type FlatpakSource = "Cemu" | "Citra" | "MelonDS";
 export type AppImageSource = "Cemu";
 export type EmuDeckSource = "CemuProton";
-export type SecondaryAppWindowingBehavior = "PreferSecondary" | "PreferPrimary" | "Hidden" | "Unmanaged";
+export type SecondaryAppScreenPreference = "PreferSecondary" | "PreferPrimary";
+export type SecondaryAppWindowingBehavior = "Fullscreen" | "Maximized" | "Minimized" | "Unmanaged";
 export type SecondaryApp = {
   app_id: string;
   args: string[];
@@ -264,6 +265,7 @@ export interface Api {
   get_secondary_app_info: GetSecondaryAppInfoResponse;
   get_settings_response: GetSettingsResponse;
   get_templates_response: GetTemplatesResponse;
+  get_toplevel_response: GetTopLevelResponse;
   patch_pipeline_action_request: PatchPipelineActionRequest;
   patch_pipeline_action_response: PatchPipelineActionResponse;
   reify_pipeline_request: ReifyPipelineRequest;
@@ -283,12 +285,20 @@ export interface CreateProfileRequest {
   pipeline: PipelineDefinition;
 }
 export interface PipelineDefinition {
-  actions: PipelineActionLookup;
   id: string;
   name: string;
-  platform: string;
+  platform: TopLevelDefinition;
   primary_target_override?: PipelineTarget | null;
   register_exit_hooks: boolean;
+  toplevel: TopLevelDefinition[];
+}
+/**
+ * Defines a top-level action, with a root id and a unique set of actions. This allows multiple top-level actions of the same type, without complicating the structure too much.
+ */
+export interface TopLevelDefinition {
+  actions: PipelineActionLookup;
+  id: string;
+  root: string;
 }
 export interface PipelineActionLookup {
   actions: {
@@ -421,6 +431,7 @@ export interface CustomFileOptions {
 export interface LaunchSecondaryFlatpakApp {
   app: FlatpakApp;
   id: string;
+  screen_preference: SecondaryAppScreenPreference;
   windowing_behavior: SecondaryAppWindowingBehavior;
 }
 export interface FlatpakApp {
@@ -430,6 +441,7 @@ export interface FlatpakApp {
 export interface LaunchSecondaryAppPreset {
   id: string;
   preset: string;
+  screen_preference: SecondaryAppScreenPreference;
   windowing_behavior: SecondaryAppWindowingBehavior;
 }
 export interface MainAppAutomaticWindowing {
@@ -511,10 +523,19 @@ export interface Template {
   id: string;
   pipeline: PipelineDefinition;
 }
-export interface PatchPipelineActionRequest {
+export interface GetTopLevelResponse {
+  toplevel: ToplevelInfo[];
+}
+export interface ToplevelInfo {
+  description?: string | null;
   id: string;
+  name: string;
+}
+export interface PatchPipelineActionRequest {
+  action_id: string;
   pipeline: PipelineDefinition;
   target: PipelineTarget;
+  toplevel_id: string;
   update: PipelineActionUpdate;
 }
 export interface PatchPipelineActionResponse {
@@ -558,6 +579,7 @@ export interface PipelineAction {
    * The value of the pipeline action
    */
   selection: RuntimeSelection;
+  toplevel_id: string;
 }
 export interface SetAppProfileOverrideRequest {
   app_id: string;

@@ -76,6 +76,7 @@ where
 {
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         log::info!("Setting up {}: {:?}", std::any::type_name::<T>(), self);
+        ctx.handle_state_slot(&self.get_type(), true);
         self.setup(ctx)
     }
 
@@ -87,7 +88,9 @@ where
             ctx.get_state::<T>()
         );
 
-        self.teardown(ctx)
+        let res = self.teardown(ctx);
+        ctx.handle_state_slot(&self.get_type(), false);
+        res
     }
 
     fn get_dependencies(&self, ctx: &mut PipelineContext) -> Vec<Dependency> {

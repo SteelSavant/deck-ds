@@ -1,15 +1,14 @@
 use std::fmt::Debug;
 
-newtype_uuid!(ProfileId);
 newtype_strid!("", AppId);
 
 use crate::{
-    macros::{newtype_strid, newtype_uuid},
+    macros::newtype_strid,
     pipeline::{
         action_registar::PipelineActionRegistrar,
         data::{
-            PipelineActionId, PipelineDefinition, PipelineDefinitionId, PipelineTarget, Template,
-            TemplateId,
+            PipelineActionId, PipelineActionLookup, PipelineDefinition, PipelineDefinitionId,
+            PipelineTarget, Template, TemplateId, TopLevelDefinition, TopLevelId,
         },
     },
 };
@@ -26,8 +25,6 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
 
     impl TemplateBuilder {
         fn build(self, registrar: &PipelineActionRegistrar) -> Template {
-            let actions = registrar.make_lookup(&self.platform);
-
             let root_action = registrar
                 .get(&self.platform, PipelineTarget::Desktop)
                 .or_else(|| registrar.get(&self.platform, PipelineTarget::Gamemode))
@@ -38,10 +35,14 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                 pipeline: PipelineDefinition {
                     id: PipelineDefinitionId::nil(),
                     name: root_action.name.clone(),
-                    platform: self.platform,
+                    platform: TopLevelDefinition {
+                        id: TopLevelId::nil(),
+                        root: self.platform,
+                        actions: PipelineActionLookup::empty(),
+                    },
                     primary_target_override: None,
                     register_exit_hooks: true,
-                    actions,
+                    toplevel: vec![],
                 },
             }
         }

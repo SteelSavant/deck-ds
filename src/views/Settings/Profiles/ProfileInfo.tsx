@@ -1,12 +1,14 @@
 import { DialogButton, Dropdown, Field, Focusable, Toggle, showModal } from "decky-frontend-lib";
 import { ReactElement } from "react";
-import { FaPlus, FaX } from "react-icons/fa6";
+import { FaPlus, FaTrash, FaX } from "react-icons/fa6";
 import { CategoryProfile, PipelineContainer, isCategoryProfile } from "../../../backend";
 import HandleLoading from "../../../components/HandleLoading";
 import { useModifiablePipelineContainer } from "../../../context/modifiablePipelineContext";
 import useGlobalSettings from "../../../hooks/useGlobalSettings";
 import useTemplates from "../../../hooks/useTemplates";
+import useToplevel from "../../../hooks/useToplevel";
 import AddProfileTagModal from "./modals/AddProfileTagModal";
+import AddToplevelActionModal from "./modals/AddToplevelActionModal";
 
 export default function ProfileInfo(container: PipelineContainer): ReactElement {
     if (!isCategoryProfile(container)) {
@@ -20,6 +22,7 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
     const { settings } = useGlobalSettings();
 
     const templates = useTemplates();
+    const toplevel = useToplevel();
 
     function removeTag(tag: string) {
         dispatch({
@@ -31,27 +34,57 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
     }
 
     function addTag() {
-        showModal(<AddProfileTagModal onSave={(tag) => {
-            const unique = new Set(profile.tags);
-            unique.delete(tag);
-            dispatch({
-                update: {
-                    type: 'updateTags',
-                    tags: [...unique, tag], // set unique tags; no duplicates. If tag exists in 
-                }
-            })
-        }} />)
+        showModal(<AddProfileTagModal
+            onSave={(tag) => {
+                const unique = new Set(profile.tags);
+                unique.delete(tag);
+                dispatch({
+                    update: {
+                        type: 'updateTags',
+                        tags: [...unique, tag], // set unique tags; no duplicates. If tag exists in 
+                    }
+                })
+            }}
+        />)
     }
 
-    const loading = templates && settings
-        ? templates.andThen((t) => settings.map((s) => { return { templates: t, globalSettings: s } }))
+    function addTopLevelAction() {
+        showModal(<AddToplevelActionModal
+            onSave={(info) => {
+                dispatch({
+                    update: {
+                        type: 'addTopLevel',
+                        action_id: info.id,
+                    }
+                })
+            }}
+        />)
+    }
+
+    function deleteToplevelAction(id: string): void {
+        // TODO::make this a confirm modal
+        dispatch({
+            update: {
+                type: 'removeTopLevel',
+                id: id,
+            },
+        })
+    }
+
+    const loading = templates && settings && toplevel
+        ? templates.andThen((t) => settings.map((s) => { return { templates: t, globalSettings: s } })).andThen((ts) => toplevel.map((tl) => {
+            return {
+                ...ts,
+                toplevel: tl
+            }
+        }))
         : undefined
         ;
 
     // TODO::make description editable
     return <HandleLoading
         value={loading}
-        onOk={({ templates, globalSettings }) => (
+        onOk={({ templates, globalSettings, toplevel }) => (
             <div>
                 <Field
                     focusable={false}
@@ -63,11 +96,11 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                     description='Platform on which the application runs. Native apps and a selection of emulators are supported.'
                 >
                     <Dropdown
-                        selectedOption={container.pipeline.platform}
+                        selectedOption={container.pipeline.platform.root}
                         rgOptions={templates.map((t) => {
                             return {
                                 label: t.pipeline.name,
-                                data: t.pipeline.platform
+                                data: t.pipeline.platform.root
                             }
                         })}
                         onChange={(v) => {
@@ -80,6 +113,46 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                         }}
                     />
                 </Field>
+                <Field
+                    focusable={false}
+                    label={"Additional Actions"}
+                    description={"Additional top-level actions to run, such as launching a secondary app."}
+                    bottomSeparator="none"
+                >
+                    <DialogButton
+                        onOKButton={addTopLevelAction}
+                        onClick={addTopLevelAction}
+                    >
+                        Add Action
+                    </DialogButton>
+
+                </Field>
+                {profile.pipeline.toplevel.map((v) => {
+                    const match = toplevel.find((tl) => tl.id === v.root);
+
+                    if (!match) {
+                        return null;
+                    }
+
+                    return <Field focusable={false} indentLevel={1} label={match.name} description={match.description}>
+                        <DialogButton style={{
+                            backgroundColor: 'red',
+                            height: '40px',
+                            width: '40px',
+                            padding: '10px 12px',
+                            minWidth: '40px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            marginRight: '10px'
+                        }}
+                            onOKButton={() => deleteToplevelAction(v.id)}
+                            onClick={() => deleteToplevelAction(v.id)}
+                        >
+                            <FaTrash />
+                        </DialogButton>
+                    </Field>
+                })}
                 <Field
                     focusable={false}
                     label='Collections'
