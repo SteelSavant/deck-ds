@@ -1398,6 +1398,7 @@
       "required": [
         "id",
         "preset",
+        "screen_preference",
         "windowing_behavior"
       ],
       "properties": {
@@ -1409,6 +1410,9 @@
           "type": "string",
           "format": "uuid"
         },
+        "screen_preference": {
+          "$ref": "#/definitions/SecondaryAppScreenPreference"
+        },
         "windowing_behavior": {
           "$ref": "#/definitions/SecondaryAppWindowingBehavior"
         }
@@ -1419,6 +1423,7 @@
       "required": [
         "app",
         "id",
+        "screen_preference",
         "windowing_behavior"
       ],
       "properties": {
@@ -1428,6 +1433,9 @@
         "id": {
           "type": "string",
           "format": "uuid"
+        },
+        "screen_preference": {
+          "$ref": "#/definitions/SecondaryAppScreenPreference"
         },
         "windowing_behavior": {
           "$ref": "#/definitions/SecondaryAppWindowingBehavior"
@@ -2222,12 +2230,19 @@
         }
       }
     },
-    "SecondaryAppWindowingBehavior": {
+    "SecondaryAppScreenPreference": {
       "type": "string",
       "enum": [
         "PreferSecondary",
-        "PreferPrimary",
-        "Hidden",
+        "PreferPrimary"
+      ]
+    },
+    "SecondaryAppWindowingBehavior": {
+      "type": "string",
+      "enum": [
+        "Fullscreen",
+        "Maximized",
+        "Minimized",
         "Unmanaged"
       ]
     },

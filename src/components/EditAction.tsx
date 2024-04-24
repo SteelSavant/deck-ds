@@ -2,7 +2,7 @@ import { DialogButton, Dropdown, FileSelectionType, TextField, Toggle } from "de
 import _ from "lodash";
 import { Fragment, ReactElement, useState } from "react";
 import { FaFile } from "react-icons/fa";
-import { Action, CemuWindowOptions, CitraWindowOptions, DolphinWindowOptions, ExternalDisplaySettings, LimitedMultiWindowLayout, MultiWindowLayout, RelativeLocation, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions, secondaryAppWindowingOptions } from "../backend";
+import { Action, CemuWindowOptions, CitraWindowOptions, DolphinWindowOptions, ExternalDisplaySettings, LimitedMultiWindowLayout, MultiWindowLayout, RelativeLocation, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions, secondaryAppScreenPreferences, secondaryAppWindowingOptions } from "../backend";
 import { useServerApi } from "../context/serverApiContext";
 import useSecondaryAppInfo from "../hooks/useSecondaryAppPresetInfo";
 import { CustomWindowOptions, LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp } from "../types/backend_api";
@@ -571,7 +571,7 @@ function SecondaryAppPreset({ cloned, indentLevel, onChange, Builder }: Secondar
                                 }}
                             />
                         </Builder>
-                        <Builder indentLevel={indentLevel - 1} label="Windowing">
+                        <Builder indentLevel={indentLevel - 1} label="Windowing" description="Behavior of secondary app window(s).">
                             <Dropdown
                                 selectedOption={cloned.value.windowing_behavior} rgOptions={secondaryAppWindowingOptions.map((a) => {
                                     return {
@@ -584,6 +584,25 @@ function SecondaryAppPreset({ cloned, indentLevel, onChange, Builder }: Secondar
                                 }}
                             />
                         </Builder>
+                        {
+                            cloned.value.windowing_behavior === 'Fullscreen'
+                                ? (
+                                    <Builder indentLevel={indentLevel - 1} label="Screen Preference" description="Screen to send secondary app window(s) to if windowing is fullscreen.">
+                                        <Dropdown
+                                            selectedOption={cloned.value.screen_preference} rgOptions={secondaryAppScreenPreferences.map((a) => {
+                                                return {
+                                                    label: labelForCamelCase(a),
+                                                    data: a
+                                                }
+                                            })} onChange={(value) => {
+                                                cloned.value.screen_preference = value.data;
+                                                onChange(cloned);
+                                            }}
+                                        />
+                                    </Builder>
+                                )
+                                : null
+                        }
                     </Fragment>
                 )
             }}

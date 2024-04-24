@@ -4,7 +4,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    pipeline::action::{ActionId, ActionImpl, ActionType},
+    pipeline::action::{Action, ActionId, ActionImpl, ActionType, ErasedPipelineAction},
     sys::windowing::get_window_info_from_pid_default_active_after,
     util::escape_string_for_regex,
 };
@@ -18,7 +18,7 @@ pub struct MainAppAutomaticWindowing {
 }
 
 impl ActionImpl for MainAppAutomaticWindowing {
-    type State = MultiWindow;
+    type State = Action;
 
     const TYPE: ActionType = ActionType::MainAppAutomaticWindowing;
 
@@ -32,7 +32,7 @@ impl ActionImpl for MainAppAutomaticWindowing {
 
         ctx.register_on_launch_callback(Box::new(move |pid, ctx| {
             let info = get_window_info_from_pid_default_active_after(pid, Duration::from_secs(5))?;
-            let multi = MultiWindow {
+            let multi = Action::from(MultiWindow {
                 id: id,
                 general: general.clone(),
                 cemu: None,
@@ -44,7 +44,7 @@ impl ActionImpl for MainAppAutomaticWindowing {
                     classes: info.classes,
                     ..Default::default()
                 }),
-            };
+            });
             multi.setup(ctx)?;
             ctx.set_state::<Self>(multi);
             Ok(())
@@ -65,14 +65,16 @@ impl ActionImpl for MainAppAutomaticWindowing {
         &self,
         ctx: &crate::pipeline::executor::PipelineContext,
     ) -> Vec<crate::pipeline::dependency::Dependency> {
-        MultiWindow {
-            id: ActionId::nil(),
-            general: GeneralOptions::default(),
-            cemu: None,
-            citra: None,
-            dolphin: None,
-            custom: None,
-        }
-        .get_dependencies(ctx)
+        ActionImpl::get_dependencies(
+            &MultiWindow {
+                id: ActionId::nil(),
+                general: GeneralOptions::default(),
+                cemu: None,
+                citra: None,
+                dolphin: None,
+                custom: None,
+            },
+            ctx,
+        )
     }
 }

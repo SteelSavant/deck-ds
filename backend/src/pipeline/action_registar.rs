@@ -267,6 +267,7 @@ impl PipelineActionRegistarBuilder {
                                 args: vec![],
                             },
                             windowing_behavior: Default::default(),
+                            screen_preference: Default::default(),
                         }.into()),
                     }).with_action("launch_secondary_app_preset", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
                         name: "Preset".into(),
@@ -278,6 +279,7 @@ impl PipelineActionRegistarBuilder {
                             id: ActionId::nil(),
                             preset: SecondaryAppPresetId::parse("fd811b3f-4e09-4828-92aa-9220239c274b"), // Youtube [Firefox]
                             windowing_behavior: Default::default(),
+                            screen_preference: Default::default(),
                         }.into()),
                     })
                 })

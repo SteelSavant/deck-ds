@@ -251,7 +251,11 @@ impl<'a> PipelineContext<'a> {
         Ok(std::fs::write(path, serialized)?)
     }
 
-    pub fn get_state_index<P: ActionImpl + 'static>(&self) -> usize {
+    pub fn get_state_index<P: ActionImpl + 'static>(&self) -> Option<usize> {
+        if !self.state.contains::<StateKey<P>>() {
+            return None;
+        }
+
         self.state
             .get::<StateKey<P>>()
             .expect("state slot should exist")
@@ -259,10 +263,13 @@ impl<'a> PipelineContext<'a> {
             .enumerate()
             .last()
             .map(|v| v.0)
-            .expect("state slot should have value to index")
     }
 
     pub fn get_state<P: ActionImpl + 'static>(&self) -> Option<&P::State> {
+        if !self.state.contains::<StateKey<P>>() {
+            return None;
+        }
+
         self.state
             .get::<StateKey<P>>()
             .expect("state slot should exist")
@@ -272,6 +279,10 @@ impl<'a> PipelineContext<'a> {
     }
 
     pub fn get_state_mut<P: ActionImpl + 'static>(&mut self) -> Option<&mut P::State> {
+        if !self.state.contains::<StateKey<P>>() {
+            return None;
+        }
+
         self.state
             .get_mut::<StateKey<P>>()
             .expect("state slot should exist")
@@ -320,7 +331,7 @@ impl<'a> PipelineContext<'a> {
         self.config_dir.join("state.json")
     }
 
-    fn handle_state_slot(&mut self, action: &Action, is_push: bool) {
+    pub fn handle_state_slot(&mut self, action: &ActionType, is_push: bool) {
         fn handle<'a, T: ActionImpl + 'static>(this: &mut PipelineContext<'a>, is_push: bool) {
             let v = this.state.entry::<StateKey<T>>().or_insert(vec![]);
             if is_push {
@@ -330,7 +341,7 @@ impl<'a> PipelineContext<'a> {
             }
         }
 
-        match action.get_type() {
+        match action {
             ActionType::CemuLayout => handle::<CemuLayout>(self, is_push),
             ActionType::CitraLayout => handle::<CitraLayout>(self, is_push),
             ActionType::DesktopSessionHandler => handle::<DesktopSessionHandler>(self, is_push),
@@ -352,7 +363,6 @@ impl<'a> PipelineContext<'a> {
     }
 
     fn setup_action(&mut self, action: Action) -> Result<()> {
-        self.handle_state_slot(&action, true);
         let res = action
             .exec(self, ExecActionType::Setup)
             .with_context(|| format!("failed to execute setup for {}", action.get_type()));
@@ -364,7 +374,6 @@ impl<'a> PipelineContext<'a> {
         let res = action
             .exec(self, ExecActionType::Teardown)
             .with_context(|| format!("failed to execute teardown for {}", action.get_type()));
-        self.handle_state_slot(&action, false);
         self.persist().and(res)
     }
 }
@@ -679,7 +688,7 @@ mod tests {
             config_dir.clone(),
         );
 
-        let actions = vec![
+        let actions: Vec<Action> = vec![
             DesktopSessionHandler {
                 id: ActionId::nil(),
                 teardown_external_settings: ExternalDisplaySettings::Native,
@@ -734,10 +743,18 @@ mod tests {
             .into(),
         ];
 
-        // assert_eq!(actions.len(), ActionType::iter().count(), "not all actions tested");
+        // assert_eq!(
+        //     actions
+        //         .iter()
+        //         .map(|v| v.get_type())
+        //         .collect::<HashSet<_>>()
+        //         .len(),
+        //     ActionType::iter().count(),
+        //     "not all actions tested"
+        // );
 
         for a in actions.iter() {
-            ctx.handle_state_slot(&a, true);
+            ctx.handle_state_slot(&a.get_type(), true);
         }
 
         ctx.have_run = actions;

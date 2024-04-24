@@ -171,8 +171,6 @@ mod tests {
 
     use std::{collections::HashMap, hash::RandomState};
 
-    use uuid::Uuid;
-
     use crate::{
         pipeline::{
             action_registar::PipelineActionRegistrar,

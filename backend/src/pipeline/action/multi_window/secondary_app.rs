@@ -10,11 +10,18 @@ pub use secondary_app_options::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Clone, Copy, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
-pub enum SecondaryAppWindowingBehavior {
+pub enum SecondaryAppScreenPreference {
     #[default]
     PreferSecondary,
     PreferPrimary,
-    Hidden,
+}
+
+#[derive(Debug, Default, Clone, Copy, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
+pub enum SecondaryAppWindowingBehavior {
+    #[default]
+    Fullscreen,
+    Maximized,
+    Minimized,
     Unmanaged,
 }
 

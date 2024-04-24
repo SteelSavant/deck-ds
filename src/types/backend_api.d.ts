@@ -155,7 +155,8 @@ export type FileSource =
 export type FlatpakSource = "Cemu" | "Citra" | "MelonDS";
 export type AppImageSource = "Cemu";
 export type EmuDeckSource = "CemuProton";
-export type SecondaryAppWindowingBehavior = "PreferSecondary" | "PreferPrimary" | "Hidden" | "Unmanaged";
+export type SecondaryAppScreenPreference = "PreferSecondary" | "PreferPrimary";
+export type SecondaryAppWindowingBehavior = "Fullscreen" | "Maximized" | "Minimized" | "Unmanaged";
 export type SecondaryApp = {
   app_id: string;
   args: string[];
@@ -430,6 +431,7 @@ export interface CustomFileOptions {
 export interface LaunchSecondaryFlatpakApp {
   app: FlatpakApp;
   id: string;
+  screen_preference: SecondaryAppScreenPreference;
   windowing_behavior: SecondaryAppWindowingBehavior;
 }
 export interface FlatpakApp {
@@ -439,6 +441,7 @@ export interface FlatpakApp {
 export interface LaunchSecondaryAppPreset {
   id: string;
   preset: string;
+  screen_preference: SecondaryAppScreenPreference;
   windowing_behavior: SecondaryAppWindowingBehavior;
 }
 export interface MainAppAutomaticWindowing {

@@ -20,7 +20,7 @@ use crate::{
                 },
                 secondary_app::{
                     LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp,
-                    SecondaryAppWindowingBehavior,
+                    SecondaryAppScreenPreference, SecondaryAppWindowingBehavior,
                 },
             },
             session_handler::DesktopSessionHandler,
@@ -863,6 +863,7 @@ pub struct DbLaunchSecondaryFlatpakApp {
     pub id: ActionId,
     pub app: DbSecondaryFlatpakApp,
     pub windowing_behavior: DbSecondaryAppWindowingBehavior,
+    pub screen_preference: DbSecondaryAppScreenPreference,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -878,10 +879,16 @@ pub struct DbSecondaryFlatpakApp {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum DbSecondaryAppWindowingBehavior {
+    Fullscreen,
+    Maximized,
+    Minimized,
+    Unmanaged,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum DbSecondaryAppScreenPreference {
     PreferSecondary,
     PreferPrimary,
-    Hidden,
-    Unmanaged,
 }
 
 impl From<FlatpakApp> for DbSecondaryFlatpakApp {
@@ -908,6 +915,7 @@ impl From<LaunchSecondaryFlatpakApp> for DbLaunchSecondaryFlatpakApp {
             id: value.id,
             app: value.app.into(),
             windowing_behavior: value.windowing_behavior.into(),
+            screen_preference: value.screen_preference.into(),
         }
     }
 }
@@ -918,6 +926,7 @@ impl From<DbLaunchSecondaryFlatpakApp> for LaunchSecondaryFlatpakApp {
             id: value.id,
             app: value.app.into(),
             windowing_behavior: value.windowing_behavior.into(),
+            screen_preference: value.screen_preference.into(),
         }
     }
 }
@@ -941,13 +950,11 @@ impl From<DbSecondaryApp> for SecondaryApp {
 impl From<SecondaryAppWindowingBehavior> for DbSecondaryAppWindowingBehavior {
     fn from(value: SecondaryAppWindowingBehavior) -> Self {
         match value {
-            SecondaryAppWindowingBehavior::PreferSecondary => {
-                DbSecondaryAppWindowingBehavior::PreferSecondary
+            SecondaryAppWindowingBehavior::Fullscreen => {
+                DbSecondaryAppWindowingBehavior::Fullscreen
             }
-            SecondaryAppWindowingBehavior::PreferPrimary => {
-                DbSecondaryAppWindowingBehavior::PreferPrimary
-            }
-            SecondaryAppWindowingBehavior::Hidden => DbSecondaryAppWindowingBehavior::Hidden,
+            SecondaryAppWindowingBehavior::Maximized => DbSecondaryAppWindowingBehavior::Maximized,
+            SecondaryAppWindowingBehavior::Minimized => DbSecondaryAppWindowingBehavior::Minimized,
             SecondaryAppWindowingBehavior::Unmanaged => DbSecondaryAppWindowingBehavior::Unmanaged,
         }
     }
@@ -956,14 +963,38 @@ impl From<SecondaryAppWindowingBehavior> for DbSecondaryAppWindowingBehavior {
 impl From<DbSecondaryAppWindowingBehavior> for SecondaryAppWindowingBehavior {
     fn from(value: DbSecondaryAppWindowingBehavior) -> Self {
         match value {
-            DbSecondaryAppWindowingBehavior::PreferSecondary => {
-                SecondaryAppWindowingBehavior::PreferSecondary
+            DbSecondaryAppWindowingBehavior::Fullscreen => {
+                SecondaryAppWindowingBehavior::Fullscreen
             }
-            DbSecondaryAppWindowingBehavior::PreferPrimary => {
-                SecondaryAppWindowingBehavior::PreferPrimary
-            }
-            DbSecondaryAppWindowingBehavior::Hidden => SecondaryAppWindowingBehavior::Hidden,
+            DbSecondaryAppWindowingBehavior::Maximized => SecondaryAppWindowingBehavior::Maximized,
+            DbSecondaryAppWindowingBehavior::Minimized => SecondaryAppWindowingBehavior::Minimized,
             DbSecondaryAppWindowingBehavior::Unmanaged => SecondaryAppWindowingBehavior::Unmanaged,
+        }
+    }
+}
+
+impl From<SecondaryAppScreenPreference> for DbSecondaryAppScreenPreference {
+    fn from(value: SecondaryAppScreenPreference) -> Self {
+        match value {
+            SecondaryAppScreenPreference::PreferSecondary => {
+                DbSecondaryAppScreenPreference::PreferSecondary
+            }
+            SecondaryAppScreenPreference::PreferPrimary => {
+                DbSecondaryAppScreenPreference::PreferPrimary
+            }
+        }
+    }
+}
+
+impl From<DbSecondaryAppScreenPreference> for SecondaryAppScreenPreference {
+    fn from(value: DbSecondaryAppScreenPreference) -> Self {
+        match value {
+            DbSecondaryAppScreenPreference::PreferSecondary => {
+                SecondaryAppScreenPreference::PreferSecondary
+            }
+            DbSecondaryAppScreenPreference::PreferPrimary => {
+                SecondaryAppScreenPreference::PreferPrimary
+            }
         }
     }
 }
@@ -976,6 +1007,7 @@ pub struct DbLaunchSecondaryAppPreset {
     pub id: ActionId,
     pub preset: SecondaryAppPresetId,
     pub windowing_behavior: DbSecondaryAppWindowingBehavior,
+    pub screen_preference: DbSecondaryAppScreenPreference,
 }
 
 impl From<LaunchSecondaryAppPreset> for DbLaunchSecondaryAppPreset {
@@ -984,6 +1016,7 @@ impl From<LaunchSecondaryAppPreset> for DbLaunchSecondaryAppPreset {
             id: value.id,
             preset: value.preset,
             windowing_behavior: value.windowing_behavior.into(),
+            screen_preference: value.screen_preference.into(),
         }
     }
 }
@@ -994,6 +1027,7 @@ impl From<DbLaunchSecondaryAppPreset> for LaunchSecondaryAppPreset {
             id: value.id,
             preset: value.preset,
             windowing_behavior: value.windowing_behavior.into(),
+            screen_preference: value.screen_preference.into(),
         }
     }
 }

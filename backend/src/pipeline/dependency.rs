@@ -97,6 +97,7 @@ impl Dependency {
                                 id: ActionId::nil(),
                                 app: app.clone(),
                                 windowing_behavior: Default::default(),
+                                screen_preference: Default::default(),
                             }
                             .get_dependencies(ctx)
                             .into_iter()
