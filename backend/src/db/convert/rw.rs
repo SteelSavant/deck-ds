@@ -142,7 +142,7 @@ impl PipelineActionLookup {
                     is_visible_on_qam: v.is_visible_on_qam,
                 };
 
-                log::error!("TMP::saving action with id:{:?}", settings.id);
+                log::debug!("TMP::saving action with id:{:?}", settings.id);
 
                 rw.insert(settings)?;
 

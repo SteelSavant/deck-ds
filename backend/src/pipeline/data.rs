@@ -233,7 +233,7 @@ impl PipelineDefinition {
                     .iter()
                     .enumerate()
                     .filter(|(_, v)| actions_have_target(&v.root, t, registrar))
-                    .map(|(i, v)| v.reify(i, t, self, profiles, registrar))
+                    .map(|(i, v)| v.reify(i, t, profiles, registrar))
                     .filter_map(|v| v.transpose())
                     .collect::<Result<_>>()?;
 
@@ -267,16 +267,13 @@ impl TopLevelDefinition {
         &self,
         toplevel_index: usize,
         target: PipelineTarget,
-        pipeline: &PipelineDefinition,
         profiles: &[CategoryProfile],
         registrar: &PipelineActionRegistrar,
     ) -> Result<Option<PipelineAction>> {
         self.root.reify(&ReificationCtx {
-            root_id: &self.root,
             toplevel_index,
             toplevel_id: self.id,
             target,
-            pipeline,
             actions: &self.actions,
             profiles,
             registrar,
@@ -286,12 +283,10 @@ impl TopLevelDefinition {
 
 #[derive(Debug, Clone, Copy)]
 struct ReificationCtx<'a> {
-    root_id: &'a PipelineActionId,
     /// 0 for platform, otherwise (index - 1) into the toplevel array
     toplevel_index: usize,
     toplevel_id: TopLevelId,
     target: PipelineTarget,
-    pipeline: &'a PipelineDefinition,
     actions: &'a PipelineActionLookup,
     profiles: &'a [CategoryProfile],
     registrar: &'a PipelineActionRegistrar,
@@ -380,31 +375,9 @@ fn resolve_action_from_profile_override<'a>(
     if ctx.toplevel_index == 0 {
         profile.pipeline.platform.actions.get(id, ctx.target)
     } else {
-        // TODO::maybe match TopLevelId instead of nth
-        let desired_index = ctx.toplevel_index - 1;
-        let mut n = 0;
-
-        for (i, tl) in ctx.pipeline.toplevel.iter().enumerate() {
-            if tl.root == *ctx.root_id {
-                n += 1;
-            }
-
-            if i == desired_index {
-                break;
-            }
-        }
-
-        if n == 0 {
-            None
-        } else {
-            profile
-                .pipeline
-                .toplevel
-                .iter()
-                .filter(|v| v.root == *ctx.root_id)
-                .flat_map(|v| v.actions.get(id, ctx.target))
-                .nth(n - 1)
-        }
+        profile.pipeline.toplevel[ctx.toplevel_index - 1]
+            .actions
+            .get(id, ctx.target)
     }
 }
 
