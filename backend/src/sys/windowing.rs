@@ -44,6 +44,8 @@ pub fn get_window_info_from_pid_default_active_after(
     pid: Pid,
     timeout: Duration,
 ) -> Result<WindowInfo> {
+    std::thread::sleep(Duration::from_millis(500)); // Delay in case window caption changes rapidly on launch
+
     let mut window_info = get_window_info_from_pid(pid);
 
     let timer = Instant::now();
