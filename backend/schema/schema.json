@@ -2326,7 +2326,8 @@
       "type": "object",
       "required": [
         "id",
-        "pipeline"
+        "pipeline",
+        "tags"
       ],
       "properties": {
         "id": {
@@ -2335,6 +2336,12 @@
         },
         "pipeline": {
           "$ref": "#/definitions/PipelineDefinition"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

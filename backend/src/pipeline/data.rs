@@ -66,6 +66,7 @@ pub enum PipelineTarget {
 pub struct Template {
     pub id: TemplateId,
     pub pipeline: PipelineDefinition,
+    pub tags: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
