@@ -25,11 +25,16 @@ const About: VFC = () => {
             onOKActionDescription: "Support!"
         },
         {
-            label: 'GPL 3.0 License',
+            label: "Github",
+            description: "https://github.com/SteelSavant",
+            onClick: () => SteamClient.URL.ExecuteSteamURL("steam://openurl/https://github.com/SteelSavant")
+        },
+        {
+            label: 'GNU GPLv3 License',
             description: (
                 <div style={{ whiteSpace: "pre-wrap" }}>
                     DeckDS <br />
-                    Copyright (C) 2024 SteelSavant <br />
+                    Copyright (c) 2023-2024 SteelSavant <br />
                     <br />
                     This program is free software: you can redistribute it and/or modify <br />
                     it under the terms of the GNU General Public License as published by <br />
@@ -42,7 +47,7 @@ const About: VFC = () => {
                     GNU General Public License for more details. <br />
                     <br />
                     You should have received a copy of the GNU General Public License <br />
-                    along with this program. If not, see <a href="https://www.gnu.org/licenses" />. <br />
+                    along with this program. If not, see https://www.gnu.org/licenses. <br />
                 </div>
             )
         },
@@ -80,11 +85,7 @@ const About: VFC = () => {
                 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </div>)
         },
-        {
-            label: "Github",
-            description: "https://github.com/SteelSavant",
-            onClick: () => SteamClient.URL.ExecuteSteamURL("steam://openurl/https://github.com/SteelSavant")
-        },
+
     ].filter((v) => v);
 
     return (
