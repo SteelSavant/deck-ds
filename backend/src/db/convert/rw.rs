@@ -6,8 +6,8 @@ use crate::{
     db::model::{
         DbAction, DbAppOverride, DbCategoryProfile, DbCemuLayout, DbCitraLayout, DbConfigSelection,
         DbDesktopSessionHandler, DbDisplayConfig, DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset,
-        DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings,
-        DbSourceFile, DbTopLevelDefinition, DbVirtualScreen,
+        DbLime3dsLayout, DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow,
+        DbPipelineActionSettings, DbSourceFile, DbTopLevelDefinition, DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionId, ActionType, ErasedPipelineAction},
@@ -68,6 +68,9 @@ impl Action {
             }
             Action::MainAppAutomaticWindowing(action) => {
                 rw.insert::<DbMainAppAutomaticWindowing>(action.into())?;
+            }
+            Action::Lime3dsLayout(action) => {
+                rw.insert::<DbLime3dsLayout>(action.into())?;
             }
         };
 
@@ -230,6 +233,10 @@ impl DbAction {
             }
             ActionType::MainAppAutomaticWindowing => {
                 let action = rw.get().primary::<DbMainAppAutomaticWindowing>(id)?;
+                action.map(|a| rw.remove(a))
+            }
+            ActionType::Lime3dsLayout => {
+                let action = rw.get().primary::<DbLime3dsLayout>(id)?;
                 action.map(|a| rw.remove(a))
             }
         }

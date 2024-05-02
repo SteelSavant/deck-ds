@@ -220,6 +220,24 @@
             "type": {
               "type": "string",
               "enum": [
+                "Lime3dsLayout"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/CitraLayout"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
                 "MelonDSLayout"
               ]
             },
@@ -581,6 +599,7 @@
       "required": [
         "fullscreen",
         "layout_option",
+        "rotate_upright",
         "swap_screens"
       ],
       "properties": {
@@ -589,6 +608,9 @@
         },
         "layout_option": {
           "$ref": "#/definitions/CitraLayoutOption"
+        },
+        "rotate_upright": {
+          "type": "boolean"
         },
         "swap_screens": {
           "type": "boolean"
@@ -1196,7 +1218,8 @@
       "enum": [
         "Cemu",
         "Citra",
-        "MelonDS"
+        "MelonDS",
+        "Lime3ds"
       ]
     },
     "GeneralOptions": {

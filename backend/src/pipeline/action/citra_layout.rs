@@ -63,6 +63,7 @@ pub struct CitraLayoutState {
     pub layout_option: CitraLayoutOption,
     pub swap_screens: bool,
     pub fullscreen: bool, // Setting this doesn't work for some reason...
+    pub rotate_upright: bool,
 }
 
 impl CitraLayoutState {
@@ -87,6 +88,11 @@ impl CitraLayoutState {
             .map_err(|err| anyhow!(err))?
             .with_context(|| "key 'swap_screen' not found")?;
 
+        let rotate_upright = ini
+            .getbool(Self::LAYOUT_SECTION, "upright_screen")
+            .map_err(|err| anyhow!(err))?
+            .with_context(|| "key 'upright_screen' not found")?;
+
         let ui = Self::UI_SECTION;
 
         let fullscreen = ini
@@ -98,6 +104,7 @@ impl CitraLayoutState {
             layout_option: CitraLayoutOption::from_raw(raw_layout),
             swap_screens,
             fullscreen,
+            rotate_upright,
         })
     }
 
@@ -124,6 +131,12 @@ impl CitraLayoutState {
         ini.set(
             Self::LAYOUT_SECTION,
             "swap_screen",
+            Some(self.swap_screens.to_string()),
+        );
+
+        ini.set(
+            Self::LAYOUT_SECTION,
+            "upright_screen",
             Some(self.swap_screens.to_string()),
         );
 
@@ -218,6 +231,7 @@ mod tests {
             layout_option: CitraLayoutOption::Default,
             swap_screens: false,
             fullscreen: false,
+            rotate_upright: false,
         };
         let actual = CitraLayoutState::read(&path)?;
 
@@ -231,6 +245,7 @@ mod tests {
             layout_option: CitraLayoutOption::SeparateWindows,
             swap_screens: true,
             fullscreen: true,
+            rotate_upright: true,
         };
 
         expected.write(&path)?;

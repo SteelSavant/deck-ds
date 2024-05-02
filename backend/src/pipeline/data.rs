@@ -473,7 +473,6 @@ fn actions_have_target(
 
 #[cfg(test)]
 mod tests {
-    use anyhow::Result;
     use pretty_assertions::assert_eq;
 
     use strum::IntoEnumIterator;

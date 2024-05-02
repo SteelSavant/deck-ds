@@ -7,6 +7,7 @@ use strum::{Display, EnumIter, EnumString};
 use crate::macros::newtype_uuid;
 
 use self::display_config::DisplayConfig;
+use self::lime_3ds_layout::Lime3dsLayout;
 use self::multi_window::main_app_automatic_windowing::MainAppAutomaticWindowing;
 use self::multi_window::secondary_app::{LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp};
 use self::{
@@ -22,6 +23,7 @@ use anyhow::Result;
 pub mod cemu_layout;
 pub mod citra_layout;
 mod desktop;
+pub mod lime_3ds_layout;
 pub mod melonds_layout;
 pub mod multi_window;
 pub mod source_file;
@@ -118,6 +120,7 @@ pub enum Action {
     MultiWindow(MultiWindow),
     CitraLayout(CitraLayout),
     CemuLayout(CemuLayout),
+    Lime3dsLayout(Lime3dsLayout),
     MelonDSLayout(MelonDSLayout),
     SourceFile(SourceFile),
     LaunchSecondaryFlatpakApp(LaunchSecondaryFlatpakApp),
@@ -165,6 +168,9 @@ impl Action {
             Action::MainAppAutomaticWindowing(a) => {
                 Action::MainAppAutomaticWindowing(MainAppAutomaticWindowing { id, ..a.clone() })
             }
+            Action::Lime3dsLayout(a) => {
+                Action::Lime3dsLayout(Lime3dsLayout(CitraLayout { id, ..a.0.clone() }))
+            }
         }
     }
 }
@@ -176,6 +182,7 @@ impl Action {
 pub enum ActionType {
     CemuLayout,
     CitraLayout,
+    Lime3dsLayout,
     DesktopSessionHandler,
     DisplayConfig,
     MultiWindow,

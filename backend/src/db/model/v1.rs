@@ -11,6 +11,7 @@ use crate::{
             cemu_layout::{CemuLayout, CemuLayoutState},
             citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
             display_config::DisplayConfig,
+            lime_3ds_layout::Lime3dsLayout,
             melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
             multi_window::{
                 main_app_automatic_windowing::MainAppAutomaticWindowing,
@@ -164,6 +165,7 @@ pub struct DbCitraLayout {
     pub layout_option: DbCitraLayoutOption,
     pub swap_screens: bool,
     pub fullscreen: bool,
+    pub rotate_upright: bool,
 }
 
 impl From<CitraLayout> for DbCitraLayout {
@@ -181,6 +183,7 @@ impl From<CitraLayout> for DbCitraLayout {
             },
             swap_screens: value.layout.swap_screens,
             fullscreen: value.layout.fullscreen,
+            rotate_upright: value.layout.rotate_upright,
         }
     }
 }
@@ -201,6 +204,7 @@ impl From<DbCitraLayout> for CitraLayout {
                 },
                 swap_screens: value.swap_screens,
                 fullscreen: value.fullscreen,
+                rotate_upright: value.rotate_upright,
             },
         }
     }
@@ -727,6 +731,7 @@ impl From<SourceFile> for DbSourceFile {
                     FlatpakSource::Cemu => DbFlatpakSource::Cemu,
                     FlatpakSource::Citra => DbFlatpakSource::Citra,
                     FlatpakSource::MelonDS => DbFlatpakSource::MelonDS,
+                    FlatpakSource::Lime3ds => DbFlatpakSource::Lime3ds,
                 }),
                 FileSource::AppImage(v) => DbFileSource::AppImage(match v {
                     AppImageSource::Cemu => DbAppImageSource::Cemu,
@@ -752,6 +757,7 @@ impl From<DbSourceFile> for SourceFile {
                     DbFlatpakSource::Cemu => FlatpakSource::Cemu,
                     DbFlatpakSource::Citra => FlatpakSource::Citra,
                     DbFlatpakSource::MelonDS => FlatpakSource::MelonDS,
+                    DbFlatpakSource::Lime3ds => FlatpakSource::Lime3ds,
                 }),
                 DbFileSource::AppImage(v) => FileSource::AppImage(match v {
                     DbAppImageSource::Cemu => AppImageSource::Cemu,
@@ -790,6 +796,7 @@ pub enum DbFlatpakSource {
     Cemu,
     Citra,
     MelonDS,
+    Lime3ds,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -1056,5 +1063,28 @@ impl From<DbMainAppAutomaticWindowing> for MainAppAutomaticWindowing {
             id: value.id,
             general: value.general.into(),
         }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[native_db(primary_key(get_id))]
+#[native_model(id = 1012, version = 1, with = NativeModelJSON)]
+pub struct DbLime3dsLayout(DbCitraLayout);
+
+impl From<Lime3dsLayout> for DbLime3dsLayout {
+    fn from(value: Lime3dsLayout) -> Self {
+        Self(value.0.into())
+    }
+}
+
+impl From<DbLime3dsLayout> for Lime3dsLayout {
+    fn from(value: DbLime3dsLayout) -> Self {
+        Self(value.0.into())
+    }
+}
+
+impl DbLime3dsLayout {
+    fn get_id(&self) -> ActionId {
+        self.0.id
     }
 }

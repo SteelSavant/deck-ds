@@ -10,6 +10,7 @@ use super::{
         cemu_layout::{CemuLayout, CemuLayoutState},
         citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
         display_config::DisplayConfig,
+        lime_3ds_layout::Lime3dsLayout,
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
         multi_window::{
             main_app_automatic_windowing::MainAppAutomaticWindowing,
@@ -408,9 +409,10 @@ impl PipelineActionRegistarBuilder {
                         selection: CitraLayout {
                             id: ActionId::nil(),
                             layout: CitraLayoutState {
-                            layout_option: CitraLayoutOption::SeparateWindows,
-                            swap_screens: false,
-                            fullscreen: true,
+                                layout_option: CitraLayoutOption::SeparateWindows,
+                                swap_screens: false,
+                                fullscreen: true,
+                                rotate_upright: false,
                             }
                         }.into(),
                     }).with_action("layout", Some(PipelineTarget::Gamemode),PipelineActionDefinitionBuilder {
@@ -423,10 +425,111 @@ impl PipelineActionRegistarBuilder {
                             id: ActionId::nil(),
                             layout: CitraLayoutState {
                                 layout_option: CitraLayoutOption::HybridScreen,
-                                swap_screens: false,
                                 fullscreen: true,
+                                rotate_upright: false,
+                                swap_screens: false,
                             }
                         }.into(),
+                    })
+                    .with_action("multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                        name: multi_window_name.clone(),
+                        description: multi_window_description.clone(),
+                        enabled: None,
+                        is_visible_on_qam: false,
+                        profile_override: None,
+                        selection: MultiWindow {
+                            id: ActionId::nil(),
+                            general: GeneralOptions::default(),
+                            citra: Some(CitraWindowOptions::default()),
+                            cemu: None,
+                            dolphin: None,
+                            custom: None,
+                        }.into(),
+                    })
+                })
+                .with_group("lime3ds", |group| {
+                    let citra_name = "Lime3DS".to_string();
+                    let citra_description = Some("Maps primary and secondary windows to different screens for Lime3DS. Allows optional Lime3DS layout configuration.".to_string());
+
+                    let citra_layout_name = "Layout".to_string();
+                    let citra_layout_description = Some("Edits Lime3DS ini file to desired layout settings.".to_string());
+
+                    group.with_action("platform", None, PipelineActionDefinitionBuilder {
+                        name: citra_name.clone(),
+                        description: citra_description.clone(),
+                        enabled: None,
+                        profile_override: None,
+                        selection: DefinitionSelection::AllOf(vec![
+                            PipelineActionId::new("core:lime3ds:source"),
+                            PipelineActionId::new("core:lime3ds:layout"),
+                            PipelineActionId::new("core:lime3ds:multi_window"),
+                            PipelineActionId::new("core:dual_screen_platform:display_config"),
+                        ]),
+                        is_visible_on_qam: true,
+                    })
+                    .with_action("source", None, PipelineActionDefinitionBuilder {
+                        name: "Lime3DS Settings Source".to_string(),
+                        description: Some("Source file to use when editing Lime3DS settings.".to_string()),
+                        enabled: None,
+                        is_visible_on_qam: false,
+                        profile_override: None,
+                        selection:  DefinitionSelection::OneOf {selection: PipelineActionId::new("core:lime3ds:flatpak_source"), actions: vec![
+                            PipelineActionId::new("core:lime3ds:flatpak_source"),
+                            PipelineActionId::new("core:lime3ds:custom_source")
+                        ]},
+                    })
+                    .with_action("flatpak_source", None, PipelineActionDefinitionBuilder {
+                        name: "Flatpak".to_string(),
+                        description: Some("Sets the settings INI file location to the default Flatpak location.".to_string()),
+                        enabled: None,
+                        is_visible_on_qam: true,
+                        profile_override: None,
+                        selection:SourceFile {
+                            id: ActionId::nil(),
+                            source: FileSource::Flatpak(FlatpakSource::Lime3ds),
+                        }.into()
+                    })
+                    .with_action("custom_source", None, PipelineActionDefinitionBuilder {
+                        name: "Custom".to_string(),
+                        description: Some("Sets the settings INI file location to a custom location.".to_string()),
+                        enabled: None,
+                        is_visible_on_qam: true,
+                        profile_override: None,
+                        selection: SourceFile {
+                            id: ActionId::nil(),
+                            source: FileSource::Custom(CustomFileOptions {path: None, valid_ext: vec!["ini".to_string()]})
+                        }.into(),
+                    })
+                    .with_action("layout", Some(PipelineTarget::Desktop),   PipelineActionDefinitionBuilder {
+                        name: citra_layout_name.clone(),
+                        description: citra_layout_description.clone(),
+                        enabled: Some(true),
+                        is_visible_on_qam: true,
+                        profile_override: None,
+                        selection: Lime3dsLayout(CitraLayout {
+                            id: ActionId::nil(),
+                            layout: CitraLayoutState {
+                                layout_option: CitraLayoutOption::SeparateWindows,
+                                swap_screens: false,
+                                fullscreen: true,
+                                rotate_upright: false,
+                            }
+                        }).into(),
+                    }).with_action("layout", Some(PipelineTarget::Gamemode),PipelineActionDefinitionBuilder {
+                        name: citra_layout_name.clone(),
+                        description: citra_layout_description.clone(),
+                        enabled: Some(true),
+                        is_visible_on_qam: true,
+                        profile_override: None,
+                        selection: Lime3dsLayout(CitraLayout {
+                            id: ActionId::nil(),
+                            layout: CitraLayoutState {
+                                layout_option: CitraLayoutOption::HybridScreen,
+                                fullscreen: true,
+                                rotate_upright: false,
+                                swap_screens: false,
+                            }
+                        }).into(),
                     })
                     .with_action("multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
                         name: multi_window_name.clone(),
