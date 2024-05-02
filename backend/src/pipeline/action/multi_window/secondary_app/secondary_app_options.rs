@@ -24,7 +24,11 @@ impl SecondaryAppWindowOptions {
 
         let classes = kwin
             .get_script_string_setting(SCRIPT, &format!("secondaryAppWindowClasses{index}"))?
-            .map(|s| s.split(',').map(|v| v.trim().to_string()).collect())
+            .map(|s| {
+                s.split(',')
+                    .map(|v| v.trim().to_lowercase().to_string())
+                    .collect()
+            })
             .unwrap_or_default();
 
         let windowing_behavior = kwin
@@ -55,7 +59,7 @@ impl SecondaryAppWindowOptions {
         kwin.set_script_string_setting(
             SCRIPT,
             &format!("secondaryAppWindowClasses{index}"),
-            &self.classes.join(","),
+            &self.classes.join(",").to_lowercase(),
         )?;
 
         kwin.set_script_string_setting(

@@ -47,20 +47,22 @@ impl DesktopSessionHandler {
         let current_output = display.get_preferred_external_output()?;
 
         if let Some(current_output) = current_output.as_ref() {
-            match self.teardown_external_settings {
-                ExternalDisplaySettings::Previous => Ok(()),
-                ExternalDisplaySettings::Native => {
-                    let native_mode = display.get_native_mode(current_output)?;
-                    if let Some(mode) = native_mode {
-                        display.set_output_mode(current_output, &mode)
-                    } else {
-                        Ok(())
+            if current_output.connected {
+                match self.teardown_external_settings {
+                    ExternalDisplaySettings::Previous => Ok(()),
+                    ExternalDisplaySettings::Native => {
+                        let native_mode = display.get_native_mode(current_output)?;
+                        if let Some(mode) = native_mode {
+                            display.set_output_mode(current_output, &mode)
+                        } else {
+                            Ok(())
+                        }
                     }
-                }
-                ExternalDisplaySettings::Preference(preference) => {
-                    display.set_or_create_preferred_mode(current_output, &preference)
-                }
-            }?;
+                    ExternalDisplaySettings::Preference(preference) => {
+                        display.set_or_create_preferred_mode(current_output, &preference)
+                    }
+                }?;
+            }
         }
 
         if let Some(location) = self.teardown_deck_location {
@@ -184,7 +186,7 @@ impl ActionImpl for DesktopSessionHandler {
         let embedded = display.get_embedded_output()?;
 
         log::debug!(
-            "session handler found outputs: {:?}, {:?}",
+            "session handler found outputs: \n--embedded:{:?}, \n--external:{:?}",
             embedded,
             preferred
         );
@@ -264,7 +266,7 @@ impl ActionImpl for DesktopSessionHandler {
                 // old monitor settings.
                 let current_output = match current_output {
                     Some(current) => {
-                        if current.xid == output {
+                        if current.xid == output && current.connected {
                             current
                         } else {
                             return Ok(());

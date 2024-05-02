@@ -40,8 +40,6 @@ export default function PipelineDisplay({ header, general, secondaryAction, seco
                     const defaultTargets: TargetDescriptor[] = [];
                     const extraTargets: TargetDescriptor[] = [] // no real intention of actually supporting extra targets, but...
 
-
-
                     for (const key in pipeline.targets) {
                         const value: TargetDescriptor = {
                             target: key,

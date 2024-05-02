@@ -202,10 +202,15 @@ impl<'a> KWin<'a> {
     }
 
     fn reconfigure(&self) -> Result<()> {
-        // TODO::inspect output/status for errors
-        Ok(Command::new("qdbus")
+        let res = Command::new("qdbus")
             .args(["org.kde.KWin", "/KWin", "reconfigure"])
-            .status()
-            .map(|_| ())?)
+            .status()?;
+
+        if res.success() {
+            Ok(())
+        } else {
+            // TODO::get the actual error
+            Err(anyhow::anyhow!("KWin failed to reconfigure"))
+        }
     }
 }

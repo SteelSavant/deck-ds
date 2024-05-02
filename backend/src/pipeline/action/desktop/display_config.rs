@@ -33,36 +33,38 @@ impl ActionImpl for DisplayConfig {
         let mut embedded = display.get_embedded_output()?;
 
         if let Some(preferred) = preferred.as_ref() {
-            match self.external_display_settings {
-                ExternalDisplaySettings::Previous => Ok(()),
-                ExternalDisplaySettings::Native => {
-                    let native_mode = display.get_native_mode(preferred)?;
-                    if let Some(mode) = native_mode {
-                        display.set_output_mode(preferred, &mode)
-                    } else {
-                        Ok(())
+            if preferred.connected {
+                match self.external_display_settings {
+                    ExternalDisplaySettings::Previous => Ok(()),
+                    ExternalDisplaySettings::Native => {
+                        let native_mode = display.get_native_mode(preferred)?;
+                        if let Some(mode) = native_mode {
+                            display.set_output_mode(preferred, &mode)
+                        } else {
+                            Ok(())
+                        }
                     }
-                }
-                ExternalDisplaySettings::Preference(preference) => {
-                    display.set_or_create_preferred_mode(preferred, &preference)
-                }
-            }?;
+                    ExternalDisplaySettings::Preference(preference) => {
+                        display.set_or_create_preferred_mode(preferred, &preference)
+                    }
+                }?;
 
-            if let Some(embedded) = embedded.as_mut() {
-                match self.deck_location {
-                    Some(location) => {
-                        display
-                            .reconfigure_embedded(
-                                embedded,
-                                &location.into(),
-                                Some(preferred),
-                                self.deck_is_primary_display,
-                            )
-                            .with_context(|| "reconfigure embedded failed")?;
-                    }
-                    None => {
-                        // TODO:: viewport update for the remaining display
-                        display.set_output_enabled(embedded, false)?;
+                if let Some(embedded) = embedded.as_mut() {
+                    match self.deck_location {
+                        Some(location) => {
+                            display
+                                .reconfigure_embedded(
+                                    embedded,
+                                    &location.into(),
+                                    Some(preferred),
+                                    self.deck_is_primary_display,
+                                )
+                                .with_context(|| "reconfigure embedded failed")?;
+                        }
+                        None => {
+                            // TODO:: viewport update for the remaining display
+                            display.set_output_enabled(embedded, false)?;
+                        }
                     }
                 }
             }

@@ -1,7 +1,8 @@
-import { DialogButton, Dropdown, FileSelectionType, TextField, Toggle } from "decky-frontend-lib";
+import { DialogButton, Dropdown, FileSelectionType, Focusable, TextField, Toggle } from "decky-frontend-lib";
 import _ from "lodash";
-import { Fragment, ReactElement, useState } from "react";
+import React, { Fragment, ReactElement, useState } from "react";
 import { FaFile } from "react-icons/fa";
+import { FaPlus, FaTrash } from "react-icons/fa6";
 import { Action, CemuWindowOptions, CitraWindowOptions, DolphinWindowOptions, ExternalDisplaySettings, LimitedMultiWindowLayout, MultiWindowLayout, RelativeLocation, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions, secondaryAppScreenPreferences, secondaryAppWindowingOptions } from "../backend";
 import { useServerApi } from "../context/serverApiContext";
 import useSecondaryAppInfo from "../hooks/useSecondaryAppPresetInfo";
@@ -468,6 +469,7 @@ interface LaunchSecondaryFlatpakAppProps {
 
 function SecondaryFlatpakApp({ cloned, indentLevel, onChange, Builder }: LaunchSecondaryFlatpakAppProps): ReactElement {
     const secondaryInfo = useSecondaryAppInfo();
+    const [args, setArgs] = useState(cloned.value.app.args);
 
     return (
         <HandleLoading
@@ -476,9 +478,66 @@ function SecondaryFlatpakApp({ cloned, indentLevel, onChange, Builder }: LaunchS
 
                 // TODO::per-arg reorderable list (likely in a popup-menu), rather than a comma-separated list
 
-                const flatpak = cloned.value.app;
                 const windowing = cloned.value.windowing_behavior;
-                const textStyle = { minWidth: '24rem', maxWidth: Number.POSITIVE_INFINITY };
+
+                var i = 0;
+
+                const textStyle: React.CSSProperties = {
+                    width: '8rem',
+                    borderTopRightRadius: 0,
+                    borderBottomRightRadius: 0,
+                }
+
+                const displayArgs = args.map((arg) => {
+                    const index = i++;
+                    const deleteArg = () => {
+                        args.splice(index, 1)
+                        setArgs(args)
+                        cloned.value.app.args = args;
+                        onChange(cloned);
+                    }
+
+                    return (
+                        <Focusable style={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '5px',
+                        }}>
+                            <TextField style={textStyle} value={arg} onChange={(v) => {
+                                args[index] = v.target.value;
+                                setArgs(args)
+                                cloned.value.app.args = args;
+                                onChange(cloned);
+                            }} />
+                            <DialogButton style={{
+                                backgroundColor: 'red',
+                                height: '40px',
+                                width: '40px',
+                                padding: '10px 12px',
+                                minWidth: '40px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                borderTopLeftRadius: 0,
+                                borderBottomLeftRadius: 0,
+                            }}
+                                onOKButton={deleteArg}
+                                onClick={deleteArg}
+                            >
+                                <FaTrash />
+                            </DialogButton>
+                        </Focusable>
+                    )
+                });
+
+                const addArg = () => {
+                    args.push('');
+                    setArgs(args)
+                    cloned.value.app.args = args;
+                    onChange(cloned)
+                }
 
                 return (
                     <Fragment>
@@ -497,12 +556,17 @@ function SecondaryFlatpakApp({ cloned, indentLevel, onChange, Builder }: LaunchS
                                 }}
                             />
                         </Builder >
-                        <Builder indentLevel={indentLevel} label="Args" description="Comma separated list of arguments for the flatpak app.">
-                            <TextField style={textStyle} value={flatpak.args.join(',')} onChange={(v) => {
-                                flatpak.args = v.target.value.split(','); // TODO::technically won't handle commas in strings correctly, but that's a later problem.
-                                onChange(cloned);
-                            }} />
-                        </Builder >
+                        <Builder indentLevel={indentLevel} label="Args" description="Arguments for the flatpak app." >
+                            <Fragment>
+                                {displayArgs}
+                                <DialogButton
+                                    onOKButton={addArg}
+                                    onClick={addArg}
+                                >
+                                    <FaPlus />
+                                </DialogButton>
+                            </Fragment>
+                        </Builder>
                         <Builder indentLevel={indentLevel - 1} label="Windowing">
                             <Dropdown
                                 selectedOption={windowing} rgOptions={secondaryAppWindowingOptions.map((a) => {

@@ -522,6 +522,7 @@ export interface GetTemplatesResponse {
 export interface Template {
   id: string;
   pipeline: PipelineDefinition;
+  tags: string[];
 }
 export interface GetTopLevelResponse {
   toplevel: ToplevelInfo[];

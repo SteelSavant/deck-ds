@@ -79,8 +79,6 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
     const configErrors = useContext(ConfigErrorContext);
     const target = useContext(PipelineTargetContext);
 
-
-
     const selection = action.selection;
     const isEnabled = action.enabled;
 

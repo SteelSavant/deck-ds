@@ -1,8 +1,8 @@
-import { DialogButton, Navigation, PanelSection, Router } from "decky-frontend-lib";
+import { DialogButton, Field, Navigation, PanelSection, Router } from "decky-frontend-lib";
 import { Fragment, ReactElement, createContext } from "react";
-import { FaGear } from "react-icons/fa6";
+import { FaGear, FaPlus } from "react-icons/fa6";
 import { RiArrowDownSFill, RiArrowRightSFill } from "react-icons/ri";
-import { PipelineTarget, ReifyPipelineResponse } from "../../backend";
+import { PipelineTarget, ReifyPipelineResponse, createProfile, getProfile, getTemplates, setProfile } from "../../backend";
 import FocusableRow from "../../components/FocusableRow";
 import HandleLoading from "../../components/HandleLoading";
 import { IconForTarget } from "../../components/IconForTarget";
@@ -61,12 +61,83 @@ function DeckDSProfilesForApp({ appDetails, launchActions }: { appDetails: Short
         // TODO::horizonal line at end of fragment
         : <PanelSection >
             <p>No profiles configured for this title.</p>
-            <p>To set one, add one of the following collections to an existing profile: </p>
+            <p>To set one, add one of the following collections to an existing profile,
+                or use the "+" button to create a new profile using that collection: </p>
             {
                 collectionStore
                     .userCollections
                     .filter((uc) => uc.apps.get(appDetails.appId))
-                    .map((c) => <li>{c.displayName}</li>)
+                    .map((c) => {
+                        function normalize(s: string) {
+                            return s.toLowerCase().replace(/\\s+/g, '');
+                        };
+                        const createNewProfile = async () => {
+                            const templates = await getTemplates();
+                            if (templates.isOk) {
+                                const normalized = normalize(c.displayName);
+
+                                // TODO::better comparison
+                                const matchingTemplate = templates.data.templates.find(((t) => t.tags.find((tag) => normalized === normalize(tag))));
+                                const closeTemplate = templates.data.templates.find(((t) => t.tags.find((tag) => normalized.includes(normalize(tag)))));
+                                const defaultTemplate = templates.data.templates.find((v) => v.id === '84f870e9-9491-41a9-8837-d5a6f591f687')!; // hardcoded app template id
+
+                                const template = matchingTemplate ?? closeTemplate ?? defaultTemplate;
+                                const profile = await createProfile({
+                                    pipeline: {
+                                        ...template.pipeline,
+                                        name: c.displayName,
+                                    }
+                                });
+
+                                if (profile.isOk) {
+                                    let id = profile.data.profile_id;
+
+                                    const savedProfile = await getProfile({
+                                        profile_id: id,
+                                    });
+
+                                    if (savedProfile.isOk) {
+                                        await setProfile({
+                                            profile: {
+                                                ...savedProfile.data.profile!,
+                                                tags: [c.id]
+                                            }
+                                        })
+                                        Navigation.CloseSideMenus();
+                                        Navigation.Navigate(`/deck-ds/settings/profiles/${id}`);
+
+                                    } else {
+                                        // TODO::error handling
+                                    }
+                                }
+                            }
+                        }
+
+                        return (
+                            <Field
+                                focusable={false}
+                                label={`  ${c.displayName}`}
+                                inlineWrap="keep-inline"
+                                bottomSeparator="none"
+                            >
+                                <DialogButton
+                                    onClick={createNewProfile}
+                                    onOKButton={createNewProfile}
+                                    style={{
+                                        height: '40px',
+                                        width: '40px',
+                                        padding: '10px 12px',
+                                        minWidth: '40px',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'center',
+                                        marginRight: '10px'
+                                    }} >
+                                    <FaPlus />
+                                </DialogButton>
+                            </Field>
+                        )
+                    })
             }
         </PanelSection>
 }
