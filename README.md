@@ -30,10 +30,10 @@ Configuration and display/window management for a small selection of emulators a
 | MelonDS      | ✅       | ☑️        | ➖               | ☑️                    | ❌        
 
 
-*Citra is discontinued. Use Lime3DS (supported), or another fork. 
+*Development of Citra is discontinued. Consider Lime3DS (supported), or another fork. 
 
 Other forks include, but may not be limited to [Lemonade](https://github.com/Lemonade-emu/Lemonade). 
-Compatibility not guaranteed. It is unlikely other Citra forks will fullscreen and/or snap windows automatically.
+Compatibility not guaranteed. Other Citra forks may for may not fullscreen and/or snap windows automatically.
 
 ### Configuration 
 
