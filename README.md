@@ -25,13 +25,15 @@ Configuration and display/window management for a small selection of emulators a
 |--------------|----------|----------|------------------|-----------------------|-----------
 | Dolphin/mGBA | 🚧       | 🚧       | ➖               |  🚧                  | ❌         
 | Cemu         | ✅       | ✅       | ✅               | ☑️                    | ❌         
-| Citra        | ✅       | ☑️        | ➖               | ☑️                    | ❌   
-| Citra forks* | ☑️        | ☑️        | ➖               | ☑️                    | ❌   
+| Citra*        | ✅       | ☑️        | ➖               | ☑️                    | ❌   
+| Lime3DS      | ✅       | ☑️        | ➖               | ☑️                    | ❌   
 | MelonDS      | ✅       | ☑️        | ➖               | ☑️                    | ❌        
 
 
-*Citra forks include, but may not be limited to, [Lemonade](https://github.com/Lemonade-emu/Lemonade) and [Lime3DS](https://lime3ds.github.io/). Compatibility not guaranteed.
+*Development of Citra is discontinued. Consider Lime3DS (supported), or another fork. 
 
+Other forks include, but may not be limited to [Lemonade](https://github.com/Lemonade-emu/Lemonade). 
+Compatibility not guaranteed. Other Citra forks may for may not fullscreen and/or snap windows automatically.
 
 ### Configuration 
 

@@ -17,6 +17,7 @@ use crate::asset::AssetManager;
 use crate::pipeline::action::cemu_layout::CemuLayout;
 use crate::pipeline::action::citra_layout::CitraLayout;
 use crate::pipeline::action::display_config::DisplayConfig;
+use crate::pipeline::action::lime_3ds_layout::Lime3dsLayout;
 use crate::pipeline::action::melonds_layout::MelonDSLayout;
 use crate::pipeline::action::multi_window::main_app_automatic_windowing::MainAppAutomaticWindowing;
 use crate::pipeline::action::multi_window::primary_windowing::MultiWindow;
@@ -133,6 +134,7 @@ impl<'a> PipelineContext<'a> {
         register_type::<LaunchSecondaryAppPreset>(&mut type_reg);
         register_type::<LaunchSecondaryFlatpakApp>(&mut type_reg);
         register_type::<MainAppAutomaticWindowing>(&mut type_reg);
+        register_type::<Lime3dsLayout>(&mut type_reg);
 
         assert_eq!(
             type_reg.keys().count(),
@@ -180,6 +182,9 @@ impl<'a> PipelineContext<'a> {
                     }
                     ActionType::MainAppAutomaticWindowing => {
                         load_state::<MainAppAutomaticWindowing>(&mut default, &type_map)
+                    }
+                    ActionType::Lime3dsLayout => {
+                        load_state::<Lime3dsLayout>(&mut default, &type_map)
                     }
                 },
                 Err(err) => {
@@ -235,6 +240,7 @@ impl<'a> PipelineContext<'a> {
                 Action::LaunchSecondaryFlatpakApp(a) => insert_action(self, &mut map, a),
                 Action::LaunchSecondaryAppPreset(a) => insert_action(self, &mut map, a),
                 Action::MainAppAutomaticWindowing(a) => insert_action(self, &mut map, a),
+                Action::Lime3dsLayout(a) => insert_action(self, &mut map, a),
             };
         }
 
@@ -359,6 +365,7 @@ impl<'a> PipelineContext<'a> {
             ActionType::LaunchSecondaryAppPreset => {
                 handle::<LaunchSecondaryAppPreset>(self, is_push)
             }
+            ActionType::Lime3dsLayout => handle::<Lime3dsLayout>(self, is_push),
         }
     }
 
@@ -730,6 +737,7 @@ mod tests {
                     layout_option: CitraLayoutOption::Default,
                     swap_screens: false,
                     fullscreen: true,
+                    rotate_upright: false,
                 },
             }
             .into(),

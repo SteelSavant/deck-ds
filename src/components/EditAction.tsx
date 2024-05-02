@@ -176,8 +176,24 @@ export function InternalEditAction({
                             onChange(cloned);
                         }} />
                     </Builder>
+                    <Builder indentLevel={indentLevel} label="Rotate Upright">
+                        <Toggle value={cloned.value.layout.swap_screens} onChange={(isEnabled) => {
+                            cloned.value.layout.swap_screens = isEnabled;
+                            onChange(cloned);
+                        }} />
+                    </Builder>
                 </Fragment>
             );
+        case 'Lime3dsLayout':
+            return InternalEditAction({
+                action: {
+                    type: 'CitraLayout',
+                    value: cloned.value,
+                },
+                indentLevel,
+                actionChildBuilder,
+                onChange,
+            });
         case 'MelonDSLayout':
             return (
                 <Fragment>

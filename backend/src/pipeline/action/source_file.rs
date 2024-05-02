@@ -37,6 +37,7 @@ pub enum FlatpakSource {
     Cemu,
     Citra,
     MelonDS,
+    Lime3ds,
 }
 
 trait SettingsSource {
@@ -49,6 +50,7 @@ impl FlatpakSource {
             FlatpakSource::Cemu => "info.cemu.Cemu",
             FlatpakSource::Citra => "org.citra_emu.citra",
             FlatpakSource::MelonDS => "net.kuribo64.melonDS",
+            FlatpakSource::Lime3ds => "io.github.lime3ds.Lime3DS",
         }
     }
 }
@@ -60,6 +62,7 @@ impl SettingsSource for FlatpakSource {
             FlatpakSource::Cemu => dir.join("config/Cemu/settings.xml"),
             FlatpakSource::Citra => dir.join("config/citra-emu/qt-config.ini"),
             FlatpakSource::MelonDS => dir.join("config/melonDS/melonDS.ini"),
+            FlatpakSource::Lime3ds => dir.join("config/citra-emu/qt-config.ini"),
         }
     }
 }

@@ -49,6 +49,10 @@ export type Action =
       value: CemuLayout;
     }
   | {
+      type: "Lime3dsLayout";
+      value: CitraLayout;
+    }
+  | {
       type: "MelonDSLayout";
       value: MelonDSLayout;
     }
@@ -152,7 +156,7 @@ export type FileSource =
       type: "Custom";
       value: CustomFileOptions;
     };
-export type FlatpakSource = "Cemu" | "Citra" | "MelonDS";
+export type FlatpakSource = "Cemu" | "Citra" | "MelonDS" | "Lime3ds";
 export type AppImageSource = "Cemu";
 export type EmuDeckSource = "CemuProton";
 export type SecondaryAppScreenPreference = "PreferSecondary" | "PreferPrimary";
@@ -397,6 +401,7 @@ export interface CitraLayout {
 export interface CitraLayoutState {
   fullscreen: boolean;
   layout_option: CitraLayoutOption;
+  rotate_upright: boolean;
   swap_screens: boolean;
 }
 export interface CemuLayout {

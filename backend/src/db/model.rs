@@ -18,6 +18,7 @@ pub type DbPipelineActionSettings = v1::DbPipelineActionSettings;
 
 pub type DbCemuLayout = v1::DbCemuLayout;
 pub type DbCitraLayout = v1::DbCitraLayout;
+pub type DbLime3dsLayout = v1::DbLime3dsLayout;
 pub type DbMelonDSLayout = v1::DbMelonDSLayout;
 pub type DbDesktopSessionHandler = v1::DbDesktopSessionHandler;
 pub type DbMultiWindow = v1::DbMultiWindow;
