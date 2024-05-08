@@ -159,7 +159,7 @@ version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b2969dcb958b36655471fc61f7e416fa76033bdd4bfed0678d8fee1e2d07a1f0"
 dependencies = [
- "memchr 2.6.4",
+ "memchr",
 ]
 
 [[package]]
@@ -907,7 +907,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "35ed6e9d84f0b51a7f52daf1c7d71dd136fd7a3f41a8462b8cdb8c78d920fad4"
 dependencies = [
  "bytes",
- "memchr 2.6.4",
+ "memchr",
 ]
 
 [[package]]
@@ -1039,7 +1039,7 @@ dependencies = [
  "configparser",
  "derive_more",
  "dirs",
- "edid",
+ "edid-rs",
  "eframe",
  "egui",
  "either",
@@ -1184,13 +1184,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "edid"
-version = "0.3.0"
+name = "edid-rs"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24ce75530893d834dcfe3bb67ce0e7dec489484e7cb4423ca31618af4bab24fe"
-dependencies = [
- "nom",
-]
+checksum = "2ab5fa33485cd85ac354df485819a63360fefa312fe04cffe65e6f175be1522c"
 
 [[package]]
 name = "eframe"
@@ -1617,7 +1614,7 @@ dependencies = [
  "fastrand 1.9.0",
  "futures-core",
  "futures-io",
- "memchr 2.6.4",
+ "memchr",
  "parking",
  "pin-project-lite",
  "waker-fn",
@@ -1658,7 +1655,7 @@ dependencies = [
  "futures-io",
  "futures-sink",
  "futures-task",
- "memchr 2.6.4",
+ "memchr",
  "pin-project-lite",
  "pin-utils",
  "slab",
@@ -2255,15 +2252,6 @@ dependencies = [
 
 [[package]]
 name = "memchr"
-version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "148fab2e51b4f1cfc66da2a7c32981d1d3c083a803978268bb11fe4b86925e7a"
-dependencies = [
- "libc",
-]
-
-[[package]]
-name = "memchr"
 version = "2.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f665ee40bc4a3c5590afb1e9677db74a508659dfd71e126420da8274909a0167"
@@ -2344,7 +2332,7 @@ dependencies = [
  "http",
  "httparse",
  "log",
- "memchr 2.6.4",
+ "memchr",
  "mime",
  "spin",
  "version_check",
@@ -2461,15 +2449,6 @@ name = "nohash-hasher"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
-
-[[package]]
-name = "nom"
-version = "3.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05aec50c70fd288702bcd93284a8444607f3292dbdf2a30de5ea5dcdbe72287b"
-dependencies = [
- "memchr 1.0.2",
-]
 
 [[package]]
 name = "num-traits"
@@ -2609,7 +2588,7 @@ version = "0.32.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9cf5f9dd3933bd50a9e1f149ec995f39ae2c496d31fd772c1fd45ebc27e902b0"
 dependencies = [
- "memchr 2.6.4",
+ "memchr",
 ]
 
 [[package]]
@@ -2858,7 +2837,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34f197a544b0c9ab3ae46c359a7ec9cbbb5c7bf97054266fecb7ead794a181d6"
 dependencies = [
  "bitflags 1.2.1",
- "memchr 2.6.4",
+ "memchr",
  "unicase",
 ]
 
@@ -2868,7 +2847,7 @@ version = "0.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eff6510e86862b57b210fd8cbe8ed3f0d7d600b9c2863cd4549a2e033c66e956"
 dependencies = [
- "memchr 2.6.4",
+ "memchr",
 ]
 
 [[package]]
@@ -2976,7 +2955,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aaac441002f822bc9705a681810a4dd2963094b9ca0ddc41cb963a4c189189ea"
 dependencies = [
  "aho-corasick",
- "memchr 2.6.4",
+ "memchr",
  "regex-automata",
  "regex-syntax",
 ]
@@ -2988,7 +2967,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5011c7e263a695dc8ca064cddb722af1be54e517a280b12a5356f98366899e5d"
 dependencies = [
  "aho-corasick",
- "memchr 2.6.4",
+ "memchr",
  "regex-syntax",
 ]
 
@@ -4547,7 +4526,7 @@ version = "0.5.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7cf47b659b318dccbd69cc4797a39ae128f533dce7902a1096044d1967b9c16"
 dependencies = [
- "memchr 2.6.4",
+ "memchr",
 ]
 
 [[package]]

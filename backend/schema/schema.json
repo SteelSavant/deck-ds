@@ -12,6 +12,7 @@
     "get_app_profile_response",
     "get_default_app_override_for_profile_request",
     "get_default_app_override_for_profile_response",
+    "get_display_info",
     "get_profile_request",
     "get_profile_response",
     "get_profiles_response",
@@ -52,6 +53,9 @@
     },
     "get_default_app_override_for_profile_response": {
       "$ref": "#/definitions/GetDefaultAppOverrideForProfileResponse"
+    },
+    "get_display_info": {
+      "$ref": "#/definitions/GetDisplayInfoResponse"
     },
     "get_profile_request": {
       "$ref": "#/definitions/GetProfileRequest"
@@ -354,24 +358,51 @@
     "AspectRatioOption": {
       "oneOf": [
         {
-          "type": "string",
-          "enum": [
-            "Any",
-            "Native"
-          ]
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Any"
+              ]
+            }
+          }
         },
         {
           "type": "object",
           "required": [
-            "Exact"
+            "type"
           ],
           "properties": {
-            "Exact": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Native"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Exact"
+              ]
+            },
+            "value": {
               "type": "number",
               "format": "float"
             }
-          },
-          "additionalProperties": false
+          }
         }
       ]
     },
@@ -1017,6 +1048,30 @@
         }
       }
     },
+    "DisplayValues": {
+      "type": "object",
+      "required": [
+        "height",
+        "refresh",
+        "width"
+      ],
+      "properties": {
+        "height": {
+          "type": "integer",
+          "format": "uint16",
+          "minimum": 0.0
+        },
+        "refresh": {
+          "type": "number",
+          "format": "float"
+        },
+        "width": {
+          "type": "integer",
+          "format": "uint16",
+          "minimum": 0.0
+        }
+      }
+    },
     "DolphinWindowOptions": {
       "type": "object",
       "required": [
@@ -1286,6 +1341,21 @@
         }
       }
     },
+    "GetDisplayInfoResponse": {
+      "description": "Get Display Info",
+      "type": "object",
+      "required": [
+        "available_values"
+      ],
+      "properties": {
+        "available_values": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DisplayValues"
+          }
+        }
+      }
+    },
     "GetProfileRequest": {
       "type": "object",
       "required": [
@@ -1543,38 +1613,56 @@
         {
           "type": "object",
           "required": [
-            "Exact"
+            "type",
+            "value"
           ],
           "properties": {
-            "Exact": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Exact"
+              ]
+            },
+            "value": {
               "$ref": "#/definitions/Resolution"
             }
-          },
-          "additionalProperties": false
+          }
         },
         {
           "type": "object",
           "required": [
-            "AtLeast"
+            "type",
+            "value"
           ],
           "properties": {
-            "AtLeast": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "AtLeast"
+              ]
+            },
+            "value": {
               "$ref": "#/definitions/Resolution"
             }
-          },
-          "additionalProperties": false
+          }
         },
         {
           "type": "object",
           "required": [
-            "AtMost"
+            "type",
+            "value"
           ],
           "properties": {
-            "AtMost": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "AtMost"
+              ]
+            },
+            "value": {
               "$ref": "#/definitions/Resolution"
             }
-          },
-          "additionalProperties": false
+          }
         }
       ]
     },
@@ -1583,41 +1671,59 @@
         {
           "type": "object",
           "required": [
-            "Exact"
+            "type",
+            "value"
           ],
           "properties": {
-            "Exact": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Exact"
+              ]
+            },
+            "value": {
               "type": "number",
               "format": "double"
             }
-          },
-          "additionalProperties": false
+          }
         },
         {
           "type": "object",
           "required": [
-            "AtLeast"
+            "type",
+            "value"
           ],
           "properties": {
-            "AtLeast": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "AtLeast"
+              ]
+            },
+            "value": {
               "type": "number",
               "format": "double"
             }
-          },
-          "additionalProperties": false
+          }
         },
         {
           "type": "object",
           "required": [
-            "AtMost"
+            "type",
+            "value"
           ],
           "properties": {
-            "AtMost": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "AtMost"
+              ]
+            },
+            "value": {
               "type": "number",
               "format": "double"
             }
-          },
-          "additionalProperties": false
+          }
         }
       ]
     },

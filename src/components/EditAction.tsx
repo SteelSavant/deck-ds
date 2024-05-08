@@ -1,12 +1,13 @@
-import { DialogButton, Dropdown, FileSelectionType, Focusable, TextField, Toggle } from "decky-frontend-lib";
+import { DialogButton, Dropdown, DropdownOption, FileSelectionType, Focusable, TextField, Toggle } from "decky-frontend-lib";
 import _ from "lodash";
 import React, { Fragment, ReactElement, useState } from "react";
 import { FaFile } from "react-icons/fa";
 import { FaPlus, FaTrash } from "react-icons/fa6";
 import { Action, CemuWindowOptions, CitraWindowOptions, DolphinWindowOptions, ExternalDisplaySettings, LimitedMultiWindowLayout, MultiWindowLayout, RelativeLocation, citraLayoutOptions, melonDSLayoutOptions, melonDSSizingOptions, secondaryAppScreenPreferences, secondaryAppWindowingOptions } from "../backend";
 import { useServerApi } from "../context/serverApiContext";
+import useDisplayInfo from "../hooks/useDisplayInfo";
 import useSecondaryAppInfo from "../hooks/useSecondaryAppPresetInfo";
-import { CustomWindowOptions, LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp } from "../types/backend_api";
+import { CustomWindowOptions, LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp, ModePreference } from "../types/backend_api";
 import { ActionChild, ActionChildBuilder } from "./ActionChild";
 import HandleLoading from "./HandleLoading";
 
@@ -46,22 +47,17 @@ export function InternalEditAction({
         case 'DesktopSessionHandler':
             const display = cloned.value;
             const locations: RelativeLocation[] = ['Above', 'Below', 'LeftOf', 'RightOf']; // SameAs excluded because it doesn't really make sense
-            const externalSettings: ExternalDisplaySettings[] = [{ type: 'Previous' }, { type: 'Native' }] // Preference excluded because its a pain to configure, and I'm pretty sure doesn't work
             return (
                 <Fragment>
-                    <Builder indentLevel={indentLevel} label="External Display Settings" description="External display settings (resolution, refresh rate, etc.).">
-                        <Dropdown selectedOption={display.teardown_external_settings.type} rgOptions={externalSettings.map((setting) => {
-                            return {
-                                label: labelForCamelCase(setting.type),
-                                data: setting.type
-                            };
-                        })}
-                            onChange={(settings) => {
-                                cloned.value.teardown_external_settings.type = settings.data;
-                                onChange(cloned)
-                            }}
-                        />
-                    </Builder>
+                    <ExternalDisplaySettings
+                        indentLevel={indentLevel}
+                        settings={cloned.value.teardown_external_settings}
+                        Builder={Builder}
+                        onChange={(settings) => {
+                            cloned.value.teardown_external_settings = settings;
+                            onChange(cloned);
+                        }}
+                    />
                     <Builder indentLevel={indentLevel} label="Deck Screen Location" description="Location of the Deck screen on the desktop relative to the external screen.">
                         <Dropdown selectedOption={display.teardown_deck_location} rgOptions={[
                             {
@@ -97,22 +93,17 @@ export function InternalEditAction({
             // TODO::This is largely a duplicate of the above DesktopSessionHandler; refactor when Preference gets configured in UI.
             const display = cloned.value;
             const locations: RelativeLocation[] = ['Above', 'Below', 'LeftOf', 'RightOf']; // SameAs excluded because it doesn't really make sense
-            const externalSettings: ExternalDisplaySettings[] = [{ type: 'Previous' }, { type: 'Native' }] // Preference excluded because its a pain to configure, and I'm pretty sure doesn't work
             return (
                 <Fragment>
-                    <Builder indentLevel={indentLevel} label="External Display Settings" description="External display settings.">
-                        <Dropdown selectedOption={display.external_display_settings.type} rgOptions={externalSettings.map((setting) => {
-                            return {
-                                label: labelForCamelCase(setting.type),
-                                data: setting.type
-                            };
-                        })}
-                            onChange={(settings) => {
-                                cloned.value.external_display_settings.type = settings.data;
-                                onChange(cloned)
-                            }}
-                        />
-                    </Builder>
+                    <ExternalDisplaySettings
+                        indentLevel={indentLevel}
+                        settings={cloned.value.external_display_settings}
+                        Builder={Builder}
+                        onChange={(settings) => {
+                            cloned.value.external_display_settings = settings;
+                            onChange(cloned);
+                        }}
+                    />
                     <Builder indentLevel={indentLevel} label="Deck Screen Location" description="Location of the Deck screen on the desktop relative to the external screen.">
                         <Dropdown selectedOption={display.deck_location} rgOptions={[
                             {
@@ -688,4 +679,76 @@ function SecondaryAppPreset({ cloned, indentLevel, onChange, Builder }: Secondar
             }}
         />
     )
+}
+
+interface ExternalDisplaySettingsProps {
+    indentLevel: number,
+    settings: ExternalDisplaySettings
+    onChange: (settings: ExternalDisplaySettings) => void,
+    Builder: ActionChildBuilder,
+}
+
+function ExternalDisplaySettings({ indentLevel, settings, onChange, Builder }: ExternalDisplaySettingsProps): ReactElement {
+    const displayInfo = useDisplayInfo();
+
+
+
+    return (
+        <HandleLoading value={displayInfo} onOk={(displayInfo) => {
+            const fixed: ExternalDisplaySettings[] = [{ type: 'Previous' }, { type: 'Native' },];
+
+
+
+            const options: DropdownOption[] = fixed.map((setting) => {
+                return {
+                    label: labelForCamelCase(setting.type),
+                    data: setting.type
+                };
+            });
+
+            // only show display options if we actuall have some 
+            if (displayInfo != null && displayInfo.length > 0) {
+                options.push({
+                    label: 'Exact',
+                    options: displayInfo.map((info) => {
+                        const value: ModePreference = {
+                            aspect_ratio: {
+                                type: 'Exact',
+                                value: info.width / info.height,
+                            },
+                            refresh: {
+                                type: 'Exact',
+                                value: info.refresh
+                            },
+                            resolution: {
+                                type: 'Exact',
+                                value: {
+                                    h: info.height,
+                                    w: info.width,
+                                }
+                            }
+                        };
+                        return {
+                            label: `${info.width}x${info.height} @ ${info.refresh.toFixed(2)}`,
+                            data: {
+                                type: 'Preference',
+                                value
+                            }
+                        }
+                    })
+                });
+            }
+
+
+            return (
+                <Builder indentLevel={indentLevel} label="External Display Settings" description="External display settings (resolution, refresh rate, etc.).">
+                    <Dropdown selectedOption={settings.type} rgOptions={options}
+                        onChange={(settings) => {
+                            onChange(settings.data)
+                        }}
+                    />
+                </Builder>
+            )
+        }} />
+    );
 }

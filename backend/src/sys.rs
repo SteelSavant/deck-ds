@@ -1,4 +1,5 @@
 pub mod app_process;
+pub mod display_info;
 pub mod flatpak;
 pub mod kwin;
 pub mod steamos_session_select;

@@ -85,29 +85,41 @@ export type ExternalDisplaySettings =
       value: ModePreference;
     };
 export type AspectRatioOption =
-  | ("Any" | "Native")
   | {
-      Exact: number;
+      type: "Any";
+    }
+  | {
+      type: "Native";
+    }
+  | {
+      type: "Exact";
+      value: number;
     };
 export type ModeOptionForDouble =
   | {
-      Exact: number;
+      type: "Exact";
+      value: number;
     }
   | {
-      AtLeast: number;
+      type: "AtLeast";
+      value: number;
     }
   | {
-      AtMost: number;
+      type: "AtMost";
+      value: number;
     };
 export type ModeOptionFor_Resolution =
   | {
-      Exact: Resolution;
+      type: "Exact";
+      value: Resolution;
     }
   | {
-      AtLeast: Resolution;
+      type: "AtLeast";
+      value: Resolution;
     }
   | {
-      AtMost: Resolution;
+      type: "AtMost";
+      value: Resolution;
     };
 export type MultiWindowLayout = "column-right" | "column-left" | "square-right" | "square-left" | "separate";
 export type LimitedMultiWindowLayout = "column-right" | "column-left" | "square-right" | "square-left";
@@ -263,6 +275,7 @@ export interface Api {
   get_app_profile_response: GetAppProfileResponse;
   get_default_app_override_for_profile_request: GetDefaultAppOverrideForProfileRequest;
   get_default_app_override_for_profile_response: GetDefaultAppOverrideForProfileResponse;
+  get_display_info: GetDisplayInfoResponse;
   get_profile_request: GetProfileRequest;
   get_profile_response: GetProfileResponse;
   get_profiles_response: GetProfilesResponse;
@@ -477,6 +490,17 @@ export interface GetDefaultAppOverrideForProfileRequest {
 }
 export interface GetDefaultAppOverrideForProfileResponse {
   pipeline?: PipelineDefinition | null;
+}
+/**
+ * Get Display Info
+ */
+export interface GetDisplayInfoResponse {
+  available_values: DisplayValues[];
+}
+export interface DisplayValues {
+  height: number;
+  refresh: number;
+  width: number;
 }
 export interface GetProfileRequest {
   profile_id: string;
