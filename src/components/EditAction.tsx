@@ -707,6 +707,8 @@ function ExternalDisplaySettingsSelector({ indentLevel, settings, onChange, Buil
                 options.push({
                     label: 'Fixed',
                     options: displayInfo.map((info) => {
+                        // note: most settings are "AtMost" in case the user changes displays without changing the plugin settings.
+
                         if (info.refresh) {
                             // If we have a refresh rate, use it
                             const value: ModePreference = {
@@ -715,11 +717,11 @@ function ExternalDisplaySettingsSelector({ indentLevel, settings, onChange, Buil
                                     value: info.width / info.height,
                                 },
                                 refresh: {
-                                    type: 'Exact',
+                                    type: 'AtMost',
                                     value: info.refresh
                                 },
                                 resolution: {
-                                    type: 'Exact',
+                                    type: 'AtMost',
                                     value: {
                                         h: info.height,
                                         w: info.width,
@@ -745,7 +747,7 @@ function ExternalDisplaySettingsSelector({ indentLevel, settings, onChange, Buil
                                     value: 2000.0
                                 },
                                 resolution: {
-                                    type: 'Exact',
+                                    type: 'AtMost',
                                     value: {
                                         h: info.height,
                                         w: info.width,
@@ -792,7 +794,7 @@ function ExternalDisplaySettingsSelector({ indentLevel, settings, onChange, Buil
             }
 
             return (
-                <Builder indentLevel={indentLevel} label="External Display Settings" description="External display settings (resolution, refresh rate, etc.).">
+                <Builder indentLevel={indentLevel} label="External Display Settings" description="Desired resolution of the external display.">
                     <Dropdown selectedOption={selected?.data} rgOptions={options}
                         onChange={(settings) => {
                             onChange(settings.data)
