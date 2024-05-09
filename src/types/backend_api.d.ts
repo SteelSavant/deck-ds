@@ -499,7 +499,7 @@ export interface GetDisplayInfoResponse {
 }
 export interface DisplayValues {
   height: number;
-  refresh: number;
+  refresh?: number | null;
   width: number;
 }
 export interface GetProfileRequest {

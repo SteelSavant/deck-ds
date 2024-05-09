@@ -702,35 +702,66 @@ function ExternalDisplaySettingsSelector({ indentLevel, settings, onChange, Buil
                 };
             });
 
-            // only show display options if we actuall have some 
+            // only show display options if we actually have some 
             if (displayInfo != null && displayInfo.length > 0) {
                 options.push({
-                    label: 'Exact',
+                    label: 'Fixed',
                     options: displayInfo.map((info) => {
-                        const value: ModePreference = {
-                            aspect_ratio: {
-                                type: 'Exact',
-                                value: info.width / info.height,
-                            },
-                            refresh: {
-                                type: 'Exact',
-                                value: info.refresh
-                            },
-                            resolution: {
-                                type: 'Exact',
-                                value: {
-                                    h: info.height,
-                                    w: info.width,
+                        if (info.refresh) {
+                            // If we have a refresh rate, use it
+                            const value: ModePreference = {
+                                aspect_ratio: {
+                                    type: 'Exact',
+                                    value: info.width / info.height,
+                                },
+                                refresh: {
+                                    type: 'Exact',
+                                    value: info.refresh
+                                },
+                                resolution: {
+                                    type: 'Exact',
+                                    value: {
+                                        h: info.height,
+                                        w: info.width,
+                                    }
+                                }
+                            };
+                            return {
+                                label: `${info.width}x${info.height} @ ${info.refresh.toFixed(2)}`,
+                                data: {
+                                    type: 'Preference',
+                                    value
                                 }
                             }
-                        };
-                        return {
-                            label: `${info.width}x${info.height} @ ${info.refresh.toFixed(2)}`,
-                            data: {
-                                type: 'Preference',
-                                value
+                        } else {
+                            // If not, have the system scale up as high as possible
+                            const value: ModePreference = {
+                                aspect_ratio: {
+                                    type: 'Exact',
+                                    value: info.width / info.height,
+                                },
+                                refresh: {
+                                    type: 'AtMost',
+                                    value: 2000
+                                },
+                                resolution: {
+                                    type: 'Exact',
+                                    value: {
+                                        h: info.height,
+                                        w: info.width,
+                                    }
+                                }
+                            };
+                            return {
+                                label: `${info.width}x${info.height}`,
+                                data: {
+                                    type: 'Preference',
+                                    value
+                                }
                             }
                         }
+
+
                     })
                 });
             }

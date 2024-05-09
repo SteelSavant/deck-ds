@@ -1052,7 +1052,6 @@
       "type": "object",
       "required": [
         "height",
-        "refresh",
         "width"
       ],
       "properties": {
@@ -1062,7 +1061,10 @@
           "minimum": 0.0
         },
         "refresh": {
-          "type": "number",
+          "type": [
+            "number",
+            "null"
+          ],
           "format": "float"
         },
         "width": {
