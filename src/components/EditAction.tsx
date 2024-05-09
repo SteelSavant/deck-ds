@@ -419,7 +419,7 @@ export function InternalEditAction({
         case 'MainAppAutomaticWindowing':
             return (
                 <Fragment>
-                    <Builder indentLevel={indentLevel} label="Keep Above" description="Keep emulator windows above others.">
+                    <Builder indentLevel={indentLevel} label="Keep Above" description="Keep app windows above others.">
                         <Toggle value={cloned.value.general.keep_above} onChange={(isEnabled) => {
                             cloned.value.general.keep_above = isEnabled;
                             onChange(cloned);
@@ -742,7 +742,7 @@ function ExternalDisplaySettingsSelector({ indentLevel, settings, onChange, Buil
                                 },
                                 refresh: {
                                     type: 'AtMost',
-                                    value: 2000
+                                    value: 2000.0
                                 },
                                 resolution: {
                                     type: 'Exact',
@@ -760,23 +760,35 @@ function ExternalDisplaySettingsSelector({ indentLevel, settings, onChange, Buil
                                 }
                             }
                         }
-
-
                     })
                 });
             }
+            function comparator(value: any, other: any) {
+                if (typeof value === 'number' && typeof other === 'number') {
+                    const tolerance = 0.000001;
+                    return Math.abs(value - other) < tolerance;
+                }
 
+                // Return undefined for default comparison behavior
+                return undefined;
+            }
 
             var selected = options.find((v) => {
                 if (v.data != null) {
                     return _.isEqual(v.data, settings);
                 } else {
-                    return v.options?.find((v) => _.isEqual(v.data, settings))
+
+
+                    return v.options?.find((v) => {
+                        const equal = _.isEqualWith(v.data, settings, comparator);
+                        console.log(`equal(${JSON.stringify(v.data)}, ${JSON.stringify(settings)}): ${equal}`)
+                        return equal;
+                    })
                 }
             });
 
             if (selected?.options) {
-                selected = selected.options?.find((v) => _.isEqual(v.data, settings))
+                selected = selected.options?.find((v) => _.isEqualWith(v.data, settings, comparator))
             }
 
             return (
