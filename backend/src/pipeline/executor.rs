@@ -492,7 +492,9 @@ impl<'a> PipelineExecutor<'a> {
             ));
         }
 
-        let app_process = AppProcess::find(Duration::from_secs(30))?;
+        let app_process = AppProcess::find(Duration::from_secs(60))?;
+
+        log::debug!("Got app process {:?}...", app_process.get_pid());
 
         let mut tmp = vec![];
         std::mem::swap(&mut tmp, &mut self.ctx.on_launch_callbacks);
@@ -513,6 +515,8 @@ impl<'a> PipelineExecutor<'a> {
         self.ctx.send_ui_event(UiEvent::UpdateWindowLevel(
             egui::WindowLevel::AlwaysOnBottom,
         ));
+
+        log::debug!("Waiting for app process to close...");
 
         while app_process.is_alive() {
             std::thread::sleep(std::time::Duration::from_millis(100));
@@ -587,6 +591,8 @@ impl<'a> PipelineExecutor<'a> {
                 }
             }
         }
+
+        log::debug!("App process closed.");
 
         self.ctx.send_ui_event(UiEvent::UpdateStatusMsg(
             "returning to game mode...".to_string(),

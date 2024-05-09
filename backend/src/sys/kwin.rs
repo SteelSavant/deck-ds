@@ -136,7 +136,7 @@ impl<'a> KWin<'a> {
         if trimmed.is_empty() {
             Ok(None)
         } else {
-            log::debug!("got kwinrc {script_name} {key} as {trimmed}");
+            log::trace!("got kwinrc {script_name} {key} as {trimmed}");
 
             Ok(Some(trimmed.to_string()))
         }
@@ -174,7 +174,7 @@ impl<'a> KWin<'a> {
         value: &str,
         ktype: Option<&str>,
     ) -> Result<()> {
-        log::debug!("setting kwinrc {script_name} {key} to {value}");
+        log::trace!("setting kwinrc {script_name} {key} to {value}");
         Command::new("kwriteconfig5")
             .args([
                 "--file",
