@@ -49,7 +49,7 @@ export function InternalEditAction({
             const locations: RelativeLocation[] = ['Above', 'Below', 'LeftOf', 'RightOf']; // SameAs excluded because it doesn't really make sense
             return (
                 <Fragment>
-                    <ExternalDisplaySettings
+                    <ExternalDisplaySettingsSelector
                         indentLevel={indentLevel}
                         settings={cloned.value.teardown_external_settings}
                         Builder={Builder}
@@ -95,7 +95,7 @@ export function InternalEditAction({
             const locations: RelativeLocation[] = ['Above', 'Below', 'LeftOf', 'RightOf']; // SameAs excluded because it doesn't really make sense
             return (
                 <Fragment>
-                    <ExternalDisplaySettings
+                    <ExternalDisplaySettingsSelector
                         indentLevel={indentLevel}
                         settings={cloned.value.external_display_settings}
                         Builder={Builder}
@@ -681,28 +681,24 @@ function SecondaryAppPreset({ cloned, indentLevel, onChange, Builder }: Secondar
     )
 }
 
-interface ExternalDisplaySettingsProps {
+interface ExternalDisplaySettingsSelectorProps {
     indentLevel: number,
     settings: ExternalDisplaySettings
     onChange: (settings: ExternalDisplaySettings) => void,
     Builder: ActionChildBuilder,
 }
 
-function ExternalDisplaySettings({ indentLevel, settings, onChange, Builder }: ExternalDisplaySettingsProps): ReactElement {
+function ExternalDisplaySettingsSelector({ indentLevel, settings, onChange, Builder }: ExternalDisplaySettingsSelectorProps): ReactElement {
     const displayInfo = useDisplayInfo();
-
-
 
     return (
         <HandleLoading value={displayInfo} onOk={(displayInfo) => {
             const fixed: ExternalDisplaySettings[] = [{ type: 'Previous' }, { type: 'Native' },];
 
-
-
             const options: DropdownOption[] = fixed.map((setting) => {
                 return {
                     label: labelForCamelCase(setting.type),
-                    data: setting.type
+                    data: setting
                 };
             });
 
@@ -740,9 +736,21 @@ function ExternalDisplaySettings({ indentLevel, settings, onChange, Builder }: E
             }
 
 
+            var selected = options.find((v) => {
+                if (v.data != null) {
+                    return _.isEqual(v.data, settings);
+                } else {
+                    return v.options?.find((v) => _.isEqual(v.data, settings))
+                }
+            });
+
+            if (selected?.options) {
+                selected = selected.options?.find((v) => _.isEqual(v.data, settings))
+            }
+
             return (
                 <Builder indentLevel={indentLevel} label="External Display Settings" description="External display settings (resolution, refresh rate, etc.).">
-                    <Dropdown selectedOption={settings.type} rgOptions={options}
+                    <Dropdown selectedOption={selected?.data} rgOptions={options}
                         onChange={(settings) => {
                             onChange(settings.data)
                         }}
