@@ -11,6 +11,8 @@ use anyhow::{Context, Result};
 
 use crate::pipeline::action::session_handler::{Pos, Size, UiEvent};
 
+// TODO::raw edid at /sys/class/drm/XXX/edid, modes at /sys/class/drm/XXX/modes
+
 /// Thin wrapper around xrandr for common display operations.
 #[derive(Debug)]
 pub struct XDisplay {
@@ -26,6 +28,7 @@ pub struct ModePreference {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "type", content = "value")]
 pub enum ModeOption<T> {
     Exact(T),
     AtLeast(T),
@@ -39,6 +42,7 @@ pub struct Resolution {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "type", content = "value")]
 pub enum AspectRatioOption {
     Any,
     Native,

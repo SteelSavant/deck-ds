@@ -4,7 +4,10 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use usdpl_back::core::serdes::Primitive;
 
-use crate::settings::{GlobalConfig, Settings};
+use crate::{
+    settings::{GlobalConfig, Settings},
+    sys::display_info::{self, DisplayValues},
+};
 
 use super::{
     request_handler::{log_invoke, RequestHandler},
@@ -69,6 +72,23 @@ pub fn set_settings(
             }
             Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
         }
+    }
+}
+
+/// Get Display Info
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct GetDisplayInfoResponse {
+    available_values: Vec<DisplayValues>,
+}
+
+pub fn get_display_info() -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+    move |args| {
+        log_invoke("get_display_info", &args);
+        GetDisplayInfoResponse {
+            available_values: display_info::get_display_info().unwrap_or_default(),
+        }
+        .to_response()
     }
 }
 

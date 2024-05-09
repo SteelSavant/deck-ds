@@ -3,6 +3,7 @@ import {
     CreateProfileRequest, CreateProfileResponse,
     DeleteProfileRequest, GetAppProfileRequest, GetAppProfileResponse,
     GetDefaultAppOverrideForProfileRequest, GetDefaultAppOverrideForProfileResponse,
+    GetDisplayInfoResponse,
     GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetSecondaryAppInfoResponse, GetSettingsResponse,
     GetTemplatesResponse, GetTopLevelResponse, MelonDSLayoutOption, MelonDSSizingOption, PatchPipelineActionRequest, PatchPipelineActionResponse, PipelineAction, PipelineActionSettingsFor_ConfigSelection, PipelineDefinition,
     ReifyPipelineRequest, ReifyPipelineResponse,
@@ -258,9 +259,15 @@ export async function getSecondaryAppInfo(): Response<GetSecondaryAppInfoRespons
 // Settings
 
 export async function getSettings(): Response<GetSettingsResponse> {
-    return await call_backend_typed("get_settings", null)
+    return await call_backend_typed("get_settings", null);
 }
 
 export async function setSettings(request: SetSettingsRequest): Response<void> {
-    return await call_backend_typed("set_settings", request)
+    return await call_backend_typed("set_settings", request);
+}
+
+// Display Info
+
+export async function getDisplayInfo(): Response<GetDisplayInfoResponse> {
+    return await call_backend_typed("get_display_info", null);
 }

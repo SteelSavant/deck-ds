@@ -234,8 +234,8 @@ impl PipelineActionRegistarBuilder {
 
         // All actions in the registrar have nil ActionIds, since they're not stored in the DB.
         self.with_scope("core", |scope| {
-            let multi_window_name = "Multi-Window Emulation".to_string();
-            let multi_window_description = Some("Manages windows for known emulators configurations with multiple display windows.".to_string());
+            let multi_window_name = "Multi-Window".to_string();
+            let multi_window_description = Some("Manages windows for primary/secondary apps and known emulator configurations with multiple display windows.".to_string());
 
             scope
                 .with_group("toplevel", |group| {
