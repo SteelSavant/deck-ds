@@ -72,8 +72,6 @@ fn get_audio(audio_type: &str) -> Result<Vec<AudioDeviceInfo>> {
 
 /// Parse the pactl output. Badly.
 fn parse_pactl_list(output: &str) -> Vec<AudioDeviceInfo> {
-    log::debug!("Got pactl output {output}");
-
     let mut info = Vec::new();
 
     let mut name = String::new();

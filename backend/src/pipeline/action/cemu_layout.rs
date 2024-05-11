@@ -114,7 +114,7 @@ mod tests {
     fn test_read_write_cemu_layout() -> Result<()> {
         let source_path = "test/assets/cemu/settings.xml";
         let source = std::fs::read_to_string(source_path)?;
-        let path = PathBuf::from("test/out/cemu/settings.xml");
+        let path = PathBuf::from("test/out/cemu/layout_settings.xml");
         create_dir_all(path.parent().unwrap())?;
 
         std::fs::write(&path, &source)?;

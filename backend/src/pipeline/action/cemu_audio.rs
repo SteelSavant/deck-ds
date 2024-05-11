@@ -2,7 +2,7 @@ use std::{borrow::Cow, path::Path};
 
 use crate::{
     pipeline::{dependency::Dependency, executor::PipelineContext},
-    sys::audio::AudioDeviceInfo,
+    sys::audio::{get_audio_sinks, get_audio_sources, AudioDeviceInfo},
 };
 
 use super::{source_file::SourceFile, ActionId, ActionImpl, ActionType};
@@ -80,51 +80,51 @@ impl CemuAudioState {
         // Channels
         let tv_channels = TV_CHANNELS_RXP
             .captures(&xml)
-            .expect("settings.xml should have open_pad setting")
+            .expect("settings.xml should have TVChannels setting")
             .get(1)
             .with_context(|| "TV_CHANNELS_RXP should have one capture")?;
         let pad_channels = PAD_CHANNELS_RXP
             .captures(&xml)
-            .expect("settings.xml should have open_pad setting")
+            .expect("settings.xml should have PadChannels setting")
             .get(1)
             .with_context(|| "PAD_CHANNELS_RXP should have one capture")?;
         let input_channels = INPUT_CHANNELS_RXP
             .captures(&xml)
-            .expect("settings.xml should have open_pad setting")
+            .expect("settings.xml should have InputChannels setting")
             .get(1)
             .with_context(|| "INPUT_CHANNELS_RXP rxp should have one capture")?;
 
         // Volume
         let tv_volume = TV_VOLUME_RXP
             .captures(&xml)
-            .expect("settings.xml should have open_pad setting")
+            .expect("settings.xml should have TVVolume setting")
             .get(1)
             .with_context(|| "TV_VOLUME_RXP should have one capture")?;
         let pad_volume = PAD_VOLUME_RXP
             .captures(&xml)
-            .expect("settings.xml should have open_pad setting")
+            .expect("settings.xml should have PadVolume setting")
             .get(1)
             .with_context(|| "PAD_VOLUME_RXP should have one capture")?;
         let input_volume = INPUT_VOLUME_RXP
             .captures(&xml)
-            .expect("settings.xml should have open_pad setting")
+            .expect("settings.xml should have InputVolume setting")
             .get(1)
             .with_context(|| "INPUT_VOLUME_RXP rxp should have one capture")?;
 
         // Device
         let tv_device = TV_DEVICE_RXP
             .captures(&xml)
-            .expect("settings.xml should have open_pad setting")
+            .expect("settings.xml should have TVDevice setting")
             .get(1)
             .with_context(|| "TV_DEVICE_RXP should have one capture")?;
         let pad_device = PAD_DEVICE_RXP
             .captures(&xml)
-            .expect("settings.xml should have open_pad setting")
+            .expect("settings.xml should have PadDevice setting")
             .get(1)
             .with_context(|| "PAD_DEVICE_RXP should have one capture")?;
         let input_device = INPUT_DEVICE_RXP
             .captures(&xml)
-            .expect("settings.xml should have open_pad setting")
+            .expect("settings.xml should have InputDevice setting")
             .get(1)
             .with_context(|| "INPUT_DEVICE_RXP rxp should have one capture")?;
 
@@ -150,20 +150,23 @@ impl CemuAudioState {
     fn write<P: AsRef<Path>>(&self, xml_path: P) -> Result<()> {
         let mut xml = std::fs::read_to_string(&xml_path)?;
 
-        let options: [(&Regex, &Regex, &Regex, &CemuAudioSetting); 3] = [
+        let options: [(&str, &Regex, &Regex, &Regex, &CemuAudioSetting); 3] = [
             (
+                "TV",
                 &TV_DEVICE_RXP,
                 &TV_VOLUME_RXP,
                 &TV_CHANNELS_RXP,
                 &self.tv_out,
             ),
             (
+                "Pad",
                 &PAD_DEVICE_RXP,
                 &PAD_VOLUME_RXP,
                 &PAD_CHANNELS_RXP,
                 &self.pad_out,
             ),
             (
+                "Input",
                 &INPUT_DEVICE_RXP,
                 &INPUT_VOLUME_RXP,
                 &INPUT_CHANNELS_RXP,
@@ -171,10 +174,13 @@ impl CemuAudioState {
             ),
         ];
 
-        for (device_rxp, volume_rxp, channels_rxp, value) in options {
-            let xml1 = device_rxp.replace(&xml, &value.device.name);
-            let xml2 = volume_rxp.replace(&xml1, &value.volume.to_string());
-            let xml3 = channels_rxp.replace(&xml2, &value.channels.to_raw().to_string());
+        for (tag, device_rxp, volume_rxp, channels_rxp, value) in options {
+            let out = format!("<{tag}Device>{}</{tag}Device>", value.device.name);
+            let xml1 = device_rxp.replace(&xml, &out);
+            let out = format!("<{tag}Volume>{}</{tag}Volume>", value.volume);
+            let xml2 = volume_rxp.replace(&xml1, &out);
+            let out = format!("<{tag}Channels>{}</{tag}Channels>", value.channels.to_raw());
+            let xml3 = channels_rxp.replace(&xml2, &out);
 
             xml = xml3.to_string();
         }
@@ -197,10 +203,36 @@ impl ActionImpl for CemuAudio {
             (xml_path, CemuAudioState::read(xml_path)?)
         };
 
-        todo!()
-        // self.state.write(xml_path).map(|_| {
-        //     ctx.set_state::<Self>(Audio);
-        // })
+        let sources = get_audio_sources();
+        let sinks = get_audio_sinks();
+
+        let available_tv_out = self
+            .tv_out_device_pref
+            .iter()
+            .filter(|v| sinks.iter().any(|s| s.name == v.device.name))
+            .next();
+
+        let available_pad_out = self
+            .pad_out_device_pref
+            .iter()
+            .filter(|v| sinks.iter().any(|s| s.name == v.device.name))
+            .next();
+
+        let available_mic_in = self
+            .mic_in_device_pref
+            .iter()
+            .filter(|v| sources.iter().any(|s| s.name == v.device.name))
+            .next();
+
+        let state = CemuAudioState {
+            tv_out: available_tv_out.unwrap_or(&audio.tv_out).clone(),
+            pad_out: available_pad_out.unwrap_or(&audio.pad_out).clone(),
+            mic_in: available_mic_in.unwrap_or(&audio.mic_in).clone(),
+        };
+
+        state.write(xml_path).map(|_| {
+            ctx.set_state::<Self>(audio);
+        })
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {
@@ -231,49 +263,54 @@ impl ActionImpl for CemuAudio {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use std::path::PathBuf;
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
 
-//     use crate::util::create_dir_all;
+    use crate::util::create_dir_all;
 
-//     use pretty_assertions::assert_eq;
+    use pretty_assertions::assert_eq;
 
-//     use super::*;
+    use super::*;
 
-//     #[test]
-//     fn test_read_write_cemu_Audio() -> Result<()> {
-//         let source_path = "test/assets/cemu/settings.xml";
-//         let source = std::fs::read_to_string(source_path)?;
-//         let path = PathBuf::from("test/out/cemu/settings.xml");
-//         create_dir_all(path.parent().unwrap())?;
+    #[test]
+    fn test_read_write_cemu_audio() -> Result<()> {
+        let source_path = "test/assets/cemu/settings.xml";
+        let source = std::fs::read_to_string(source_path)?;
+        let path = PathBuf::from("test/out/cemu/audio_settings.xml");
+        create_dir_all(path.parent().unwrap())?;
 
-//         std::fs::write(&path, &source)?;
+        std::fs::write(&path, &source)?;
 
-//         let expected = CemuAudioState {
-//             separate_gamepad_view: false,
-//             fullscreen: false,
-//         };
-//         let actual = CemuAudioState::read(&path)?;
+        let expected = CemuAudioState {
+            tv_out: CemuAudioSetting {
+                device: AudioDeviceInfo::from_name("default".to_string()),
+                volume: 50,
+                channels: CemuAudioChannels::Surround,
+            },
+            pad_out: CemuAudioSetting {
+                device: AudioDeviceInfo::from_name("".to_string()),
+                volume: 0,
+                channels: CemuAudioChannels::Stereo,
+            },
+            mic_in: CemuAudioSetting {
+                device: AudioDeviceInfo::from_name("".to_string()),
+                volume: 20,
+                channels: CemuAudioChannels::Mono,
+            },
+        };
+        let actual = CemuAudioState::read(&path)?;
 
-//         assert_eq!(expected, actual);
+        assert_eq!(expected, actual);
 
-//         expected.write(&path)?;
-//         let actual_str = std::fs::read_to_string(&path)?;
-//         assert_eq!(source, actual_str);
+        expected.write(&path)?;
+        let actual_str = std::fs::read_to_string(&path)?;
+        assert_eq!(source, actual_str);
 
-//         let expected = CemuAudioState {
-//             separate_gamepad_view: true,
-//             fullscreen: true,
-//         };
+        let actual = CemuAudioState::read(&path)?;
+        assert_eq!(expected, actual);
 
-//         expected.write(&path)?;
-
-//         let actual = CemuAudioState::read(&path)?;
-
-//         assert_eq!(expected, actual);
-
-//         std::fs::remove_file(path)?;
-//         Ok(())
-//     }
-// }
+        std::fs::remove_file(path)?;
+        Ok(())
+    }
+}
