@@ -834,6 +834,7 @@ interface CemuAudioProps {
 
 function CemuAudioSelector({ indentLevel, settings, onChange, Builder }: CemuAudioProps): ReactElement {
     const deviceInfo = useAudioDeviceInfo();
+
     return (
         <HandleLoading value={deviceInfo} onOk={(deviceInfo) => {
             const sources: {
@@ -895,6 +896,8 @@ function CemuAudioSelector({ indentLevel, settings, onChange, Builder }: CemuAud
 
                         const noDevices = devices.configured.length + devices.notConfigured.length == 0;
 
+                        // TODO::fix reordering by making child a new component and using state
+
                         return (
                             <Fragment>
                                 <Builder
@@ -953,8 +956,7 @@ function CemuAudioSelector({ indentLevel, settings, onChange, Builder }: CemuAud
                                         s.prefs = prefs as CemuAudioSetting[];
                                         onChange(settings);
                                     }}
-                                    interactables={CemuAudioDeviceInteractables
-                                    }
+                                    interactables={CemuAudioDeviceInteractables}
                                 />
 
                             </Fragment>
@@ -966,8 +968,6 @@ function CemuAudioSelector({ indentLevel, settings, onChange, Builder }: CemuAud
         }}
         />
     );
-
-
 }
 
 function getListFromType(type: AudioSourceType, settings: CemuAudio): CemuAudioSetting[] {
@@ -990,14 +990,6 @@ function mapPrefsAndSources(prefs: CemuAudioSetting[], sources: AudioDeviceInfo[
     const notConfigured = sources.filter((s) => {
         return !prefs.find((p) => p.device.name === s.name);
     });
-    // .map((s) => {
-    //     return {
-    //         device: s,
-    //         channels: channelsToCemuChannels(s.channels),
-    //         volume: 100,
-    //         available: true,
-    //     }
-    // });
 
     const configured = prefs.map((p) => {
         const match = sources.find((s) => s.name === p.device.name);
