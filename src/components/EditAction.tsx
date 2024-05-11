@@ -905,7 +905,7 @@ function CemuAudioSelector({ indentLevel, settings, onChange, Builder }: CemuAud
                                             : <ReorderableList<CemuAudioEntry>
                                                 entries={devices.configured.map((d, index) => {
                                                     return {
-                                                        label: d.device.name,
+                                                        label: d.device.description ?? d.device.name,
                                                         data: { ...d, index, type: s.type },
                                                         position: index
                                                     }

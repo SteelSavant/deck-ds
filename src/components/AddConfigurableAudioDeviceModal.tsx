@@ -22,7 +22,7 @@ export function AddConfigurableAudioDeviceModal({ devices, onSave, closeModal }:
             selectedOption={device}
             rgOptions={devices.map((d) => {
                 return {
-                    label: d.name,
+                    label: d.description ?? d.name,
                     data: d,
                 }
             })}
