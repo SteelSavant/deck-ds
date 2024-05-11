@@ -9,7 +9,9 @@ use usdpl_back::core::serdes::Primitive;
 
 use self::{
     autostart::AutoStartRequest,
-    general::{GetDisplayInfoResponse, GetSettingsResponse, SetSettingsRequest},
+    general::{
+        GetAudioDeviceInfoResponse, GetDisplayInfoResponse, GetSettingsResponse, SetSettingsRequest,
+    },
     profile::{
         CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, GetAppProfileRequest,
         GetAppProfileResponse, GetDefaultAppOverrideForProfileRequest,
@@ -107,8 +109,9 @@ pub struct Api {
     pub get_settings_response: GetSettingsResponse,
     pub set_settings_request: SetSettingsRequest,
 
-    // display info
+    // system info
     pub get_display_info: GetDisplayInfoResponse,
+    pub get_audio_device_info: GetAudioDeviceInfoResponse,
 
     // autostart
     pub autostart_request: AutoStartRequest,

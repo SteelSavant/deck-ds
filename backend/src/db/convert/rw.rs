@@ -4,10 +4,11 @@ use native_db::transaction::RwTransaction;
 
 use crate::{
     db::model::{
-        DbAction, DbAppOverride, DbCategoryProfile, DbCemuLayout, DbCitraLayout, DbConfigSelection,
-        DbDesktopSessionHandler, DbDisplayConfig, DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset,
-        DbLime3dsLayout, DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow,
-        DbPipelineActionSettings, DbSourceFile, DbTopLevelDefinition, DbVirtualScreen,
+        DbAction, DbAppOverride, DbCategoryProfile, DbCemuAudio, DbCemuLayout, DbCitraLayout,
+        DbConfigSelection, DbDesktopSessionHandler, DbDisplayConfig, DbLaunchSecondaryApp,
+        DbLaunchSecondaryAppPreset, DbLime3dsLayout, DbMainAppAutomaticWindowing, DbMelonDSLayout,
+        DbMultiWindow, DbPipelineActionSettings, DbSourceFile, DbTopLevelDefinition,
+        DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionId, ActionType, ErasedPipelineAction},
@@ -53,6 +54,9 @@ impl Action {
             }
             Action::CemuLayout(action) => {
                 rw.insert::<DbCemuLayout>(action.into())?;
+            }
+            Action::CemuAudio(action) => {
+                rw.insert::<DbCemuAudio>(action.into())?;
             }
             Action::MelonDSLayout(action) => {
                 rw.insert::<DbMelonDSLayout>(action.into())?;
@@ -213,6 +217,10 @@ impl DbAction {
             }
             ActionType::CemuLayout => {
                 let action = rw.get().primary::<DbCemuLayout>(id)?;
+                action.map(|a| rw.remove(a))
+            }
+            ActionType::CemuAudio => {
+                let action = rw.get().primary::<DbCemuAudio>(id)?;
                 action.map(|a| rw.remove(a))
             }
             ActionType::MelonDSLayout => {

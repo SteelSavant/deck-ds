@@ -49,6 +49,10 @@ export type Action =
       value: CemuLayout;
     }
   | {
+      type: "CemuAudio";
+      value: CemuAudio;
+    }
+  | {
       type: "Lime3dsLayout";
       value: CitraLayout;
     }
@@ -146,6 +150,7 @@ export type CitraLayoutOption =
       type: "Unknown";
       value: number;
     };
+export type CemuAudioChannels = "Mono" | "Stereo" | "Surround";
 /**
  * melonDS layout options. Because of the "unique" way melonDS handles layouts, these options do not map 1:1.
  */
@@ -273,6 +278,7 @@ export interface Api {
   delete_profile_request: DeleteProfileRequest;
   get_app_profile_request: GetAppProfileRequest;
   get_app_profile_response: GetAppProfileResponse;
+  get_audio_device_info: GetAudioDeviceInfoResponse;
   get_default_app_override_for_profile_request: GetDefaultAppOverrideForProfileRequest;
   get_default_app_override_for_profile_response: GetDefaultAppOverrideForProfileResponse;
   get_display_info: GetDisplayInfoResponse;
@@ -425,6 +431,22 @@ export interface CemuLayoutState {
   fullscreen: boolean;
   separate_gamepad_view: boolean;
 }
+export interface CemuAudio {
+  id: string;
+  mic_in_device_pref: CemuAudioSetting[];
+  pad_out_device_pref: CemuAudioSetting[];
+  tv_out_device_pref: CemuAudioSetting[];
+}
+export interface CemuAudioSetting {
+  channels: CemuAudioChannels;
+  device: AudioDeviceInfo;
+  volume: number;
+}
+export interface AudioDeviceInfo {
+  channels?: number | null;
+  description?: string | null;
+  name: string;
+}
 export interface MelonDSLayout {
   book_mode: boolean;
   id: string;
@@ -484,6 +506,13 @@ export interface AppProfile {
   overrides: {
     [k: string]: PipelineDefinition;
   };
+}
+/**
+ * Get Audio Device Info
+ */
+export interface GetAudioDeviceInfoResponse {
+  sinks: AudioDeviceInfo[];
+  sources: AudioDeviceInfo[];
 }
 export interface GetDefaultAppOverrideForProfileRequest {
   profile_id: string;

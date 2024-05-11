@@ -14,6 +14,7 @@ use std::time::{Duration, Instant, SystemTime};
 use typemap::{Key, TypeMap};
 
 use crate::asset::AssetManager;
+use crate::pipeline::action::cemu_audio::CemuAudio;
 use crate::pipeline::action::cemu_layout::CemuLayout;
 use crate::pipeline::action::citra_layout::CitraLayout;
 use crate::pipeline::action::display_config::DisplayConfig;
@@ -135,6 +136,7 @@ impl<'a> PipelineContext<'a> {
         register_type::<LaunchSecondaryFlatpakApp>(&mut type_reg);
         register_type::<MainAppAutomaticWindowing>(&mut type_reg);
         register_type::<Lime3dsLayout>(&mut type_reg);
+        register_type::<CemuAudio>(&mut type_reg);
 
         assert_eq!(
             type_reg.keys().count(),
@@ -186,6 +188,7 @@ impl<'a> PipelineContext<'a> {
                     ActionType::Lime3dsLayout => {
                         load_state::<Lime3dsLayout>(&mut default, &type_map)
                     }
+                    ActionType::CemuAudio => load_state::<CemuAudio>(&mut default, &type_map),
                 },
                 Err(err) => {
                     log::warn!("failed to parse action {action} from type reg: {err}")
@@ -235,6 +238,7 @@ impl<'a> PipelineContext<'a> {
                 Action::MultiWindow(a) => insert_action(self, &mut map, a),
                 Action::CitraLayout(a) => insert_action(self, &mut map, a),
                 Action::CemuLayout(a) => insert_action(self, &mut map, a),
+                Action::CemuAudio(a) => insert_action(self, &mut map, a),
                 Action::MelonDSLayout(a) => insert_action(self, &mut map, a),
                 Action::SourceFile(a) => insert_action(self, &mut map, a),
                 Action::LaunchSecondaryFlatpakApp(a) => insert_action(self, &mut map, a),
@@ -349,6 +353,7 @@ impl<'a> PipelineContext<'a> {
 
         match action {
             ActionType::CemuLayout => handle::<CemuLayout>(self, is_push),
+            ActionType::CemuAudio => handle::<CemuAudio>(self, is_push),
             ActionType::CitraLayout => handle::<CitraLayout>(self, is_push),
             ActionType::DesktopSessionHandler => handle::<DesktopSessionHandler>(self, is_push),
             ActionType::DisplayConfig => handle::<DisplayConfig>(self, is_push),

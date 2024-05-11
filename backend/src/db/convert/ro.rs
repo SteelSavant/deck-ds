@@ -6,10 +6,11 @@ use native_db::transaction::RTransaction;
 
 use crate::{
     db::model::{
-        DbAction, DbCemuLayout, DbCitraLayout, DbConfigSelection, DbDesktopSessionHandler,
-        DbDisplayConfig, DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset, DbLime3dsLayout,
-        DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings,
-        DbPipelineDefinition, DbSourceFile, DbTopLevelDefinition, DbVirtualScreen,
+        DbAction, DbCemuAudio, DbCemuLayout, DbCitraLayout, DbConfigSelection,
+        DbDesktopSessionHandler, DbDisplayConfig, DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset,
+        DbLime3dsLayout, DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow,
+        DbPipelineActionSettings, DbPipelineDefinition, DbSourceFile, DbTopLevelDefinition,
+        DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionType},
@@ -49,6 +50,10 @@ impl DbAction {
             ActionType::CemuLayout => {
                 let action = ro.get().primary::<DbCemuLayout>(id)?;
                 action.map(|a| Action::CemuLayout(a.into()))
+            }
+            ActionType::CemuAudio => {
+                let action = ro.get().primary::<DbCemuAudio>(id)?;
+                action.map(|a| Action::CemuAudio(a.into()))
             }
             ActionType::MelonDSLayout => {
                 let action = ro.get().primary::<DbMelonDSLayout>(id)?;

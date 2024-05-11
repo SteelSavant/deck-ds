@@ -6,6 +6,7 @@ use strum::{Display, EnumIter, EnumString};
 
 use crate::macros::newtype_uuid;
 
+use self::cemu_audio::CemuAudio;
 use self::display_config::DisplayConfig;
 use self::lime_3ds_layout::Lime3dsLayout;
 use self::multi_window::main_app_automatic_windowing::MainAppAutomaticWindowing;
@@ -20,6 +21,7 @@ use super::data::{ConfigSelection, DefinitionSelection, RuntimeSelection};
 use super::{dependency::Dependency, executor::PipelineContext};
 use anyhow::Result;
 
+pub mod cemu_audio;
 pub mod cemu_layout;
 pub mod citra_layout;
 mod desktop;
@@ -120,6 +122,7 @@ pub enum Action {
     MultiWindow(MultiWindow),
     CitraLayout(CitraLayout),
     CemuLayout(CemuLayout),
+    CemuAudio(CemuAudio),
     Lime3dsLayout(Lime3dsLayout),
     MelonDSLayout(MelonDSLayout),
     SourceFile(SourceFile),
@@ -157,6 +160,7 @@ impl Action {
             Action::MultiWindow(a) => Action::MultiWindow(MultiWindow { id, ..a.clone() }),
             Action::CitraLayout(a) => Action::CitraLayout(CitraLayout { id, ..*a }),
             Action::CemuLayout(a) => Action::CemuLayout(CemuLayout { id, ..*a }),
+            Action::CemuAudio(a) => Action::CemuAudio(CemuAudio { id, ..a.clone() }),
             Action::MelonDSLayout(a) => Action::MelonDSLayout(MelonDSLayout { id, ..*a }),
             Action::SourceFile(a) => Action::SourceFile(SourceFile { id, ..a.clone() }),
             Action::LaunchSecondaryFlatpakApp(a) => {
@@ -180,6 +184,7 @@ impl Action {
     Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Display, EnumString, EnumIter,
 )]
 pub enum ActionType {
+    CemuAudio,
     CemuLayout,
     CitraLayout,
     Lime3dsLayout,

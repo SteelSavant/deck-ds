@@ -329,8 +329,12 @@ fn main() -> Result<()> {
                     "set_settings",
                     crate::api::general::set_settings(request_handler.clone(), settings.clone()),
                 )
-                // display info
+                // system info
                 .register("get_display_info", api::general::get_display_info())
+                .register(
+                    "get_audio_device_info",
+                    api::general::get_audio_device_info(),
+                )
                 // autostart
                 .register(
                     "autostart",

@@ -6,7 +6,10 @@ use usdpl_back::core::serdes::Primitive;
 
 use crate::{
     settings::{GlobalConfig, Settings},
-    sys::display_info::{self, DisplayValues},
+    sys::{
+        audio::{get_audio_sinks, get_audio_sources, AudioDeviceInfo},
+        display_info::{self, DisplayValues},
+    },
 };
 
 use super::{
@@ -89,6 +92,23 @@ pub fn get_display_info() -> impl Fn(super::ApiParameterType) -> super::ApiParam
             available_values: display_info::get_display_info().unwrap_or_default(),
         }
         .to_response()
+    }
+}
+
+/// Get Audio Device Info
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct GetAudioDeviceInfoResponse {
+    sources: Vec<AudioDeviceInfo>,
+    sinks: Vec<AudioDeviceInfo>,
+}
+
+pub fn get_audio_device_info() -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+    move |args| {
+        log_invoke("get_audio_device_info", &args);
+        let sources = get_audio_sources();
+        let sinks = get_audio_sinks();
+        GetAudioDeviceInfoResponse { sources, sinks }.to_response()
     }
 }
 

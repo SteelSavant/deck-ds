@@ -2,6 +2,7 @@ import {
     AutoStartRequest, CategoryProfile, CitraLayoutOption,
     CreateProfileRequest, CreateProfileResponse,
     DeleteProfileRequest, GetAppProfileRequest, GetAppProfileResponse,
+    GetAudioDeviceInfoResponse,
     GetDefaultAppOverrideForProfileRequest, GetDefaultAppOverrideForProfileResponse,
     GetDisplayInfoResponse,
     GetProfileRequest, GetProfileResponse, GetProfilesResponse, GetSecondaryAppInfoResponse, GetSettingsResponse,
@@ -266,8 +267,13 @@ export async function setSettings(request: SetSettingsRequest): Response<void> {
     return await call_backend_typed("set_settings", request);
 }
 
-// Display Info
+// system Info
 
 export async function getDisplayInfo(): Response<GetDisplayInfoResponse> {
     return await call_backend_typed("get_display_info", null);
+}
+
+
+export async function getAudioDeviceInfo(): Response<GetAudioDeviceInfoResponse> {
+    return await call_backend_typed("get_audio_device_info", null);
 }

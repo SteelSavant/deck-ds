@@ -7,6 +7,7 @@ use crate::{
 
 use super::{
     action::{
+        cemu_audio::CemuAudio,
         cemu_layout::{CemuLayout, CemuLayoutState},
         citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
         display_config::DisplayConfig,
@@ -552,6 +553,8 @@ impl PipelineActionRegistarBuilder {
                     let cemu_description = Some("Maps primary and secondary windows to different screens for Cemu.".to_string());
                     let cemu_layout_name = "Layout".to_string();
                     let cemu_layout_description = Some("Edits Cemu settings.xml file to desired settings.".to_string());
+                    let cemu_audio_name = "Audio".to_string();
+                    let cemu_audio_description = Some("Optional audio configuration for Cemu to handle desired audio outputs and related settings.".to_string());
 
                     group.with_action("platform", None, PipelineActionDefinitionBuilder {
                         name: cemu_name.clone(),
@@ -561,6 +564,7 @@ impl PipelineActionRegistarBuilder {
                         selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:cemu:source"),
                             PipelineActionId::new("core:cemu:layout"),
+                            PipelineActionId::new("core:cemu:audio"),
                             PipelineActionId::new("core:cemu:multi_window"),
                             PipelineActionId::new("core:dual_screen_platform:display_config"),
                         ]),
@@ -635,9 +639,9 @@ impl PipelineActionRegistarBuilder {
                                 fullscreen: true
                             }
                         }.into(),
-                    }).with_action("layout",  Some(PipelineTarget::Gamemode),    PipelineActionDefinitionBuilder {
+                    }).with_action("layout",  Some(PipelineTarget::Desktop),    PipelineActionDefinitionBuilder {
                         name: cemu_layout_name.to_string(),
-                        description: cemu_description.clone(),
+                        description: cemu_layout_description.clone(),
                         enabled: Some(true),
                         is_visible_on_qam: true,
                         profile_override: None,
@@ -647,6 +651,32 @@ impl PipelineActionRegistarBuilder {
                                 separate_gamepad_view: false,
                                 fullscreen: true
                             }
+                        }.into(),
+                    })
+                          .with_action("audio",  Some(PipelineTarget::Desktop),    PipelineActionDefinitionBuilder {
+                        name: cemu_audio_name.clone(),
+                        description: cemu_audio_description.clone(),
+                        enabled: Some(true),
+                        is_visible_on_qam: true,
+                        profile_override: None,
+                        selection: CemuAudio {
+                            id: ActionId::nil(),
+                            tv_out_device_pref: vec![],
+                            pad_out_device_pref: vec![],
+                            mic_in_device_pref: vec![],
+                        }.into(),
+                    })
+                    .with_action("audio",  Some(PipelineTarget::Gamemode),    PipelineActionDefinitionBuilder {
+                        name: cemu_audio_name,
+                        description: cemu_audio_description.clone(),
+                        enabled: Some(true),
+                        is_visible_on_qam: true,
+                        profile_override: None,
+                        selection: CemuAudio {
+                            id: ActionId::nil(),
+                            tv_out_device_pref: vec![],
+                            pad_out_device_pref: vec![],
+                            mic_in_device_pref: vec![],
                         }.into(),
                     })
                     .with_action("multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
@@ -830,6 +860,7 @@ mod tests {
                 "core:cemu:custom_source",
                 "core:cemu:layout:desktop",
                 "core:cemu:layout:gamemode",
+                "core:cemu:audio",
             ]
             .map(|v| PipelineActionId::new(v)),
         );
