@@ -8,11 +8,14 @@ export function AddConfigurableAudioDeviceModal({ devices, onSave, closeModal }:
     closeModal?: () => void,
 }): ReactElement {
     const [device, setDevice] = useState(devices[0]);
-
+    const [done, setDone] = useState(false);
 
     return <ConfirmModal
         onOK={() => {
-            onSave(device);
+            if (!done) {
+                setDone(true);
+                onSave(device);
+            }
             closeModal!();
         }}
         onCancel={closeModal}

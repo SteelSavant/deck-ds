@@ -1,6 +1,9 @@
 use std::{borrow::Cow, path::Path};
 
-use crate::{pipeline::executor::PipelineContext, sys::audio::AudioDeviceInfo};
+use crate::{
+    pipeline::{dependency::Dependency, executor::PipelineContext},
+    sys::audio::AudioDeviceInfo,
+};
 
 use super::{source_file::SourceFile, ActionId, ActionImpl, ActionType};
 use anyhow::{Context, Result};
@@ -213,6 +216,13 @@ impl ActionImpl for CemuAudio {
             }
             None => Ok(()),
         }
+    }
+
+    fn get_dependencies(
+        &self,
+        _ctx: &PipelineContext,
+    ) -> Vec<crate::pipeline::dependency::Dependency> {
+        vec![Dependency::System("pactl".to_string())]
     }
 
     #[inline]

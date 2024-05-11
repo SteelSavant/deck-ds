@@ -639,7 +639,7 @@ impl PipelineActionRegistarBuilder {
                                 fullscreen: true
                             }
                         }.into(),
-                    }).with_action("layout",  Some(PipelineTarget::Desktop),    PipelineActionDefinitionBuilder {
+                    }).with_action("layout",  Some(PipelineTarget::Gamemode),    PipelineActionDefinitionBuilder {
                         name: cemu_layout_name.to_string(),
                         description: cemu_layout_description.clone(),
                         enabled: Some(true),
@@ -860,7 +860,8 @@ mod tests {
                 "core:cemu:custom_source",
                 "core:cemu:layout:desktop",
                 "core:cemu:layout:gamemode",
-                "core:cemu:audio",
+                "core:cemu:audio:desktop",
+                "core:cemu:audio:gamemode",
             ]
             .map(|v| PipelineActionId::new(v)),
         );
@@ -880,7 +881,7 @@ mod tests {
             .map(|a| a.clone())
             .collect::<HashSet<_>>();
 
-        assert_eq!(difference.len(), 0);
+        assert_eq!(difference, HashSet::new());
         assert_eq!(intersection.len(), expected_keys.len());
     }
 

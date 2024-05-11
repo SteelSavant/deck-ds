@@ -32,6 +32,7 @@ use crate::{
     },
     secondary_app::{FlatpakApp, SecondaryApp, SecondaryAppPresetId},
     settings::{AppId, ProfileId},
+    sys::audio::AudioDeviceInfo,
 };
 
 // Core
@@ -1150,7 +1151,7 @@ impl From<DbCemuAudio> for CemuAudio {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DbCemuAudioSetting {
-    pub device: String,
+    pub device: DbAudioDeviceInfo,
     pub volume: u8,
     pub channels: DbCemuAudioChannels,
 }
@@ -1158,7 +1159,7 @@ pub struct DbCemuAudioSetting {
 impl From<CemuAudioSetting> for DbCemuAudioSetting {
     fn from(value: CemuAudioSetting) -> Self {
         Self {
-            device: todo!(),
+            device: value.device.into(),
             volume: value.volume,
             channels: match value.channels {
                 CemuAudioChannels::Mono => DbCemuAudioChannels::Mono,
@@ -1172,13 +1173,40 @@ impl From<CemuAudioSetting> for DbCemuAudioSetting {
 impl From<DbCemuAudioSetting> for CemuAudioSetting {
     fn from(value: DbCemuAudioSetting) -> Self {
         Self {
-            device: todo!(),
+            device: value.device.into(),
             volume: value.volume,
             channels: match value.channels {
                 DbCemuAudioChannels::Mono => CemuAudioChannels::Mono,
                 DbCemuAudioChannels::Stereo => CemuAudioChannels::Stereo,
                 DbCemuAudioChannels::Surround => CemuAudioChannels::Surround,
             },
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DbAudioDeviceInfo {
+    name: String,
+    description: Option<String>,
+    channels: Option<u8>,
+}
+
+impl From<AudioDeviceInfo> for DbAudioDeviceInfo {
+    fn from(value: AudioDeviceInfo) -> Self {
+        Self {
+            name: value.name,
+            description: value.description,
+            channels: value.channels,
+        }
+    }
+}
+
+impl From<DbAudioDeviceInfo> for AudioDeviceInfo {
+    fn from(value: DbAudioDeviceInfo) -> Self {
+        Self {
+            name: value.name,
+            description: value.description,
+            channels: value.channels,
         }
     }
 }
