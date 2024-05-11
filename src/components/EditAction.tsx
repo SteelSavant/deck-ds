@@ -802,13 +802,18 @@ function ExternalDisplaySettingsSelector({ indentLevel, settings, onChange, Buil
                 }
             });
 
+
+            let defaultLabel = settings.type === 'Preference'
+                ? `${settings.value.resolution.value.w}x${settings.value.resolution.value.h} (Previous Display)`
+                : undefined;
+
             if (selected?.options) {
                 selected = selected.options?.find((v) => _.isEqualWith(v.data, settings, comparator))
             }
 
             return (
                 <Builder indentLevel={indentLevel} label="External Display Settings" description="Desired resolution of the external display.">
-                    <Dropdown selectedOption={selected?.data} rgOptions={options}
+                    <Dropdown selectedOption={selected?.data} rgOptions={options} strDefaultLabel={defaultLabel}
                         onChange={(settings) => {
                             onChange(settings.data)
                         }}
@@ -894,56 +899,64 @@ function CemuAudioSelector({ indentLevel, settings, onChange, Builder }: CemuAud
                             <Fragment>
                                 <Builder
                                     indentLevel={indentLevel}
-                                    childrenLayout="below"
                                     label={`${s.label} Audio Device Preferences`}
                                     description={
                                         `Device preferences for Cemu's ${s.label} ${s.dir}put. First available will be used when updating settings. If none is available, defaults will be used. `
                                         + (devices.notConfigured.length > 0 ? 'Press the "+" button to add a configuration for a detected device.' : '')
                                     }
-                                />
-                                <div style={{ paddingLeft: `${indentLevel * 30}px` }}>
+                                >
                                     {
                                         noDevices
                                             ? <p>No available devices.</p>
-                                            : <ReorderableList<CemuAudioEntry>
-                                                fieldProps={{ focusable: false, bottomSeparator: 'standard', childrenLayout: 'below' }}
-                                                entries={devices.configured.map((d, index) => {
-                                                    return {
-                                                        label: d.device.description ?? d.device.name,
-                                                        data: { ...d, index, type: s.type },
-                                                        position: index
-                                                    }
-                                                })}
-                                                onSave={(entries) => {
-                                                    const prefs: (AvailableCemuAudioSetting | undefined)[] = entries
-                                                        .sort((a, b) => a.position - b.position)
-                                                        .map((e) => e.data)
-                                                        .filter((d) => d);
-                                                    s.prefs = prefs as CemuAudioSetting[];
-                                                    onChange(settings);
-                                                }}
-                                                interactables={(entry) => <CemuAudioDeviceInteractables
-                                                    entry={entry.entry}
-                                                    onChange={(source: AudioSourceType, index: number, isInsert: boolean, setting: CemuAudioSetting) => {
-                                                        const list = getListFromType(source, settings);
-                                                        if (isInsert) {
-                                                            list[index] = setting;
-                                                        } else {
-                                                            list.splice(index, 1);
-                                                        }
-                                                        onChange(settings);
+                                            :
+                                            devices.notConfigured.length > 0
+                                                ? <DialogButton
+                                                    onClick={onAdd}
+                                                    onOKButton={onAdd}
+                                                    style={{
+                                                        width: 'fit-content',
+                                                        minWidth: 'fit-content',
+                                                        height: 'fit-content',
+                                                        padding: '10px 12px',
                                                     }}
-                                                />}
-                                            />
+                                                >
+                                                    <FaPlus />
+                                                </DialogButton>
+                                                : undefined
                                     }
-                                    {
-                                        devices.notConfigured.length > 0
-                                            ? <DialogButton onClick={onAdd} onOKButton={onAdd}>
-                                                <FaPlus />
-                                            </DialogButton>
-                                            : null
+                                </Builder>
+                                <ReorderableList<CemuAudioEntry>
+                                    fieldProps={{ childrenLayout: 'below', focusable: false, indentLevel: indentLevel + 1 }}
+                                    entries={devices.configured.map((d, index) => {
+                                        return {
+                                            label: d.device.description ?? d.device.name,
+                                            data: {
+                                                ...d, index, type: s.type, onChange: (source: AudioSourceType, index: number, isInsert: boolean, setting: CemuAudioSetting) => {
+                                                    const list = getListFromType(source, settings);
+                                                    if (isInsert) {
+                                                        list[index] = setting;
+                                                    } else {
+                                                        list.splice(index, 1);
+                                                    }
+                                                    onChange(settings);
+                                                }
+                                            },
+                                            position: index
+
+                                        }
+                                    })}
+                                    onSave={(entries) => {
+                                        const prefs: (AvailableCemuAudioSetting | undefined)[] = entries
+                                            .sort((a, b) => a.position - b.position)
+                                            .map((e) => e.data)
+                                            .filter((d) => d);
+                                        s.prefs = prefs as CemuAudioSetting[];
+                                        onChange(settings);
+                                    }}
+                                    interactables={CemuAudioDeviceInteractables
                                     }
-                                </div>
+                                />
+
                             </Fragment>
                         )
                     })
@@ -1014,24 +1027,23 @@ type AudioSourceType = 'TV' | 'Pad' | 'Mic';
 
 interface CemuAudioDeviceInteractablesProps {
     entry: ReorderableEntry<CemuAudioEntry>
-    onChange: (source: AudioSourceType, index: number, isInsert: boolean, setting: CemuAudioSetting) => void,
 }
 
 function CemuAudioDeviceInteractables(props: CemuAudioDeviceInteractablesProps): ReactElement | null {
-    const { onChange } = props;
-
     const data = props.entry.data;
 
     if (!data) {
         return null;
     }
 
+    const onChange = data.onChange;
+
     const channels: CemuAudioChannels[] = ['Mono', 'Stereo', 'Surround'];
 
     const channelsOptions = channels.filter((c) => {
         const deviceChannels = data.device.channels;
         if (deviceChannels === null || deviceChannels === undefined) {
-            // we don't know how many channels, assume the best
+            // We don't know how many channels, assume the best. It's not like Cemu is likely to care.
             return true;
         }
 
@@ -1055,32 +1067,42 @@ function CemuAudioDeviceInteractables(props: CemuAudioDeviceInteractablesProps):
         onChange(data!.type, data!.index, false, data!)
     }
 
+    const centerDiv = <div style={{ flex: 1 }} />;
+
     return data.available ?
-        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-end' }}>
-
-            <Dropdown
-                menuLabel="Channels"
-                strDefaultLabel="Channels"
-                rgOptions={channelsOptions}
-                selectedOption={data.channels}
-                onChange={(value) => {
-                    data.channels = value.data;
-                    onChange(data.type, data.index, true, data);
-                }}
-            />
-
+        <Focusable style={{
+            display: 'flex',
+            flexDirection: 'row',
+            width: '100%',
+            justifyContent: 'space-between',
+            justifyItems: 'space-between',
+            alignItems: 'center',
+            paddingRight: '10px',
+        }}>
+            <div style={{ width: 'max-content' }}>
+                <Dropdown
+                    menuLabel="Channels"
+                    strDefaultLabel="Channels"
+                    rgOptions={channelsOptions}
+                    selectedOption={data.channels}
+                    onChange={(value) => {
+                        data.channels = value.data;
+                        onChange(data.type, data.index, true, data);
+                    }}
+                />
+            </div>
+            {centerDiv}
             <SliderField
-                label="Volume"
+                label={`Volume (${data.volume}%)`}
                 value={data.volume}
                 min={0}
                 max={100}
-
                 onChange={(value) => {
                     data.volume = value;
                     onChange(data.type, data.index, true, data);
                 }}
             />
-
+            {centerDiv}
             <DialogButton style={{
                 backgroundColor: 'red',
                 height: '40px',
@@ -1090,15 +1112,14 @@ function CemuAudioDeviceInteractables(props: CemuAudioDeviceInteractablesProps):
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
-                borderTopLeftRadius: 0,
-                borderBottomLeftRadius: 0,
+
             }}
                 onOKButton={deletePref}
                 onClick={deletePref}
             >
                 <FaTrash />
             </DialogButton>
-        </div>
+        </Focusable>
         : <p>Not Available</p>;
 }
 
@@ -1107,5 +1128,6 @@ interface AvailableCemuAudioSetting extends CemuAudioSetting {
 }
 interface CemuAudioEntry extends AvailableCemuAudioSetting {
     index: number,
-    type: AudioSourceType
+    type: AudioSourceType,
+    onChange: (source: AudioSourceType, index: number, isInsert: boolean, setting: CemuAudioSetting) => void;
 }
