@@ -1097,31 +1097,14 @@ impl DbLime3dsLayout {
 pub struct DbCemuAudio {
     #[primary_key]
     pub id: ActionId,
-    // track previous devices by use, in case the desired one isn't available
-    pub tv_out_device_pref: Vec<DbCemuAudioSetting>,
-    pub pad_out_device_pref: Vec<DbCemuAudioSetting>,
-    pub mic_in_device_pref: Vec<DbCemuAudioSetting>,
+    pub state: DbCemuAudioState,
 }
 
 impl From<CemuAudio> for DbCemuAudio {
     fn from(value: CemuAudio) -> Self {
         Self {
             id: value.id,
-            tv_out_device_pref: value
-                .tv_out_device_pref
-                .into_iter()
-                .map(|v| v.into())
-                .collect(),
-            pad_out_device_pref: value
-                .pad_out_device_pref
-                .into_iter()
-                .map(|v| v.into())
-                .collect(),
-            mic_in_device_pref: value
-                .mic_in_device_pref
-                .into_iter()
-                .map(|v| v.into())
-                .collect(),
+            state: value.state.into(),
         }
     }
 }
@@ -1130,28 +1113,41 @@ impl From<DbCemuAudio> for CemuAudio {
     fn from(value: DbCemuAudio) -> Self {
         Self {
             id: value.id,
-            tv_out_device_pref: value
-                .tv_out_device_pref
-                .into_iter()
-                .map(|v| v.into())
-                .collect(),
-            pad_out_device_pref: value
-                .pad_out_device_pref
-                .into_iter()
-                .map(|v| v.into())
-                .collect(),
-            mic_in_device_pref: value
-                .mic_in_device_pref
-                .into_iter()
-                .map(|v| v.into())
-                .collect(),
+            state: value.state.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DbCemuAudioState {
+    pub tv_out: DbCemuAudioSetting,
+    pub pad_out: DbCemuAudioSetting,
+    pub mic_in: DbCemuAudioSetting,
+}
+
+impl From<CemuAudioState> for DbCemuAudioState {
+    fn from(value: CemuAudioState) -> Self {
+        Self {
+            tv_out: value.tv_out.into(),
+            pad_out: value.pad_out.into(),
+            mic_in: value.mic_in.into(),
+        }
+    }
+}
+
+impl From<DbCemuAudioState> for CemuAudioState {
+    fn from(value: DbCemuAudioState) -> Self {
+        Self {
+            tv_out: value.tv_out.into(),
+            pad_out: value.pad_out.into(),
+            mic_in: value.mic_in.into(),
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DbCemuAudioSetting {
-    pub device: DbAudioDeviceInfo,
+    pub device: String,
     pub volume: u8,
     pub channels: DbCemuAudioChannels,
 }
@@ -1159,7 +1155,7 @@ pub struct DbCemuAudioSetting {
 impl From<CemuAudioSetting> for DbCemuAudioSetting {
     fn from(value: CemuAudioSetting) -> Self {
         Self {
-            device: value.device.into(),
+            device: value.device,
             volume: value.volume,
             channels: match value.channels {
                 CemuAudioChannels::Mono => DbCemuAudioChannels::Mono,
@@ -1173,40 +1169,13 @@ impl From<CemuAudioSetting> for DbCemuAudioSetting {
 impl From<DbCemuAudioSetting> for CemuAudioSetting {
     fn from(value: DbCemuAudioSetting) -> Self {
         Self {
-            device: value.device.into(),
+            device: value.device,
             volume: value.volume,
             channels: match value.channels {
                 DbCemuAudioChannels::Mono => CemuAudioChannels::Mono,
                 DbCemuAudioChannels::Stereo => CemuAudioChannels::Stereo,
                 DbCemuAudioChannels::Surround => CemuAudioChannels::Surround,
             },
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct DbAudioDeviceInfo {
-    name: String,
-    description: Option<String>,
-    channels: Option<u8>,
-}
-
-impl From<AudioDeviceInfo> for DbAudioDeviceInfo {
-    fn from(value: AudioDeviceInfo) -> Self {
-        Self {
-            name: value.name,
-            description: value.description,
-            channels: value.channels,
-        }
-    }
-}
-
-impl From<DbAudioDeviceInfo> for AudioDeviceInfo {
-    fn from(value: DbAudioDeviceInfo) -> Self {
-        Self {
-            name: value.name,
-            description: value.description,
-            channels: value.channels,
         }
     }
 }

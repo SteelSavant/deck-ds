@@ -433,19 +433,17 @@ export interface CemuLayoutState {
 }
 export interface CemuAudio {
   id: string;
-  mic_in_device_pref: CemuAudioSetting[];
-  pad_out_device_pref: CemuAudioSetting[];
-  tv_out_device_pref: CemuAudioSetting[];
+  state: CemuAudioState;
+}
+export interface CemuAudioState {
+  mic_in: CemuAudioSetting;
+  pad_out: CemuAudioSetting;
+  tv_out: CemuAudioSetting;
 }
 export interface CemuAudioSetting {
   channels: CemuAudioChannels;
-  device: AudioDeviceInfo;
+  device: string;
   volume: number;
-}
-export interface AudioDeviceInfo {
-  channels?: number | null;
-  description?: string | null;
-  name: string;
 }
 export interface MelonDSLayout {
   book_mode: boolean;
@@ -513,6 +511,11 @@ export interface AppProfile {
 export interface GetAudioDeviceInfoResponse {
   sinks: AudioDeviceInfo[];
   sources: AudioDeviceInfo[];
+}
+export interface AudioDeviceInfo {
+  channels?: number | null;
+  description: string;
+  name: string;
 }
 export interface GetDefaultAppOverrideForProfileRequest {
   profile_id: string;

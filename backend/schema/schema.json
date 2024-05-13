@@ -431,6 +431,7 @@
     "AudioDeviceInfo": {
       "type": "object",
       "required": [
+        "description",
         "name"
       ],
       "properties": {
@@ -443,10 +444,7 @@
           "minimum": 0.0
         },
         "description": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "name": {
           "type": "string"
@@ -506,32 +504,15 @@
       "type": "object",
       "required": [
         "id",
-        "mic_in_device_pref",
-        "pad_out_device_pref",
-        "tv_out_device_pref"
+        "state"
       ],
       "properties": {
         "id": {
           "type": "string",
           "format": "uuid"
         },
-        "mic_in_device_pref": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/CemuAudioSetting"
-          }
-        },
-        "pad_out_device_pref": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/CemuAudioSetting"
-          }
-        },
-        "tv_out_device_pref": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/CemuAudioSetting"
-          }
+        "state": {
+          "$ref": "#/definitions/CemuAudioState"
         }
       }
     },
@@ -555,12 +536,31 @@
           "$ref": "#/definitions/CemuAudioChannels"
         },
         "device": {
-          "$ref": "#/definitions/AudioDeviceInfo"
+          "type": "string"
         },
         "volume": {
           "type": "integer",
           "format": "uint8",
           "minimum": 0.0
+        }
+      }
+    },
+    "CemuAudioState": {
+      "type": "object",
+      "required": [
+        "mic_in",
+        "pad_out",
+        "tv_out"
+      ],
+      "properties": {
+        "mic_in": {
+          "$ref": "#/definitions/CemuAudioSetting"
+        },
+        "pad_out": {
+          "$ref": "#/definitions/CemuAudioSetting"
+        },
+        "tv_out": {
+          "$ref": "#/definitions/CemuAudioSetting"
         }
       }
     },

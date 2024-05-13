@@ -11,18 +11,8 @@ const SYSTEM_DEVICES: [&str; 2] = ["filter-chain-source", "output.virtual-source
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct AudioDeviceInfo {
     pub name: String,
-    pub description: Option<String>,
+    pub description: String,
     pub channels: Option<u8>,
-}
-
-impl AudioDeviceInfo {
-    pub fn from_name(name: String) -> Self {
-        Self {
-            name,
-            description: None,
-            channels: None,
-        }
-    }
 }
 
 pub fn get_audio_sinks() -> Vec<AudioDeviceInfo> {
@@ -96,7 +86,7 @@ fn parse_pactl_list(output: &str) -> Vec<AudioDeviceInfo> {
                     log::debug!("pactl got channels: {channelsval:?}");
 
                     info.push(AudioDeviceInfo {
-                        description: description.or(Some(name.clone())),
+                        description: description.unwrap_or(name.clone()),
                         name: name.take(),
                         channels: Some(channelsval),
                     });

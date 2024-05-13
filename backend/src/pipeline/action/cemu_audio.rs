@@ -15,10 +15,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct CemuAudio {
     pub id: ActionId,
-    // track previous devices by use, in case the desired one isn't available
-    pub tv_out_device_pref: Vec<CemuAudioSetting>,
-    pub pad_out_device_pref: Vec<CemuAudioSetting>,
-    pub mic_in_device_pref: Vec<CemuAudioSetting>,
+    pub state: CemuAudioState,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -30,7 +27,7 @@ pub struct CemuAudioState {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct CemuAudioSetting {
-    pub device: AudioDeviceInfo,
+    pub device: String,
     pub volume: u8,
     pub channels: CemuAudioChannels,
 }
@@ -130,17 +127,17 @@ impl CemuAudioState {
 
         Ok(Self {
             tv_out: CemuAudioSetting {
-                device: AudioDeviceInfo::from_name(tv_device.as_str().to_string()),
+                device: tv_device.as_str().to_string(),
                 volume: tv_volume.as_str().parse().unwrap(),
                 channels: CemuAudioChannels::from_raw(tv_channels.as_str().parse().unwrap()),
             },
             pad_out: CemuAudioSetting {
-                device: AudioDeviceInfo::from_name(pad_device.as_str().to_string()),
+                device: pad_device.as_str().to_string(),
                 volume: pad_volume.as_str().parse().unwrap(),
                 channels: CemuAudioChannels::from_raw(pad_channels.as_str().parse().unwrap()),
             },
             mic_in: CemuAudioSetting {
-                device: AudioDeviceInfo::from_name(input_device.as_str().to_string()),
+                device: input_device.as_str().to_string(),
                 volume: input_volume.as_str().parse().unwrap(),
                 channels: CemuAudioChannels::from_raw(input_channels.as_str().parse().unwrap()),
             },
@@ -175,7 +172,7 @@ impl CemuAudioState {
         ];
 
         for (tag, device_rxp, volume_rxp, channels_rxp, value) in options {
-            let out = format!("<{tag}Device>{}</{tag}Device>", value.device.name);
+            let out = format!("<{tag}Device>{}</{tag}Device>", value.device);
             let xml1 = device_rxp.replace(&xml, &out);
             let out = format!("<{tag}Volume>{}</{tag}Volume>", value.volume);
             let xml2 = volume_rxp.replace(&xml1, &out);
@@ -206,29 +203,38 @@ impl ActionImpl for CemuAudio {
         let sources = get_audio_sources();
         let sinks = get_audio_sinks();
 
-        let available_tv_out = self
-            .tv_out_device_pref
+        let mut state = self.state.clone();
+        let available_tv_out = sinks
             .iter()
-            .filter(|v| sinks.iter().any(|s| s.name == v.device.name))
-            .next();
+            .map(|s| s.name.as_str())
+            .chain(["default", ""].into_iter())
+            .any(|s| *s == state.tv_out.device);
 
-        let available_pad_out = self
-            .pad_out_device_pref
+        let available_pad_out = sinks
             .iter()
-            .filter(|v| sinks.iter().any(|s| s.name == v.device.name))
-            .next();
+            .map(|s| s.name.as_str())
+            .chain(["default", ""].into_iter())
+            .any(|s| *s == state.pad_out.device);
 
-        let available_mic_in = self
-            .mic_in_device_pref
+        let available_mic_in = sources
             .iter()
-            .filter(|v| sources.iter().any(|s| s.name == v.device.name))
-            .next();
+            .map(|s| s.name.as_str())
+            .chain(["default", ""].into_iter())
+            .any(|s| *s == state.mic_in.device);
 
-        let state = CemuAudioState {
-            tv_out: available_tv_out.unwrap_or(&audio.tv_out).clone(),
-            pad_out: available_pad_out.unwrap_or(&audio.pad_out).clone(),
-            mic_in: available_mic_in.unwrap_or(&audio.mic_in).clone(),
-        };
+        // TODO::if audio.*.device is empty, replace with default
+
+        if !available_tv_out {
+            state.tv_out.device = audio.tv_out.device.clone();
+        }
+
+        if !available_pad_out {
+            state.pad_out.device = audio.pad_out.device.clone();
+        }
+
+        if !available_mic_in {
+            state.mic_in.device = audio.mic_in.device.clone();
+        }
 
         state.write(xml_path).map(|_| {
             ctx.set_state::<Self>(audio);
@@ -284,17 +290,17 @@ mod tests {
 
         let expected = CemuAudioState {
             tv_out: CemuAudioSetting {
-                device: AudioDeviceInfo::from_name("default".to_string()),
+                device: "default".to_string(),
                 volume: 50,
                 channels: CemuAudioChannels::Surround,
             },
             pad_out: CemuAudioSetting {
-                device: AudioDeviceInfo::from_name("".to_string()),
+                device: "".to_string(),
                 volume: 0,
                 channels: CemuAudioChannels::Stereo,
             },
             mic_in: CemuAudioSetting {
-                device: AudioDeviceInfo::from_name("".to_string()),
+                device: "".to_string(),
                 volume: 20,
                 channels: CemuAudioChannels::Mono,
             },
