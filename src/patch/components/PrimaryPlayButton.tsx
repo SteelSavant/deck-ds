@@ -1,5 +1,5 @@
-import { DialogButton } from "decky-frontend-lib";
-import { ReactElement } from "react";
+import { DialogButton, Focusable } from "decky-frontend-lib";
+import { ReactElement, useState } from "react";
 import { IconForTarget } from "../../components/IconForTarget";
 import { useAppState } from "../../context/appContext";
 import useAppTarget from "../../hooks/useAppTarget";
@@ -7,15 +7,19 @@ import useLaunchActions from "../../hooks/useLaunchActions";
 
 
 interface PrimaryPlayButtonProps {
-    deckDSGameModeSentinel: 'sentinel'
+    deckDSGameModeSentinel: 'sentinel',
+    hasStream: boolean,
     playButton: any
 }
 
 export default function PrimaryPlayButton({
     playButton,
+    hasStream,
 }: PrimaryPlayButtonProps): ReactElement {
     const { appDetails, appProfile } = useAppState();
     const launchActions = useLaunchActions(appDetails);
+    const [isFocused, setIsFocused] = useState(false);
+
 
     const action = appProfile?.isOk
         ? launchActions.find((a) =>
@@ -41,20 +45,59 @@ export default function PrimaryPlayButton({
         onLaunch
     );
 
+    const width = '100%';
+    const height = '100%';
+
+    const okColor = '#70d61d';
+
     return target && onLaunch ? (
-        <DialogButton
-            // I would be thrilled if this matched the actual play button (including CSS loader styling), but with a custom icon, but alas...
-            // className="basicappdetailssectionstyler_AppActionButton_QsZdW appactionbutton_PlayButtonContainer_1FnJ6 appactionbutton_Green_3cI5T Panel Focusable gpfocuswithin"
-            onClick={onLaunch}
-            onOKButton={onLaunch}
+        <Focusable
+            onFocus={() => {
+                setIsFocused(true);
+            }} onBlur={() => {
+                setIsFocused(false);
+            }}
+            style={{
+                width: width,
+                height: height,
+            }}
         >
-            <div
-            // className="appactionbutton_PlayButton_3ydig appactionbutton_ButtonChild_2AzIX Focusable gpfocus gpfocuswithin"
+            <DialogButton
+                // I would be thrilled if this matched the actual play button (including CSS loader styling), but with a custom icon + action, but alas...
+                // I genuinely don't know how to style things properly. 
+
+                onClick={onLaunch}
+                onOKButton={onLaunch}
+                onOKActionDescription={`Launch ${target}`}
+                style={{
+                    borderTopRightRadius: hasStream
+                        ? 0
+                        : undefined,
+                    borderBottomRightRadius: hasStream
+                        ? 0
+                        : undefined,
+                    color: isFocused
+                        ? 'white'
+                        : undefined,
+                    backgroundColor: isFocused
+                        ? okColor
+                        : 'transparent',
+                    alignContent: 'center',
+                    justifyContent: 'left',
+                    minWidth: '210px',
+                    maxWidth: width,
+                    width: width,
+                    height: height,
+                    display: 'flex',
+                    flexDirection: 'row',
+                    paddingTop: '12px'
+                }}
             >
                 <IconForTarget target={target} />
+                <div style={{ width: 15 }} />
                 Play
-            </div>
-        </DialogButton>
+            </DialogButton>
+        </Focusable>
     ) : playButton;
 
 

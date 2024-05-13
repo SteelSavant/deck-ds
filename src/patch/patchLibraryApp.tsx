@@ -134,6 +134,7 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                                             <ShortAppDetailsStateContextProvider ShortAppDetailsStateClass={appDetailsState}>
                                                 <PrimaryPlayButton
                                                     playButton={actualPlayButton}
+                                                    hasStream={typeof children[2] === 'object'}
                                                     deckDSGameModeSentinel='sentinel'
                                                 />
                                             </ShortAppDetailsStateContextProvider>);
