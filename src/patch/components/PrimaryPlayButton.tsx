@@ -1,4 +1,4 @@
-import { Button } from "decky-frontend-lib";
+import { DialogButton } from "decky-frontend-lib";
 import { ReactElement } from "react";
 import { IconForTarget } from "../../components/IconForTarget";
 import { useAppState } from "../../context/appContext";
@@ -42,19 +42,19 @@ export default function PrimaryPlayButton({
     );
 
     return target && onLaunch ? (
-        <Button
+        <DialogButton
             // I would be thrilled if this matched the actual play button (including CSS loader styling), but with a custom icon, but alas...
-            className="basicappdetailssectionstyler_AppActionButton_QsZdW appactionbutton_PlayButtonContainer_1FnJ6 appactionbutton_Green_3cI5T Panel Focusable gpfocuswithin"
+            // className="basicappdetailssectionstyler_AppActionButton_QsZdW appactionbutton_PlayButtonContainer_1FnJ6 appactionbutton_Green_3cI5T Panel Focusable gpfocuswithin"
             onClick={onLaunch}
             onOKButton={onLaunch}
         >
             <div
-                className="appactionbutton_PlayButton_3ydig appactionbutton_ButtonChild_2AzIX Focusable gpfocus gpfocuswithin"
+            // className="appactionbutton_PlayButton_3ydig appactionbutton_ButtonChild_2AzIX Focusable gpfocus gpfocuswithin"
             >
                 <IconForTarget target={target} />
                 Play
             </div>
-        </Button>
+        </DialogButton>
     ) : playButton;
 
 
