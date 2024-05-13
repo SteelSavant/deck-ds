@@ -7,6 +7,7 @@ use crate::{
 
 use super::{
     action::{
+        cemu_audio::{CemuAudio, CemuAudioChannels, CemuAudioSetting, CemuAudioState},
         cemu_layout::{CemuLayout, CemuLayoutState},
         citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
         display_config::DisplayConfig,
@@ -552,6 +553,11 @@ impl PipelineActionRegistarBuilder {
                     let cemu_description = Some("Maps primary and secondary windows to different screens for Cemu.".to_string());
                     let cemu_layout_name = "Layout".to_string();
                     let cemu_layout_description = Some("Edits Cemu settings.xml file to desired settings.".to_string());
+                    let cemu_audio_name = "Audio".to_string();
+                    let cemu_audio_description = Some("Optional audio configuration for Cemu to handle desired audio outputs and related settings.".to_string());
+
+                    let deck_speakers = "alsa_output.pci-0000_04_00.5-platform-acp5x_mach.0.HiFi__hw_acp5x_1__sink"; // TODO::verify for multiple decks
+                    let deck_mic = "alsa_input.pci-0000_04_00.5-platform-acp5x_mach.0.HiFi__hw_acp5x_0__source"; // TODO::verify for multiple decks
 
                     group.with_action("platform", None, PipelineActionDefinitionBuilder {
                         name: cemu_name.clone(),
@@ -561,6 +567,7 @@ impl PipelineActionRegistarBuilder {
                         selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:cemu:source"),
                             PipelineActionId::new("core:cemu:layout"),
+                            PipelineActionId::new("core:cemu:audio"),
                             PipelineActionId::new("core:cemu:multi_window"),
                             PipelineActionId::new("core:dual_screen_platform:display_config"),
                         ]),
@@ -575,7 +582,6 @@ impl PipelineActionRegistarBuilder {
                         selection:  DefinitionSelection::OneOf {selection: PipelineActionId::new("core:cemu:flatpak_source"), actions: vec![
                             PipelineActionId::new("core:cemu:flatpak_source"),
                             PipelineActionId::new("core:cemu:appimage_source"),
-                            PipelineActionId::new("core:cemu:emudeck_proton_source"),
                             PipelineActionId::new("core:cemu:custom_source")
                         ]},
                     })
@@ -599,17 +605,6 @@ impl PipelineActionRegistarBuilder {
                         selection: SourceFile {
                             id: ActionId::nil(),
                             source: FileSource::AppImage(AppImageSource::Cemu)
-                        }.into(),
-                    })
-                    .with_action("emudeck_proton_source", None, PipelineActionDefinitionBuilder {
-                        name: "EmuDeck (Proton)".to_string(),
-                        description: Some("Sets the settings XML file location to the location of EmuDeck's Cemu (Proton).".to_string()),
-                        enabled: None,
-                        is_visible_on_qam: true,
-                        profile_override: None,
-                        selection:SourceFile {
-                            id: ActionId::nil(),
-                            source: FileSource::EmuDeck(EmuDeckSource::CemuProton)
                         }.into(),
                     })
                     .with_action("custom_source", None, PipelineActionDefinitionBuilder {
@@ -637,7 +632,7 @@ impl PipelineActionRegistarBuilder {
                         }.into(),
                     }).with_action("layout",  Some(PipelineTarget::Gamemode),    PipelineActionDefinitionBuilder {
                         name: cemu_layout_name.to_string(),
-                        description: cemu_description.clone(),
+                        description: cemu_layout_description.clone(),
                         enabled: Some(true),
                         is_visible_on_qam: true,
                         profile_override: None,
@@ -647,6 +642,60 @@ impl PipelineActionRegistarBuilder {
                                 separate_gamepad_view: false,
                                 fullscreen: true
                             }
+                        }.into(),
+                    })
+                          .with_action("audio",  Some(PipelineTarget::Desktop),    PipelineActionDefinitionBuilder {
+                        name: cemu_audio_name.clone(),
+                        description: cemu_audio_description.clone(),
+                        enabled: Some(true),
+                        is_visible_on_qam: true,
+                        profile_override: None,
+                        selection: CemuAudio {
+                            id: ActionId::nil(),
+                            state: CemuAudioState {
+                                   tv_out: CemuAudioSetting {
+                                    device: "default".to_string(),
+                                    volume: 50,
+                                    channels: CemuAudioChannels::Surround,
+                                },
+                                pad_out: CemuAudioSetting {
+                                    device: deck_speakers.to_string(),
+                                    volume: 50,
+                                    channels:CemuAudioChannels::Stereo,
+                                },
+                                mic_in: CemuAudioSetting {
+                                    device: deck_mic.to_string(),
+                                    volume: 20,
+                                    channels: CemuAudioChannels::Mono,
+                                },
+                            },
+                        }.into(),
+                    })
+                    .with_action("audio",  Some(PipelineTarget::Gamemode),    PipelineActionDefinitionBuilder {
+                        name: cemu_audio_name,
+                        description: cemu_audio_description.clone(),
+                        enabled: Some(true),
+                        is_visible_on_qam: true,
+                        profile_override: None,
+                        selection: CemuAudio {
+                            id: ActionId::nil(),
+                            state: CemuAudioState {
+                                tv_out: CemuAudioSetting {
+                                    device: "default".to_string(),
+                                    volume: 50,
+                                    channels: CemuAudioChannels::Surround,
+                                },
+                                pad_out: CemuAudioSetting {
+                                    device: deck_speakers.to_string(),
+                                    volume: 50,
+                                    channels:CemuAudioChannels::Stereo,
+                                },
+                                mic_in: CemuAudioSetting {
+                                    device: deck_mic.to_string(),
+                                    volume: 20,
+                                    channels: CemuAudioChannels::Mono,
+                                },
+                            },
                         }.into(),
                     })
                     .with_action("multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
@@ -662,6 +711,46 @@ impl PipelineActionRegistarBuilder {
                             citra: None,
                             dolphin: None,
                             custom: None,
+                        }.into(),
+                    })
+                })
+                .with_group("cemu_proton", |group| {
+                    let cemu_name = "Cemu (Proton)".to_string();
+                    let cemu_description = Some("Maps primary and secondary windows to different screens for Cemu.".to_string());
+        
+                    group.with_action("platform", None, PipelineActionDefinitionBuilder {
+                        name: cemu_name.clone(),
+                        description: cemu_description.clone(),
+                        enabled: None,
+                        profile_override: None,
+                        selection: DefinitionSelection::AllOf(vec![
+                            PipelineActionId::new("core:cemu_proton:source"),
+                            PipelineActionId::new("core:cemu:layout"),
+                            PipelineActionId::new("core:cemu:multi_window"),
+                            PipelineActionId::new("core:dual_screen_platform:display_config"),
+                        ]),
+                        is_visible_on_qam: true,
+                    })
+                    .with_action("source", None, PipelineActionDefinitionBuilder {
+                        name: "Cemu Settings Source".to_string(),
+                        description: Some("Source file to use when editing Cemu settings.".to_string()),
+                        enabled: None,
+                        is_visible_on_qam: false,
+                        profile_override: None,
+                        selection:  DefinitionSelection::OneOf {selection: PipelineActionId::new("core:cemu:emudeck_proton_source"), actions: vec![
+                            PipelineActionId::new("core:cemu_proton:emudeck_proton_source"),
+                            PipelineActionId::new("core:cemu:custom_source")
+                        ]},
+                    })
+                    .with_action("emudeck_proton_source", None, PipelineActionDefinitionBuilder {
+                        name: "EmuDeck (Proton)".to_string(),
+                        description: Some("Sets the settings XML file location to the location of EmuDeck's Cemu (Proton).".to_string()),
+                        enabled: None,
+                        is_visible_on_qam: true,
+                        profile_override: None,
+                        selection:SourceFile {
+                            id: ActionId::nil(),
+                            source: FileSource::EmuDeck(EmuDeckSource::CemuProton)
                         }.into(),
                     })
                 })
@@ -826,10 +915,11 @@ mod tests {
                 "core:cemu:multi_window:desktop",
                 "core:cemu:source",
                 "core:cemu:flatpak_source",
-                "core:cemu:emudeck_proton_source",
                 "core:cemu:custom_source",
                 "core:cemu:layout:desktop",
                 "core:cemu:layout:gamemode",
+                "core:cemu:audio:desktop",
+                "core:cemu:audio:gamemode",
             ]
             .map(|v| PipelineActionId::new(v)),
         );
@@ -849,7 +939,7 @@ mod tests {
             .map(|a| a.clone())
             .collect::<HashSet<_>>();
 
-        assert_eq!(difference.len(), 0);
+        assert_eq!(difference, HashSet::new());
         assert_eq!(intersection.len(), expected_keys.len());
     }
 

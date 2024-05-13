@@ -1,5 +1,8 @@
 use native_db::DatabaseBuilder;
 use once_cell::sync::Lazy;
+use strum::IntoEnumIterator;
+
+use crate::pipeline::action::ActionType;
 
 mod v1;
 
@@ -17,6 +20,7 @@ pub type DbPipelineActionSettings = v1::DbPipelineActionSettings;
 // Action
 
 pub type DbCemuLayout = v1::DbCemuLayout;
+pub type DbCemuAudio = v1::DbCemuAudio;
 pub type DbCitraLayout = v1::DbCitraLayout;
 pub type DbLime3dsLayout = v1::DbLime3dsLayout;
 pub type DbMelonDSLayout = v1::DbMelonDSLayout;
@@ -53,39 +57,49 @@ pub static DATABASE_BUILDER: Lazy<native_db::DatabaseBuilder> = Lazy::new(|| {
 
         // Actions
 
-        builder
-            .define::<v1::DbCemuLayout>()
-            .expect("failed to define CemuLayout v1");
-        builder
-            .define::<v1::DbCitraLayout>()
-            .expect("failed to define CitraLayout v1");
-        builder
-            .define::<v1::DbMelonDSLayout>()
-            .expect("failed to define MelonDSLayout v1");
-        builder
-            .define::<v1::DbDesktopSessionHandler>()
-            .expect("failed to define DesktopSessionHandler v1");
-        builder
-            .define::<v1::DbMultiWindow>()
-            .expect("failed to define MultiWindow v1");
-        builder
-            .define::<v1::DbVirtualScreen>()
-            .expect("failed to define VirtualScreen v1");
-        builder
-            .define::<v1::DbSourceFile>()
-            .expect("failed to define SourceDbSourceFile v1");
-        builder
-            .define::<v1::DbDisplayConfig>()
-            .expect("failed to define DbDisplayConfig v1");
-        builder
-            .define::<v1::DbLaunchSecondaryFlatpakApp>()
-            .expect("failed to define LaunchSecondaryApp v1");
-        builder
-            .define::<v1::DbLaunchSecondaryAppPreset>()
-            .expect("failed to define LaunchSecondaryAppPreset v1");
-        builder
-            .define::<v1::DbMainAppAutomaticWindowing>()
-            .expect("failed to define LaunchSecondaryAppPreset v1");
+        let v1_actions = [
+            builder
+                .define::<v1::DbCemuLayout>()
+                .expect("failed to define CemuLayout v1"),
+            builder
+                .define::<v1::DbCemuAudio>()
+                .expect("failed to define DbCemuAudio v1"),
+            builder
+                .define::<v1::DbCitraLayout>()
+                .expect("failed to define CitraLayout v1"),
+            builder
+                .define::<v1::DbLime3dsLayout>()
+                .expect("failed to define DbLime3dsLayout v1"),
+            builder
+                .define::<v1::DbMelonDSLayout>()
+                .expect("failed to define MelonDSLayout v1"),
+            builder
+                .define::<v1::DbDesktopSessionHandler>()
+                .expect("failed to define DesktopSessionHandler v1"),
+            builder
+                .define::<v1::DbMultiWindow>()
+                .expect("failed to define MultiWindow v1"),
+            builder
+                .define::<v1::DbVirtualScreen>()
+                .expect("failed to define VirtualScreen v1"),
+            builder
+                .define::<v1::DbSourceFile>()
+                .expect("failed to define SourceDbSourceFile v1"),
+            builder
+                .define::<v1::DbDisplayConfig>()
+                .expect("failed to define DbDisplayConfig v1"),
+            builder
+                .define::<v1::DbLaunchSecondaryFlatpakApp>()
+                .expect("failed to define LaunchSecondaryApp v1"),
+            builder
+                .define::<v1::DbLaunchSecondaryAppPreset>()
+                .expect("failed to define LaunchSecondaryAppPreset v1"),
+            builder
+                .define::<v1::DbMainAppAutomaticWindowing>()
+                .expect("failed to define DbMainAppAutomaticWindowing  v1"),
+        ];
+
+        assert_eq!(ActionType::iter().len(), v1_actions.len());
     }
 
     builder

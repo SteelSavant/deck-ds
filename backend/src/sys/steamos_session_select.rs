@@ -15,14 +15,16 @@ pub fn steamos_session_select(session: Session) -> Result<()> {
 
     Command::new("steamos-session-select")
         .arg(s)
-        .status()
-        .map(|status| {
-            if status.success() {
+        .env("SHELL", "/bin/sh")
+        .output()
+        .map(|output| {
+            if output.status.success() {
                 Ok(())
             } else {
                 Err(anyhow!(
-                    "steamos-session-select failed with error code {:?}",
-                    status.code()
+                    "steamos-session-select failed with error {:?}, code {:?}",
+                    String::from_utf8_lossy(&output.stderr),
+                    output.status.code()
                 ))
             }
         })?

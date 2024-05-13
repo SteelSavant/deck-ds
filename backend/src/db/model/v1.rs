@@ -8,6 +8,7 @@ use crate::{
     native_model_serde_json::NativeModelJSON,
     pipeline::{
         action::{
+            cemu_audio::{CemuAudio, CemuAudioChannels, CemuAudioSetting, CemuAudioState},
             cemu_layout::{CemuLayout, CemuLayoutState},
             citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
             display_config::DisplayConfig,
@@ -31,6 +32,7 @@ use crate::{
     },
     secondary_app::{FlatpakApp, SecondaryApp, SecondaryAppPresetId},
     settings::{AppId, ProfileId},
+    sys::audio::AudioDeviceInfo,
 };
 
 // Core
@@ -1087,4 +1089,100 @@ impl DbLime3dsLayout {
     fn get_id(&self) -> ActionId {
         self.0.id
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[native_db]
+#[native_model(id = 1013, version = 1, with = NativeModelJSON)]
+pub struct DbCemuAudio {
+    #[primary_key]
+    pub id: ActionId,
+    pub state: DbCemuAudioState,
+}
+
+impl From<CemuAudio> for DbCemuAudio {
+    fn from(value: CemuAudio) -> Self {
+        Self {
+            id: value.id,
+            state: value.state.into(),
+        }
+    }
+}
+
+impl From<DbCemuAudio> for CemuAudio {
+    fn from(value: DbCemuAudio) -> Self {
+        Self {
+            id: value.id,
+            state: value.state.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DbCemuAudioState {
+    pub tv_out: DbCemuAudioSetting,
+    pub pad_out: DbCemuAudioSetting,
+    pub mic_in: DbCemuAudioSetting,
+}
+
+impl From<CemuAudioState> for DbCemuAudioState {
+    fn from(value: CemuAudioState) -> Self {
+        Self {
+            tv_out: value.tv_out.into(),
+            pad_out: value.pad_out.into(),
+            mic_in: value.mic_in.into(),
+        }
+    }
+}
+
+impl From<DbCemuAudioState> for CemuAudioState {
+    fn from(value: DbCemuAudioState) -> Self {
+        Self {
+            tv_out: value.tv_out.into(),
+            pad_out: value.pad_out.into(),
+            mic_in: value.mic_in.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DbCemuAudioSetting {
+    pub device: String,
+    pub volume: u8,
+    pub channels: DbCemuAudioChannels,
+}
+
+impl From<CemuAudioSetting> for DbCemuAudioSetting {
+    fn from(value: CemuAudioSetting) -> Self {
+        Self {
+            device: value.device,
+            volume: value.volume,
+            channels: match value.channels {
+                CemuAudioChannels::Mono => DbCemuAudioChannels::Mono,
+                CemuAudioChannels::Stereo => DbCemuAudioChannels::Stereo,
+                CemuAudioChannels::Surround => DbCemuAudioChannels::Surround,
+            },
+        }
+    }
+}
+
+impl From<DbCemuAudioSetting> for CemuAudioSetting {
+    fn from(value: DbCemuAudioSetting) -> Self {
+        Self {
+            device: value.device,
+            volume: value.volume,
+            channels: match value.channels {
+                DbCemuAudioChannels::Mono => CemuAudioChannels::Mono,
+                DbCemuAudioChannels::Stereo => CemuAudioChannels::Stereo,
+                DbCemuAudioChannels::Surround => CemuAudioChannels::Surround,
+            },
+        }
+    }
+}
+
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Debug)]
+pub enum DbCemuAudioChannels {
+    Mono,
+    Stereo,
+    Surround,
 }

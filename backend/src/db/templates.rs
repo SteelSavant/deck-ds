@@ -66,6 +66,20 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                 .map(|v| v.to_string())
                 .collect(),
         },
+        // Cemu (Proton)
+        TemplateBuilder {
+            id: TemplateId::parse("2bb19c62-a3ee-4602-9707-59258f9b21b9"),
+            platform: PipelineActionId::new("core:cemu_proton:platform"),
+            tags: vec![
+                "Cemu (Proton)",
+                "Cemu - Proton",
+                "WiiU (Proton)",
+                "WiiU - Proton",
+            ]
+            .into_iter()
+            .map(|v| v.to_string())
+            .collect(),
+        },
         // App
         TemplateBuilder {
             id: TemplateId::parse("84f870e9-9491-41a9-8837-d5a6f591f687"),

@@ -6,7 +6,7 @@
   ],
   "publish": {
     "tags": [
-      "emulation, dual-screen, ds"
+      "emulation, dual-screen, display"
     ],
     "description": "Decky plugin to help with applications that launch on two screens, primarily emulators for NDS, 3DS, and WiiU. Supports launching applications on multiple displays automatically from gamemode via desktop mode.",
     "image": "https://opengraph.githubassets.com/1/SteamDeckHomebrew/PluginLoader"
