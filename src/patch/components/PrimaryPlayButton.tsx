@@ -1,5 +1,5 @@
 import { DialogButton, Focusable } from "decky-frontend-lib";
-import { ReactElement, useState } from "react";
+import { ReactElement, useEffect, useRef, useState } from "react";
 import { IconForTarget } from "../../components/IconForTarget";
 import { useAppState } from "../../context/appContext";
 import useAppTarget from "../../hooks/useAppTarget";
@@ -19,6 +19,7 @@ export default function PrimaryPlayButton({
     const { appDetails, appProfile } = useAppState();
     const launchActions = useLaunchActions(appDetails);
     const [isFocused, setIsFocused] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
 
 
     const action = appProfile?.isOk
@@ -37,6 +38,19 @@ export default function PrimaryPlayButton({
     )
 
     const onLaunch = action?.targets?.find((t) => t.target === target)?.action;
+
+    useEffect(() => {
+        // ref?.current?.focus();
+        // setTimeout(() => {
+        //     ref?.current?.focus();
+        // }, 200);
+        // setTimeout(() => {
+        //     ref?.current?.focus();
+        // }, 500);
+        setTimeout(() => {
+            ref?.current?.focus();
+        }, 750);
+    }, []);
 
     console.log('DeckDS: patching play button with target: ',
         target, 'action:',
@@ -65,7 +79,7 @@ export default function PrimaryPlayButton({
             <DialogButton
                 // I would be thrilled if this matched the actual play button (including CSS loader styling), but with a custom icon + action, but alas...
                 // I genuinely don't know how to style things properly. 
-
+                ref={ref}
                 onClick={onLaunch}
                 onOKButton={onLaunch}
                 onOKActionDescription={`Launch ${target}`}

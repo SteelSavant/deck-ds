@@ -15,10 +15,10 @@ import SecondaryPlayButton from './components/SecondaryPlayButton';
 // TODO::patch in real button
 
 function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsState) {
-    console.log('style ActionButtonAndStatusPanel', basicAppDetailsSectionStylerClasses.ActionButtonAndStatusPanel);
-    console.log('style ActionRow', basicAppDetailsSectionStylerClasses.ActionRow);
-    console.log('style AppActionButton', basicAppDetailsSectionStylerClasses.AppActionButton);
-    console.log('style PlaySection', basicAppDetailsSectionStylerClasses.PlaySection);
+    // console.log('style ActionButtonAndStatusPanel', basicAppDetailsSectionStylerClasses.ActionButtonAndStatusPanel);
+    // console.log('style ActionRow', basicAppDetailsSectionStylerClasses.ActionRow);
+    // console.log('style AppActionButton', basicAppDetailsSectionStylerClasses.AppActionButton);
+    // console.log('style PlaySection', basicAppDetailsSectionStylerClasses.PlaySection);
 
     return serverAPI.routerHook.addPatch(
         '/library/app/:appid',
@@ -35,7 +35,6 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                         return ret;
                     }
 
-                    console.log('ret1:', ret);
 
                     wrapReactType(ret.props.children)
                     afterPatch(
@@ -51,28 +50,18 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                                     )
                             )
 
-
                             if (typeof container !== 'object') {
                                 return ret2;
                             }
 
-                            console.log('ret2:', ret2);
-
-
                             const children = container.props.children;
                             const child = children.find((c: any) => c?.type?.render);
-
-
-                            console.log('ret2 child:', child);
 
                             // wrapReactType(child.type);
                             afterPatch(child.type, 'render', (_3: Record<string, unknown>[], ret3?: ReactElement) => {
                                 if (!ret3) {
                                     return ret3;
                                 }
-
-                                console.log('ret3:', ret3);
-
 
                                 const appButtons = findInReactTree(
                                     ret3,
@@ -102,9 +91,6 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                                         )
                                     }
                                 )
-
-                                console.log('play button:', playButton);
-
                                 const missingAppButtons = typeof appButtons !== 'object';
                                 const missingPlayButton = typeof playButton !== 'object';
 
@@ -124,8 +110,6 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
 
                                 if (!missingPlayButton) {
                                     const children = playButton?.props?.children;
-
-                                    console.log('play children:', children);
 
                                     if (children && !children.find((c: any) => c?.props?.children?.props?.deckDSGameModeSentinel === 'sentinel')) {
                                         const actualPlayButton = children[0];
