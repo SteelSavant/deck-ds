@@ -737,7 +737,7 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: false,
                         profile_override: None,
-                        selection:  DefinitionSelection::OneOf {selection: PipelineActionId::new("core:cemu:flatpak_source"), actions: vec![
+                        selection:  DefinitionSelection::OneOf {selection: PipelineActionId::new("core:cemu:emudeck_proton_source"), actions: vec![
                             PipelineActionId::new("core:cemu_proton:emudeck_proton_source"),
                             PipelineActionId::new("core:cemu:custom_source")
                         ]},
