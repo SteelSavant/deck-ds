@@ -48,11 +48,38 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
     }
 
     let templates = vec![
+        // App
+        TemplateBuilder {
+            id: TemplateId::parse("84f870e9-9491-41a9-8837-d5a6f591f687"),
+            platform: PipelineActionId::new("core:app:platform"),
+            tags: vec!["Steam", "App", "Native"]
+                .into_iter()
+                .map(|v| v.to_string())
+                .collect(),
+        },
+        // melonDS
+        TemplateBuilder {
+            id: TemplateId::parse("c6430131-50e0-435e-a917-5ae3cfa46e3c"),
+            platform: PipelineActionId::new("core:melonds:platform"),
+            tags: vec!["melonDS", "nds", "Nintendo DS"]
+                .into_iter()
+                .map(|v| v.to_string())
+                .collect(),
+        },
+        // Lime3DS
+        TemplateBuilder {
+            id: TemplateId::parse("fe82be74-22b9-4135-b7a0-cb6d8f51aecd"),
+            platform: PipelineActionId::new("core:lime3ds:platform"),
+            tags: vec!["Lime3DS", "3DS", "N3DS", "Nintendo 3DS"]
+                .into_iter()
+                .map(|v| v.to_string())
+                .collect(),
+        },
         // Citra
         TemplateBuilder {
             id: TemplateId::parse("fe82be74-22b9-4135-b7a0-cb6d8f51aecd"),
             platform: PipelineActionId::new("core:citra:platform"),
-            tags: vec!["Citra", "Lime3DS", "3DS", "N3DS", "Nintendo 3DS"]
+            tags: vec!["Citra", "3DS", "N3DS", "Nintendo 3DS"]
                 .into_iter()
                 .map(|v| v.to_string())
                 .collect(),
@@ -79,24 +106,6 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
             .into_iter()
             .map(|v| v.to_string())
             .collect(),
-        },
-        // App
-        TemplateBuilder {
-            id: TemplateId::parse("84f870e9-9491-41a9-8837-d5a6f591f687"),
-            platform: PipelineActionId::new("core:app:platform"),
-            tags: vec!["Steam", "App", "Native"]
-                .into_iter()
-                .map(|v| v.to_string())
-                .collect(),
-        },
-        // melonDS
-        TemplateBuilder {
-            id: TemplateId::parse("c6430131-50e0-435e-a917-5ae3cfa46e3c"),
-            platform: PipelineActionId::new("core:melonds:platform"),
-            tags: vec!["melonDS", "nds", "Nintendo DS"]
-                .into_iter()
-                .map(|v| v.to_string())
-                .collect(),
         },
     ];
 

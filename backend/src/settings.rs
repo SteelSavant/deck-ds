@@ -36,7 +36,7 @@ pub struct Settings {
 #[derive(Debug, SmartDefault, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct GlobalConfig {
     pub display_restoration: DesktopSessionHandler,
-    #[default(true)]
+    #[default(false)]
     pub restore_displays_if_not_executing_pipeline: bool,
     /// If true, inject buttons onto app action bar
     #[default(true)]

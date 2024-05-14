@@ -15,6 +15,11 @@ import SecondaryPlayButton from './components/SecondaryPlayButton';
 // TODO::patch in real button
 
 function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsState) {
+    // console.log('style ActionButtonAndStatusPanel', basicAppDetailsSectionStylerClasses.ActionButtonAndStatusPanel);
+    // console.log('style ActionRow', basicAppDetailsSectionStylerClasses.ActionRow);
+    // console.log('style AppActionButton', basicAppDetailsSectionStylerClasses.AppActionButton);
+    // console.log('style PlaySection', basicAppDetailsSectionStylerClasses.PlaySection);
+
     return serverAPI.routerHook.addPatch(
         '/library/app/:appid',
         (props?: { path?: string; children?: ReactElement }) => {
@@ -45,7 +50,6 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                                     )
                             )
 
-
                             if (typeof container !== 'object') {
                                 return ret2;
                             }
@@ -53,7 +57,7 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                             const children = container.props.children;
                             const child = children.find((c: any) => c?.type?.render);
 
-                            wrapReactType(child.type);
+                            // wrapReactType(child.type);
                             afterPatch(child.type, 'render', (_3: Record<string, unknown>[], ret3?: ReactElement) => {
                                 if (!ret3) {
                                     return ret3;
@@ -68,17 +72,27 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                                         )
                                 );
 
-                                const playButtonStatusPanel = findInReactTree(
-                                    ret3,
-                                    (x: ReactElement) =>
-                                        Array.isArray(x?.props?.children) &&
-                                        x?.props?.className?.includes(
-                                            basicAppDetailsSectionStylerClasses.ActionButtonAndStatusPanel
-                                        )
-                                )
+                                // const playButtonStatusPanel = findInReactTree(
+                                //     ret3,
+                                //     (x: ReactElement) => Array.isArray(x?.props?.children) &&
+                                //         x?.props?.className?.includes(
+                                //             basicAppDetailsSectionStylerClasses.ActionButtonAndStatusPanel
+                                //         )
 
+                                // )
+
+                                const playButton = findInReactTree(
+                                    ret3,
+                                    (x: ReactElement) => {
+
+
+                                        return Array.isArray(x?.props?.children) && x?.props?.className?.includes(
+                                            basicAppDetailsSectionStylerClasses.AppActionButton
+                                        )
+                                    }
+                                )
                                 const missingAppButtons = typeof appButtons !== 'object';
-                                const missingPlayButtonStatusPanel = typeof playButtonStatusPanel !== 'object';
+                                const missingPlayButton = typeof playButton !== 'object';
 
                                 if (!missingAppButtons) {
                                     const children = appButtons?.props?.children;
@@ -94,15 +108,17 @@ function patchLibraryApp(serverAPI: ServerAPI, appDetailsState: ShortAppDetailsS
                                     }
                                 }
 
-                                if (!missingPlayButtonStatusPanel) {
-                                    const children = playButtonStatusPanel?.props?.children;
+                                if (!missingPlayButton) {
+                                    const children = playButton?.props?.children;
 
                                     if (children && !children.find((c: any) => c?.props?.children?.props?.deckDSGameModeSentinel === 'sentinel')) {
                                         const actualPlayButton = children[0];
+
                                         children?.splice(0, 1,
                                             <ShortAppDetailsStateContextProvider ShortAppDetailsStateClass={appDetailsState}>
                                                 <PrimaryPlayButton
                                                     playButton={actualPlayButton}
+                                                    hasStream={typeof children[2] === 'object'}
                                                     deckDSGameModeSentinel='sentinel'
                                                 />
                                             </ShortAppDetailsStateContextProvider>);
