@@ -40,13 +40,6 @@ export default function PrimaryPlayButton({
     const onLaunch = action?.targets?.find((t) => t.target === target)?.action;
 
     useEffect(() => {
-        // ref?.current?.focus();
-        // setTimeout(() => {
-        //     ref?.current?.focus();
-        // }, 200);
-        // setTimeout(() => {
-        //     ref?.current?.focus();
-        // }, 500);
         setTimeout(() => {
             ref?.current?.focus();
         }, 750);

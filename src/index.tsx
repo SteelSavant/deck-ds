@@ -76,9 +76,7 @@ export default definePlugin((serverApi: ServerAPI) => {
   function updateAppDetails(currentRoute: string): void {
     const re = /^\/library\/app\/(\d+)(\/?.*)/
 
-
     if (re.test(currentRoute)) {
-
       const appIdStr = re.exec(currentRoute)![1]!;
       const appId = Number.parseInt(appIdStr);
       let overview = appStore.GetAppOverviewByAppID(appId);
@@ -92,8 +90,7 @@ export default definePlugin((serverApi: ServerAPI) => {
     }
   }
 
-  // @ts-ignore
-  const initialRoute = Router?.WindowStore?.GamepadUIMainWindowInstance?.m_history?.location?.pathname ?? '/library/home';
+  const initialRoute = History.location?.pathname ?? '/library/home';
   updateAppDetails(initialRoute);
 
   const unlistenHistory = History.listen(async (info: any) => {
