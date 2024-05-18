@@ -14,6 +14,7 @@ use std::time::{Duration, Instant, SystemTime};
 use typemap::{Key, TypeMap};
 
 use crate::asset::AssetManager;
+use crate::decky_env::DeckyEnv;
 use crate::pipeline::action::cemu_audio::CemuAudio;
 use crate::pipeline::action::cemu_layout::CemuLayout;
 use crate::pipeline::action::citra_layout::CitraLayout;
@@ -50,10 +51,8 @@ pub struct PipelineExecutor<'a> {
 type OnLaunchCallback = Box<dyn Fn(Pid, &mut PipelineContext) -> Result<()>>;
 
 pub struct PipelineContext<'a> {
-    /// path to directory containing the user's home directory
-    pub home_dir: PathBuf,
-    /// path to directory containing user configuration files
-    pub config_dir: PathBuf,
+    /// Decky environment variables for the session
+    pub decky_env: DeckyEnv,
     /// KWin script handler
     pub kwin: KWin<'a>,
     /// Display handler,
@@ -79,7 +78,7 @@ where
 }
 
 impl<'a> PipelineContext<'a> {
-    pub fn new(assets_manager: AssetManager<'a>, home_dir: PathBuf, config_dir: PathBuf) -> Self {
+    pub fn new(assets_manager: AssetManager<'a>, decky_env: DeckyEnv) -> Self {
         PipelineContext {
             home_dir,
             config_dir,
@@ -338,7 +337,7 @@ impl<'a> PipelineContext<'a> {
     }
 
     fn get_state_path(&self) -> PathBuf {
-        self.config_dir.join("state.json")
+        self.decky_env.decky_plugin_runtime_dir.join("state.json")
     }
 
     pub fn handle_state_slot(&mut self, action: &ActionType, is_push: bool) {
@@ -396,14 +395,13 @@ impl<'a> PipelineExecutor<'a> {
         pipeline: Pipeline,
         target: PipelineTarget,
         assets_manager: AssetManager<'a>,
-        home_dir: PathBuf,
-        config_dir: PathBuf,
+        decky_env: DeckyEnv,
     ) -> Result<Self> {
         let s = Self {
             game_id,
             pipeline: Some(pipeline),
             target,
-            ctx: PipelineContext::new(assets_manager, home_dir, config_dir),
+            ctx: PipelineContext::new(assets_manager, decky_env),
         };
 
         Ok(s)

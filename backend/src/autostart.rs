@@ -1,11 +1,9 @@
 use anyhow::Result;
-use std::{
-    path::PathBuf,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use crate::{
     asset::AssetManager,
+    decky_env::DeckyEnv,
     pipeline::{
         data::{PipelineAction, PipelineActionId, PipelineTarget, RuntimeSelection, TopLevelId},
         executor::PipelineExecutor,
@@ -24,7 +22,7 @@ pub struct LoadedAutoStart {
 }
 
 impl AutoStart {
-    pub fn new(settings: Arc<Mutex<Settings>>) -> Self {
+    pub fn new(settings: Arc<Mutex<Settings>>, env: Arc<DeckyEnv>) -> Self {
         Self { settings }
     }
 
@@ -85,16 +83,14 @@ impl LoadedAutoStart {
     pub fn build_executor(
         self,
         assets_manager: AssetManager,
-        home_dir: PathBuf,
-        config_dir: PathBuf,
+        decky_env: DeckyEnv,
     ) -> Result<PipelineExecutor> {
         PipelineExecutor::new(
             self.autostart.game_id,
             self.autostart.pipeline,
             self.target,
             assets_manager,
-            home_dir,
-            config_dir,
+            decky_env,
         )
     }
 }

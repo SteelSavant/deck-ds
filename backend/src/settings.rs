@@ -16,6 +16,7 @@ newtype_strid!("", AppId);
 newtype_strid!("", GameId);
 
 use crate::{
+    decky_env::DeckyEnv,
     macros::{newtype_strid, newtype_uuid},
     pipeline::{
         action::session_handler::DesktopSessionHandler,
@@ -173,6 +174,7 @@ Type=Application"
 pub struct AutoStart {
     pub game_id: Either<AppId, GameId>,
     pub pipeline: Pipeline,
+    pub env: DeckyEnv,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]

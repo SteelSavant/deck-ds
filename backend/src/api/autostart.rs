@@ -12,6 +12,7 @@ use crate::{
     asset::AssetManager,
     autostart::LoadedAutoStart,
     db::ProfileDb,
+    decky_env::DeckyEnv,
     pipeline::{action_registar::PipelineActionRegistrar, data::PipelineTarget},
     settings::{self, AppId, GameId, ProfileId, Settings},
     sys::steamos_session_select::{steamos_session_select, Session},
@@ -36,12 +37,10 @@ pub fn autostart(
     registrar: PipelineActionRegistrar,
     settings: Arc<Mutex<Settings>>,
     assets_manager: AssetManager<'static>,
-    home_dir: PathBuf,
-    config_dir: PathBuf,
+    decky_env: DeckyEnv,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     let assets_manager = Arc::new(assets_manager);
-    let home_dir = Arc::new(home_dir);
-    let config_dir = Arc::new(config_dir);
+    let decky_env = Arc::new(decky_env);
 
     move |args: super::ApiParameterType| {
         log_invoke("autostart", &args);
@@ -72,6 +71,8 @@ pub fn autostart(
 
                 let pipeline = definition.reify(&profiles, &registrar).unwrap();
 
+                let env = (*decky_env).clone();
+
                 let id = args
                     .game_id
                     .map(Either::Right)
@@ -84,6 +85,7 @@ pub fn autostart(
                         let res = lock.set_autostart_cfg(&settings::AutoStart {
                             game_id: id,
                             pipeline,
+                            env,
                         });
                         match res {
                             Ok(_) => match steamos_session_select(Session::Plasma) {
@@ -103,14 +105,11 @@ pub fn autostart(
                             settings::AutoStart {
                                 game_id: id,
                                 pipeline,
+                                env,
                             },
                             PipelineTarget::Gamemode,
                         )
-                        .build_executor(
-                            (*assets_manager).clone(),
-                            (*home_dir).clone(),
-                            (*config_dir).clone(),
-                        );
+                        .build_executor((*assets_manager).clone(), (*decky_env).clone());
 
                         match executor {
                             Ok(executor) => match executor.exec() {
