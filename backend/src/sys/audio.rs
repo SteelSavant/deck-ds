@@ -53,7 +53,7 @@ fn get_audio(audio_type: &str, decky_env: &DeckyEnv) -> Result<Vec<AudioDeviceIn
         Ok(parse_pactl_list(&out)
             .into_iter()
             .filter(|v| {
-                !v.name.ends_with(".monitor") && !SYSTEM_DEVICES.iter().any(|sd| *sd == &v.name)
+                !v.name.ends_with(".monitor") && !SYSTEM_DEVICES.iter().any(|sd| *sd == v.name)
             })
             .collect())
     } else {

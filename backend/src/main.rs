@@ -135,13 +135,13 @@ fn main() -> Result<()> {
         log::info!("Updated version file succesfully");
     }
 
-    if let Err(err) = create_dir_all(&config_dir) {
+    if let Err(err) = create_dir_all(config_dir) {
         log::error!("Error setting up config dir: {err}");
     }
 
     let registrar = PipelineActionRegistrar::builder().with_core().build();
 
-    let settings = Settings::new(&env::current_exe()?, &decky_env);
+    let settings = Settings::new(env::current_exe()?, &decky_env);
 
     let settings = Arc::new(Mutex::new(settings));
 
@@ -200,9 +200,7 @@ fn main() -> Result<()> {
                     // return to gamemode
 
                     use crate::sys::steamos_session_select::{steamos_session_select, Session};
-                    let res = steamos_session_select(Session::Gamescope).and(exec_result);
-
-                    res
+                    steamos_session_select(Session::Gamescope).and(exec_result)
                 }
                 None => {
                     log::info!("No autostart pipeline found. Staying on desktop.");

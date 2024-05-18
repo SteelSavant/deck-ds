@@ -224,11 +224,7 @@ impl PipelineDefinition {
         let targets = PipelineTarget::iter()
             .map(|t: PipelineTarget| {
                 let platform_ref = &self.platform;
-                let toplevel = vec![
-                    vec![platform_ref],
-                    self.toplevel.iter().map(|v| v).collect(),
-                ]
-                .concat();
+                let toplevel = vec![vec![platform_ref], self.toplevel.iter().collect()].concat();
 
                 let reified: Vec<_> = toplevel
                     .iter()
@@ -344,7 +340,7 @@ impl PipelineActionId {
                                 // if missing, use the registered defaults
                                 let mut config: PipelineActionSettings<ConfigSelection> = ctx
                                     .registrar
-                                    .get(&self, ctx.target)
+                                    .get(self, ctx.target)
                                     .expect("action should exist if fetched for profile override")
                                     .settings
                                     .clone()
