@@ -25,7 +25,7 @@ impl DeckyEnv {
         let default = Self::default();
 
         match mode {
-            AppModes::Autostart { env_source } => std::fs::read_to_string(&env_source)
+            AppModes::Autostart { env_source } => std::fs::read_to_string(env_source)
                 .inspect_err(|err| log::warn!("Failed to read env source file {env_source}: {err}"))
                 .map(|v| {
                     serde_json::from_str(&v)
@@ -56,7 +56,7 @@ impl DeckyEnv {
 
     pub fn write(&self) -> Result<()> {
         let contents = serde_json::to_string_pretty(&self)?;
-        std::fs::write(&self.decky_env_path(), &contents)?;
+        std::fs::write(self.decky_env_path(), contents)?;
 
         Ok(())
     }

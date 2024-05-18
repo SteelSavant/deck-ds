@@ -1,13 +1,12 @@
-use std::{borrow::Cow, path::Path};
+use std::path::Path;
 
 use crate::{
     pipeline::{dependency::Dependency, executor::PipelineContext},
-    sys::audio::{get_audio_sinks, get_audio_sources, AudioDeviceInfo},
+    sys::audio::{get_audio_sinks, get_audio_sources},
 };
 
 use super::{source_file::SourceFile, ActionId, ActionImpl, ActionType};
 use anyhow::{Context, Result};
-use egui::TextBuffer;
 use regex::Regex;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -207,19 +206,19 @@ impl ActionImpl for CemuAudio {
         let available_tv_out = sinks
             .iter()
             .map(|s| s.name.as_str())
-            .chain(["default", ""].into_iter())
+            .chain(["default", ""])
             .any(|s| *s == state.tv_out.device);
 
         let available_pad_out = sinks
             .iter()
             .map(|s| s.name.as_str())
-            .chain(["default", ""].into_iter())
+            .chain(["default", ""])
             .any(|s| *s == state.pad_out.device);
 
         let available_mic_in = sources
             .iter()
             .map(|s| s.name.as_str())
-            .chain(["default", ""].into_iter())
+            .chain(["default", ""])
             .any(|s| *s == state.mic_in.device);
 
         // TODO::if audio.*.device is empty, replace with default

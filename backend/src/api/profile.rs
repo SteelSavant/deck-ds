@@ -1,6 +1,5 @@
 use std::{
     collections::HashMap,
-    path::PathBuf,
     sync::{Arc, Mutex},
 };
 
@@ -10,7 +9,6 @@ use serde::{Deserialize, Serialize};
 use anyhow::Result;
 
 use crate::{
-    asset::AssetManager,
     db::ProfileDb,
     decky_env::DeckyEnv,
     pipeline::{
