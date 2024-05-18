@@ -540,12 +540,8 @@ pub fn reify_pipeline(
     request_handler: Arc<Mutex<RequestHandler>>,
     profiles: &'static ProfileDb,
     registrar: PipelineActionRegistrar,
-    assets_manager: AssetManager<'static>,
-    decky_env: DeckyEnv,
+    decky_env: Arc<DeckyEnv>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    let assets_manager = Arc::new(assets_manager);
-    let decky_env = Arc::new(decky_env);
-
     move |args: super::ApiParameterType| {
         log_invoke("reify_pipeline", &args);
 
@@ -559,8 +555,7 @@ pub fn reify_pipeline(
         match args {
             Ok(args) => match profiles.get_profiles() {
                 Ok(profiles) => {
-                    let ctx =
-                        &mut PipelineContext::new((*assets_manager).clone(), (*decky_env).clone());
+                    let ctx = &mut PipelineContext::new(decky_env.clone());
                     let res = args.pipeline.reify(&profiles, &registrar);
 
                     match res {

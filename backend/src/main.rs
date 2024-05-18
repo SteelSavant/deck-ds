@@ -71,8 +71,6 @@ enum Modes {
     },
 }
 
-static ASSETS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/assets");
-
 fn main() -> Result<()> {
     // simple fn to sanity check ui
     // return ui_test::ui_test();
@@ -149,23 +147,21 @@ fn main() -> Result<()> {
 
     let settings = Arc::new(Mutex::new(settings));
 
-    let assets_dir = config_dir.join("assets"); // TODO::keep assets with decky plugin, not config
-    let assets_manager = AssetManager::new(&ASSETS_DIR, assets_dir.clone());
     let request_handler = Arc::new(Mutex::new(RequestHandler::new()));
-    let secondary_app_manager = SecondaryAppManager::new(assets_manager.clone());
+    let secondary_app_manager = SecondaryAppManager::new(decky_env.asset_manager());
 
     // TODO::refactor teardown to use old env
     // teardown persisted state
-    match PipelineContext::load(assets_manager.clone(), home_dir.clone(), config_dir.clone()) {
-        Ok(Some(loaded)) => {
-            log::info!("Tearing down last executed pipeline");
-            // TODO::this will cause display-dependent actions to automatically fail, but
-            // this (hopefully) isn't a major problem because xrandr isn't persistent across reboots
-            loaded.teardown(&mut vec![]);
-        }
-        Ok(None) => (),
-        Err(err) => log::warn!("failed to load persisted context state: {err}"),
-    }
+    // match PipelineContext::load(decky_env) {
+    //     Ok(Some(loaded)) => {
+    //         log::info!("Tearing down last executed pipeline");
+    //         // TODO::this will cause display-dependent actions to automatically fail, but
+    //         // this (hopefully) isn't a major problem because xrandr isn't persistent across reboots
+    //         loaded.teardown(&mut vec![]);
+    //     }
+    //     Ok(None) => (),
+    //     Err(err) => log::warn!("failed to load persisted context state: {err}"),
+    // }
 
     match mode {
         Modes::Autostart { env_source } => {
@@ -174,7 +170,7 @@ fn main() -> Result<()> {
             // build the executor
             let executor = AutoStart::new(settings.clone(), decky_env.clone())
                 .load()
-                .map(|l| l.build_executor(assets_manager, decky_env.clone()));
+                .map(|l| l.build_executor(decky_env.clone()));
 
             let thread_settings = settings.clone();
             std::thread::spawn(move || loop {
@@ -219,8 +215,7 @@ fn main() -> Result<()> {
 
                     let config = lock.get_global_cfg();
                     if config.restore_displays_if_not_executing_pipeline {
-                        let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
-                        let ctx = &mut PipelineContext::new(asset_manager, decky_env.clone());
+                        let ctx = &mut PipelineContext::new(decky_env.clone());
 
                         let res = config.display_restoration.desktop_only(ctx);
                         if let Err(err) = res {
@@ -310,7 +305,6 @@ fn main() -> Result<()> {
                         request_handler.clone(),
                         profiles_db,
                         registrar.clone(),
-                        assets_manager.clone(),
                         decky_env.clone(),
                     ),
                 )
@@ -350,7 +344,6 @@ fn main() -> Result<()> {
                         profiles_db,
                         registrar.clone(),
                         settings.clone(),
-                        assets_manager,
                         decky_env.clone(),
                     ),
                 );

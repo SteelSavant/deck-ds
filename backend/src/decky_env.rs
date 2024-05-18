@@ -1,12 +1,15 @@
 use std::path::PathBuf;
 
+use include_dir::{include_dir, Dir};
 use serde::{Deserialize, Serialize};
 
-use crate::{consts::PACKAGE_NAME, Modes};
+use crate::{asset::AssetManager, consts::PACKAGE_NAME, Modes};
 
 use usdpl_back::api::decky;
 
-#[derive(Clone, Debutg, Deserialize, Serialize)]
+static ASSETS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/assets");
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct DeckyEnv {
     pub decky_user: String,
     pub deck_user_home: PathBuf,
@@ -47,6 +50,10 @@ impl DeckyEnv {
             },
             Modes::Schema { .. } => default,
         }
+    }
+
+    pub fn asset_manager(&self) -> AssetManager<'static> {
+        AssetManager::new(&ASSETS_DIR, self.decky_plugin_settings_dir.join("assets"))
     }
 }
 

@@ -35,7 +35,7 @@ pub struct DesktopSessionHandler {
 }
 
 impl DesktopSessionHandler {
-    pub(crate) fn desktop_only(&self, ctx: &mut PipelineContext<'_>) -> Result<()> {
+    pub(crate) fn desktop_only(&self, ctx: &mut PipelineContext) -> Result<()> {
         let mut display = ctx
             .display
             .take()

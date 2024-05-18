@@ -17,7 +17,7 @@ pub struct GetSecondaryAppInfoResponse {
 }
 
 pub fn get_secondary_app_info(
-    secondary_app_manager: SecondaryAppManager<'static>,
+    secondary_app_manager: SecondaryAppManager,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
         log_invoke("get_secondary_app_info", &args);

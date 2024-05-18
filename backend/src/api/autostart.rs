@@ -36,12 +36,8 @@ pub fn autostart(
     profile_db: &'static ProfileDb,
     registrar: PipelineActionRegistrar,
     settings: Arc<Mutex<Settings>>,
-    assets_manager: AssetManager<'static>,
-    decky_env: DeckyEnv,
+    decky_env: Arc<DeckyEnv>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    let assets_manager = Arc::new(assets_manager);
-    let decky_env = Arc::new(decky_env);
-
     move |args: super::ApiParameterType| {
         log_invoke("autostart", &args);
 
@@ -109,7 +105,7 @@ pub fn autostart(
                             },
                             PipelineTarget::Gamemode,
                         )
-                        .build_executor((*assets_manager).clone(), (*decky_env).clone());
+                        .build_executor(decky_env.clone());
 
                         match executor {
                             Ok(executor) => match executor.exec() {

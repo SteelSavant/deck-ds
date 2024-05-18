@@ -57,7 +57,11 @@ impl FlatpakSource {
 
 impl SettingsSource for FlatpakSource {
     fn settings_file(&self, ctx: &PipelineContext) -> PathBuf {
-        let dir = ctx.home_dir.join(".var/app").join(self.org());
+        let dir = ctx
+            .decky_env
+            .deck_user_home
+            .join(".var/app")
+            .join(self.org());
         match self {
             FlatpakSource::Cemu => dir.join("config/Cemu/settings.xml"),
             FlatpakSource::Citra => dir.join("config/citra-emu/qt-config.ini"),
@@ -75,7 +79,7 @@ pub enum EmuDeckSource {
 
 impl SettingsSource for EmuDeckSource {
     fn settings_file(&self, ctx: &PipelineContext) -> PathBuf {
-        let emudeck_settings_file = ctx.home_dir.join("emudeck/settings.sh");
+        let emudeck_settings_file = ctx.decky_env.deck_user_home.join("emudeck/settings.sh");
 
         log::debug!("found emudeck settings file");
 
@@ -92,11 +96,12 @@ impl SettingsSource for EmuDeckSource {
                 match found {
                     Some(c) => {
                         let path = Path::new(c.get(1).unwrap().as_str().trim());
-                        let resolved = if !path.is_dir() && ctx.home_dir.join(path).is_dir() {
-                            ctx.home_dir.join(path)
-                        } else {
-                            path.to_path_buf()
-                        };
+                        let resolved =
+                            if !path.is_dir() && ctx.decky_env.deck_user_home.join(path).is_dir() {
+                                ctx.decky_env.deck_user_home.join(path)
+                            } else {
+                                path.to_path_buf()
+                            };
 
                         let cemu_proton_path = resolved.join("roms/wiiu/settings.xml");
                         log::debug!("cemu_proton_path at {cemu_proton_path:?}",);
@@ -121,7 +126,10 @@ pub enum AppImageSource {
 impl SettingsSource for AppImageSource {
     fn settings_file(&self, ctx: &PipelineContext) -> PathBuf {
         match self {
-            AppImageSource::Cemu => ctx.home_dir.join(".config/Cemu/settings.xml"),
+            AppImageSource::Cemu => ctx
+                .decky_env
+                .deck_user_home
+                .join(".config/Cemu/settings.xml"),
         }
     }
 }

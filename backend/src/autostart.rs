@@ -80,16 +80,11 @@ impl LoadedAutoStart {
 
     // TODO::teardown leftover?
 
-    pub fn build_executor(
-        self,
-        assets_manager: AssetManager,
-        decky_env: DeckyEnv,
-    ) -> Result<PipelineExecutor> {
+    pub fn build_executor(self, decky_env: Arc<DeckyEnv>) -> Result<PipelineExecutor> {
         PipelineExecutor::new(
             self.autostart.game_id,
             self.autostart.pipeline,
             self.target,
-            assets_manager,
             decky_env,
         )
     }
