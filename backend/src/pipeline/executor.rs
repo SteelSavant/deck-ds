@@ -138,6 +138,7 @@ impl PipelineContext {
         );
 
         type_reg.register::<Vec<String>>("__actions__".to_string());
+        type_reg.register::<DeckyEnv>("__env__".to_string());
 
         let mut deserializer = serde_json::Deserializer::from_str(&persisted);
         let type_map: SerdeMap<String> = type_reg
@@ -149,6 +150,10 @@ impl PipelineContext {
             .with_context(|| "could not find key '__actions__' while loading context state")?
             .iter()
             .map(|v| v.as_str());
+
+        let env = type_map
+            .get::<DeckyEnv, _>("__env__")
+            .with_context(|| "could not find key '__env__' while loading context state")?;
 
         for action in actions {
             match ActionType::from_str(action) {
@@ -203,6 +208,10 @@ impl PipelineContext {
             }
         }
 
+        default.kwin = KWin::new(env.asset_manager());
+        default.secondary_app = SecondaryAppManager::new(env.asset_manager());
+        default.decky_env = Arc::new(env.clone());
+
         Ok(Some(default))
     }
 
@@ -247,6 +256,7 @@ impl PipelineContext {
             .map(|a| a.get_type())
             .collect::<Vec<_>>();
         map.insert("__actions__".to_string(), actions);
+        map.insert("__env__".to_string(), (*self.decky_env).clone());
 
         let serialized = serde_json::to_string_pretty(&map)?;
         let path = self.get_state_path();

@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use usdpl_back::core::serdes::Primitive;
 
 use crate::{
+    decky_env::DeckyEnv,
     settings::{GlobalConfig, Settings},
     sys::{
         audio::{get_audio_sinks, get_audio_sources, AudioDeviceInfo},
@@ -103,11 +104,13 @@ pub struct GetAudioDeviceInfoResponse {
     sinks: Vec<AudioDeviceInfo>,
 }
 
-pub fn get_audio_device_info() -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+pub fn get_audio_device_info(
+    decky_env: Arc<DeckyEnv>,
+) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args| {
         log_invoke("get_audio_device_info", &args);
-        let sources = get_audio_sources();
-        let sinks = get_audio_sinks();
+        let sources = get_audio_sources(&decky_env);
+        let sinks = get_audio_sinks(&decky_env);
         GetAudioDeviceInfoResponse { sources, sinks }.to_response()
     }
 }

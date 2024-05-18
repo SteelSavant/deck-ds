@@ -16,7 +16,6 @@ use usdpl_back::Instance;
 
 use crate::{
     api::{request_handler::RequestHandler, Api},
-    asset::AssetManager,
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
     db::ProfileDb,
@@ -50,11 +49,11 @@ mod ui_test;
 #[command(author, version, about, long_about = None)]
 struct Cli {
     #[command(subcommand)]
-    mode: Option<Modes>,
+    mode: Option<AppModes>,
 }
 
 #[derive(Subcommand, Clone, Default, Debug, Display)]
-enum Modes {
+pub enum AppModes {
     /// runs the autostart sequence
     Autostart {
         /// The file storing the environment variables of the decky instance from which
@@ -84,9 +83,9 @@ fn main() -> Result<()> {
         "{}.{}.log",
         PACKAGE_NAME,
         match mode {
-            Modes::Autostart { .. } => "autostart",
-            Modes::Serve => "server",
-            Modes::Schema { .. } => "schema",
+            AppModes::Autostart { .. } => "autostart",
+            AppModes::Serve => "server",
+            AppModes::Schema { .. } => "schema",
         }
     );
 
@@ -119,7 +118,6 @@ fn main() -> Result<()> {
     let home_dir = &decky_env.deck_user_home;
 
     let config_dir = &decky_env.decky_plugin_settings_dir;
-    let autostart_dir = config_dir.join("autostart");
 
     log::info!("home dir: {:?}", home_dir);
     println!("home dir `{}`", config_dir.display());
@@ -143,32 +141,31 @@ fn main() -> Result<()> {
 
     let registrar = PipelineActionRegistrar::builder().with_core().build();
 
-    let settings = Settings::new(&env::current_exe()?, &config_dir, &autostart_dir);
+    let settings = Settings::new(&env::current_exe()?, &decky_env);
 
     let settings = Arc::new(Mutex::new(settings));
 
     let request_handler = Arc::new(Mutex::new(RequestHandler::new()));
     let secondary_app_manager = SecondaryAppManager::new(decky_env.asset_manager());
 
-    // TODO::refactor teardown to use old env
     // teardown persisted state
-    // match PipelineContext::load(decky_env) {
-    //     Ok(Some(loaded)) => {
-    //         log::info!("Tearing down last executed pipeline");
-    //         // TODO::this will cause display-dependent actions to automatically fail, but
-    //         // this (hopefully) isn't a major problem because xrandr isn't persistent across reboots
-    //         loaded.teardown(&mut vec![]);
-    //     }
-    //     Ok(None) => (),
-    //     Err(err) => log::warn!("failed to load persisted context state: {err}"),
-    // }
+    match PipelineContext::load(decky_env.clone()) {
+        Ok(Some(loaded)) => {
+            log::info!("Tearing down last executed pipeline");
+            // TODO::this will cause display-dependent actions to automatically fail, but
+            // this (hopefully) isn't a major problem because xrandr isn't persistent across reboots
+            loaded.teardown(&mut vec![]);
+        }
+        Ok(None) => (),
+        Err(err) => log::warn!("failed to load persisted context state: {err}"),
+    }
 
     match mode {
-        Modes::Autostart { env_source } => {
+        AppModes::Autostart { .. } => {
             sleep(Duration::from_millis(500));
 
             // build the executor
-            let executor = AutoStart::new(settings.clone(), decky_env.clone())
+            let executor = AutoStart::new(settings.clone())
                 .load()
                 .map(|l| l.build_executor(decky_env.clone()));
 
@@ -227,7 +224,9 @@ fn main() -> Result<()> {
                 }
             }
         }
-        Modes::Serve => {
+        AppModes::Serve => {
+            decky_env.write()?;
+
             let decky_data_dir = std::env::var("DECKY_PLUGIN_RUNTIME_DIR")
                 .expect("unable to find decky plugin runtime dir");
             let db_path = Path::new(&decky_data_dir).join("profiles.db");
@@ -334,7 +333,7 @@ fn main() -> Result<()> {
                 .register("get_display_info", api::general::get_display_info())
                 .register(
                     "get_audio_device_info",
-                    api::general::get_audio_device_info(),
+                    api::general::get_audio_device_info(decky_env.clone()),
                 )
                 // autostart
                 .register(
@@ -352,7 +351,7 @@ fn main() -> Result<()> {
                 .run_blocking()
                 .map_err(|_| anyhow::anyhow!("server stopped unexpectedly"))
         }
-        Modes::Schema { output } => {
+        AppModes::Schema { output } => {
             let path = Path::new(&output);
             if path.is_file() {
                 Err(anyhow::anyhow!("output must be a directory"))

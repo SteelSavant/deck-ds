@@ -200,8 +200,8 @@ impl ActionImpl for CemuAudio {
             (xml_path, CemuAudioState::read(xml_path)?)
         };
 
-        let sources = get_audio_sources();
-        let sinks = get_audio_sinks();
+        let sources = get_audio_sources(&ctx.decky_env);
+        let sinks = get_audio_sinks(&ctx.decky_env);
 
         let mut state = self.state.clone();
         let available_tv_out = sinks

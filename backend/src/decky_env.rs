@@ -3,7 +3,9 @@ use std::path::PathBuf;
 use include_dir::{include_dir, Dir};
 use serde::{Deserialize, Serialize};
 
-use crate::{asset::AssetManager, consts::PACKAGE_NAME, Modes};
+use anyhow::Result;
+
+use crate::{asset::AssetManager, consts::PACKAGE_NAME, AppModes};
 
 use usdpl_back::api::decky;
 
@@ -19,11 +21,11 @@ pub struct DeckyEnv {
 }
 
 impl DeckyEnv {
-    pub fn from_mode(mode: &Modes) -> Self {
+    pub fn from_mode(mode: &AppModes) -> Self {
         let default = Self::default();
 
         match mode {
-            Modes::Autostart { env_source } => std::fs::read_to_string(&env_source)
+            AppModes::Autostart { env_source } => std::fs::read_to_string(&env_source)
                 .inspect_err(|err| log::warn!("Failed to read env source file {env_source}: {err}"))
                 .map(|v| {
                     serde_json::from_str(&v)
@@ -33,7 +35,7 @@ impl DeckyEnv {
                         .unwrap_or(default.clone())
                 })
                 .unwrap_or(default),
-            Modes::Serve => Self {
+            AppModes::Serve => Self {
                 decky_user: decky::user().unwrap_or(default.decky_user),
                 deck_user_home: decky::home()
                     .map(PathBuf::from)
@@ -48,8 +50,19 @@ impl DeckyEnv {
                     .map(PathBuf::from)
                     .unwrap_or(default.decky_plugin_log_dir),
             },
-            Modes::Schema { .. } => default,
+            AppModes::Schema { .. } => default,
         }
+    }
+
+    pub fn write(&self) -> Result<()> {
+        let contents = serde_json::to_string_pretty(&self)?;
+        std::fs::write(&self.decky_env_path(), &contents)?;
+
+        Ok(())
+    }
+
+    pub fn decky_env_path(&self) -> PathBuf {
+        self.decky_plugin_runtime_dir.join("decky.env")
     }
 
     pub fn asset_manager(&self) -> AssetManager<'static> {
@@ -78,7 +91,16 @@ impl Default for DeckyEnv {
     }
 }
 
-// settings/config
-// settings/autostart.env
-// settings/current.autostart -> source
-// settings/previous.autostart?
+#[cfg(test)]
+impl DeckyEnv {
+    pub fn new_test(name: &str) -> Self {
+        let home = PathBuf::from(format!("test/out/env/{name}"));
+        Self {
+            decky_user: "deck".to_string(),
+            decky_plugin_settings_dir: home.join("homebrew/settings").join(PACKAGE_NAME),
+            decky_plugin_runtime_dir: home.join("homebrew/data").join(PACKAGE_NAME),
+            decky_plugin_log_dir: home.join("homebrew/logs").join(PACKAGE_NAME),
+            deck_user_home: home,
+        }
+    }
+}

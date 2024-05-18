@@ -2,7 +2,6 @@ use anyhow::Result;
 use std::sync::{Arc, Mutex};
 
 use crate::{
-    asset::AssetManager,
     decky_env::DeckyEnv,
     pipeline::{
         data::{PipelineAction, PipelineActionId, PipelineTarget, RuntimeSelection, TopLevelId},
@@ -17,12 +16,12 @@ pub struct AutoStart {
 
 #[derive(Debug)]
 pub struct LoadedAutoStart {
-    autostart: crate::settings::AutoStart,
+    autostart: crate::settings::AutoStartConfig,
     target: PipelineTarget,
 }
 
 impl AutoStart {
-    pub fn new(settings: Arc<Mutex<Settings>>, env: Arc<DeckyEnv>) -> Self {
+    pub fn new(settings: Arc<Mutex<Settings>>) -> Self {
         Self { settings }
     }
 
@@ -74,7 +73,7 @@ impl AutoStart {
 }
 
 impl LoadedAutoStart {
-    pub fn new(autostart: crate::settings::AutoStart, target: PipelineTarget) -> Self {
+    pub fn new(autostart: crate::settings::AutoStartConfig, target: PipelineTarget) -> Self {
         Self { autostart, target }
     }
 

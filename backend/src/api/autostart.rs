@@ -1,7 +1,4 @@
-use std::{
-    path::PathBuf,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
 use either::Either;
@@ -9,7 +6,6 @@ use schemars::JsonSchema;
 use serde::Deserialize;
 
 use crate::{
-    asset::AssetManager,
     autostart::LoadedAutoStart,
     db::ProfileDb,
     decky_env::DeckyEnv,
@@ -78,7 +74,7 @@ pub fn autostart(
                     PipelineTarget::Desktop => {
                         let lock = settings.lock().expect("settings mutex should be lockable");
 
-                        let res = lock.set_autostart_cfg(&settings::AutoStart {
+                        let res = lock.set_autostart_cfg(&settings::AutoStartConfig {
                             game_id: id,
                             pipeline,
                             env,
@@ -98,7 +94,7 @@ pub fn autostart(
                     }
                     PipelineTarget::Gamemode => {
                         let executor = LoadedAutoStart::new(
-                            settings::AutoStart {
+                            settings::AutoStartConfig {
                                 game_id: id,
                                 pipeline,
                                 env,
