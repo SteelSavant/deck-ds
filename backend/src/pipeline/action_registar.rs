@@ -717,7 +717,7 @@ impl PipelineActionRegistarBuilder {
                 .with_group("cemu_proton", |group| {
                     let cemu_name = "Cemu (Proton)".to_string();
                     let cemu_description = Some("Maps primary and secondary windows to different screens for Cemu.".to_string());
-        
+
                     group.with_action("platform", None, PipelineActionDefinitionBuilder {
                         name: cemu_name.clone(),
                         description: cemu_description.clone(),

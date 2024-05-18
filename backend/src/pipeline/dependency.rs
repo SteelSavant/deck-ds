@@ -100,7 +100,8 @@ impl Dependency {
                                 screen_preference: Default::default(),
                             }
                             .get_dependencies(ctx)
-                            .into_iter().try_for_each(|v| v.verify_config(ctx))
+                            .into_iter()
+                            .try_for_each(|v| v.verify_config(ctx))
                         }
                     }
                 } else {
