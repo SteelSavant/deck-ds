@@ -540,7 +540,7 @@ mod tests {
         }
     }
 
-    // #[cfg(test)]
+    // #[test]
     // fn test_toplevel_reification_for_override() -> Result<()> {
     //     use crate::settings::{AppId, AppProfile};
 

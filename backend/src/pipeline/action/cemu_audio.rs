@@ -221,18 +221,24 @@ impl ActionImpl for CemuAudio {
             .chain(["default", ""])
             .any(|s| *s == state.mic_in.device);
 
-        // TODO::if audio.*.device is empty, replace with default
+        fn device_or_default(s: &str) -> String {
+            if s.trim().is_empty() {
+                "default".to_string()
+            } else {
+                s.trim().to_string()
+            }
+        }
 
         if !available_tv_out {
-            state.tv_out.device = audio.tv_out.device.clone();
+            state.tv_out.device = device_or_default(&audio.tv_out.device);
         }
 
         if !available_pad_out {
-            state.pad_out.device = audio.pad_out.device.clone();
+            state.pad_out.device = device_or_default(&audio.pad_out.device);
         }
 
         if !available_mic_in {
-            state.mic_in.device = audio.mic_in.device.clone();
+            state.mic_in.device = device_or_default(&audio.mic_in.device);
         }
 
         state.write(xml_path).map(|_| {

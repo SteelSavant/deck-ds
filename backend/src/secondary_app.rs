@@ -71,33 +71,28 @@ impl SecondaryAppManager {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
     use log::Level;
 
-    use crate::asset::AssetManager;
+    use crate::decky_env::DeckyEnv;
 
     use super::SecondaryAppManager;
 
-    // TODO::fix this
+    #[test]
+    fn test_parsed_embedded_secondary_apps() {
+        testing_logger::setup();
 
-    // #[test]
-    // fn test_parsed_embedded_secondary_apps() {
-    //     testing_logger::setup();
+        let asset_manager = DeckyEnv::new_test("parsed_embedded_secondary_apps").asset_manager();
+        let secondary_apps = SecondaryAppManager::new(asset_manager).get_presets();
 
-    //     let asset_manager =
-    //         AssetManager::new(&ASSETS_DIR, Path::new("./not_a_real_path").to_path_buf());
-    //     let secondary_apps = SecondaryAppManager::new(asset_manager).get_presets();
+        testing_logger::validate(|logs| {
+            for log in logs {
+                assert!(log.level > Level::Warn, "{}", log.body);
+            }
+        });
 
-    //     testing_logger::validate(|logs| {
-    //         for log in logs {
-    //             assert!(log.level > Level::Warn, "{}", log.body);
-    //         }
-    //     });
-
-    //     assert!(
-    //         secondary_apps.keys().count() > 0,
-    //         "should find at least one secondary app preset"
-    //     )
-    // }
+        assert!(
+            secondary_apps.keys().count() > 0,
+            "should find at least one secondary app preset"
+        )
+    }
 }

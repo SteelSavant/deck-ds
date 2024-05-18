@@ -670,179 +670,160 @@ impl Action {
 #[cfg(test)]
 mod tests {
 
-    use crate::{
-        pipeline::action::{
-            cemu_layout::CemuLayoutState,
-            citra_layout::{CitraLayoutOption, CitraLayoutState, CitraState},
-            melonds_layout::{MelonDSLayoutOption, MelonDSLayoutState, MelonDSSizingOption},
-            multi_window::primary_windowing::{
-                CemuWindowOptions, CitraWindowOptions, CustomWindowOptions, DolphinWindowOptions,
-                GeneralOptions, LimitedMultiWindowLayout, MultiWindowLayout, MultiWindowOptions,
-            },
-            session_handler::{DisplayState, ExternalDisplaySettings, RelativeLocation},
-            source_file::{FileSource, FlatpakSource},
-            ActionId,
+    use crate::pipeline::action::{
+        cemu_layout::CemuLayoutState,
+        citra_layout::{CitraLayoutOption, CitraLayoutState, CitraState},
+        melonds_layout::{MelonDSLayoutOption, MelonDSLayoutState, MelonDSSizingOption},
+        multi_window::primary_windowing::{
+            CemuWindowOptions, CitraWindowOptions, CustomWindowOptions, DolphinWindowOptions,
+            GeneralOptions, LimitedMultiWindowLayout, MultiWindowLayout, MultiWindowOptions,
         },
-        util::create_dir_all,
+        session_handler::{DisplayState, ExternalDisplaySettings, RelativeLocation},
+        source_file::{FileSource, FlatpakSource},
+        ActionId,
     };
 
     use super::*;
 
-    // TODO::fix this
+    #[test]
+    fn test_ctx_serde() -> anyhow::Result<()> {
+        // TODO::test all action types
 
-    // #[test]
-    // fn test_ctx_serde() -> anyhow::Result<()> {
-    //     // TODO::test all action types
+        let decky_env = Arc::new(DeckyEnv::new_test("ctx_serde"));
 
-    //     let home_dir: PathBuf = "test/out/home/ctx-serde".into();
-    //     let config_dir: PathBuf = "test/out/.config/deck-ds-ctx-serde".into();
-    //     let external_asset_path: PathBuf = "test/out/assets/ctx-serde".into();
+        let mut ctx = PipelineContext::new(decky_env.clone());
 
-    //     if !config_dir.exists() {
-    //         create_dir_all(&config_dir)?;
-    //     }
+        let actions: Vec<Action> = vec![
+            DesktopSessionHandler {
+                id: ActionId::nil(),
+                teardown_external_settings: ExternalDisplaySettings::Native,
+                teardown_deck_location: Some(RelativeLocation::Below),
+                deck_is_primary_display: true,
+            }
+            .clone()
+            .into(),
+            VirtualScreen {
+                id: ActionId::nil(),
+            }
+            .clone()
+            .into(),
+            MultiWindow {
+                id: ActionId::nil(),
+                general: GeneralOptions::default(),
+                cemu: None,
+                citra: None,
+                dolphin: None,
+                custom: None,
+            }
+            .into(),
+            SourceFile {
+                id: ActionId::nil(),
+                source: FileSource::Flatpak(FlatpakSource::Cemu),
+            }
+            .into(),
+            CemuLayout {
+                id: ActionId::nil(),
+                layout: CemuLayoutState {
+                    separate_gamepad_view: true,
+                    fullscreen: true,
+                },
+            }
+            .into(),
+            CitraLayout {
+                id: ActionId::nil(),
+                layout: CitraLayoutState {
+                    layout_option: CitraLayoutOption::Default,
+                    swap_screens: false,
+                    fullscreen: true,
+                    rotate_upright: false,
+                },
+            }
+            .into(),
+            MelonDSLayout {
+                id: ActionId::nil(),
+                layout_option: MelonDSLayoutOption::Vertical,
+                sizing_option: MelonDSSizingOption::Even,
+                book_mode: false,
+                swap_screens: false,
+            }
+            .into(),
+        ];
 
-    //     let mut ctx = PipelineContext::new(
-    //         AssetManager::new(&ASSETS_DIR, external_asset_path.clone()),
-    //         home_dir.clone(),
-    //         config_dir.clone(),
-    //     );
+        // assert_eq!(
+        //     actions
+        //         .iter()
+        //         .map(|v| v.get_type())
+        //         .collect::<HashSet<_>>()
+        //         .len(),
+        //     ActionType::iter().count(),
+        //     "not all actions tested"
+        // );
 
-    //     let actions: Vec<Action> = vec![
-    //         DesktopSessionHandler {
-    //             id: ActionId::nil(),
-    //             teardown_external_settings: ExternalDisplaySettings::Native,
-    //             teardown_deck_location: Some(RelativeLocation::Below),
-    //             deck_is_primary_display: true,
-    //         }
-    //         .clone()
-    //         .into(),
-    //         VirtualScreen {
-    //             id: ActionId::nil(),
-    //         }
-    //         .clone()
-    //         .into(),
-    //         MultiWindow {
-    //             id: ActionId::nil(),
-    //             general: GeneralOptions::default(),
-    //             cemu: None,
-    //             citra: None,
-    //             dolphin: None,
-    //             custom: None,
-    //         }
-    //         .into(),
-    //         SourceFile {
-    //             id: ActionId::nil(),
-    //             source: FileSource::Flatpak(FlatpakSource::Cemu),
-    //         }
-    //         .into(),
-    //         CemuLayout {
-    //             id: ActionId::nil(),
-    //             layout: CemuLayoutState {
-    //                 separate_gamepad_view: true,
-    //                 fullscreen: true,
-    //             },
-    //         }
-    //         .into(),
-    //         CitraLayout {
-    //             id: ActionId::nil(),
-    //             layout: CitraLayoutState {
-    //                 layout_option: CitraLayoutOption::Default,
-    //                 swap_screens: false,
-    //                 fullscreen: true,
-    //                 rotate_upright: false,
-    //             },
-    //         }
-    //         .into(),
-    //         MelonDSLayout {
-    //             id: ActionId::nil(),
-    //             layout_option: MelonDSLayoutOption::Vertical,
-    //             sizing_option: MelonDSSizingOption::Even,
-    //             book_mode: false,
-    //             swap_screens: false,
-    //         }
-    //         .into(),
-    //     ];
+        for a in actions.iter() {
+            ctx.handle_state_slot(&a.get_type(), true);
+        }
 
-    //     // assert_eq!(
-    //     //     actions
-    //     //         .iter()
-    //     //         .map(|v| v.get_type())
-    //     //         .collect::<HashSet<_>>()
-    //     //         .len(),
-    //     //     ActionType::iter().count(),
-    //     //     "not all actions tested"
-    //     // );
+        ctx.have_run = actions;
 
-    //     for a in actions.iter() {
-    //         ctx.handle_state_slot(&a.get_type(), true);
-    //     }
+        ctx.set_state::<DesktopSessionHandler>(DisplayState::default());
+        ctx.set_state::<VirtualScreen>(false);
+        ctx.set_state::<MultiWindow>(MultiWindowOptions {
+            enabled: true,
+            general: GeneralOptions::default(),
+            cemu: CemuWindowOptions {
+                single_screen_layout: LimitedMultiWindowLayout::ColumnLeft,
+                multi_screen_layout: MultiWindowLayout::Separate,
+            },
+            citra: CitraWindowOptions {
+                single_screen_layout: LimitedMultiWindowLayout::ColumnRight,
+                multi_screen_layout: MultiWindowLayout::Separate,
+            },
+            dolphin: DolphinWindowOptions {
+                single_screen_layout: LimitedMultiWindowLayout::SquareLeft,
+                multi_screen_single_secondary_layout: MultiWindowLayout::SquareRight,
+                multi_screen_multi_secondary_layout: MultiWindowLayout::Separate,
+                gba_blacklist: vec![1, 2, 3, 4],
+            },
+            custom: CustomWindowOptions::default(),
+        });
+        ctx.set_state::<SourceFile>("some_random_path".into());
+        ctx.set_state::<CemuLayout>(CemuLayoutState {
+            separate_gamepad_view: true,
+            fullscreen: false,
+        });
+        ctx.set_state::<CitraLayout>(CitraState::default());
+        ctx.set_state::<MelonDSLayout>(MelonDSLayoutState::default());
 
-    //     ctx.have_run = actions;
+        ctx.persist()?;
 
-    //     ctx.set_state::<DesktopSessionHandler>(DisplayState::default());
-    //     ctx.set_state::<VirtualScreen>(false);
-    //     ctx.set_state::<MultiWindow>(MultiWindowOptions {
-    //         enabled: true,
-    //         general: GeneralOptions::default(),
-    //         cemu: CemuWindowOptions {
-    //             single_screen_layout: LimitedMultiWindowLayout::ColumnLeft,
-    //             multi_screen_layout: MultiWindowLayout::Separate,
-    //         },
-    //         citra: CitraWindowOptions {
-    //             single_screen_layout: LimitedMultiWindowLayout::ColumnRight,
-    //             multi_screen_layout: MultiWindowLayout::Separate,
-    //         },
-    //         dolphin: DolphinWindowOptions {
-    //             single_screen_layout: LimitedMultiWindowLayout::SquareLeft,
-    //             multi_screen_single_secondary_layout: MultiWindowLayout::SquareRight,
-    //             multi_screen_multi_secondary_layout: MultiWindowLayout::Separate,
-    //             gba_blacklist: vec![1, 2, 3, 4],
-    //         },
-    //         custom: CustomWindowOptions::default(),
-    //     });
-    //     ctx.set_state::<SourceFile>("some_random_path".into());
-    //     ctx.set_state::<CemuLayout>(CemuLayoutState {
-    //         separate_gamepad_view: true,
-    //         fullscreen: false,
-    //     });
-    //     ctx.set_state::<CitraLayout>(CitraState::default());
-    //     ctx.set_state::<MelonDSLayout>(MelonDSLayoutState::default());
+        let loaded = PipelineContext::load(decky_env.clone())
+            .with_context(|| "Persisted context should load")?
+            .with_context(|| "Persisted context should exist")?;
 
-    //     ctx.persist()?;
+        for (expected_action, actual_action) in ctx.have_run.iter().zip(loaded.have_run.iter()) {
+            assert_eq!(expected_action, actual_action);
+        }
 
-    //     let loaded = PipelineContext::load(
-    //         AssetManager::new(&ASSETS_DIR, external_asset_path.clone()),
-    //         home_dir,
-    //         config_dir,
-    //     )
-    //     .with_context(|| "Persisted context should load")?
-    //     .with_context(|| "Persisted context should exist")?;
+        fn check_state<T>(ctx: &PipelineContext, loaded: &PipelineContext)
+        where
+            T: ActionImpl + 'static,
+            <T as ActionImpl>::State: PartialEq,
+        {
+            let expected = ctx.get_state::<T>();
+            let actual = loaded.get_state::<T>();
 
-    //     for (expected_action, actual_action) in ctx.have_run.iter().zip(loaded.have_run.iter()) {
-    //         assert_eq!(expected_action, actual_action);
-    //     }
+            assert_eq!(expected, actual, "{} failed to match", T::TYPE);
+        }
 
-    //     fn check_state<T>(ctx: &PipelineContext, loaded: &PipelineContext)
-    //     where
-    //         T: ActionImpl + 'static,
-    //         <T as ActionImpl>::State: PartialEq,
-    //     {
-    //         let expected = ctx.get_state::<T>();
-    //         let actual = loaded.get_state::<T>();
+        check_state::<DesktopSessionHandler>(&ctx, &loaded);
+        // check_state::<DisplayConfig>(&ctx, &loaded);
+        check_state::<VirtualScreen>(&ctx, &loaded);
+        check_state::<MultiWindow>(&ctx, &loaded);
+        check_state::<SourceFile>(&ctx, &loaded);
+        check_state::<CemuLayout>(&ctx, &loaded);
+        check_state::<CitraLayout>(&ctx, &loaded);
+        check_state::<MelonDSLayout>(&ctx, &loaded);
 
-    //         assert_eq!(expected, actual, "{} failed to match", T::TYPE);
-    //     }
-
-    //     check_state::<DesktopSessionHandler>(&ctx, &loaded);
-    //     // check_state::<DisplayConfig>(&ctx, &loaded);
-    //     check_state::<VirtualScreen>(&ctx, &loaded);
-    //     check_state::<MultiWindow>(&ctx, &loaded);
-    //     check_state::<SourceFile>(&ctx, &loaded);
-    //     check_state::<CemuLayout>(&ctx, &loaded);
-    //     check_state::<CitraLayout>(&ctx, &loaded);
-    //     check_state::<MelonDSLayout>(&ctx, &loaded);
-
-    //     Ok(())
-    // }
+        Ok(())
+    }
 }

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use anyhow::Result;
 
-use crate::{asset::AssetManager, consts::PACKAGE_NAME, AppModes};
+use crate::{asset::AssetManager, consts::PACKAGE_NAME, util::create_dir_all, AppModes};
 
 use usdpl_back::api::decky;
 
@@ -95,12 +95,31 @@ impl Default for DeckyEnv {
 impl DeckyEnv {
     pub fn new_test(name: &str) -> Self {
         let home = PathBuf::from(format!("test/out/env/{name}"));
-        Self {
+
+        // ensure clean environment before executing test
+        if home.exists() {
+            std::fs::remove_dir_all(&home).expect("should be able to clean up old test env");
+        }
+
+        let s = Self {
             decky_user: "deck".to_string(),
             decky_plugin_settings_dir: home.join("homebrew/settings").join(PACKAGE_NAME),
             decky_plugin_runtime_dir: home.join("homebrew/data").join(PACKAGE_NAME),
             decky_plugin_log_dir: home.join("homebrew/logs").join(PACKAGE_NAME),
             deck_user_home: home,
+        };
+
+        for dir in [
+            &s.deck_user_home,
+            &s.decky_plugin_log_dir,
+            &s.decky_plugin_runtime_dir,
+            &s.decky_plugin_log_dir,
+        ] {
+            if !dir.exists() {
+                create_dir_all(dir).expect("should be able to create test directory");
+            }
         }
+
+        s
     }
 }
