@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 
 use anyhow::Result;
 
+use crate::decky_env::DeckyEnv;
+
 const SYSTEM_DEVICES: [&str; 2] = ["filter-chain-source", "output.virtual-source"];
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -15,32 +17,33 @@ pub struct AudioDeviceInfo {
     pub channels: Option<u8>,
 }
 
-pub fn get_audio_sinks() -> Vec<AudioDeviceInfo> {
-    get_audio("sinks")
+pub fn get_audio_sinks(decky_env: &DeckyEnv) -> Vec<AudioDeviceInfo> {
+    get_audio("sinks", decky_env)
         .inspect_err(|err| log::error!("failed to get audio sinks: {err}"))
         .unwrap_or_default()
 }
 
-pub fn get_audio_sources() -> Vec<AudioDeviceInfo> {
-    get_audio("sources")
+pub fn get_audio_sources(decky_env: &DeckyEnv) -> Vec<AudioDeviceInfo> {
+    get_audio("sources", decky_env)
         .inspect_err(|err| log::error!("failed to get audio sinks: {err}"))
         .unwrap_or_default()
 }
 
-fn get_audio(audio_type: &str) -> Result<Vec<AudioDeviceInfo>> {
+fn get_audio(audio_type: &str, decky_env: &DeckyEnv) -> Result<Vec<AudioDeviceInfo>> {
     let mut cmd = Command::new("pactl");
 
     cmd.args(["list", audio_type]);
 
-    let user = usdpl_back::api::decky::user();
+    let output = std::process::Command::new("id")
+        .args(["-u", &decky_env.decky_user])
+        .output()?;
+    let uid: u32 = String::from_utf8_lossy(&output.stdout)
+        .parse()
+        .unwrap_or(1000);
 
-    // TODO::don't hardcode this
-
-    // if let Ok(user) = user {
-    let runtime_dir = Path::new("/run").join("user").join("1000");
+    let runtime_dir = Path::new("/run").join("user").join(uid.to_string());
     log::debug!("Setting XDG_RUNTIME_DIR to {:?}", runtime_dir);
     cmd.env("XDG_RUNTIME_DIR", runtime_dir);
-    // }
 
     let output = cmd.output()?;
 
@@ -50,7 +53,7 @@ fn get_audio(audio_type: &str) -> Result<Vec<AudioDeviceInfo>> {
         Ok(parse_pactl_list(&out)
             .into_iter()
             .filter(|v| {
-                !v.name.ends_with(".monitor") && !SYSTEM_DEVICES.iter().any(|sd| *sd == &v.name)
+                !v.name.ends_with(".monitor") && !SYSTEM_DEVICES.iter().any(|sd| *sd == v.name)
             })
             .collect())
     } else {

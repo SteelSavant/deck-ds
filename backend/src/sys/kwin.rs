@@ -5,13 +5,13 @@ use std::{ffi::OsStr, path::PathBuf, process::Command, str::FromStr};
 use crate::asset::{Asset, AssetManager};
 
 #[derive(Debug)]
-pub struct KWin<'a> {
-    assets_manager: AssetManager<'a>,
+pub struct KWin {
+    assets_manager: AssetManager<'static>,
     bundles_dir: PathBuf,
 }
 
-impl<'a> KWin<'a> {
-    pub fn new(assets_manager: AssetManager<'a>) -> Self {
+impl KWin {
+    pub fn new(assets_manager: AssetManager<'static>) -> Self {
         Self {
             assets_manager,
             bundles_dir: PathBuf::from_str("kwin").expect("kwin path should be valid"),

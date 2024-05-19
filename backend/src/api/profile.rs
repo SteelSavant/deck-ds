@@ -1,6 +1,5 @@
 use std::{
     collections::HashMap,
-    path::PathBuf,
     sync::{Arc, Mutex},
 };
 
@@ -10,8 +9,8 @@ use serde::{Deserialize, Serialize};
 use anyhow::Result;
 
 use crate::{
-    asset::AssetManager,
     db::ProfileDb,
+    decky_env::DeckyEnv,
     pipeline::{
         action::{Action, ActionId, ErasedPipelineAction},
         action_registar::PipelineActionRegistrar,
@@ -539,14 +538,8 @@ pub fn reify_pipeline(
     request_handler: Arc<Mutex<RequestHandler>>,
     profiles: &'static ProfileDb,
     registrar: PipelineActionRegistrar,
-    assets_manager: AssetManager<'static>,
-    home_dir: PathBuf,
-    config_dir: PathBuf,
+    decky_env: Arc<DeckyEnv>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    let assets_manager = Arc::new(assets_manager);
-    let home_dir = Arc::new(home_dir);
-    let config_dir = Arc::new(config_dir);
-
     move |args: super::ApiParameterType| {
         log_invoke("reify_pipeline", &args);
 
@@ -560,11 +553,7 @@ pub fn reify_pipeline(
         match args {
             Ok(args) => match profiles.get_profiles() {
                 Ok(profiles) => {
-                    let ctx = &mut PipelineContext::new(
-                        (*assets_manager).clone(),
-                        (*home_dir).clone(),
-                        (*config_dir).clone(),
-                    );
+                    let ctx = &mut PipelineContext::new(decky_env.clone());
                     let res = args.pipeline.reify(&profiles, &registrar);
 
                     match res {

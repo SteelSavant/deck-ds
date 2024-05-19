@@ -1,9 +1,8 @@
 use anyhow::Result;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use crate::{
-    asset::AssetManager,
-    consts::PACKAGE_NAME,
+    decky_env::DeckyEnv,
     pipeline::{
         self,
         action::{
@@ -13,22 +12,14 @@ use crate::{
         },
         executor::PipelineContext,
     },
-    sys, ASSETS_DIR,
+    sys,
 };
 
 #[allow(dead_code)]
-pub fn ui_test() -> Result<()> {
+pub fn ui_test(decky_env: Arc<DeckyEnv>) -> Result<()> {
     use sys::x_display::{ModePreference, Resolution};
 
-    let home_dir = usdpl_back::api::dirs::home()
-        .or_else(dirs::home_dir)
-        .expect("home dir must exist");
-
-    let config_dir = home_dir.join(".config").join(PACKAGE_NAME);
-    let assets_dir = config_dir.join("assets"); // TODO::keep assets with decky plugin, not config
-
-    let asset_manager = AssetManager::new(&ASSETS_DIR, assets_dir);
-    let ctx = &mut PipelineContext::new(asset_manager, home_dir, config_dir);
+    let ctx = &mut PipelineContext::new(decky_env);
 
     let ui = DesktopSessionHandler {
         id: ActionId::nil(),

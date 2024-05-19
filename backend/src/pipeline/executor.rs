@@ -10,10 +10,11 @@ use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::process::Command;
 use std::str::FromStr;
+use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
 use typemap::{Key, TypeMap};
 
-use crate::asset::AssetManager;
+use crate::decky_env::DeckyEnv;
 use crate::pipeline::action::cemu_audio::CemuAudio;
 use crate::pipeline::action::cemu_layout::CemuLayout;
 use crate::pipeline::action::citra_layout::CitraLayout;
@@ -40,26 +41,24 @@ use super::action::session_handler::UiEvent;
 use super::action::{Action, ErasedPipelineAction};
 use super::data::{Pipeline, PipelineTarget};
 
-pub struct PipelineExecutor<'a> {
+pub struct PipelineExecutor {
     game_id: Either<AppId, GameId>,
     pipeline: Option<Pipeline>,
     target: PipelineTarget,
-    ctx: PipelineContext<'a>,
+    ctx: PipelineContext,
 }
 
 type OnLaunchCallback = Box<dyn Fn(Pid, &mut PipelineContext) -> Result<()>>;
 
-pub struct PipelineContext<'a> {
-    /// path to directory containing the user's home directory
-    pub home_dir: PathBuf,
-    /// path to directory containing user configuration files
-    pub config_dir: PathBuf,
+pub struct PipelineContext {
+    /// Decky environment variables for the session
+    pub decky_env: Arc<DeckyEnv>,
     /// KWin script handler
-    pub kwin: KWin<'a>,
+    pub kwin: KWin,
     /// Display handler,
     pub display: Option<XDisplay>,
     pub should_register_exit_hooks: bool,
-    pub secondary_app: SecondaryAppManager<'a>,
+    pub secondary_app: SecondaryAppManager,
     /// actions that have run
     have_run: Vec<Action>,
     /// pipeline state
@@ -78,18 +77,17 @@ where
     type Value = Vec<Option<<S as ActionImpl>::State>>;
 }
 
-impl<'a> PipelineContext<'a> {
-    pub fn new(assets_manager: AssetManager<'a>, home_dir: PathBuf, config_dir: PathBuf) -> Self {
+impl PipelineContext {
+    pub fn new(decky_env: Arc<DeckyEnv>) -> Self {
         PipelineContext {
-            home_dir,
-            config_dir,
-            kwin: KWin::new(assets_manager.clone()),
+            kwin: KWin::new(decky_env.asset_manager()),
             display: XDisplay::new().ok(),
             state: TypeMap::new(),
             have_run: vec![],
-            secondary_app: SecondaryAppManager::new(assets_manager),
+            secondary_app: SecondaryAppManager::new(decky_env.asset_manager()),
             should_register_exit_hooks: true,
             on_launch_callbacks: vec![],
+            decky_env,
         }
     }
 
@@ -97,13 +95,8 @@ impl<'a> PipelineContext<'a> {
         self.on_launch_callbacks.push(callback);
     }
 
-    pub fn load(
-        assets_manager: AssetManager<'a>,
-        home_dir: PathBuf,
-        config_dir: PathBuf,
-    ) -> Result<Option<Self>> {
-        let mut default: PipelineContext<'_> =
-            PipelineContext::new(assets_manager, home_dir, config_dir);
+    pub fn load(decky_env: Arc<DeckyEnv>) -> Result<Option<Self>> {
+        let mut default: PipelineContext = PipelineContext::new(decky_env);
 
         let persisted = std::fs::read_to_string(default.get_state_path()).ok();
         let persisted = match persisted {
@@ -145,6 +138,7 @@ impl<'a> PipelineContext<'a> {
         );
 
         type_reg.register::<Vec<String>>("__actions__".to_string());
+        type_reg.register::<DeckyEnv>("__env__".to_string());
 
         let mut deserializer = serde_json::Deserializer::from_str(&persisted);
         let type_map: SerdeMap<String> = type_reg
@@ -156,6 +150,10 @@ impl<'a> PipelineContext<'a> {
             .with_context(|| "could not find key '__actions__' while loading context state")?
             .iter()
             .map(|v| v.as_str());
+
+        let env = type_map
+            .get::<DeckyEnv, _>("__env__")
+            .with_context(|| "could not find key '__env__' while loading context state")?;
 
         for action in actions {
             match ActionType::from_str(action) {
@@ -210,6 +208,10 @@ impl<'a> PipelineContext<'a> {
             }
         }
 
+        default.kwin = KWin::new(env.asset_manager());
+        default.secondary_app = SecondaryAppManager::new(env.asset_manager());
+        default.decky_env = Arc::new(env.clone());
+
         Ok(Some(default))
     }
 
@@ -254,6 +256,7 @@ impl<'a> PipelineContext<'a> {
             .map(|a| a.get_type())
             .collect::<Vec<_>>();
         map.insert("__actions__".to_string(), actions);
+        map.insert("__env__".to_string(), (*self.decky_env).clone());
 
         let serialized = serde_json::to_string_pretty(&map)?;
         let path = self.get_state_path();
@@ -318,7 +321,7 @@ impl<'a> PipelineContext<'a> {
 
     pub fn teardown(mut self, errors: &mut Vec<anyhow::Error>) {
         while let Some(action) = self.have_run.pop() {
-            let ctx: &mut PipelineContext<'_> = &mut self;
+            let ctx: &mut PipelineContext = &mut self;
 
             let msg = format!("tearing down {}...", action.get_type());
 
@@ -338,11 +341,11 @@ impl<'a> PipelineContext<'a> {
     }
 
     fn get_state_path(&self) -> PathBuf {
-        self.config_dir.join("state.json")
+        self.decky_env.decky_plugin_runtime_dir.join("state.json")
     }
 
     pub fn handle_state_slot(&mut self, action: &ActionType, is_push: bool) {
-        fn handle<'a, T: ActionImpl + 'static>(this: &mut PipelineContext<'a>, is_push: bool) {
+        fn handle<T: ActionImpl + 'static>(this: &mut PipelineContext, is_push: bool) {
             let v = this.state.entry::<StateKey<T>>().or_insert(vec![]);
             if is_push {
                 v.push(None)
@@ -390,20 +393,18 @@ impl<'a> PipelineContext<'a> {
     }
 }
 
-impl<'a> PipelineExecutor<'a> {
+impl PipelineExecutor {
     pub fn new(
         game_id: Either<AppId, GameId>,
         pipeline: Pipeline,
         target: PipelineTarget,
-        assets_manager: AssetManager<'a>,
-        home_dir: PathBuf,
-        config_dir: PathBuf,
+        decky_env: Arc<DeckyEnv>,
     ) -> Result<Self> {
         let s = Self {
             game_id,
             pipeline: Some(pipeline),
             target,
-            ctx: PipelineContext::new(assets_manager, home_dir, config_dir),
+            ctx: PipelineContext::new(decky_env),
         };
 
         Ok(s)
@@ -669,21 +670,17 @@ impl Action {
 #[cfg(test)]
 mod tests {
 
-    use crate::{
-        pipeline::action::{
-            cemu_layout::CemuLayoutState,
-            citra_layout::{CitraLayoutOption, CitraLayoutState, CitraState},
-            melonds_layout::{MelonDSLayoutOption, MelonDSLayoutState, MelonDSSizingOption},
-            multi_window::primary_windowing::{
-                CemuWindowOptions, CitraWindowOptions, CustomWindowOptions, DolphinWindowOptions,
-                GeneralOptions, LimitedMultiWindowLayout, MultiWindowLayout, MultiWindowOptions,
-            },
-            session_handler::{DisplayState, ExternalDisplaySettings, RelativeLocation},
-            source_file::{FileSource, FlatpakSource},
-            ActionId,
+    use crate::pipeline::action::{
+        cemu_layout::CemuLayoutState,
+        citra_layout::{CitraLayoutOption, CitraLayoutState, CitraState},
+        melonds_layout::{MelonDSLayoutOption, MelonDSLayoutState, MelonDSSizingOption},
+        multi_window::primary_windowing::{
+            CemuWindowOptions, CitraWindowOptions, CustomWindowOptions, DolphinWindowOptions,
+            GeneralOptions, LimitedMultiWindowLayout, MultiWindowLayout, MultiWindowOptions,
         },
-        util::create_dir_all,
-        ASSETS_DIR,
+        session_handler::{DisplayState, ExternalDisplaySettings, RelativeLocation},
+        source_file::{FileSource, FlatpakSource},
+        ActionId,
     };
 
     use super::*;
@@ -692,19 +689,9 @@ mod tests {
     fn test_ctx_serde() -> anyhow::Result<()> {
         // TODO::test all action types
 
-        let home_dir: PathBuf = "test/out/home/ctx-serde".into();
-        let config_dir: PathBuf = "test/out/.config/deck-ds-ctx-serde".into();
-        let external_asset_path: PathBuf = "test/out/assets/ctx-serde".into();
+        let decky_env = Arc::new(DeckyEnv::new_test("ctx_serde"));
 
-        if !config_dir.exists() {
-            create_dir_all(&config_dir)?;
-        }
-
-        let mut ctx = PipelineContext::new(
-            AssetManager::new(&ASSETS_DIR, external_asset_path.clone()),
-            home_dir.clone(),
-            config_dir.clone(),
-        );
+        let mut ctx = PipelineContext::new(decky_env.clone());
 
         let actions: Vec<Action> = vec![
             DesktopSessionHandler {
@@ -809,13 +796,9 @@ mod tests {
 
         ctx.persist()?;
 
-        let loaded = PipelineContext::load(
-            AssetManager::new(&ASSETS_DIR, external_asset_path.clone()),
-            home_dir,
-            config_dir,
-        )
-        .with_context(|| "Persisted context should load")?
-        .with_context(|| "Persisted context should exist")?;
+        let loaded = PipelineContext::load(decky_env.clone())
+            .with_context(|| "Persisted context should load")?
+            .with_context(|| "Persisted context should exist")?;
 
         for (expected_action, actual_action) in ctx.have_run.iter().zip(loaded.have_run.iter()) {
             assert_eq!(expected_action, actual_action);

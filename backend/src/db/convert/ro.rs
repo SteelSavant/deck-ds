@@ -169,7 +169,7 @@ impl DbTopLevelDefinition {
         Ok(TopLevelDefinition {
             id: self.id,
             root: self.root.clone(),
-            actions: PipelineActionLookup { actions: actions },
+            actions: PipelineActionLookup { actions },
         })
     }
 }

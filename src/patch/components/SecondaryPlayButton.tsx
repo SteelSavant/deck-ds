@@ -22,7 +22,7 @@ export default function SecondaryPlayButton({ }: SecondaryPlayButtonProps): Reac
         ?? launchActions[0]
         : null;
 
-    const vPadding = 13;
+    const vPadding = 14;
     const wPadding = 15;
 
     const target = useAppTarget({ isPrimary: false, profileId: action?.profile.id });

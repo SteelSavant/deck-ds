@@ -123,7 +123,7 @@ impl TopLevelDefinition {
         );
 
         Ok(DbTopLevelDefinition {
-            id: id,
+            id,
             root: self.root,
             actions: self.actions.save_all_and_transform(pipeline_id, id, rw)?,
         })

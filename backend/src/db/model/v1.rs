@@ -32,7 +32,6 @@ use crate::{
     },
     secondary_app::{FlatpakApp, SecondaryApp, SecondaryAppPresetId},
     settings::{AppId, ProfileId},
-    sys::audio::AudioDeviceInfo,
 };
 
 // Core

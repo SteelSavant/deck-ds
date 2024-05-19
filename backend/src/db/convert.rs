@@ -193,7 +193,7 @@ impl DbCategoryProfile {
 
         let actions = Some(self.pipeline.platform)
             .into_iter()
-            .chain(self.pipeline.toplevel.into_iter());
+            .chain(self.pipeline.toplevel);
 
         for tl in actions {
             for id in tl.actions {

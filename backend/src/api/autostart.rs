@@ -1,7 +1,4 @@
-use std::{
-    path::PathBuf,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
 use either::Either;
@@ -9,9 +6,9 @@ use schemars::JsonSchema;
 use serde::Deserialize;
 
 use crate::{
-    asset::AssetManager,
     autostart::LoadedAutoStart,
     db::ProfileDb,
+    decky_env::DeckyEnv,
     pipeline::{action_registar::PipelineActionRegistrar, data::PipelineTarget},
     settings::{self, AppId, GameId, ProfileId, Settings},
     sys::steamos_session_select::{steamos_session_select, Session},
@@ -35,14 +32,8 @@ pub fn autostart(
     profile_db: &'static ProfileDb,
     registrar: PipelineActionRegistrar,
     settings: Arc<Mutex<Settings>>,
-    assets_manager: AssetManager<'static>,
-    home_dir: PathBuf,
-    config_dir: PathBuf,
+    decky_env: Arc<DeckyEnv>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    let assets_manager = Arc::new(assets_manager);
-    let home_dir = Arc::new(home_dir);
-    let config_dir = Arc::new(config_dir);
-
     move |args: super::ApiParameterType| {
         log_invoke("autostart", &args);
 
@@ -72,6 +63,8 @@ pub fn autostart(
 
                 let pipeline = definition.reify(&profiles, &registrar).unwrap();
 
+                let env = (*decky_env).clone();
+
                 let id = args
                     .game_id
                     .map(Either::Right)
@@ -81,9 +74,10 @@ pub fn autostart(
                     PipelineTarget::Desktop => {
                         let lock = settings.lock().expect("settings mutex should be lockable");
 
-                        let res = lock.set_autostart_cfg(&settings::AutoStart {
+                        let res = lock.set_autostart_cfg(&settings::AutoStartConfig {
                             game_id: id,
                             pipeline,
+                            env,
                         });
                         match res {
                             Ok(_) => match steamos_session_select(Session::Plasma) {
@@ -100,17 +94,14 @@ pub fn autostart(
                     }
                     PipelineTarget::Gamemode => {
                         let executor = LoadedAutoStart::new(
-                            settings::AutoStart {
+                            settings::AutoStartConfig {
                                 game_id: id,
                                 pipeline,
+                                env,
                             },
                             PipelineTarget::Gamemode,
                         )
-                        .build_executor(
-                            (*assets_manager).clone(),
-                            (*home_dir).clone(),
-                            (*config_dir).clone(),
-                        );
+                        .build_executor(decky_env.clone());
 
                         match executor {
                             Ok(executor) => match executor.exec() {

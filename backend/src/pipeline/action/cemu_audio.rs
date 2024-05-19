@@ -1,13 +1,12 @@
-use std::{borrow::Cow, path::Path};
+use std::path::Path;
 
 use crate::{
     pipeline::{dependency::Dependency, executor::PipelineContext},
-    sys::audio::{get_audio_sinks, get_audio_sources, AudioDeviceInfo},
+    sys::audio::{get_audio_sinks, get_audio_sources},
 };
 
 use super::{source_file::SourceFile, ActionId, ActionImpl, ActionType};
 use anyhow::{Context, Result};
-use egui::TextBuffer;
 use regex::Regex;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -200,40 +199,46 @@ impl ActionImpl for CemuAudio {
             (xml_path, CemuAudioState::read(xml_path)?)
         };
 
-        let sources = get_audio_sources();
-        let sinks = get_audio_sinks();
+        let sources = get_audio_sources(&ctx.decky_env);
+        let sinks = get_audio_sinks(&ctx.decky_env);
 
         let mut state = self.state.clone();
         let available_tv_out = sinks
             .iter()
             .map(|s| s.name.as_str())
-            .chain(["default", ""].into_iter())
+            .chain(["default", ""])
             .any(|s| *s == state.tv_out.device);
 
         let available_pad_out = sinks
             .iter()
             .map(|s| s.name.as_str())
-            .chain(["default", ""].into_iter())
+            .chain(["default", ""])
             .any(|s| *s == state.pad_out.device);
 
         let available_mic_in = sources
             .iter()
             .map(|s| s.name.as_str())
-            .chain(["default", ""].into_iter())
+            .chain(["default", ""])
             .any(|s| *s == state.mic_in.device);
 
-        // TODO::if audio.*.device is empty, replace with default
+        fn device_or_default(s: &str) -> String {
+            if s.trim().is_empty() {
+                "default".to_string()
+            } else {
+                s.trim().to_string()
+            }
+        }
 
         if !available_tv_out {
-            state.tv_out.device = audio.tv_out.device.clone();
+            state.tv_out.device = device_or_default(&audio.tv_out.device);
         }
 
         if !available_pad_out {
-            state.pad_out.device = audio.pad_out.device.clone();
+            state.pad_out.device = device_or_default(&audio.pad_out.device);
         }
 
         if !available_mic_in {
-            state.mic_in.device = audio.mic_in.device.clone();
+            state.mic_in.device = device_or_default(&audio.mic_in.device);
         }
 
         state.write(xml_path).map(|_| {

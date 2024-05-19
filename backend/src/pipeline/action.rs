@@ -173,7 +173,7 @@ impl Action {
                 Action::MainAppAutomaticWindowing(MainAppAutomaticWindowing { id, ..a.clone() })
             }
             Action::Lime3dsLayout(a) => {
-                Action::Lime3dsLayout(Lime3dsLayout(CitraLayout { id, ..a.0.clone() }))
+                Action::Lime3dsLayout(Lime3dsLayout(CitraLayout { id, ..a.0 }))
             }
         }
     }

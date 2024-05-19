@@ -33,7 +33,7 @@ impl ActionImpl for MainAppAutomaticWindowing {
         ctx.register_on_launch_callback(Box::new(move |pid, ctx| {
             let info = get_window_info_from_pid_default_active_after(pid, Duration::from_secs(5))?;
             let multi = Action::from(MultiWindow {
-                id: id,
+                id,
                 general: general.clone(),
                 cemu: None,
                 citra: None,

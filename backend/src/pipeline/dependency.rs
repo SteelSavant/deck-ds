@@ -101,8 +101,7 @@ impl Dependency {
                             }
                             .get_dependencies(ctx)
                             .into_iter()
-                            .map(|v| v.verify_config(ctx))
-                            .collect()
+                            .try_for_each(|v| v.verify_config(ctx))
                         }
                     }
                 } else {

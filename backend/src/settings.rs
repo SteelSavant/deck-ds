@@ -16,6 +16,7 @@ newtype_strid!("", AppId);
 newtype_strid!("", GameId);
 
 use crate::{
+    decky_env::DeckyEnv,
     macros::{newtype_strid, newtype_uuid},
     pipeline::{
         action::session_handler::DesktopSessionHandler,
@@ -31,6 +32,7 @@ pub struct Settings {
     global_config_path: PathBuf,
     autostart_path: PathBuf,
     exe_path: PathBuf,
+    env_source_path: PathBuf,
 }
 
 #[derive(Debug, SmartDefault, Clone, Deserialize, Serialize, JsonSchema)]
@@ -47,25 +49,19 @@ pub struct GlobalConfig {
 }
 
 impl Settings {
-    pub fn new<P: AsRef<Path>>(exe_path: P, config_dir: P, system_autostart_dir: P) -> Self {
-        let config_dir = config_dir.as_ref();
-
-        if !config_dir.exists() {
-            create_dir_all(config_dir).unwrap();
-        }
-
+    pub fn new<P: AsRef<Path>>(exe_path: P, decky_env: &DeckyEnv) -> Self {
         Self {
-            autostart_path: config_dir.join("autostart.json"),
-            global_config_path: config_dir.join("config.json"),
-
-            system_autostart_dir: system_autostart_dir.as_ref().to_owned(),
+            autostart_path: decky_env.decky_plugin_runtime_dir.join("autostart.json"),
+            global_config_path: decky_env.decky_plugin_settings_dir.join("config.json"),
+            system_autostart_dir: decky_env.deck_user_home.join(".config/autostart"),
+            env_source_path: decky_env.decky_env_path().clone(),
             exe_path: exe_path.as_ref().to_owned(),
         }
     }
 
     // File data
 
-    pub fn get_autostart_cfg(&self) -> Option<AutoStart> {
+    pub fn get_autostart_cfg(&self) -> Option<AutoStartConfig> {
         std::fs::read_to_string(&self.autostart_path)
             .ok()
             .and_then(|s| serde_json::from_str(&s).ok())
@@ -80,7 +76,7 @@ impl Settings {
         }
     }
 
-    pub fn set_autostart_cfg(&self, autostart: &AutoStart) -> Result<()> {
+    pub fn set_autostart_cfg(&self, autostart: &AutoStartConfig) -> Result<()> {
         // always set system autostart, since we (eventually) want to be able to auto-configure displays
         // whether or not an app is run
         create_dir_all(&self.system_autostart_dir)?;
@@ -152,10 +148,13 @@ Type=Application"
             .replace(
                 "$Exec",
                 &format!(
-                    "{} autostart",
+                    "{} autostart \"{}\"",
                     self.exe_path
                         .to_str()
-                        .expect("DeckDS server path should be valid unicode")
+                        .expect("DeckDS server path should be valid unicode"),
+                    self.env_source_path
+                        .to_str()
+                        .expect("DeckDS env source path should be valid unicode")
                 ),
             )
             .replace(
@@ -170,9 +169,10 @@ Type=Application"
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct AutoStart {
+pub struct AutoStartConfig {
     pub game_id: Either<AppId, GameId>,
     pub pipeline: Pipeline,
+    pub env: DeckyEnv,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
@@ -192,13 +192,12 @@ pub struct AppProfile {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     use std::path::Path;
 
-    use crate::consts::PACKAGE_NAME;
-
     use pretty_assertions::assert_eq;
+
+    use crate::{consts::PACKAGE_NAME, decky_env::DeckyEnv, settings::Settings};
 
     #[test]
     fn test_desktop_contents_correct() {
@@ -206,17 +205,16 @@ mod tests {
             Path::new("test/out/homebrew/plugins")
                 .join(PACKAGE_NAME)
                 .join("bin/backend"),
-            Path::new("test/out/.config").join(PACKAGE_NAME),
-            Path::new("test/out/.config/autostart").to_path_buf(),
+            &DeckyEnv::new_test("desktop_contents"),
         );
 
         let actual = settings.create_desktop_contents();
-        let expected = r"[Desktop Entry]
+        let expected = r#"[Desktop Entry]
 Comment=Runs DeckDS plugin autostart script for dual screen applications.
-Exec=test/out/homebrew/plugins/DeckDS/bin/backend autostart
+Exec=test/out/homebrew/plugins/DeckDS/bin/backend autostart "test/out/env/desktop_contents/homebrew/data/DeckDS/decky.env"
 Path=test/out/homebrew/plugins/DeckDS/bin
 Name=DeckDS
-Type=Application";
+Type=Application"#;
 
         assert_eq!(expected, actual);
     }

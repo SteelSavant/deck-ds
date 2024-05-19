@@ -25,12 +25,12 @@ pub struct SecondaryAppPreset {
     pub app: SecondaryApp,
 }
 
-pub struct SecondaryAppManager<'a> {
-    asset_manager: AssetManager<'a>,
+pub struct SecondaryAppManager {
+    asset_manager: AssetManager<'static>,
 }
 
-impl<'a> SecondaryAppManager<'a> {
-    pub fn new(asset_manager: AssetManager<'a>) -> Self {
+impl SecondaryAppManager {
+    pub fn new(asset_manager: AssetManager<'static>) -> Self {
         Self { asset_manager }
     }
 
@@ -71,11 +71,9 @@ impl<'a> SecondaryAppManager<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
     use log::Level;
 
-    use crate::{asset::AssetManager, ASSETS_DIR};
+    use crate::decky_env::DeckyEnv;
 
     use super::SecondaryAppManager;
 
@@ -83,8 +81,7 @@ mod tests {
     fn test_parsed_embedded_secondary_apps() {
         testing_logger::setup();
 
-        let asset_manager =
-            AssetManager::new(&ASSETS_DIR, Path::new("./not_a_real_path").to_path_buf());
+        let asset_manager = DeckyEnv::new_test("parsed_embedded_secondary_apps").asset_manager();
         let secondary_apps = SecondaryAppManager::new(asset_manager).get_presets();
 
         testing_logger::validate(|logs| {

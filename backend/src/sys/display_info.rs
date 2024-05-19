@@ -14,27 +14,26 @@ impl Eq for DisplayValues {}
 
 impl PartialOrd for DisplayValues {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        let area = self.width * self.height;
-        let other_area = other.width * other.height;
-
-        if area < other_area {
-            Some(Ordering::Less)
-        } else if area > other_area {
-            Some(Ordering::Greater)
-        } else if self.refresh < other.refresh {
-            Some(Ordering::Less)
-        } else if self.refresh > other.refresh {
-            Some(Ordering::Greater)
-        } else {
-            Some(Ordering::Equal)
-        }
+        Some(self.cmp(other))
     }
 }
 
 impl Ord for DisplayValues {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other)
-            .expect("DisplayValues should be orderable")
+        let area = self.width * self.height;
+        let other_area = other.width * other.height;
+
+        if area < other_area {
+            Ordering::Less
+        } else if area > other_area {
+            Ordering::Greater
+        } else if self.refresh < other.refresh {
+            Ordering::Less
+        } else if self.refresh > other.refresh {
+            Ordering::Greater
+        } else {
+            Ordering::Equal
+        }
     }
 }
 
@@ -57,10 +56,9 @@ fn parse_modes(file: &str) -> Option<Vec<DisplayValues>> {
 
     let mut modes = modes
         .split_terminator('\n')
-        .into_iter()
         .filter(|v| !v.trim().is_empty())
         .map(|v| {
-            let mut res = v.split_terminator('x').into_iter();
+            let mut res = v.split_terminator('x');
             let width = res
                 .next()
                 .expect("expected width when parsing mode")

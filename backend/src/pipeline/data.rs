@@ -224,11 +224,7 @@ impl PipelineDefinition {
         let targets = PipelineTarget::iter()
             .map(|t: PipelineTarget| {
                 let platform_ref = &self.platform;
-                let toplevel = vec![
-                    vec![platform_ref],
-                    self.toplevel.iter().map(|v| v).collect(),
-                ]
-                .concat();
+                let toplevel = [vec![platform_ref], self.toplevel.iter().collect()].concat();
 
                 let reified: Vec<_> = toplevel
                     .iter()
@@ -338,13 +334,13 @@ impl PipelineActionId {
                         ctx.profiles
                             .iter()
                             .find(|p| p.id == profile)
-                            .and_then(|p| resolve_action_from_profile_override(p, self, &ctx))
+                            .and_then(|p| resolve_action_from_profile_override(p, self, ctx))
                             .map(|config| (Some(profile), config.clone()))
                             .or_else(|| {
                                 // if missing, use the registered defaults
                                 let mut config: PipelineActionSettings<ConfigSelection> = ctx
                                     .registrar
-                                    .get(&self, ctx.target)
+                                    .get(self, ctx.target)
                                     .expect("action should exist if fetched for profile override")
                                     .settings
                                     .clone()
@@ -544,7 +540,7 @@ mod tests {
         }
     }
 
-    // #[cfg(test)]
+    // #[test]
     // fn test_toplevel_reification_for_override() -> Result<()> {
     //     use crate::settings::{AppId, AppProfile};
 
