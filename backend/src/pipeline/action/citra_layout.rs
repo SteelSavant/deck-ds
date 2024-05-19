@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{path::Path, thread::sleep, time::Duration};
 
 use crate::pipeline::executor::PipelineContext;
 
@@ -62,7 +62,7 @@ pub struct CitraLayout {
 pub struct CitraLayoutState {
     pub layout_option: CitraLayoutOption,
     pub swap_screens: bool,
-    pub fullscreen: bool, // Setting this doesn't work for some reason...
+    pub fullscreen: bool,
     pub rotate_upright: bool,
 }
 
@@ -128,10 +128,23 @@ impl CitraLayoutState {
             "layout_option",
             Some(self.layout_option.raw().to_string()),
         );
+
+        ini.set(
+            Self::LAYOUT_SECTION,
+            "layout_option\\default",
+            Some((self.layout_option == CitraLayoutOption::Default).to_string()),
+        );
+
         ini.set(
             Self::LAYOUT_SECTION,
             "swap_screen",
             Some(self.swap_screens.to_string()),
+        );
+
+        ini.set(
+            Self::LAYOUT_SECTION,
+            "swap_screen\\default",
+            Some((!self.swap_screens).to_string()),
         );
 
         ini.set(
@@ -141,9 +154,21 @@ impl CitraLayoutState {
         );
 
         ini.set(
+            Self::LAYOUT_SECTION,
+            "swap_screen\\default",
+            Some((!self.rotate_upright).to_string()),
+        );
+
+        ini.set(
             Self::UI_SECTION,
             "fullscreen",
             Some(self.fullscreen.to_string()),
+        );
+
+        ini.set(
+            Self::UI_SECTION,
+            "fullscreen\\default",
+            Some((!self.fullscreen).to_string()),
         );
 
         let section_regex = Regex::new(r#"^\[(.*)\]\s*$"#).expect("regex should be valid");
