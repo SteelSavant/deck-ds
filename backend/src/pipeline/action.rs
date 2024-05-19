@@ -68,7 +68,7 @@ pub trait ActionImpl: DeserializeOwned + Serialize {
 pub trait ErasedPipelineAction {
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()>;
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()>;
-    fn get_dependencies(&self, ctx: &mut PipelineContext) -> Vec<Dependency>;
+    fn get_dependencies(&self, ctx: &PipelineContext) -> Vec<Dependency>;
     fn get_id(&self) -> ActionId;
     /// Essentially a more stable, hardcoded typename.
     fn get_type(&self) -> ActionType;
@@ -97,7 +97,7 @@ where
         res
     }
 
-    fn get_dependencies(&self, ctx: &mut PipelineContext) -> Vec<Dependency> {
+    fn get_dependencies(&self, ctx: &PipelineContext) -> Vec<Dependency> {
         self.get_dependencies(ctx)
     }
 
