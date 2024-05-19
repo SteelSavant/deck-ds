@@ -12,7 +12,7 @@ use std::process::Command;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
-use typemap::{Key, TypeMap};
+use typemap_ors::{Key, TypeMap};
 
 use crate::decky_env::DeckyEnv;
 use crate::pipeline::action::cemu_audio::CemuAudio;
@@ -580,7 +580,7 @@ impl PipelineExecutor {
                         state.insert(id, (btn0_pressed, btn1_pressed, instant));
                     }
                     EventType::Disconnected => {
-                        state.remove(&id);
+                        state.shift_remove(&id);
                     }
                     _ => (),
                 }

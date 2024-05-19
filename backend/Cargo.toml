@@ -33,8 +33,6 @@ clap = { version = "4.4.6", features = ["derive"] }
 derive_more = "0.99.17"
 indexmap = { version = "^2.1.0", features = ["serde"] }
 schemars = { version = "0.8.15", features = ["indexmap2", "uuid1", "either"] }
-
-typemap = "0.3.3"
 anyhow = { version = "1.0.75", features = ["backtrace"] }
 gilrs = "0.10.2"
 rand = "0.8.5"
@@ -65,6 +63,7 @@ smart-default = "0.7.1"
 log-panics = { version = "2.1.0", features = ["with-backtrace"] }
 testing_logger = "0.1.1"
 edid-rs = "0.1.0"
+typemap-ors = "1.0.0"
 
 [features]
 default = ["online", "decky"]
