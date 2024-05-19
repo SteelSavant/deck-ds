@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use anyhow::Result;
 
-use crate::{asset::AssetManager, consts::PACKAGE_NAME, util::create_dir_all, AppModes};
+use crate::{asset::AssetManager, consts::PACKAGE_NAME, settings::Settings, AppModes};
 
 use usdpl_back::api::decky;
 
@@ -24,20 +24,31 @@ impl DeckyEnv {
     pub fn from_mode(mode: &AppModes) -> Self {
         let default = Self::default();
 
-        match mode {
-            AppModes::Autostart { env_source } => std::fs::read_to_string(env_source)
-                .inspect_err(|err| log::warn!("Failed to read env source file {env_source}: {err}"))
-                .map(|v| {
-                    serde_json::from_str(&v)
-                        .inspect_err(|err| {
-                            log::warn!("Failed to parse env source file {env_source}: {err}")
-                        })
-                        .unwrap_or(default.clone())
-                })
-                .unwrap_or(default),
+        let env = match mode {
+            AppModes::Autostart { env_source } => {
+                let env = std::fs::read_to_string(env_source)
+                    .inspect_err(|err| {
+                        log::warn!("Failed to read env source file {env_source}: {err}")
+                    })
+                    .map(|v| {
+                        serde_json::from_str(&v)
+                            .inspect_err(|err| {
+                                log::warn!("Failed to parse env source file {env_source}: {err}")
+                            })
+                            .unwrap_or(default.clone())
+                    })
+                    .unwrap_or(default);
+
+                // Use the settings saved in the autostart if possible, the default env settings otherwise
+
+                Settings::new("", &env)
+                    .get_autostart_cfg()
+                    .map(|v| v.env)
+                    .unwrap_or(env)
+            }
             AppModes::Serve => Self {
                 decky_user: decky::user().unwrap_or(default.decky_user),
-                deck_user_home: decky::home()
+                deck_user_home: std::env::var("DECKY_USER_HOME")
                     .map(PathBuf::from)
                     .unwrap_or(default.deck_user_home),
                 decky_plugin_settings_dir: decky::settings_dir()
@@ -51,7 +62,11 @@ impl DeckyEnv {
                     .unwrap_or(default.decky_plugin_log_dir),
             },
             AppModes::Schema { .. } => default,
-        }
+        };
+
+        env.create_dirs();
+
+        env
     }
 
     pub fn write(&self) -> Result<()> {
@@ -67,6 +82,20 @@ impl DeckyEnv {
 
     pub fn asset_manager(&self) -> AssetManager<'static> {
         AssetManager::new(&ASSETS_DIR, self.decky_plugin_settings_dir.join("assets"))
+    }
+
+    fn create_dirs(&self) {
+        for dir in [
+            &self.deck_user_home,
+            &self.decky_plugin_log_dir,
+            &self.decky_plugin_runtime_dir,
+            &self.decky_plugin_log_dir,
+        ] {
+            if !dir.exists() {
+                crate::util::create_dir_all(dir).expect("should be able to create dir in env");
+                // TODO::error handling
+            }
+        }
     }
 }
 
@@ -109,16 +138,7 @@ impl DeckyEnv {
             deck_user_home: home,
         };
 
-        for dir in [
-            &s.deck_user_home,
-            &s.decky_plugin_log_dir,
-            &s.decky_plugin_runtime_dir,
-            &s.decky_plugin_log_dir,
-        ] {
-            if !dir.exists() {
-                create_dir_all(dir).expect("should be able to create test directory");
-            }
-        }
+        s.create_dirs();
 
         s
     }

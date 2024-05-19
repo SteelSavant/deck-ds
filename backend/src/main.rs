@@ -225,9 +225,7 @@ fn main() -> Result<()> {
         AppModes::Serve => {
             decky_env.write()?;
 
-            let decky_data_dir = std::env::var("DECKY_PLUGIN_RUNTIME_DIR")
-                .expect("unable to find decky plugin runtime dir");
-            let db_path = Path::new(&decky_data_dir).join("profiles.db");
+            let db_path = decky_env.decky_plugin_runtime_dir.join("profiles.db");
             let profiles_db: &'static ProfileDb =
                 Box::leak(Box::new(ProfileDb::new(db_path, registrar.clone())));
 

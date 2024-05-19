@@ -15,7 +15,7 @@ pub fn steamos_session_select(session: Session) -> Result<()> {
 
     Command::new("steamos-session-select")
         .arg(s)
-        .env("SHELL", "/bin/sh")
+        .env("SHELL", "/bin/sh") // At some point during development, SteamOS lost the ability to set this correctly...
         .output()
         .map(|output| {
             if output.status.success() {

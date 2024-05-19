@@ -70,7 +70,8 @@ pub fn list_installed_flatpaks() -> Result<Vec<FlatpakInfo>> {
         Ok(status)
     } else {
         Err(anyhow::anyhow!(
-            String::from_utf8_lossy(&output.stderr).to_string()
+            "failed to list flatpaks: {}",
+            String::from_utf8_lossy(&output.stderr)
         ))
     }
 }

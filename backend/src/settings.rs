@@ -148,7 +148,7 @@ Type=Application"
             .replace(
                 "$Exec",
                 &format!(
-                    "{} autostart --env_source \"{}\"",
+                    "{} autostart \"{}\"",
                     self.exe_path
                         .to_str()
                         .expect("DeckDS server path should be valid unicode"),
@@ -211,7 +211,7 @@ mod tests {
         let actual = settings.create_desktop_contents();
         let expected = r#"[Desktop Entry]
 Comment=Runs DeckDS plugin autostart script for dual screen applications.
-Exec=test/out/homebrew/plugins/DeckDS/bin/backend autostart --env_source "test/out/env/desktop_contents/homebrew/data/DeckDS/decky.env"
+Exec=test/out/homebrew/plugins/DeckDS/bin/backend autostart "test/out/env/desktop_contents/homebrew/data/DeckDS/decky.env"
 Path=test/out/homebrew/plugins/DeckDS/bin
 Name=DeckDS
 Type=Application"#;
