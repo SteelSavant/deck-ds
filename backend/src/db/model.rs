@@ -16,7 +16,6 @@ pub type DbTopLevelDefinition = v1::DbTopLevelDefinition;
 pub type DbConfigSelection = v1::DbConfigSelection;
 pub type DbAction = v1::DbAction;
 pub type DbPipelineActionSettings = v1::DbPipelineActionSettings;
-pub type DbExitHooks = v1::DbExitHooks;
 
 // Action
 

@@ -413,17 +413,22 @@ impl PipelineExecutor {
 
     pub fn exec(mut self) -> Result<()> {
         // Set up pipeline
-        self.ctx.exit_hooks = if self.target == PipelineTarget::Desktop {
-            self.pipeline.as_ref().and_then(|p| p.exit_hooks.clone())
-        } else {
-            None
-        };
 
-        let pipeline = self
-            .pipeline
-            .take()
-            .with_context(|| "cannot execute pipeline; pipeline has already been executed")?
-            .build_actions(self.target);
+        let pipeline = {
+            let p = self
+                .pipeline
+                .take()
+                .with_context(|| "cannot execute pipeline; pipeline has already been executed")?;
+
+            self.ctx.exit_hooks =
+                if self.target == PipelineTarget::Desktop && p.should_register_exit_hooks {
+                    Some(p.exit_hooks.clone())
+                } else {
+                    None
+                };
+
+            p.build_actions(self.target)
+        };
 
         let mut errors = vec![];
 

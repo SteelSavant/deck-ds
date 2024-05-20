@@ -41,7 +41,8 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                         actions: PipelineActionLookup::empty(),
                     },
                     primary_target_override: None,
-                    exit_hooks: Some(ExitHooks::default()),
+                    should_register_exit_hooks: true,
+                    exit_hooks: ExitHooks::default(),
                     toplevel: vec![],
                 },
             }

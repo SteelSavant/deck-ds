@@ -6,10 +6,7 @@ use anyhow::Result;
 use native_db::transaction::{RTransaction, RwTransaction};
 
 use crate::{
-    db::model::{
-        DbAppOverride, DbCategoryProfile, DbExitHooks, DbPipelineActionSettings,
-        DbPipelineDefinition,
-    },
+    db::model::{DbAppOverride, DbCategoryProfile, DbPipelineActionSettings, DbPipelineDefinition},
     pipeline::data::{
         PipelineActionId, PipelineActionLookup, PipelineDefinition, PipelineDefinitionId,
         TopLevelDefinition, TopLevelId,
@@ -178,7 +175,8 @@ impl PipelineDefinition {
         let db_pipeline = DbPipelineDefinition {
             id,
             name: self.name.clone(),
-            exit_hooks: self.exit_hooks.map(DbExitHooks::from),
+            should_register_exit_hooks: self.should_register_exit_hooks,
+            exit_hooks: self.exit_hooks.into(),
             primary_target_override: self.primary_target_override,
             platform,
             toplevel,

@@ -9,6 +9,7 @@ import useAudioDeviceInfo from "../hooks/useAudioDeviceInfo";
 import useDisplayInfo from "../hooks/useDisplayInfo";
 import useSecondaryAppInfo from "../hooks/useSecondaryAppPresetInfo";
 import { AudioDeviceInfo, CemuAudio, CemuAudioChannels, CemuAudioSetting, CustomWindowOptions, LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp, ModePreference } from "../types/backend_api";
+import { labelForCamelCase, labelForKebabCase } from "../util/display";
 import { ActionChild, ActionChildBuilder } from "./ActionChild";
 import HandleLoading from "./HandleLoading";
 
@@ -452,33 +453,6 @@ export function InternalEditAction({
             const typecheck: never = type;
             throw typecheck ?? 'action for edit failed to typecheck'
     }
-}
-
-
-function labelForCamelCase(s: string, separator = ' '): string {
-    const splitIndexes: number[] = [];
-    s = s[0].toUpperCase() + s.slice(1);
-
-    [...s].forEach((c, i) => {
-        if (c === c.toUpperCase()) {
-            splitIndexes.push(i)
-        }
-    });
-
-    splitIndexes.push(s.length);
-    let start = splitIndexes.shift();
-
-    const words = [];
-    for (const next of splitIndexes) {
-        words.push(s.slice(start, next))
-        start = next;
-    }
-
-    return words.join(separator);
-}
-
-function labelForKebabCase(s: string): string {
-    return s.split('-').map((v) => v[0].toUpperCase() + v.slice(1).toLowerCase()).join('-');
 }
 
 interface LaunchSecondaryFlatpakAppProps {

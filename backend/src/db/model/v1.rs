@@ -88,7 +88,8 @@ pub struct DbPipelineDefinition {
     #[primary_key]
     pub id: PipelineDefinitionId,
     pub name: String,
-    pub exit_hooks: Option<DbExitHooks>,
+    pub should_register_exit_hooks: bool,
+    pub exit_hooks: DbExitHooks,
     pub primary_target_override: Option<PipelineTarget>,
     pub platform: DbTopLevelDefinition,
     pub toplevel: Vec<DbTopLevelDefinition>,

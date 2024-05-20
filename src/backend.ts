@@ -1,7 +1,9 @@
 import {
     AutoStartRequest, CategoryProfile, CitraLayoutOption,
     CreateProfileRequest, CreateProfileResponse,
-    DeleteProfileRequest, GetAppProfileRequest, GetAppProfileResponse,
+    DeleteProfileRequest,
+    GamepadButton,
+    GetAppProfileRequest, GetAppProfileResponse,
     GetAudioDeviceInfoResponse,
     GetDefaultAppOverrideForProfileRequest, GetDefaultAppOverrideForProfileResponse,
     GetDisplayInfoResponse,
@@ -35,6 +37,26 @@ export type ActionOneOf = { selection: string, actions: PipelineAction[] }
 export type DefinitionOneOf = { selection: string, actions: string[] }
 
 export type PipelineActionSettings = PipelineActionSettingsFor_ConfigSelection;
+
+export type GamepadButtonSelection = GamepadButton;
+export const gamepadButtonSelectionOptions: GamepadButtonSelection[] = [
+    'Start',
+    'Select',
+    'South',
+    'East',
+    'West',
+    'North',
+    'DPadUp',
+    'DPadDown',
+    'DPadLeft',
+    'DPadRight',
+    'L1',
+    'L2',
+    'R1',
+    'R2',
+    'LeftThumb',
+    'RightThumb'
+];
 
 export interface AppProfileOveride {
     profileId: string,

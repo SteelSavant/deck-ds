@@ -15,8 +15,8 @@ use crate::{
     pipeline::{
         action::{Action, ActionType},
         data::{
-            ConfigSelection, ExitHooks, PipelineActionLookup, PipelineActionSettings,
-            PipelineDefinition, PipelineDefinitionId, TopLevelDefinition,
+            ConfigSelection, PipelineActionLookup, PipelineActionSettings, PipelineDefinition,
+            PipelineDefinitionId, TopLevelDefinition,
         },
     },
 };
@@ -111,7 +111,8 @@ impl DbPipelineDefinition {
         Ok(PipelineDefinition {
             id: self.id,
             name: self.name.clone(),
-            exit_hooks: self.exit_hooks.clone().map(ExitHooks::from),
+            should_register_exit_hooks: self.should_register_exit_hooks,
+            exit_hooks: self.exit_hooks.clone().into(),
             primary_target_override: self.primary_target_override,
             platform,
             toplevel,

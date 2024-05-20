@@ -1,5 +1,5 @@
 import { Action, ApiError, PipelineDefinition, PipelineTarget, patchPipelineAction } from "../backend";
-import { PipelineActionUpdate } from "../types/backend_api";
+import { ExitHooks, PipelineActionUpdate } from "../types/backend_api";
 import { MaybeString } from "../types/short";
 import { Ok, Result } from "./result";
 
@@ -48,10 +48,11 @@ export type PipelineUpdate = {
 };
 
 export interface PipelineInfo {
-    description?: string | undefined;
-    name?: string | undefined;
-    register_exit_hooks?: boolean | undefined;
-    primary_target_override?: PipelineTarget | null | undefined;
+    description?: string | undefined,
+    name?: string | undefined,
+    exit_hooks?: ExitHooks | undefined,
+    register_exit_hooks?: boolean | undefined,
+    primary_target_override?: PipelineTarget | null | undefined,
 }
 
 
@@ -63,7 +64,8 @@ export async function patchPipeline(pipeline: PipelineDefinition, update: Pipeli
         return Ok({
             ...pipeline,
             name: info.name ?? pipeline.name,
-            register_exit_hooks: info.register_exit_hooks ?? pipeline.register_exit_hooks,
+            register_exit_hooks: info.register_exit_hooks ?? pipeline.should_register_exit_hooks,
+            exit_hooks: info.exit_hooks ?? pipeline.exit_hooks,
             primary_target_override: info.primary_target_override === undefined
                 ? pipeline.primary_target_override
                 : info.primary_target_override
