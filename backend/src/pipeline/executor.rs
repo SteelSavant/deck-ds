@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Context, Result};
+use egui::ahash::HashSet;
 use either::Either;
 use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
@@ -39,7 +40,7 @@ use crate::sys::x_display::XDisplay;
 
 use super::action::session_handler::UiEvent;
 use super::action::{Action, ErasedPipelineAction};
-use super::data::{Pipeline, PipelineTarget};
+use super::data::{ExitHooks, GamepadButton, Pipeline, PipelineTarget};
 
 pub struct PipelineExecutor {
     game_id: Either<AppId, GameId>,
@@ -57,7 +58,7 @@ pub struct PipelineContext {
     pub kwin: KWin,
     /// Display handler,
     pub display: Option<XDisplay>,
-    pub should_register_exit_hooks: bool,
+    pub exit_hooks: Option<ExitHooks>,
     pub secondary_app: SecondaryAppManager,
     /// actions that have run
     have_run: Vec<Action>,
@@ -85,7 +86,7 @@ impl PipelineContext {
             state: TypeMap::new(),
             have_run: vec![],
             secondary_app: SecondaryAppManager::new(decky_env.asset_manager()),
-            should_register_exit_hooks: true,
+            exit_hooks: Some(ExitHooks::default()),
             on_launch_callbacks: vec![],
             decky_env,
         }
@@ -412,14 +413,11 @@ impl PipelineExecutor {
 
     pub fn exec(mut self) -> Result<()> {
         // Set up pipeline
-        let should_register_exit_hooks = self.target == PipelineTarget::Desktop
-            && self
-                .pipeline
-                .as_ref()
-                .map(|p| p.register_exit_hooks)
-                .unwrap_or_default();
-
-        self.ctx.should_register_exit_hooks = should_register_exit_hooks;
+        self.ctx.exit_hooks = if self.target == PipelineTarget::Desktop {
+            self.pipeline.as_ref().and_then(|p| p.exit_hooks.clone())
+        } else {
+            None
+        };
 
         let pipeline = self
             .pipeline
@@ -461,7 +459,7 @@ impl PipelineExecutor {
             ));
 
             // Run app
-            if let Err(err) = self.run_app(should_register_exit_hooks) {
+            if let Err(err) = self.run_app() {
                 log::error!("{}", err);
                 errors.push(err);
             }
@@ -480,7 +478,7 @@ impl PipelineExecutor {
         }
     }
 
-    fn run_app(&mut self, should_register_exit_hooks: bool) -> Result<()> {
+    fn run_app(&mut self) -> Result<()> {
         let (app_id, launch_type) = match (self.game_id.as_ref(), self.target) {
             (Either::Right(id), PipelineTarget::Desktop) => (id.raw(), "rungameid"),
             (Either::Right(id), _) => (id.raw(), "launch"),
@@ -512,10 +510,7 @@ impl PipelineExecutor {
         std::mem::swap(&mut tmp, &mut self.ctx.on_launch_callbacks);
 
         let mut gilrs = gilrs::Gilrs::new().unwrap();
-        let mut state = IndexMap::<GamepadId, (bool, bool, Option<Instant>)>::new();
-
-        const BTN0: gilrs::Button = gilrs::Button::Start;
-        const BTN1: gilrs::Button = gilrs::Button::Select;
+        let mut state = IndexMap::<GamepadId, (HashSet<Button>, Option<Instant>)>::new();
 
         self.ctx.send_ui_event(UiEvent::ClearStatus);
         self.ctx.send_ui_event(UiEvent::UpdateWindowLevel(
@@ -527,73 +522,71 @@ impl PipelineExecutor {
         while app_process.is_alive() {
             std::thread::sleep(std::time::Duration::from_millis(100));
 
-            if !should_register_exit_hooks {
-                continue;
-            }
+            if let Some(hooks) = self.ctx.exit_hooks.clone() {
+                let btns: Vec<Button> = hooks.iter().map(|v| (*v).into()).collect();
 
-            while let Some(Event { id, event, time }) = gilrs.next_event() {
-                fn create_instant(time: SystemTime) -> Instant {
-                    let elapsed = time.elapsed().unwrap_or_default();
-                    Instant::now() - elapsed
+                while let Some(Event { id, event, time }) = gilrs.next_event() {
+                    fn create_instant(time: SystemTime) -> Instant {
+                        let elapsed = time.elapsed().unwrap_or_default();
+                        Instant::now() - elapsed
+                    }
+                    log::trace!("Event: {:?}", event);
+                    match event {
+                        EventType::ButtonPressed(btn, _) => {
+                            let entry = state.entry(id).or_default();
+                            if btns.contains(&btn) {
+                                entry.0.insert(btn);
+                            }
+
+                            if entry.0.len() == btns.len() && entry.1.is_none() {
+                                entry.1 = Some(create_instant(time))
+                            }
+                        }
+                        EventType::ButtonReleased(btn, _) => {
+                            let entry = state.entry(id).or_default();
+                            if btns.contains(&btn) {
+                                entry.0.remove(&btn);
+                                entry.1 = None;
+                            }
+                        }
+                        EventType::Connected => {
+                            let gamepad = gilrs.gamepad(id);
+
+                            fn check_pressed(gamepad: Gamepad, btn: Button) -> bool {
+                                gamepad
+                                    .button_data(btn)
+                                    .map(|data| data.is_pressed())
+                                    .unwrap_or_default()
+                            }
+
+                            for btn in btns.iter() {
+                                let pressed = check_pressed(gamepad, *btn);
+                                if pressed {
+                                    let entry = state.entry(id).or_default();
+                                    entry.0.insert(*btn);
+
+                                    if entry.0.len() == btns.len() && entry.1.is_none() {
+                                        entry.1 = Some(create_instant(time))
+                                    }
+                                }
+                            }
+                        }
+                        EventType::Disconnected => {
+                            state.swap_remove(&id);
+                        }
+                        _ => (),
+                    }
                 }
-                log::trace!("Event: {:?}", event);
-                match event {
-                    EventType::ButtonPressed(btn @ (BTN0 | BTN1), _) => {
-                        let entry = state.entry(id).or_default();
-                        if btn == BTN0 {
-                            entry.0 = true;
-                        } else {
-                            entry.1 = true;
-                        }
 
-                        if let &mut (true, true, None) = entry {
-                            entry.2 = Some(create_instant(time))
-                        }
+                log::trace!("Gamepad State: {state:?}");
+
+                for (_, instant) in state.values() {
+                    let hold_duration = std::time::Duration::from_secs(2);
+                    if matches!(instant, &Some(i) if i.elapsed() > hold_duration) {
+                        log::info!("Received exit signal. Closing application...");
+
+                        return app_process.kill();
                     }
-                    EventType::ButtonReleased(btn @ (BTN0 | BTN1), _) => {
-                        let entry = state.entry(id).or_default();
-                        if btn == Button::Start {
-                            entry.0 = false;
-                        } else {
-                            entry.1 = false;
-                        }
-                        entry.2 = None;
-                    }
-                    EventType::Connected => {
-                        let gamepad = gilrs.gamepad(id);
-
-                        fn check_pressed(gamepad: Gamepad, btn: Button) -> bool {
-                            gamepad
-                                .button_data(btn)
-                                .map(|data| data.is_pressed())
-                                .unwrap_or_default()
-                        }
-
-                        let btn0_pressed = check_pressed(gamepad, BTN0);
-                        let btn1_pressed = check_pressed(gamepad, BTN1);
-                        let instant = if btn0_pressed && btn1_pressed {
-                            Some(create_instant(time))
-                        } else {
-                            None
-                        };
-
-                        state.insert(id, (btn0_pressed, btn1_pressed, instant));
-                    }
-                    EventType::Disconnected => {
-                        state.shift_remove(&id);
-                    }
-                    _ => (),
-                }
-            }
-
-            log::trace!("Gamepad State: {state:?}");
-
-            for (_, _, instant) in state.values() {
-                let hold_duration = std::time::Duration::from_secs(2);
-                if matches!(instant, &Some(i) if i.elapsed() > hold_duration) {
-                    log::info!("Received exit signal. Closing application...");
-
-                    return app_process.kill();
                 }
             }
         }
@@ -663,6 +656,31 @@ impl Action {
             }
             ExecActionType::Setup => self.setup(ctx),
             ExecActionType::Teardown => self.teardown(ctx),
+        }
+    }
+}
+
+impl From<GamepadButton> for Button {
+    fn from(value: GamepadButton) -> Self {
+        match value {
+            GamepadButton::Start => Button::Start,
+            GamepadButton::Select => Button::Select,
+            GamepadButton::North => Button::North,
+            GamepadButton::East => Button::East,
+            GamepadButton::South => Button::South,
+            GamepadButton::West => Button::West,
+            GamepadButton::RightThumb => Button::RightThumb,
+            GamepadButton::LeftThumb => Button::LeftThumb,
+            GamepadButton::DPadUp => Button::DPadUp,
+            GamepadButton::DPadLeft => Button::DPadLeft,
+            GamepadButton::DPadRight => Button::DPadRight,
+            GamepadButton::DPadDown => Button::DPadDown,
+            GamepadButton::L1 => Button::LeftTrigger,
+            GamepadButton::L2 => Button::LeftTrigger2,
+            GamepadButton::R1 => Button::RightTrigger,
+            GamepadButton::R2 => Button::RightTrigger2,
+            // If it can be determined what "C" and "Z" map to, they exist as well.
+            // "Mode" is not used as SteamOS overrides it.
         }
     }
 }

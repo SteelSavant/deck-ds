@@ -28,7 +28,10 @@ use crate::{
             session_handler::DesktopSessionHandler,
             ActionId,
         },
-        data::{PipelineActionId, PipelineDefinitionId, PipelineTarget, TopLevelId},
+        data::{
+            ExitHooks, GamepadButton, PipelineActionId, PipelineDefinitionId, PipelineTarget,
+            TopLevelId,
+        },
     },
     secondary_app::{FlatpakApp, SecondaryApp, SecondaryAppPresetId},
     settings::{AppId, ProfileId},
@@ -85,10 +88,25 @@ pub struct DbPipelineDefinition {
     #[primary_key]
     pub id: PipelineDefinitionId,
     pub name: String,
-    pub register_exit_hooks: bool,
+    pub exit_hooks: Option<DbExitHooks>,
     pub primary_target_override: Option<PipelineTarget>,
     pub platform: DbTopLevelDefinition,
     pub toplevel: Vec<DbTopLevelDefinition>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct DbExitHooks(pub GamepadButton, pub GamepadButton, pub Vec<GamepadButton>);
+
+impl From<ExitHooks> for DbExitHooks {
+    fn from(value: ExitHooks) -> Self {
+        Self(value.0, value.1, value.2)
+    }
+}
+
+impl From<DbExitHooks> for ExitHooks {
+    fn from(value: DbExitHooks) -> Self {
+        Self(value.0, value.1, value.2)
+    }
 }
 
 #[derive(Serialize, Deserialize)]

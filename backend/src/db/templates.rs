@@ -7,8 +7,9 @@ use crate::{
     pipeline::{
         action_registar::PipelineActionRegistrar,
         data::{
-            PipelineActionId, PipelineActionLookup, PipelineDefinition, PipelineDefinitionId,
-            PipelineTarget, Template, TemplateId, TopLevelDefinition, TopLevelId,
+            ExitHooks, PipelineActionId, PipelineActionLookup, PipelineDefinition,
+            PipelineDefinitionId, PipelineTarget, Template, TemplateId, TopLevelDefinition,
+            TopLevelId,
         },
     },
 };
@@ -40,7 +41,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                         actions: PipelineActionLookup::empty(),
                     },
                     primary_target_override: None,
-                    register_exit_hooks: true,
+                    exit_hooks: Some(ExitHooks::default()),
                     toplevel: vec![],
                 },
             }

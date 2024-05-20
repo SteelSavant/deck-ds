@@ -175,8 +175,8 @@ mod tests {
         pipeline::{
             action_registar::PipelineActionRegistrar,
             data::{
-                PipelineActionId, PipelineActionLookup, PipelineDefinitionId, PipelineTarget,
-                TopLevelDefinition, TopLevelId,
+                ExitHooks, PipelineActionId, PipelineActionLookup, PipelineDefinitionId,
+                PipelineTarget, TopLevelDefinition, TopLevelId,
             },
         },
         util::create_dir_all,
@@ -208,7 +208,7 @@ mod tests {
             pipeline: PipelineDefinition {
                 id: PipelineDefinitionId::nil(),
                 name: "Test Pipeline".to_string(),
-                register_exit_hooks: true,
+                exit_hooks: Some(ExitHooks::default()),
                 primary_target_override: None,
                 platform: TopLevelDefinition {
                     id: TopLevelId::nil(),
@@ -312,7 +312,7 @@ mod tests {
                 PipelineDefinition {
                     id: pd_id_1,
                     name: "Profile 1".into(),
-                    register_exit_hooks: true,
+                    exit_hooks: Some(ExitHooks::default()),
                     primary_target_override: None,
                     platform: TopLevelDefinition {
                         id: toplevel1,
@@ -327,7 +327,7 @@ mod tests {
                 PipelineDefinition {
                     id: pd_id_2,
                     name: "Profile 2".into(),
-                    register_exit_hooks: true,
+                    exit_hooks: Some(ExitHooks::default()),
                     primary_target_override: None,
                     platform: TopLevelDefinition {
                         id: toplevel2,

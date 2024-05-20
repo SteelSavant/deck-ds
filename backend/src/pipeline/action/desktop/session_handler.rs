@@ -194,13 +194,11 @@ impl ActionImpl for DesktopSessionHandler {
         let (ui_tx, ui_rx): (Sender<UiEvent>, Receiver<UiEvent>) = mpsc::channel();
         let (main_tx, main_rx): (Sender<egui::Context>, Receiver<egui::Context>) = mpsc::channel();
 
-        let should_register_exit_hooks = ctx.should_register_exit_hooks;
-        let secondary_text = if should_register_exit_hooks {
-                    "hold (select) + (start) to exit\ngame after launch"
-                } else {
-                    "exit hooks not registered;\nuse Steam Input mapping or press (Alt+F4) to exit\ngame after launch"
-                }
-                .to_string();
+        let secondary_text = match &ctx.exit_hooks {
+            Some(hooks) =>
+                    format!("hold \"{}\" to exit\ngame after launch", hooks.iter().map(|v| format!("{v}")).collect::<Vec<_>>().join("\" + \"")),
+                    None =>"exit hooks not registered;\nuse Steam Input mapping or press (Alt+F4) to exit\ngame after launch".to_string()
+        };
 
         let update = display.calc_ui_viewport_event(embedded.as_ref(), preferred.as_ref());
 
