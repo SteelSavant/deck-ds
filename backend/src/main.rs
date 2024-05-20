@@ -172,6 +172,9 @@ fn main() -> Result<()> {
                 .map(|l| l.build_executor(decky_env.clone()));
 
             let thread_settings = settings.clone();
+
+            let global_config = settings.lock().unwrap().get_global_cfg();
+
             std::thread::spawn(move || loop {
                 // Ensure the autostart config gets removed, to avoid launching old configs
                 {
@@ -196,7 +199,7 @@ fn main() -> Result<()> {
 
                     let exec_result = executor.and_then(|e| {
                         log::debug!("Pipeline executor initialized; executing");
-                        e.exec()
+                        e.exec(&global_config)
                     });
 
                     // return to gamemode

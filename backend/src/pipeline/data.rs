@@ -74,7 +74,7 @@ pub struct PipelineDefinition {
     pub id: PipelineDefinitionId,
     pub name: String,
     pub should_register_exit_hooks: bool,
-    pub exit_hooks: ExitHooks,
+    pub exit_hooks_override: Option<ExitHooks>,
     pub primary_target_override: Option<PipelineTarget>,
     pub platform: TopLevelDefinition,
     // Additional top-level actions besides the main platform.
@@ -161,7 +161,7 @@ pub struct Pipeline {
     pub name: String,
     pub description: String,
     pub should_register_exit_hooks: bool,
-    pub exit_hooks: ExitHooks,
+    pub exit_hooks_override: Option<ExitHooks>,
     pub primary_target_override: Option<PipelineTarget>,
     pub targets: HashMap<PipelineTarget, RuntimeSelection>,
 }
@@ -320,7 +320,7 @@ impl PipelineDefinition {
             name: self.name.clone(),
             description,
             should_register_exit_hooks: self.should_register_exit_hooks,
-            exit_hooks: self.exit_hooks.clone(),
+            exit_hooks_override: self.exit_hooks_override.clone(),
             primary_target_override: self.primary_target_override,
             targets,
         })

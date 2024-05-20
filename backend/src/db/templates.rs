@@ -7,9 +7,8 @@ use crate::{
     pipeline::{
         action_registar::PipelineActionRegistrar,
         data::{
-            ExitHooks, PipelineActionId, PipelineActionLookup, PipelineDefinition,
-            PipelineDefinitionId, PipelineTarget, Template, TemplateId, TopLevelDefinition,
-            TopLevelId,
+            PipelineActionId, PipelineActionLookup, PipelineDefinition, PipelineDefinitionId,
+            PipelineTarget, Template, TemplateId, TopLevelDefinition, TopLevelId,
         },
     },
 };
@@ -42,7 +41,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                     },
                     primary_target_override: None,
                     should_register_exit_hooks: true,
-                    exit_hooks: ExitHooks::default(),
+                    exit_hooks_override: None,
                     toplevel: vec![],
                 },
             }
@@ -68,7 +67,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                 .map(|v| v.to_string())
                 .collect(),
         },
-        // Lime3DS
+        // Lime3DS; Before Citra to ensure it matches 3DS tags first, since Citra is technically no longer in development
         TemplateBuilder {
             id: TemplateId::parse("fe82be74-22b9-4135-b7a0-cb6d8f51aecd"),
             platform: PipelineActionId::new("core:lime3ds:platform"),
@@ -90,7 +89,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
         TemplateBuilder {
             id: TemplateId::parse("33c863e5-2739-4bc3-b9bc-4798bac8682d"),
             platform: PipelineActionId::new("core:cemu:platform"),
-            tags: vec!["Cemu", "WiiU"]
+            tags: vec!["Cemu", "WiiU", "Wii U"]
                 .into_iter()
                 .map(|v| v.to_string())
                 .collect(),

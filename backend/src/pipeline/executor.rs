@@ -33,7 +33,7 @@ use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::action::{ActionImpl, ActionType};
 use crate::pipeline::data::RuntimeSelection;
 use crate::secondary_app::SecondaryAppManager;
-use crate::settings::{AppId, GameId};
+use crate::settings::{AppId, GameId, GlobalConfig};
 use crate::sys::app_process::AppProcess;
 use crate::sys::kwin::KWin;
 use crate::sys::x_display::XDisplay;
@@ -411,7 +411,7 @@ impl PipelineExecutor {
         Ok(s)
     }
 
-    pub fn exec(mut self) -> Result<()> {
+    pub fn exec(mut self, global_config: &GlobalConfig) -> Result<()> {
         // Set up pipeline
 
         let pipeline = {
@@ -422,7 +422,11 @@ impl PipelineExecutor {
 
             self.ctx.exit_hooks =
                 if self.target == PipelineTarget::Desktop && p.should_register_exit_hooks {
-                    Some(p.exit_hooks.clone())
+                    Some(
+                        p.exit_hooks_override
+                            .clone()
+                            .unwrap_or(global_config.exit_hooks.clone()),
+                    )
                 } else {
                     None
                 };

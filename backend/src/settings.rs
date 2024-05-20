@@ -20,7 +20,7 @@ use crate::{
     macros::{newtype_strid, newtype_uuid},
     pipeline::{
         action::session_handler::DesktopSessionHandler,
-        data::{Pipeline, PipelineDefinition, PipelineTarget},
+        data::{ExitHooks, Pipeline, PipelineDefinition, PipelineTarget},
     },
     util::create_dir_all,
     PACKAGE_NAME,
@@ -46,6 +46,8 @@ pub struct GlobalConfig {
     /// If `enable_ui_inject` is true, set the "Play" button to this target
     #[default(PipelineTarget::Gamemode)]
     pub primary_ui_target: PipelineTarget,
+    /// Button chord to be used to exit profiles that register for exit hooks.
+    pub exit_hooks: ExitHooks,
 }
 
 impl Settings {
