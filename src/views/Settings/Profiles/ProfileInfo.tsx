@@ -1,13 +1,13 @@
 import { DialogButton, Dropdown, Field, Focusable, Toggle, showModal } from "decky-frontend-lib";
 import { Fragment, ReactElement } from "react";
 import { FaPlus, FaTrash, FaX } from "react-icons/fa6";
-import { CategoryProfile, GamepadButtonSelection, PipelineContainer, gamepadButtonSelectionOptions, isCategoryProfile } from "../../../backend";
+import { CategoryProfile, PipelineContainer, isCategoryProfile } from "../../../backend";
+import { EditExitHooks } from "../../../components/EditExitHooks";
 import HandleLoading from "../../../components/HandleLoading";
 import { useModifiablePipelineContainer } from "../../../context/modifiablePipelineContext";
 import useGlobalSettings from "../../../hooks/useGlobalSettings";
 import useTemplates from "../../../hooks/useTemplates";
 import useToplevel from "../../../hooks/useToplevel";
-import { labelForGamepadButton } from "../../../util/display";
 import AddProfileTagModal from "./modals/AddProfileTagModal";
 import AddToplevelActionModal from "./modals/AddToplevelActionModal";
 
@@ -83,35 +83,8 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
         : undefined
         ;
 
-    const exitHooks = profile.pipeline.exit_hooks;
-    const flattenedHooks = [[exitHooks[0]], [exitHooks[1]], exitHooks[2]].flat();
-    const availableHooks: GamepadButtonSelection[] = gamepadButtonSelectionOptions.filter((v) => !flattenedHooks.includes(v));
 
-    console.log('exit hooks:', exitHooks);
-    console.log('flattened hooks:', flattenedHooks)
 
-    function deleteExitHook(i: number) {
-        flattenedHooks.splice(i, 1);
-        dispatch({
-            update: {
-                type: 'updatePipelineInfo',
-                info: {
-                    exit_hooks: [flattenedHooks[0], flattenedHooks[1], flattenedHooks.slice(2)]
-                }
-            }
-        })
-    }
-
-    function onAddExitHook() {
-        dispatch({
-            update: {
-                type: 'updatePipelineInfo',
-                info: {
-                    exit_hooks: [flattenedHooks[0], flattenedHooks[1], flattenedHooks.slice(2).concat(availableHooks[0])]
-                }
-            }
-        })
-    }
 
     // TODO::make description editable
     return <HandleLoading
@@ -227,75 +200,53 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                 {
                     profile.pipeline.should_register_exit_hooks ?
                         <Fragment>
-                            {
-                                flattenedHooks.map((hook, i) => {
-                                    return (
-                                        <Field indentLevel={1} focusable={false}>
-                                            <div
-                                                style={{
-                                                    display: 'flex',
-                                                    flexDirection: 'row'
-                                                }}
-                                            >
-                                                <Dropdown
-                                                    selectedOption={hook}
-                                                    rgOptions={[hook].concat(availableHooks).map((v) => {
-                                                        return {
-                                                            label: labelForGamepadButton(v),
-                                                            data: v
-                                                        }
-                                                    })}
-                                                    onChange={(props) => {
-                                                        const data: GamepadButtonSelection = props.data;
-                                                        const index = flattenedHooks.indexOf(hook);
-                                                        flattenedHooks.splice(index, 1, data);
-                                                        dispatch({
-                                                            update: {
-                                                                type: 'updatePipelineInfo',
-                                                                info: {
-                                                                    exit_hooks: [flattenedHooks[0], flattenedHooks[1], flattenedHooks.slice(2)]
-                                                                }
-                                                            }
-                                                        })
-                                                    }}
-                                                />
-                                                {
-                                                    // TODO::styling
-                                                    flattenedHooks.length > 2 ?
-                                                        <DialogButton style={{
-                                                            backgroundColor: 'red',
-                                                            height: '40px',
-                                                            width: '40px',
-                                                            padding: '10px 12px',
-                                                            minWidth: '40px',
-                                                            display: 'flex',
-                                                            flexDirection: 'column',
-                                                            justifyContent: 'center',
-                                                            marginRight: '10px'
-                                                        }}
-                                                            onOKButton={() => deleteExitHook(i)}
-                                                            onClick={() => deleteExitHook(i)}
-                                                        >
-                                                            <FaTrash />
-                                                        </DialogButton>
-                                                        : undefined
+                            <Field
+                                focusable={false}
+                                label="Exit Hooks"
+                                description="The button chord to hold to exit the app in desktop mode."
+                            >
+                                <Dropdown
+                                    selectedOption={profile.pipeline.exit_hooks_override}
+                                    rgOptions={
+                                        [
+                                            {
+                                                label: `Global Setting`,
+                                                data: null
+                                            },
+                                            {
+                                                label: 'Custom',
+                                                data: profile.pipeline.exit_hooks_override ?? globalSettings.exit_hooks
+                                            }
+                                        ]
+                                    }
+                                    onChange={(option) => {
+                                        dispatch({
+                                            update: {
+                                                type: 'updatePipelineInfo',
+                                                info: {
+                                                    exit_hooks_override: option.data,
                                                 }
-                                            </div>
-                                        </Field>
-                                    )
-                                })
-
-                            }
+                                            }
+                                        });
+                                    }}
+                                />
+                            </Field>
                             {
-                                availableHooks.length > 0
-                                    ? <Field indentLevel={1} focusable={false}>
-                                        <DialogButton
-                                            onClick={onAddExitHook}
-                                            onOKButton={onAddExitHook}
-                                        >
-                                            Add Chord Button
-                                        </DialogButton>
-                                    </Field>
+                                profile.pipeline.exit_hooks_override
+                                    ? <EditExitHooks
+                                        exitHooks={profile.pipeline.exit_hooks_override}
+                                        indentLevel={1}
+                                        onChange={(hooks) => {
+                                            dispatch({
+                                                update: {
+                                                    type: 'updatePipelineInfo',
+                                                    info: {
+                                                        exit_hooks_override: hooks
+                                                    }
+                                                }
+                                            })
+                                        }}
+                                    />
                                     : undefined
                             }
                         </Fragment>
@@ -329,8 +280,7 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                                     }
                                 }
                             });
-                        }
-                        }
+                        }}
                     />
                 </Field>
             </div>

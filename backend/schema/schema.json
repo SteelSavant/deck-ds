@@ -1636,6 +1636,7 @@
       "required": [
         "display_restoration",
         "enable_ui_inject",
+        "exit_hooks",
         "primary_ui_target",
         "restore_displays_if_not_executing_pipeline"
       ],
@@ -1646,6 +1647,14 @@
         "enable_ui_inject": {
           "description": "If true, inject buttons onto app action bar",
           "type": "boolean"
+        },
+        "exit_hooks": {
+          "description": "Button chord to be used to exit profiles that register for exit hooks.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/ExitHooks"
+            }
+          ]
         },
         "primary_ui_target": {
           "description": "If `enable_ui_inject` is true, set the \"Play\" button to this target",
@@ -2032,7 +2041,6 @@
       "type": "object",
       "required": [
         "description",
-        "exit_hooks",
         "name",
         "should_register_exit_hooks",
         "targets"
@@ -2041,8 +2049,15 @@
         "description": {
           "type": "string"
         },
-        "exit_hooks": {
-          "$ref": "#/definitions/ExitHooks"
+        "exit_hooks_override": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ExitHooks"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "name": {
           "type": "string"
@@ -2311,7 +2326,6 @@
     "PipelineDefinition": {
       "type": "object",
       "required": [
-        "exit_hooks",
         "id",
         "name",
         "platform",
@@ -2319,8 +2333,15 @@
         "toplevel"
       ],
       "properties": {
-        "exit_hooks": {
-          "$ref": "#/definitions/ExitHooks"
+        "exit_hooks_override": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ExitHooks"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "id": {
           "type": "string",

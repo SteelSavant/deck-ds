@@ -332,7 +332,7 @@ export interface CreateProfileRequest {
   pipeline: PipelineDefinition;
 }
 export interface PipelineDefinition {
-  exit_hooks: ExitHooks;
+  exit_hooks_override?: ExitHooks | null;
   id: string;
   name: string;
   platform: TopLevelDefinition;
@@ -597,6 +597,10 @@ export interface GlobalConfig {
    */
   enable_ui_inject: boolean;
   /**
+   * Button chord to be used to exit profiles that register for exit hooks.
+   */
+  exit_hooks: ExitHooks;
+  /**
    * If `enable_ui_inject` is true, set the "Play" button to this target
    */
   primary_ui_target: PipelineTarget;
@@ -639,7 +643,7 @@ export interface ReifyPipelineResponse {
 }
 export interface Pipeline {
   description: string;
-  exit_hooks: ExitHooks;
+  exit_hooks_override?: ExitHooks | null;
   name: string;
   primary_target_override?: PipelineTarget | null;
   should_register_exit_hooks: boolean;

@@ -10,7 +10,8 @@ export const GlobalSettingsPage: VFC = () => {
 
     const Builder = ActionChild;
 
-    // TODO:: make UI inject configurable
+    // TODO::global config for editing exit hooks
+
     return <HandleLoading
         value={settings}
         onOk={(settings) => {
