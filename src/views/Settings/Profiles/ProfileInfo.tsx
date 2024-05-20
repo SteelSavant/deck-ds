@@ -261,7 +261,7 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                                                 />
                                                 {
                                                     // TODO::styling
-                                                    flattenedHooks.length >= 2 ?
+                                                    flattenedHooks.length > 2 ?
                                                         <DialogButton style={{
                                                             backgroundColor: 'red',
                                                             height: '40px',
