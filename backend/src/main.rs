@@ -74,6 +74,8 @@ fn main() -> Result<()> {
     // simple fn to sanity check ui
     // return ui_test::ui_test();
 
+    set_env_vars();
+
     let args = Cli::parse();
     let mode = args.mode.unwrap_or_default();
 
@@ -366,4 +368,16 @@ fn main() -> Result<()> {
             }
         }
     }
+}
+
+fn set_env_vars() {
+    // TODO::consider XDG_RUNDIME_DIR and XDG_DATA_DIRS
+
+    // flatpak links the wrong openssl lib since the default
+    // LD_LIBRARY_PATH links to a generated temporary directory,
+    // so we ensure "good" paths show up first.
+    std::env::set_var(
+        "LD_LIBRARY_PATH",
+        "/usr/lib:/usr/local/lib:$LD_LIBRARY_PATH",
+    );
 }
