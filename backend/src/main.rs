@@ -74,6 +74,8 @@ fn main() -> Result<()> {
     // simple fn to sanity check ui
     // return ui_test::ui_test();
 
+    set_env_vars();
+
     let args = Cli::parse();
     let mode = args.mode.unwrap_or_default();
 
@@ -170,6 +172,9 @@ fn main() -> Result<()> {
                 .map(|l| l.build_executor(decky_env.clone()));
 
             let thread_settings = settings.clone();
+
+            let global_config = settings.lock().unwrap().get_global_cfg();
+
             std::thread::spawn(move || loop {
                 // Ensure the autostart config gets removed, to avoid launching old configs
                 {
@@ -194,7 +199,7 @@ fn main() -> Result<()> {
 
                     let exec_result = executor.and_then(|e| {
                         log::debug!("Pipeline executor initialized; executing");
-                        e.exec()
+                        e.exec(&global_config)
                     });
 
                     // return to gamemode
@@ -366,4 +371,16 @@ fn main() -> Result<()> {
             }
         }
     }
+}
+
+fn set_env_vars() {
+    // TODO::consider XDG_RUNDIME_DIR and XDG_DATA_DIRS
+
+    // flatpak links the wrong openssl lib since the default
+    // LD_LIBRARY_PATH links to a generated temporary directory,
+    // so we ensure "good" paths show up first.
+    std::env::set_var(
+        "LD_LIBRARY_PATH",
+        "/usr/lib:/usr/local/lib:$LD_LIBRARY_PATH",
+    );
 }

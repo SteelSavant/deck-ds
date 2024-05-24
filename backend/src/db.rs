@@ -208,7 +208,8 @@ mod tests {
             pipeline: PipelineDefinition {
                 id: PipelineDefinitionId::nil(),
                 name: "Test Pipeline".to_string(),
-                register_exit_hooks: true,
+                should_register_exit_hooks: true,
+                exit_hooks_override: None,
                 primary_target_override: None,
                 platform: TopLevelDefinition {
                     id: TopLevelId::nil(),
@@ -312,7 +313,8 @@ mod tests {
                 PipelineDefinition {
                     id: pd_id_1,
                     name: "Profile 1".into(),
-                    register_exit_hooks: true,
+                    should_register_exit_hooks: true,
+                    exit_hooks_override: None,
                     primary_target_override: None,
                     platform: TopLevelDefinition {
                         id: toplevel1,
@@ -327,7 +329,8 @@ mod tests {
                 PipelineDefinition {
                     id: pd_id_2,
                     name: "Profile 2".into(),
-                    register_exit_hooks: true,
+                    should_register_exit_hooks: true,
+                    exit_hooks_override: None,
                     primary_target_override: None,
                     platform: TopLevelDefinition {
                         id: toplevel2,

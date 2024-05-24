@@ -2,6 +2,7 @@ import { Dropdown, Field, Toggle } from "decky-frontend-lib";
 import { Fragment, VFC } from "react";
 import { ActionChild } from "../../../components/ActionChild";
 import { EditAction } from "../../../components/EditAction";
+import { EditExitHooks } from "../../../components/EditExitHooks";
 import HandleLoading from "../../../components/HandleLoading";
 import useGlobalSettings from "../../../hooks/useGlobalSettings";
 
@@ -10,12 +11,42 @@ export const GlobalSettingsPage: VFC = () => {
 
     const Builder = ActionChild;
 
-    // TODO:: make UI inject configurable
+    // TODO::global config for editing exit hooks
+
     return <HandleLoading
         value={settings}
         onOk={(settings) => {
             return (
                 <Fragment>
+                    <Field
+                        label="Desktop Mode"
+                        description={'Configuration for actions run in desktop mode.'}
+                        focusable={true}
+                    />
+                    <Builder
+                        label="Exit Hooks"
+                        description="The button chord to hold to exit the app in desktop mode."
+                        indentLevel={1}
+                    />
+                    <EditExitHooks
+                        exitHooks={settings.exit_hooks}
+                        indentLevel={2}
+                        onChange={(hooks) => {
+                            updateSettings({
+                                ...settings,
+                                exit_hooks: hooks
+                            })
+                        }}
+                    />
+                    {
+                        /* <Builder
+                            label="Overwrite Desktop Controller Layout (Hack)"
+                            indentLevel={1}
+                            description="Overwrites the main desktop controller layout with the layout of the app being launched."
+                        >
+ 
+                        </Builder> */
+                    }
                     <Field
                         focusable={false}
                         label="Display Settings"
@@ -47,7 +78,7 @@ export const GlobalSettingsPage: VFC = () => {
                             }}
                         />
                     </Builder>
-                    <Field label="Deck UI"></Field>
+                    <Field label="Deck UI" />
                     <Builder
                         indentLevel={1}
                         label="Enable UI Patching"

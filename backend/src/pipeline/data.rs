@@ -73,11 +73,77 @@ pub struct Template {
 pub struct PipelineDefinition {
     pub id: PipelineDefinitionId,
     pub name: String,
-    pub register_exit_hooks: bool,
+    pub should_register_exit_hooks: bool,
+    pub exit_hooks_override: Option<ExitHooks>,
     pub primary_target_override: Option<PipelineTarget>,
     pub platform: TopLevelDefinition,
     // Additional top-level actions besides the main platform.
     pub toplevel: Vec<TopLevelDefinition>,
+}
+
+/// The required button chord to hold to exit. At least 2 buttons are required.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct ExitHooks(pub GamepadButton, pub GamepadButton, pub Vec<GamepadButton>);
+
+impl ExitHooks {
+    pub fn iter(&self) -> impl Iterator<Item = &GamepadButton> {
+        [&self.0, &self.1].into_iter().chain(self.2.iter())
+    }
+}
+
+impl Default for ExitHooks {
+    fn default() -> Self {
+        // Start + Select would be ideal defaults, but if desktop layouts break (again),
+        // it becomes impossible to use because holding Start swaps the action set.
+        Self(GamepadButton::L1, GamepadButton::East, vec![])
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub enum GamepadButton {
+    Start,
+    Select,
+    North,
+    East,
+    South,
+    West,
+    RightThumb,
+    LeftThumb,
+    DPadUp,
+    DPadLeft,
+    DPadRight,
+    DPadDown,
+    L1,
+    L2,
+    R1,
+    R2,
+}
+
+impl std::fmt::Display for GamepadButton {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                GamepadButton::Start => "Start",
+                GamepadButton::Select => "Select",
+                GamepadButton::North => "Y (North)",
+                GamepadButton::East => "B (East)",
+                GamepadButton::South => "A (South)",
+                GamepadButton::West => "X (West)",
+                GamepadButton::RightThumb => "Right Thumb",
+                GamepadButton::LeftThumb => "Left Thumb",
+                GamepadButton::DPadUp => "DPad Up",
+                GamepadButton::DPadLeft => "DPad Left",
+                GamepadButton::DPadRight => "DPad Right",
+                GamepadButton::DPadDown => "DPad Down",
+                GamepadButton::L1 => "L1 (Left Bumper)",
+                GamepadButton::L2 => "L2 (Left Trigger)",
+                GamepadButton::R1 => "R1 (Right Bumper)",
+                GamepadButton::R2 => "R2 (Right Trigger)",
+            }
+        )
+    }
 }
 
 /// Defines a top-level action, with a root id and a unique set of actions.
@@ -94,7 +160,8 @@ pub struct TopLevelDefinition {
 pub struct Pipeline {
     pub name: String,
     pub description: String,
-    pub register_exit_hooks: bool,
+    pub should_register_exit_hooks: bool,
+    pub exit_hooks_override: Option<ExitHooks>,
     pub primary_target_override: Option<PipelineTarget>,
     pub targets: HashMap<PipelineTarget, RuntimeSelection>,
 }
@@ -252,7 +319,8 @@ impl PipelineDefinition {
         Ok(Pipeline {
             name: self.name.clone(),
             description,
-            register_exit_hooks: self.register_exit_hooks,
+            should_register_exit_hooks: self.should_register_exit_hooks,
+            exit_hooks_override: self.exit_hooks_override.clone(),
             primary_target_override: self.primary_target_override,
             targets,
         })

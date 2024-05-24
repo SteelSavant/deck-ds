@@ -1217,6 +1217,26 @@
         "CemuProton"
       ]
     },
+    "ExitHooks": {
+      "description": "The required button chord to hold to exit. At least 2 buttons are required.",
+      "type": "array",
+      "items": [
+        {
+          "$ref": "#/definitions/GamepadButton"
+        },
+        {
+          "$ref": "#/definitions/GamepadButton"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GamepadButton"
+          }
+        }
+      ],
+      "maxItems": 3,
+      "minItems": 3
+    },
     "ExternalDisplaySettings": {
       "oneOf": [
         {
@@ -1386,6 +1406,27 @@
         "Citra",
         "MelonDS",
         "Lime3ds"
+      ]
+    },
+    "GamepadButton": {
+      "type": "string",
+      "enum": [
+        "Start",
+        "Select",
+        "North",
+        "East",
+        "South",
+        "West",
+        "RightThumb",
+        "LeftThumb",
+        "DPadUp",
+        "DPadLeft",
+        "DPadRight",
+        "DPadDown",
+        "L1",
+        "L2",
+        "R1",
+        "R2"
       ]
     },
     "GeneralOptions": {
@@ -1595,6 +1636,7 @@
       "required": [
         "display_restoration",
         "enable_ui_inject",
+        "exit_hooks",
         "primary_ui_target",
         "restore_displays_if_not_executing_pipeline"
       ],
@@ -1605,6 +1647,14 @@
         "enable_ui_inject": {
           "description": "If true, inject buttons onto app action bar",
           "type": "boolean"
+        },
+        "exit_hooks": {
+          "description": "Button chord to be used to exit profiles that register for exit hooks.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/ExitHooks"
+            }
+          ]
         },
         "primary_ui_target": {
           "description": "If `enable_ui_inject` is true, set the \"Play\" button to this target",
@@ -1992,12 +2042,22 @@
       "required": [
         "description",
         "name",
-        "register_exit_hooks",
+        "should_register_exit_hooks",
         "targets"
       ],
       "properties": {
         "description": {
           "type": "string"
+        },
+        "exit_hooks_override": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ExitHooks"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "name": {
           "type": "string"
@@ -2012,7 +2072,7 @@
             }
           ]
         },
-        "register_exit_hooks": {
+        "should_register_exit_hooks": {
           "type": "boolean"
         },
         "targets": {
@@ -2269,10 +2329,20 @@
         "id",
         "name",
         "platform",
-        "register_exit_hooks",
+        "should_register_exit_hooks",
         "toplevel"
       ],
       "properties": {
+        "exit_hooks_override": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ExitHooks"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "id": {
           "type": "string",
           "format": "uuid"
@@ -2293,7 +2363,7 @@
             }
           ]
         },
-        "register_exit_hooks": {
+        "should_register_exit_hooks": {
           "type": "boolean"
         },
         "toplevel": {

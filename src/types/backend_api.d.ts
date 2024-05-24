@@ -7,6 +7,30 @@
 
 export type PipelineTarget = "Desktop" | "Gamemode";
 /**
+ * The required button chord to hold to exit. At least 2 buttons are required.
+ *
+ * @minItems 3
+ * @maxItems 3
+ */
+export type ExitHooks = [GamepadButton, GamepadButton, GamepadButton[]];
+export type GamepadButton =
+  | "Start"
+  | "Select"
+  | "North"
+  | "East"
+  | "South"
+  | "West"
+  | "RightThumb"
+  | "LeftThumb"
+  | "DPadUp"
+  | "DPadLeft"
+  | "DPadRight"
+  | "DPadDown"
+  | "L1"
+  | "L2"
+  | "R1"
+  | "R2";
+/**
  * Configured selection for an specific pipeline. Only user values are saved; everything else is pulled at runtime to ensure it's up to date.
  */
 export type ConfigSelection =
@@ -308,11 +332,12 @@ export interface CreateProfileRequest {
   pipeline: PipelineDefinition;
 }
 export interface PipelineDefinition {
+  exit_hooks_override?: ExitHooks | null;
   id: string;
   name: string;
   platform: TopLevelDefinition;
   primary_target_override?: PipelineTarget | null;
-  register_exit_hooks: boolean;
+  should_register_exit_hooks: boolean;
   toplevel: TopLevelDefinition[];
 }
 /**
@@ -572,6 +597,10 @@ export interface GlobalConfig {
    */
   enable_ui_inject: boolean;
   /**
+   * Button chord to be used to exit profiles that register for exit hooks.
+   */
+  exit_hooks: ExitHooks;
+  /**
    * If `enable_ui_inject` is true, set the "Play" button to this target
    */
   primary_ui_target: PipelineTarget;
@@ -614,9 +643,10 @@ export interface ReifyPipelineResponse {
 }
 export interface Pipeline {
   description: string;
+  exit_hooks_override?: ExitHooks | null;
   name: string;
   primary_target_override?: PipelineTarget | null;
-  register_exit_hooks: boolean;
+  should_register_exit_hooks: boolean;
   targets: {
     [k: string]: RuntimeSelection;
   };

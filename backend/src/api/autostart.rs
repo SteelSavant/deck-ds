@@ -70,10 +70,10 @@ pub fn autostart(
                     .map(Either::Right)
                     .unwrap_or(Either::Left(args.app_id));
 
+                let lock = settings.lock().expect("settings mutex should be lockable");
+
                 match args.target {
                     PipelineTarget::Desktop => {
-                        let lock = settings.lock().expect("settings mutex should be lockable");
-
                         let res = lock.set_autostart_cfg(&settings::AutoStartConfig {
                             game_id: id,
                             pipeline,
@@ -103,8 +103,10 @@ pub fn autostart(
                         )
                         .build_executor(decky_env.clone());
 
+                        let global_config = lock.get_global_cfg();
+
                         match executor {
-                            Ok(executor) => match executor.exec() {
+                            Ok(executor) => match executor.exec(&global_config) {
                                 Ok(_) => ResponseOk.to_response(),
                                 Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
                             },

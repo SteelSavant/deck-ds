@@ -1,20 +1,20 @@
 import { ConfirmModal, Dropdown } from "decky-frontend-lib";
 import { ReactElement, useState } from "react";
-import { AudioDeviceInfo } from "../types/backend_api";
+import { GamepadButtonSelection } from "../backend";
 
-export function AddConfigurableAudioDeviceModal({ devices, onSave, closeModal }: {
-    devices: AudioDeviceInfo[],
-    onSave: (device: AudioDeviceInfo) => void,
+export function AddGamepadButtonModal({ buttons, onSave, closeModal }: {
+    buttons: GamepadButtonSelection[],
+    onSave: (button: GamepadButtonSelection) => void,
     closeModal?: () => void,
 }): ReactElement {
-    const [device, setDevice] = useState(devices[0]);
+    const [button, setButton] = useState<GamepadButtonSelection>(buttons[0]);
     const [done, setDone] = useState(false);
 
     return <ConfirmModal
         onOK={() => {
             if (!done) {
                 setDone(true);
-                onSave(device);
+                onSave(button);
             }
             closeModal!();
         }}
@@ -22,15 +22,15 @@ export function AddConfigurableAudioDeviceModal({ devices, onSave, closeModal }:
         onEscKeypress={closeModal}
     >
         <Dropdown
-            selectedOption={device}
-            rgOptions={devices.map((d) => {
+            selectedOption={button}
+            rgOptions={buttons.map((d) => {
                 return {
-                    label: d.description ?? d.name,
+                    label: d,
                     data: d,
                 }
             })}
             onChange={(data) => {
-                setDevice(data.data);
+                setButton(data.data);
             }}
         />
     </ConfirmModal>

@@ -1,7 +1,8 @@
 import { DialogButton, Dropdown, Field, Focusable, Toggle, showModal } from "decky-frontend-lib";
-import { ReactElement } from "react";
+import { Fragment, ReactElement } from "react";
 import { FaPlus, FaTrash, FaX } from "react-icons/fa6";
 import { CategoryProfile, PipelineContainer, isCategoryProfile } from "../../../backend";
+import { EditExitHooks } from "../../../components/EditExitHooks";
 import HandleLoading from "../../../components/HandleLoading";
 import { useModifiablePipelineContainer } from "../../../context/modifiablePipelineContext";
 import useGlobalSettings from "../../../hooks/useGlobalSettings";
@@ -9,6 +10,7 @@ import useTemplates from "../../../hooks/useTemplates";
 import useToplevel from "../../../hooks/useToplevel";
 import AddProfileTagModal from "./modals/AddProfileTagModal";
 import AddToplevelActionModal from "./modals/AddToplevelActionModal";
+
 
 export default function ProfileInfo(container: PipelineContainer): ReactElement {
     if (!isCategoryProfile(container)) {
@@ -81,6 +83,9 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
         : undefined
         ;
 
+
+
+
     // TODO::make description editable
     return <HandleLoading
         value={loading}
@@ -117,7 +122,6 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                     focusable={false}
                     label={"Additional Actions"}
                     description={"Additional top-level actions to run, such as launching a secondary app."}
-                    bottomSeparator="none"
                 >
                     <DialogButton
                         onOKButton={addTopLevelAction}
@@ -177,10 +181,10 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                 <Field
                     focusable={false}
                     label='Register Exit Hooks'
-                    description='Register holding (select + start) as hooks to exit app when launched in desktop mode. Disable if your controller config in Steam Input already has an exit mapping.'
+                    description='In desktop mode, register a button chord that exits the app when held. Disable if your controller config in Steam Input already has an exit mapping.'
                 >
                     <Toggle
-                        value={profile.pipeline.register_exit_hooks}
+                        value={profile.pipeline.should_register_exit_hooks}
                         onChange={(value) => {
                             dispatch({
                                 update: {
@@ -193,6 +197,61 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                         }}
                     />
                 </Field>
+                {
+                    profile.pipeline.should_register_exit_hooks ?
+                        <Fragment>
+                            <Field
+                                focusable={false}
+                                label="Exit Hooks"
+                                description="The button chord to hold to exit the app in desktop mode."
+                            >
+                                <Dropdown
+                                    selectedOption={profile.pipeline.exit_hooks_override}
+                                    rgOptions={
+                                        [
+                                            {
+                                                label: `Global Setting`,
+                                                data: null
+                                            },
+                                            {
+                                                label: 'Custom',
+                                                data: profile.pipeline.exit_hooks_override ?? globalSettings.exit_hooks
+                                            }
+                                        ]
+                                    }
+                                    onChange={(option) => {
+                                        dispatch({
+                                            update: {
+                                                type: 'updatePipelineInfo',
+                                                info: {
+                                                    exit_hooks_override: option.data,
+                                                }
+                                            }
+                                        });
+                                    }}
+                                />
+                            </Field>
+                            {
+                                profile.pipeline.exit_hooks_override
+                                    ? <EditExitHooks
+                                        exitHooks={profile.pipeline.exit_hooks_override}
+                                        indentLevel={1}
+                                        onChange={(hooks) => {
+                                            dispatch({
+                                                update: {
+                                                    type: 'updatePipelineInfo',
+                                                    info: {
+                                                        exit_hooks_override: hooks
+                                                    }
+                                                }
+                                            })
+                                        }}
+                                    />
+                                    : undefined
+                            }
+                        </Fragment>
+                        : undefined
+                }
                 <Field
                     focusable={false}
                     label="Primary Target"
@@ -221,14 +280,14 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                                     }
                                 }
                             });
-                        }
-                        }
+                        }}
                     />
                 </Field>
             </div>
         )}
     />;
 }
+
 
 function ProfileTag({ tag, removeTag }: { tag: string, removeTag: (tag: string) => void }): ReactElement {
     const display = collectionStore.userCollections.find((uc) => uc.id === tag)?.displayName;
