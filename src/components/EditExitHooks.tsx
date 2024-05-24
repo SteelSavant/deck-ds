@@ -1,9 +1,11 @@
-import { DialogButton, Dropdown, Field } from "decky-frontend-lib";
+import { DialogButton, Dropdown, Field, showModal } from "decky-frontend-lib";
 import { Fragment, ReactElement } from "react";
 import { FaTrash } from "react-icons/fa6";
 import { GamepadButtonSelection, gamepadButtonSelectionOptions } from "../backend";
 import { ExitHooks } from "../types/backend_api";
 import { labelForGamepadButton } from "../util/display";
+import { AddGamepadButtonModal } from "./AddGamepadButtonModal";
+import FocusableRow from "./FocusableRow";
 
 interface EditExitHooksProps {
     exitHooks: ExitHooks,
@@ -22,7 +24,12 @@ export function EditExitHooks({ exitHooks, indentLevel, onChange }: EditExitHook
     }
 
     function onAddExitHook() {
-        onChange([flattenedHooks[0], flattenedHooks[1], flattenedHooks.slice(2).concat(availableHooks[0])]);
+        showModal(
+            <AddGamepadButtonModal
+                buttons={availableHooks}
+                onSave={(button) => onChange([flattenedHooks[0], flattenedHooks[1], flattenedHooks.slice(2).concat(button)])}
+            />
+        )
     }
 
     return (
@@ -31,12 +38,8 @@ export function EditExitHooks({ exitHooks, indentLevel, onChange }: EditExitHook
                 flattenedHooks.map((hook, i) => {
                     return (
                         <Field indentLevel={indentLevel} focusable={false}>
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'row'
-                                }}
-                            >
+
+                            <FocusableRow>
                                 <Dropdown
                                     selectedOption={hook}
                                     rgOptions={[hook].concat(availableHooks).map((v) => {
@@ -54,7 +57,6 @@ export function EditExitHooks({ exitHooks, indentLevel, onChange }: EditExitHook
                                     }}
                                 />
                                 {
-                                    // TODO::styling
                                     flattenedHooks.length > 2 ?
                                         <DialogButton style={{
                                             backgroundColor: 'red',
@@ -65,7 +67,8 @@ export function EditExitHooks({ exitHooks, indentLevel, onChange }: EditExitHook
                                             display: 'flex',
                                             flexDirection: 'column',
                                             justifyContent: 'center',
-                                            marginRight: '10px'
+                                            marginRight: '10px',
+                                            marginLeft: '10px'
                                         }}
                                             onOKButton={() => deleteExitHook(i)}
                                             onClick={() => deleteExitHook(i)}
@@ -74,11 +77,10 @@ export function EditExitHooks({ exitHooks, indentLevel, onChange }: EditExitHook
                                         </DialogButton>
                                         : undefined
                                 }
-                            </div>
+                            </FocusableRow>
                         </Field>
                     )
                 })
-
             }
             {
                 availableHooks.length > 0
@@ -94,5 +96,6 @@ export function EditExitHooks({ exitHooks, indentLevel, onChange }: EditExitHook
             }
         </Fragment>
     )
+
 }
 

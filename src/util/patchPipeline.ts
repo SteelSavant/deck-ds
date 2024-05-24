@@ -50,7 +50,7 @@ export type PipelineUpdate = {
 export interface PipelineInfo {
     description?: string | undefined,
     name?: string | undefined,
-    exit_hooks_override?: ExitHooks | undefined,
+    exit_hooks_override?: ExitHooks | null | undefined,
     register_exit_hooks?: boolean | undefined,
     primary_target_override?: PipelineTarget | null | undefined,
 }
@@ -65,7 +65,9 @@ export async function patchPipeline(pipeline: PipelineDefinition, update: Pipeli
             ...pipeline,
             name: info.name ?? pipeline.name,
             register_exit_hooks: info.register_exit_hooks ?? pipeline.should_register_exit_hooks,
-            exit_hooks_override: info.exit_hooks_override ?? pipeline.exit_hooks_override,
+            exit_hooks_override: info.exit_hooks_override === undefined
+                ? pipeline.exit_hooks_override
+                : info.exit_hooks_override,
             primary_target_override: info.primary_target_override === undefined
                 ? pipeline.primary_target_override
                 : info.primary_target_override
