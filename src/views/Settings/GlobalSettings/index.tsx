@@ -25,7 +25,7 @@ export const GlobalSettingsPage: VFC = () => {
                     />
                     <Builder
                         label="Exit Hooks"
-                        description="The button chord to hold to exit the app in desktop mode."
+                        description="The button chord to hold to exit the app in desktop mode, if enabled."
                         indentLevel={1}
                     />
                     <EditExitHooks

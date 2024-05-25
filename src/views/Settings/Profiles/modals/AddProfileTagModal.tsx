@@ -1,10 +1,6 @@
 import { ConfirmModal, Dropdown, Focusable } from "decky-frontend-lib";
 import { ReactElement, useState } from "react";
 
-declare global {
-    let collectionStore: CollectionStore;
-    let appStore: AppStore;
-}
 
 export default function CreateProfileTagModal({ onSave, closeModal }: {
     onSave: (tag: string) => void, closeModal?: () => void,
