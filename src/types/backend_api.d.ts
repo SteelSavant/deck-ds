@@ -325,13 +325,16 @@ export interface Api {
 export interface AutoStartRequest {
   app_id: string;
   game_id?: string | null;
+  game_title: string;
   profile_id: string;
   target: PipelineTarget;
+  user_id_64: string;
 }
 export interface CreateProfileRequest {
   pipeline: PipelineDefinition;
 }
 export interface PipelineDefinition {
+  desktop_layout_config_hack_override?: boolean | null;
   exit_hooks_override?: ExitHooks | null;
   id: string;
   name: string;
@@ -605,6 +608,10 @@ export interface GlobalConfig {
    */
   primary_ui_target: PipelineTarget;
   restore_displays_if_not_executing_pipeline: boolean;
+  /**
+   * Overwrite the desktop layout with the game layout
+   */
+  use_desktop_controller_layout_hack: boolean;
 }
 export interface GetTemplatesResponse {
   templates: Template[];
@@ -643,6 +650,7 @@ export interface ReifyPipelineResponse {
 }
 export interface Pipeline {
   description: string;
+  desktop_layout_config_hack_override?: boolean | null;
   exit_hooks_override?: ExitHooks | null;
   name: string;
   primary_target_override?: PipelineTarget | null;

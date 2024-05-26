@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 newtype_uuid!(ProfileId);
 newtype_strid!("The AppId in Steam", AppId);
 newtype_strid!("The GameId in Steam", GameId);
-newtype_strid!("The UserId in steam", UserId);
+newtype_strid!("The UserId in steam", SteamUserId64);
 
 use crate::{
     decky_env::DeckyEnv,

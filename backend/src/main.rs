@@ -240,6 +240,10 @@ fn main() -> Result<()> {
         AppModes::Serve => {
             decky_env.write()?;
 
+            if let Err(err) = steam::unset_desktop_controller_hack(decky_env.steam_dir()) {
+                log::warn!("failed to unset desktop controller hack: {err}");
+            }
+
             let db_path = decky_env.decky_plugin_runtime_dir.join("profiles.db");
             let profiles_db: &'static ProfileDb =
                 Box::leak(Box::new(ProfileDb::new(db_path, registrar.clone())));

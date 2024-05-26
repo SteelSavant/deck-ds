@@ -88,11 +88,14 @@ export default definePlugin((serverApi: ServerAPI) => {
       const appId = Number.parseInt(appIdStr);
       const overview = appStore.GetAppOverviewByAppID(appId);
 
+      console.log('app', App);
+      console.log('user', App.m_CurrentUser);
+
       appDetailsState.setOnAppPage({
         appId,
         gameId: overview.m_gameid,
         displayName: overview.display_name,
-        userId: App.m_CurrentUser.strSteamID
+        userId64: App.m_CurrentUser.strSteamID
       });
     } else {
       appDetailsState.setOnAppPage(null); appDetailsState.setOnAppPage(null);

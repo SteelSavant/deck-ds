@@ -74,9 +74,11 @@ const useLaunchActions = (appDetails: ShortAppDetails | null): LaunchActions[] =
                             );
                         } else {
                             const res = await autoStart({
+                                user_id_64: appDetails.userId64,
                                 game_id: appDetails.gameId,
                                 app_id: appDetails.appId.toString(),
                                 profile_id: p.id,
+                                game_title: appDetails.displayName,
                                 target: key as PipelineTarget
                             });
 

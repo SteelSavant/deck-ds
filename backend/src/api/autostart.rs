@@ -10,7 +10,7 @@ use crate::{
     db::ProfileDb,
     decky_env::DeckyEnv,
     pipeline::{action_registar::PipelineActionRegistrar, data::PipelineTarget},
-    settings::{self, AppId, GameId, ProfileId, Settings, UserId},
+    settings::{self, AppId, GameId, ProfileId, Settings, SteamUserId64},
     sys::{
         steam,
         steamos_session_select::{steamos_session_select, Session},
@@ -27,7 +27,7 @@ pub struct AutoStartRequest {
     game_id: Option<GameId>,
     app_id: AppId,
     profile_id: ProfileId,
-    user_id: UserId,
+    user_id_64: SteamUserId64,
     game_title: String,
     target: PipelineTarget,
 }
@@ -96,7 +96,7 @@ pub fn autostart(
                                 Ok(_) => {
                                     if use_controller_hack {
                                         let res = steam::set_desktop_controller_hack(
-                                            &args.user_id,
+                                            &args.user_id_64,
                                             &args.app_id,
                                             &args.game_title,
                                             decky_env.steam_dir(),
@@ -104,7 +104,7 @@ pub fn autostart(
 
                                         if let Err(err) = res {
                                             log::warn!(
-                                                "unable to set desktop controller hack: {err}"
+                                                "unable to set desktop controller hack: {err:#?}"
                                             )
                                         }
                                     }

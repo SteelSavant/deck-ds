@@ -455,8 +455,10 @@
       "type": "object",
       "required": [
         "app_id",
+        "game_title",
         "profile_id",
-        "target"
+        "target",
+        "user_id_64"
       ],
       "properties": {
         "app_id": {
@@ -468,12 +470,18 @@
             "null"
           ]
         },
+        "game_title": {
+          "type": "string"
+        },
         "profile_id": {
           "type": "string",
           "format": "uuid"
         },
         "target": {
           "$ref": "#/definitions/PipelineTarget"
+        },
+        "user_id_64": {
+          "type": "string"
         }
       }
     },
@@ -1638,7 +1646,8 @@
         "enable_ui_inject",
         "exit_hooks",
         "primary_ui_target",
-        "restore_displays_if_not_executing_pipeline"
+        "restore_displays_if_not_executing_pipeline",
+        "use_desktop_controller_layout_hack"
       ],
       "properties": {
         "display_restoration": {
@@ -1665,6 +1674,10 @@
           ]
         },
         "restore_displays_if_not_executing_pipeline": {
+          "type": "boolean"
+        },
+        "use_desktop_controller_layout_hack": {
+          "description": "Overwrite the desktop layout with the game layout",
           "type": "boolean"
         }
       }
@@ -2049,6 +2062,12 @@
         "description": {
           "type": "string"
         },
+        "desktop_layout_config_hack_override": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "exit_hooks_override": {
           "anyOf": [
             {
@@ -2333,6 +2352,12 @@
         "toplevel"
       ],
       "properties": {
+        "desktop_layout_config_hack_override": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "exit_hooks_override": {
           "anyOf": [
             {
