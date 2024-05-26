@@ -25,6 +25,13 @@ import QAM from "./views/QAM";
 import ProfileRoute from "./views/Settings/Profiles/ProfileRoute";
 import SettingsRouter from "./views/Settings/SettingsRouter";
 
+
+declare global {
+  let collectionStore: CollectionStore;
+  let appStore: AppStore;
+  let App: App;
+}
+
 const appDetailsState = new ShortAppDetailsState();
 
 var usdplReady = false;
@@ -73,17 +80,22 @@ const History = findModuleChild((m) => {
 
 
 export default definePlugin((serverApi: ServerAPI) => {
-  function updateAppDetails(currentRoute: string): void {
+  function updateAppDetails(this: any, currentRoute: string): void {
     const re = /^\/library\/app\/(\d+)(\/?.*)/
 
     if (re.test(currentRoute)) {
       const appIdStr = re.exec(currentRoute)![1]!;
       const appId = Number.parseInt(appIdStr);
-      let overview = appStore.GetAppOverviewByAppID(appId);
+      const overview = appStore.GetAppOverviewByAppID(appId);
+
+      console.log('app', App);
+      console.log('user', App.m_CurrentUser);
+
       appDetailsState.setOnAppPage({
         appId,
         gameId: overview.m_gameid,
-        displayName: overview.display_name
+        displayName: overview.display_name,
+        userId64: App.m_CurrentUser.strSteamID
       });
     } else {
       appDetailsState.setOnAppPage(null); appDetailsState.setOnAppPage(null);

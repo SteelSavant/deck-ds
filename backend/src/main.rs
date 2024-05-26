@@ -23,6 +23,7 @@ use crate::{
     pipeline::{action_registar::PipelineActionRegistrar, executor::PipelineContext},
     secondary_app::SecondaryAppManager,
     settings::Settings,
+    sys::steam,
     util::create_dir_all,
 };
 use clap::{Parser, Subcommand};
@@ -204,11 +205,20 @@ fn main() -> Result<()> {
 
                     // return to gamemode
 
+                    if let Err(err) = steam::unset_desktop_controller_hack(decky_env.steam_dir()) {
+                        log::warn!("failed to unset desktop controller hack: {err}");
+                    }
+
                     use crate::sys::steamos_session_select::{steamos_session_select, Session};
                     steamos_session_select(Session::Gamescope).and(exec_result)
                 }
                 None => {
                     log::info!("No autostart pipeline found. Staying on desktop.");
+
+                    if let Err(err) = steam::unset_desktop_controller_hack(decky_env.steam_dir()) {
+                        log::warn!("failed to unset desktop controller hack: {err}");
+                    }
+
                     let lock = settings
                         .lock()
                         .expect("settings mutex should not be poisoned");
@@ -229,6 +239,10 @@ fn main() -> Result<()> {
         }
         AppModes::Serve => {
             decky_env.write()?;
+
+            if let Err(err) = steam::unset_desktop_controller_hack(decky_env.steam_dir()) {
+                log::warn!("failed to unset desktop controller hack: {err}");
+            }
 
             let db_path = decky_env.decky_plugin_runtime_dir.join("profiles.db");
             let profiles_db: &'static ProfileDb =

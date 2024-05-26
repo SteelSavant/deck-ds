@@ -84,6 +84,10 @@ impl DeckyEnv {
         AssetManager::new(&ASSETS_DIR, self.decky_plugin_settings_dir.join("assets"))
     }
 
+    pub fn steam_dir(&self) -> PathBuf {
+        self.deck_user_home.join(".steam").join("steam")
+    }
+
     fn create_dirs(&self) {
         for dir in [
             &self.deck_user_home,

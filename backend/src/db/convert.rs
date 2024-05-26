@@ -68,6 +68,8 @@ impl AppProfile {
                 o.exit_hooks_override = profile.pipeline.exit_hooks_override;
                 o.name = profile.pipeline.name;
                 o.platform.root = profile.pipeline.platform.root.clone();
+                o.desktop_layout_config_hack_override =
+                    profile.pipeline.desktop_layout_config_hack_override;
 
                 let platform = &mut o.platform;
 
@@ -182,6 +184,7 @@ impl PipelineDefinition {
             should_register_exit_hooks: self.should_register_exit_hooks,
             exit_hooks_override: self.exit_hooks_override.map(DbExitHooks::from),
             primary_target_override: self.primary_target_override,
+            desktop_layout_config_hack_override: self.desktop_layout_config_hack_override,
             platform,
             toplevel,
         };

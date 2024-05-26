@@ -25,7 +25,7 @@ export const GlobalSettingsPage: VFC = () => {
                     />
                     <Builder
                         label="Exit Hooks"
-                        description="The button chord to hold to exit the app in desktop mode."
+                        description="The button chord to hold to exit the app in desktop mode, if enabled."
                         indentLevel={1}
                     />
                     <EditExitHooks
@@ -38,15 +38,22 @@ export const GlobalSettingsPage: VFC = () => {
                             })
                         }}
                     />
-                    {
-                        /* <Builder
-                            label="Overwrite Desktop Controller Layout (Hack)"
-                            indentLevel={1}
-                            description="Overwrites the main desktop controller layout with the layout of the app being launched."
-                        >
- 
-                        </Builder> */
-                    }
+                    <Builder
+                        label="Overwrite Desktop Controller Layout (Hack)"
+                        indentLevel={1}
+                        description="Overwrites the main desktop controller layout with the layout of the app being launched, in case Steam fails to switch to the game's controller layout.
+                        Currently only works for the Deck's built-in  controller."
+                    >
+                        <Toggle
+                            value={settings.use_desktop_controller_layout_hack}
+                            onChange={(value) => {
+                                updateSettings({
+                                    ...settings,
+                                    use_desktop_controller_layout_hack: value
+                                })
+                            }}
+                        />
+                    </Builder>
                     <Field
                         focusable={false}
                         label="Display Settings"

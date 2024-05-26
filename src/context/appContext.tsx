@@ -24,6 +24,7 @@ export interface StateAction {
 export type ShortAppDetails = {
     appId: number,
     gameId: string,
+    userId64: string,
     displayName: string,
 };
 

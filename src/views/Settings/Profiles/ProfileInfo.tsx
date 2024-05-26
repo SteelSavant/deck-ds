@@ -90,7 +90,7 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
     return <HandleLoading
         value={loading}
         onOk={({ templates, globalSettings, toplevel }) => (
-            <div>
+            <>
                 <Field
                     focusable={false}
                 // description={profile.pipeline.description}
@@ -180,6 +180,37 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                 <Field focusable={false} />
                 <Field
                     focusable={false}
+                    label="Primary Target"
+                    description="Determines which target is used by the primary 'Play' button when patching the UI."
+                >
+                    <Dropdown
+                        selectedOption={profile.pipeline.primary_target_override}
+                        rgOptions={
+                            [
+                                {
+                                    label: `Global Setting (${globalSettings.primary_ui_target})`,
+                                    data: null
+                                },
+                                ...['Gamemode', 'Desktop'].map((t) => {
+                                    return {
+                                        label: t,
+                                        data: t
+                                    }
+                                })]}
+                        onChange={(option) => {
+                            dispatch({
+                                update: {
+                                    type: 'updatePipelineInfo',
+                                    info: {
+                                        primary_target_override: option.data,
+                                    }
+                                }
+                            });
+                        }}
+                    />
+                </Field>
+                <Field
+                    focusable={false}
                     label='Register Exit Hooks'
                     description='In desktop mode, register a button chord that exits the app when held. Disable if your controller config in Steam Input already has an exit mapping.'
                 >
@@ -253,39 +284,43 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                         : undefined
                 }
                 <Field
-                    focusable={false}
-                    label="Primary Target"
-                    description="Determines which target is used by the primary 'Play' button when patching the UI."
+                    label="Overwrite Desktop Controller Layout (Hack)"
+                    description="Overwrites the main desktop controller layout with the layout of the app being launched, in case Steam fails to switch to the game's controller layout.
+                    Currently only works for the Deck's built-in controller."
                 >
                     <Dropdown
-                        selectedOption={profile.pipeline.primary_target_override}
-                        rgOptions={
-                            [
-                                {
-                                    label: `Global Setting (${globalSettings.primary_ui_target})`,
-                                    data: null
-                                },
-                                ...['Gamemode', 'Desktop'].map((t) => {
-                                    return {
-                                        label: t,
-                                        data: t
-                                    }
-                                })]}
-                        onChange={(option) => {
+                        selectedOption={profile.pipeline.desktop_layout_config_hack_override}
+                        rgOptions={[null, true, false].map((v) => {
+                            return {
+                                label: mapControllerHackValueToSelection(v, globalSettings.use_desktop_controller_layout_hack),
+                                data: v
+                            }
+                        })}
+                        onChange={(props) => {
                             dispatch({
                                 update: {
                                     type: 'updatePipelineInfo',
                                     info: {
-                                        primary_target_override: option.data,
+                                        desktop_layout_config_hack_override: props.data
                                     }
                                 }
-                            });
+                            })
                         }}
                     />
                 </Field>
-            </div>
+            </>
         )}
     />;
+}
+
+function mapControllerHackValueToSelection(value: boolean | null | undefined, global: boolean): string {
+    if (value === false) {
+        return 'Disabled'
+    } else if (value === true) {
+        return 'Enabled'
+    } else {
+        return `Global (${mapControllerHackValueToSelection(global, global)})`
+    }
 }
 
 
