@@ -1,7 +1,10 @@
+import { randomUUID } from 'crypto';
 import { Action, ApiError, PipelineDefinition, PipelineTarget, patchPipelineAction } from "../backend";
 import { ExitHooks, PipelineActionUpdate } from "../types/backend_api";
 import { MaybeString } from "../types/short";
 import { Ok, Result } from "./result";
+
+
 
 export type PipelineUpdate = {
     type: 'updatePlatform',
@@ -88,7 +91,7 @@ export async function patchPipeline(pipeline: PipelineDefinition, update: Pipeli
         return Ok({
             ...pipeline,
             toplevel: pipeline.toplevel.concat([{
-                id: '00000000-0000-0000-0000-000000000000',
+                id: randomUUID(),
                 root: update.action_id,
                 actions: { actions: {} }
             }])
