@@ -93,10 +93,6 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
             <>
                 <Field
                     focusable={false}
-                // description={profile.pipeline.description}
-                />
-                <Field
-                    focusable={false}
                     label='Platform'
                     description='Platform on which the application runs. Native apps and a selection of emulators are supported.'
                 >
@@ -233,6 +229,7 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                         <Fragment>
                             <Field
                                 focusable={false}
+                                indentLevel={1}
                                 label="Exit Hooks"
                                 description="The button chord to hold to exit the app in desktop mode."
                             >
