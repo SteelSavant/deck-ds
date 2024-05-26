@@ -128,7 +128,6 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
 
     switch (type) {
         case 'AllOf':
-            // TODO::handle userdefined
             if (forcedEnabled || selection.value.length == 0) {
                 return buildAllOf(selection.value);
             } else {

@@ -123,7 +123,8 @@ export async function patchPipeline(
         });
     } else {
         const u: PipelineActionUpdate = (function () {
-            switch (update.type) {
+            const type = update.type;
+            switch (type) {
                 case 'updateEnabled':
                     return {
                         type: 'UpdateEnabled',
@@ -163,6 +164,9 @@ export async function patchPipeline(
                             is_visible: update.visible,
                         },
                     };
+                default:
+                    const typecheck: never = type;
+                    throw `failed to typecheck PipelineActionUpdate: ${typecheck}`;
             }
         })();
 
