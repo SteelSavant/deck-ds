@@ -29,11 +29,11 @@ export default function ProfilePreviewRoute(): ReactElement {
             onOk={(profile) => {
                 if (!profile) {
                     return (
-                        <div>
+                        <p>
                             {' '}
                             Profile {profileid} does not exist! Something has
                             gone terribly wrong...
-                        </div>
+                        </p>
                     );
                 } else {
                     return (

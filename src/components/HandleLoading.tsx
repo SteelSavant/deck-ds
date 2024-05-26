@@ -17,9 +17,9 @@ export default function HandleLoading<T>({
     const definiteOnErr =
         onErr ??
         ((err) => (
-            <div>
+            <p>
                 Loading error! Server returned {err.code}: {err.err}
-            </div>
+            </p>
         ));
 
     return !value
