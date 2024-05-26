@@ -33,7 +33,7 @@ export function EditExitHooks({ exitHooks, indentLevel, onChange }: EditExitHook
     }
 
     return (
-        <Fragment>
+        <>
             {
                 flattenedHooks.map((hook, i) => {
                     return (
@@ -94,7 +94,7 @@ export function EditExitHooks({ exitHooks, indentLevel, onChange }: EditExitHook
                     </Field>
                     : undefined
             }
-        </Fragment>
+        </>
     )
 
 }

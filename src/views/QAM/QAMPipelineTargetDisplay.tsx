@@ -1,6 +1,6 @@
 import { DialogBody, DialogControlsSection, Dropdown, Field, Focusable, Toggle } from "decky-frontend-lib";
 import { Fragment, ReactElement, createContext, useContext } from "react";
-import { ProfileContext } from ".";
+
 import { Action, ActionOneOf, DependencyError, PipelineAction, PipelineTarget, RuntimeSelection } from "../../backend";
 import ActionIcon from "../../components/ActionIcon";
 import ConfigErrorWarning from "../../components/ConfigErrorWarning";
@@ -11,6 +11,8 @@ import QAMEditAction from "./QAMEditAction";
 
 
 const PipelineTargetContext = createContext<PipelineTarget>("Desktop");
+export const ProfileContext = createContext("notset");
+
 
 export default function QAMPipelineTargetDisplay({ root, target }: {
     root: RuntimeSelection,
@@ -85,9 +87,9 @@ function buildOneOf(oneOf: ActionOneOf): ReactElement {
 
 function buildAllOf(allOf: PipelineAction[]): ReactElement {
     return (
-        <Fragment>
+        <>
             {allOf.map((action) => buildPipelineAction(action))}
-        </Fragment>
+        </>
     );
 }
 
@@ -123,24 +125,24 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                 return buildAllOf(selection.value);
             } else {
                 return (
-                    <Fragment>
+                    <>
                         <Header {...props} />
                         {
                             isEnabled
                                 ? buildAllOf(selection.value)
                                 : <div />
                         }
-                    </Fragment>
+                    </>
                 )
             }
 
         case 'OneOf':
             return (
-                <Fragment>
+                <>
                     <Header {...props} />
                     {
                         isEnabled
-                            ? <Fragment>
+                            ? <>
                                 <Field focusable={false} childrenContainerWidth="max">
                                     <Focusable >
                                         <Dropdown selectedOption={selection.value.selection} rgOptions={selection.value.actions.map((a) => {
@@ -163,20 +165,20 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                                     </Focusable>
                                 </Field>
                                 {buildOneOf(selection.value)}
-                            </Fragment>
+                            </>
                             : <div />
                     }
-                </Fragment>
+                </>
             )
         case 'Action':
             const actionComponent = buildAction(action.id, action.toplevel_id, action.profile_override, selection.value);
 
             if (actionComponent) {
                 return (
-                    <Fragment>
+                    <>
                         <Header {...props} />
                         {isEnabled ? actionComponent : <div />}
-                    </Fragment>
+                    </>
                 );
             } else {
                 return <Fragment />
@@ -258,7 +260,7 @@ function Header(props: HeaderProps): ReactElement {
     const errors = props.configErrors ?? [];
 
     return (
-        <Fragment>
+        <>
             <Field
                 focusable={false}
                 label={displayName}
@@ -272,7 +274,7 @@ function Header(props: HeaderProps): ReactElement {
             </Field>
             <FromProfileComponent {...props} />
             <EnabledComponent {...props} />
-        </Fragment>
+        </>
     );
 }
 

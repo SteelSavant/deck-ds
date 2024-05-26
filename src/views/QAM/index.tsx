@@ -1,5 +1,5 @@
 import { DialogButton, Field, Navigation, PanelSection, Router } from "decky-frontend-lib";
-import { Fragment, ReactElement, createContext } from "react";
+import { Fragment, ReactElement } from "react";
 import { FaGear, FaPlus } from "react-icons/fa6";
 import { RiArrowDownSFill, RiArrowRightSFill } from "react-icons/ri";
 import { PipelineTarget, ReifyPipelineResponse, createProfile, getProfile, getTemplates, setProfile } from "../../backend";
@@ -11,9 +11,8 @@ import { ConfigErrorContext } from "../../context/configErrorContext";
 import useEnsureAppOverridePipeline from "../../hooks/useEnsureAppOverridePipeline";
 import useLaunchActions, { LaunchActions } from "../../hooks/useLaunchActions";
 import AppDefaultProfileDropdown from "./AppDefaultProfileDropdown";
-import QAMPipelineTargetDisplay from "./QAMPipelineTargetDisplay";
+import QAMPipelineTargetDisplay, { ProfileContext } from "./QAMPipelineTargetDisplay";
 
-export const ProfileContext = createContext("notset");
 
 export default function QAM(): ReactElement {
     const { appDetails, appProfile } = useAppState();
@@ -23,7 +22,7 @@ export default function QAM(): ReactElement {
         <HandleLoading
             value={appProfile}
             onOk={(appProfile) =>
-                <Fragment>
+                <>
                     < AppDefaultProfileDropdown
                         appDetails={appDetails}
                         appProfile={appProfile}
@@ -33,7 +32,7 @@ export default function QAM(): ReactElement {
                         appDetails={appDetails}
                         launchActions={launchActions}
                     />
-                </Fragment>
+                </>
             }
             onErr={(err) => <p>{err.err}</p>}
         />
@@ -47,7 +46,7 @@ export default function QAM(): ReactElement {
 function DeckDSProfilesForApp({ appDetails, launchActions }: { appDetails: ShortAppDetails, launchActions: LaunchActions[] }): ReactElement {
 
     return launchActions.length > 0
-        ? <Fragment >
+        ? <>
             {
                 launchActions.map((a) => {
                     return (
@@ -57,7 +56,7 @@ function DeckDSProfilesForApp({ appDetails, launchActions }: { appDetails: Short
                     )
                 })
             }
-        </Fragment >
+        </>
         // TODO::horizonal line at end of fragment
         : <PanelSection >
             <p>No profiles configured for this title.</p>
@@ -196,7 +195,7 @@ function AppProfileSection({ launchActions }: { launchActions: LaunchActions }):
                             launchActions.targets.filter((v) => reified.pipeline.targets[v.target]).map((t) => {
                                 const isOpen = openViews[profileId]?.[t.target];
                                 return (
-                                    <Fragment>
+                                    <>
                                         <FocusableRow>
                                             <DialogButton
                                                 style={{
@@ -252,7 +251,7 @@ function AppProfileSection({ launchActions }: { launchActions: LaunchActions }):
                                                 <QAMTarget reified={reified} target={t.target} />
                                                 : <div />
                                         }
-                                    </Fragment>
+                                    </>
                                 )
                             })
                         }

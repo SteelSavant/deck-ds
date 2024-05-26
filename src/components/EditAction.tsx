@@ -50,7 +50,7 @@ export function InternalEditAction({
             const display = cloned.value;
             const locations: RelativeLocation[] = ['Above', 'Below', 'LeftOf', 'RightOf']; // SameAs excluded because it doesn't really make sense
             return (
-                <Fragment>
+                <>
                     <ExternalDisplaySettingsSelector
                         indentLevel={indentLevel}
                         settings={cloned.value.teardown_external_settings}
@@ -89,14 +89,14 @@ export function InternalEditAction({
                             </Builder>
                             : <div />
                     }
-                </Fragment>
+                </>
             );
         case 'DisplayConfig': {
             // TODO::This is largely a duplicate of the above DesktopSessionHandler; refactor when Preference gets configured in UI.
             const display = cloned.value;
             const locations: RelativeLocation[] = ['Above', 'Below', 'LeftOf', 'RightOf']; // SameAs excluded because it doesn't really make sense
             return (
-                <Fragment>
+                <>
                     <ExternalDisplaySettingsSelector
                         indentLevel={indentLevel}
                         settings={cloned.value.external_display_settings}
@@ -135,19 +135,19 @@ export function InternalEditAction({
                             </Builder>
                             : <div />
                     }
-                </Fragment>
+                </>
             );
         }
         case 'CemuLayout':
             return (
-                <Fragment>
+                <>
                     <Builder indentLevel={indentLevel} label="Separate Gamepad View">
                         <Toggle value={cloned.value.layout.separate_gamepad_view} onChange={(isEnabled) => {
                             cloned.value.layout.separate_gamepad_view = isEnabled;
                             onChange(cloned);
                         }} />
                     </Builder>
-                </Fragment>
+                </>
             );
 
         case 'CemuAudio':
@@ -162,7 +162,7 @@ export function InternalEditAction({
             />
         case 'CitraLayout':
             return (
-                <Fragment>
+                <>
                     <Builder indentLevel={indentLevel} label="Layout Option">
                         <Dropdown selectedOption={cloned.value.layout.layout_option.type} rgOptions={citraLayoutOptions.map((a) => {
                             return {
@@ -186,7 +186,7 @@ export function InternalEditAction({
                             onChange(cloned);
                         }} />
                     </Builder>
-                </Fragment>
+                </>
             );
         case 'Lime3dsLayout':
             return InternalEditAction({
@@ -200,7 +200,7 @@ export function InternalEditAction({
             });
         case 'MelonDSLayout':
             return (
-                <Fragment>
+                <>
                     <Builder indentLevel={indentLevel} label="Layout Option">
                         <Dropdown selectedOption={cloned.value.layout_option} rgOptions={melonDSLayoutOptions.map((a) => {
                             return {
@@ -235,7 +235,7 @@ export function InternalEditAction({
                             onChange(cloned);
                         }} />
                     </Builder>
-                </Fragment >
+                </>
             );
         case 'SourceFile':
             const sourceValue = cloned.value;
@@ -299,7 +299,7 @@ export function InternalEditAction({
 
             function DolphinAction(option: DolphinWindowOptions): ReactElement {
                 return (
-                    <Fragment>
+                    <>
                         <Builder indentLevel={indentLevel} label="Multi-Screen Layout" description="Layout when the Deck's embedded display is enabled and an external display is connected." >
                             <Fragment />
                         </Builder>
@@ -325,7 +325,7 @@ export function InternalEditAction({
                                 onChange(cloned);
                             }} />
                         </Builder>
-                    </Fragment>
+                    </>
 
                 );
             }
@@ -335,7 +335,7 @@ export function InternalEditAction({
                 // In the future, we may consider using the fields as overrides to the automatic scraping
 
                 return (
-                    <Fragment>
+                    <>
                         <Builder indentLevel={indentLevel} label="Multi-Screen Layout" description="Layout when the Deck's embedded display is enabled and an external display is connected." >
                             <Fragment />
                         </Builder>
@@ -361,7 +361,7 @@ export function InternalEditAction({
                                 onChange(cloned);
                             }} />
                         </Builder>
-                    </Fragment>
+                    </>
                 );
             }
 
@@ -381,7 +381,7 @@ export function InternalEditAction({
                 );
             }
 
-            return <Fragment>
+            return <>
                 <Builder indentLevel={indentLevel} label="Keep Above" description="Keep emulator windows above others.">
                     <Toggle value={cloned.value.general.keep_above} onChange={(isEnabled) => {
                         cloned.value.general.keep_above = isEnabled;
@@ -412,7 +412,7 @@ export function InternalEditAction({
                             ? CustomAction(option)
                             : DsAction(option)
                 }
-            </Fragment>;
+            </>;
         case 'LaunchSecondaryFlatpakApp': {
             return <SecondaryFlatpakApp
                 cloned={cloned}
@@ -431,7 +431,7 @@ export function InternalEditAction({
         }
         case 'MainAppAutomaticWindowing':
             return (
-                <Fragment>
+                <>
                     <Builder indentLevel={indentLevel} label="Keep Above" description="Keep app windows above others.">
                         <Toggle value={cloned.value.general.keep_above} onChange={(isEnabled) => {
                             cloned.value.general.keep_above = isEnabled;
@@ -444,7 +444,7 @@ export function InternalEditAction({
                             onChange(cloned);
                         }} />
                     </Builder>
-                </Fragment>
+                </>
             );
 
         case 'VirtualScreen':
@@ -533,7 +533,7 @@ function SecondaryFlatpakApp({ cloned, indentLevel, onChange, Builder }: LaunchS
                 }
 
                 return (
-                    <Fragment>
+                    <>
                         <Builder indentLevel={indentLevel} label="Flatpak App" description="The flatpak to run.">
                             <Dropdown
                                 selectedOption={cloned.value.app.app_id}
@@ -550,7 +550,7 @@ function SecondaryFlatpakApp({ cloned, indentLevel, onChange, Builder }: LaunchS
                             />
                         </Builder >
                         <Builder indentLevel={indentLevel} label="Args" description="Arguments for the flatpak app." >
-                            <Fragment>
+                            <>
                                 {displayArgs}
                                 <DialogButton
                                     onOKButton={addArg}
@@ -558,7 +558,7 @@ function SecondaryFlatpakApp({ cloned, indentLevel, onChange, Builder }: LaunchS
                                 >
                                     <FaPlus />
                                 </DialogButton>
-                            </Fragment>
+                            </>
                         </Builder>
                         <Builder indentLevel={indentLevel - 1} label="Windowing">
                             <Dropdown
@@ -573,7 +573,7 @@ function SecondaryFlatpakApp({ cloned, indentLevel, onChange, Builder }: LaunchS
                                 }}
                             />
                         </Builder>
-                    </Fragment >
+                    </>
                 );
             }} />
     )
@@ -612,7 +612,7 @@ function SecondaryAppPreset({ cloned, indentLevel, onChange, Builder }: Secondar
                 options.sort((a, b) => a.label.localeCompare(b.label));
 
                 return (
-                    <Fragment>
+                    <>
                         <Builder indentLevel={indentLevel} label="Filter By Installed">
                             <Toggle value={filtered} onChange={(isEnabled) => {
                                 setFiltered(isEnabled);
@@ -660,7 +660,7 @@ function SecondaryAppPreset({ cloned, indentLevel, onChange, Builder }: Secondar
                                 )
                                 : null
                         }
-                    </Fragment>
+                    </>
                 )
             }}
         />
@@ -840,7 +840,7 @@ function CemuAudioSelector({ indentLevel, settings, onChange, Builder }: CemuAud
                     }
                 ];
             return (
-                <Fragment>{
+                <>{
                     sources.map(({ channelOptions, label, dir, prefs, devices }) => {
                         const fixed:
                             CemuDeviceOption[]
@@ -892,7 +892,7 @@ function CemuAudioSelector({ indentLevel, settings, onChange, Builder }: CemuAud
                         const isDisabled = deviceSelected?.data === '';
 
                         return (
-                            <Fragment>
+                            <>
                                 <Builder
                                     indentLevel={indentLevel}
                                     label={`${label} Device`}
@@ -912,7 +912,7 @@ function CemuAudioSelector({ indentLevel, settings, onChange, Builder }: CemuAud
                                 </Builder>
                                 {
                                     !isDisabled
-                                        ? <Fragment>
+                                        ? <>
                                             <Builder
                                                 label="Channels"
                                                 description="Cemu audio channel configuration. Does not affect system audio channel configuration."
@@ -959,14 +959,14 @@ function CemuAudioSelector({ indentLevel, settings, onChange, Builder }: CemuAud
                                                 />
                                             </div>
                                             {/* </Builder> */}
-                                        </Fragment>
+                                        </>
                                         : undefined
                                 }
-                            </Fragment>
+                            </>
                         )
                     })
                 }
-                </Fragment >
+                </>
             )
         }}
         />

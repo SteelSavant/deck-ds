@@ -83,9 +83,6 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
         : undefined
         ;
 
-
-
-
     // TODO::make description editable
     return <HandleLoading
         value={loading}
@@ -226,7 +223,7 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                 </Field>
                 {
                     profile.pipeline.should_register_exit_hooks ?
-                        <Fragment>
+                        <>
                             <Field
                                 focusable={false}
                                 indentLevel={1}
@@ -277,7 +274,7 @@ export default function ProfileInfo(container: PipelineContainer): ReactElement 
                                     />
                                     : undefined
                             }
-                        </Fragment>
+                        </>
                         : undefined
                 }
                 <Field

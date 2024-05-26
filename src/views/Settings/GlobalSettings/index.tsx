@@ -17,7 +17,7 @@ export const GlobalSettingsPage: VFC = () => {
         value={settings}
         onOk={(settings) => {
             return (
-                <Fragment>
+                <>
                     <Field
                         label="Desktop Mode"
                         description={'Configuration for actions run in desktop mode.'}
@@ -124,7 +124,7 @@ export const GlobalSettingsPage: VFC = () => {
                             }
                         />
                     </Builder>
-                </Fragment>
+                </>
             )
         }}
     />

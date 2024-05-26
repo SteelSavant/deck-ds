@@ -68,9 +68,9 @@ function buildOneOf(oneOf: ActionOneOf, indentLevel: number, qamHiddenByParent: 
 
 function buildAllOf(allOf: PipelineAction[], indentLevel: number, qamHiddenByParent: boolean): ReactElement {
     return (
-        <Fragment>
+        <>
             {allOf.map((action) => buildPipelineAction(action, indentLevel + 1, qamHiddenByParent))}
-        </Fragment>
+        </>
     );
 }
 
@@ -107,7 +107,7 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
     const hasError = configErrors[action.id]?.length ?? 0 > 0;
 
     return (
-        <Fragment>
+        <>
             <Field
                 indentLevel={indentLevel}
                 focusable={!hasError && ((!childAction && forcedEnabled) || (selection.type !== 'AllOf' && forcedEnabled && qamHiddenByParent && !configErrors[action.id]))}
@@ -191,6 +191,6 @@ function buildPipelineAction(action: PipelineAction, indentLevel: number, qamHid
                 </Focusable>
             </Field>
             {childAction}
-        </Fragment >
+        </>
     )
 }
