@@ -1,42 +1,44 @@
 import * as React from 'react';
 import { PipelineContainer } from '../backend';
-import { PipelineUpdate, patchPipeline } from "../util/patchPipeline";
+import { PipelineUpdate, patchPipeline } from '../util/patchPipeline';
 
 interface PipelineContainerState {
-    container: PipelineContainer,
+    container: PipelineContainer;
 }
 
 type ProfileUpdate = {
-    type: 'updateTags',
-    tags: string[]
+    type: 'updateTags';
+    tags: string[];
 };
 
-
 export interface StateAction {
-    update: PipelineUpdate | ProfileUpdate,
+    update: PipelineUpdate | ProfileUpdate;
 }
 
-type Dispatch = (action: StateAction) => Promise<void>
+type Dispatch = (action: StateAction) => Promise<void>;
 
 type UpdatePipeline = (pipelineSettings: PipelineContainer) => void;
 
 type ModifiablePipelineContextProviderProps = {
-    children: React.ReactNode,
-    initialContainer: PipelineContainer,
-    onPipelineUpdate?: UpdatePipeline,
-}
+    children: React.ReactNode;
+    initialContainer: PipelineContainer;
+    onPipelineUpdate?: UpdatePipeline;
+};
 
 const ModifiablePipelineContainerStateContext = React.createContext<
     { state: PipelineContainerState; dispatch: Dispatch } | undefined
->(undefined)
+>(undefined);
 
-function ModifiablePipelineContainerProvider({ children, initialContainer, onPipelineUpdate }: ModifiablePipelineContextProviderProps) {
+function ModifiablePipelineContainerProvider({
+    children,
+    initialContainer,
+    onPipelineUpdate,
+}: ModifiablePipelineContextProviderProps) {
     const [state, setState] = React.useState({ container: initialContainer });
 
     console.log('modifiable pipeline', state.container.pipeline);
 
     async function dispatch(action: StateAction) {
-
         console.log('starting dispatch');
 
         const newContainer: PipelineContainer = await (async () => {
@@ -46,15 +48,18 @@ function ModifiablePipelineContainerProvider({ children, initialContainer, onPip
             if (updateType === 'updateTags') {
                 return {
                     ...state.container,
-                    tags: action.update.tags
-                }
+                    tags: action.update.tags,
+                };
             } else {
-                const newPipeline = await patchPipeline(pipeline, action.update);
+                const newPipeline = await patchPipeline(
+                    pipeline,
+                    action.update,
+                );
                 if (newPipeline.isOk) {
                     return {
                         ...state.container,
                         pipeline: newPipeline.data,
-                    }
+                    };
                 }
                 throw newPipeline.err;
             }
@@ -62,16 +67,14 @@ function ModifiablePipelineContainerProvider({ children, initialContainer, onPip
 
         console.log('got container state', newContainer);
 
-
         if (onPipelineUpdate) {
             await onPipelineUpdate(newContainer); // perform arbitrary action, like saving, when the definition changes
         }
 
         console.log('setting container state to', newContainer);
 
-        setState({ container: newContainer })
-    };
-
+        setState({ container: newContainer });
+    }
 
     const value = { state, dispatch };
     return (
@@ -82,13 +85,11 @@ function ModifiablePipelineContainerProvider({ children, initialContainer, onPip
 }
 
 function useModifiablePipelineContainer() {
-    const context = React.useContext(ModifiablePipelineContainerStateContext)
+    const context = React.useContext(ModifiablePipelineContainerStateContext);
     if (context === undefined) {
-        throw new Error('useSettings must be used within a SettingsProvider')
+        throw new Error('useSettings must be used within a SettingsProvider');
     }
-    return context
+    return context;
 }
 
 export { ModifiablePipelineContainerProvider, useModifiablePipelineContainer };
-
-

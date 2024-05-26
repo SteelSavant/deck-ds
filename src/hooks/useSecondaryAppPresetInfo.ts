@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
-import { getSecondaryAppInfo } from "../backend";
-import { GetSecondaryAppInfoResponse } from "../types/backend_api";
-import { Loading } from "../util/loading";
+import { useEffect, useState } from 'react';
+import { getSecondaryAppInfo } from '../backend';
+import { GetSecondaryAppInfoResponse } from '../types/backend_api';
+import { Loading } from '../util/loading';
 
 const useSecondaryAppInfo = (): Loading<GetSecondaryAppInfoResponse> => {
-    const [result, setResult] = useState<Loading<GetSecondaryAppInfoResponse>>(null);
+    const [result, setResult] =
+        useState<Loading<GetSecondaryAppInfoResponse>>(null);
 
     useEffect(() => {
         let active = true;
@@ -21,10 +22,12 @@ const useSecondaryAppInfo = (): Loading<GetSecondaryAppInfoResponse> => {
             })();
         }
 
-        return () => { active = false; };
+        return () => {
+            active = false;
+        };
     });
 
     return result;
-}
+};
 
 export default useSecondaryAppInfo;

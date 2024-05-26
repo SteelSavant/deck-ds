@@ -1,9 +1,14 @@
-import { useEffect, useState } from "react";
-import { PipelineDefinition, ReifyPipelineResponse, reifyPipeline } from "../backend";
-import { Loading } from "../util/loading";
+import { useEffect, useState } from 'react';
+import {
+    PipelineDefinition,
+    ReifyPipelineResponse,
+    reifyPipeline,
+} from '../backend';
+import { Loading } from '../util/loading';
 
-
-const useReifiedPipeline = (definition: PipelineDefinition): Loading<ReifyPipelineResponse> => {
+const useReifiedPipeline = (
+    definition: PipelineDefinition,
+): Loading<ReifyPipelineResponse> => {
     const [result, setResult] = useState<Loading<ReifyPipelineResponse>>(null);
 
     useEffect(() => {
@@ -11,7 +16,7 @@ const useReifiedPipeline = (definition: PipelineDefinition): Loading<ReifyPipeli
 
         (async function load() {
             const res = await reifyPipeline({
-                pipeline: definition
+                pipeline: definition,
             });
 
             if (!active) {
@@ -21,12 +26,12 @@ const useReifiedPipeline = (definition: PipelineDefinition): Loading<ReifyPipeli
             setResult(res);
         })();
 
-        return () => { active = false; };
+        return () => {
+            active = false;
+        };
     }, [definition]);
 
     return result;
-}
+};
 
 export default useReifiedPipeline;
-
-

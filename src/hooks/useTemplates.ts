@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { Template, getTemplates } from "../backend";
-import { Loading } from "../util/loading";
+import { useEffect, useState } from 'react';
+import { Template, getTemplates } from '../backend';
+import { Loading } from '../util/loading';
 
 const useTemplates = (): Loading<Array<Template>> => {
     const [result, setResult] = useState<Loading<Array<Template>>>(null);
@@ -16,25 +16,32 @@ const useTemplates = (): Loading<Array<Template>> => {
                     return;
                 }
 
-                setResult(res.map((v) => {
-                    v.templates.sort((a, b) => {
-                        const aName = a.pipeline.name.toLowerCase();
-                        const bName = b.pipeline.name.toLowerCase();
+                setResult(
+                    res.map((v) => {
+                        v.templates.sort((a, b) => {
+                            const aName = a.pipeline.name.toLowerCase();
+                            const bName = b.pipeline.name.toLowerCase();
 
-                        return aName < bName ? -1
-                            : aName > bName ? 1
-                                : a.id < b.id ? -1
-                                    : 1
-                    });
-                    return v.templates;
-                }));
+                            return aName < bName
+                                ? -1
+                                : aName > bName
+                                ? 1
+                                : a.id < b.id
+                                ? -1
+                                : 1;
+                        });
+                        return v.templates;
+                    }),
+                );
             })();
         }
 
-        return () => { active = false; };
+        return () => {
+            active = false;
+        };
     });
 
     return result;
-}
+};
 
 export default useTemplates;

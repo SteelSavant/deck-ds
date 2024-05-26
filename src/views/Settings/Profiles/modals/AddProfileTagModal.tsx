@@ -1,13 +1,17 @@
-import { ConfirmModal, Dropdown, Focusable } from "decky-frontend-lib";
-import { ReactElement, useState } from "react";
+import { ConfirmModal, Dropdown, Focusable } from 'decky-frontend-lib';
+import { ReactElement, useState } from 'react';
 
-
-export default function CreateProfileTagModal({ onSave, closeModal }: {
-    onSave: (tag: string) => void, closeModal?: () => void,
+export default function CreateProfileTagModal({
+    onSave,
+    closeModal,
+}: {
+    onSave: (tag: string) => void;
+    closeModal?: () => void;
 }): ReactElement {
-    const [selected, setSelected] = useState<string | null>(null)
+    const [selected, setSelected] = useState<string | null>(null);
     return (
-        <ConfirmModal strTitle='Add Collection'
+        <ConfirmModal
+            strTitle="Add Collection"
             onOK={() => {
                 if (selected != null) {
                     onSave(selected);
@@ -23,14 +27,14 @@ export default function CreateProfileTagModal({ onSave, closeModal }: {
                     rgOptions={collectionStore.userCollections.map((uc) => {
                         return {
                             label: uc.displayName,
-                            data: uc.id
-                        }
+                            data: uc.id,
+                        };
                     })}
                     onChange={(value) => {
-                        setSelected(value.data)
+                        setSelected(value.data);
                     }}
                 />
             </Focusable>
         </ConfirmModal>
-    )
+    );
 }

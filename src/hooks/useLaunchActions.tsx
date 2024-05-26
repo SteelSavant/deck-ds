@@ -1,20 +1,29 @@
-import { showModal } from "decky-frontend-lib";
-import { CategoryProfile, DependencyError, PipelineTarget, autoStart, getProfile, reifyPipeline } from "../backend";
-import ConfigErrorModal from "../components/ConfigErrorModal";
-import { ShortAppDetails } from "../context/appContext";
-import useProfiles from "./useProfiles";
+import { showModal } from 'decky-frontend-lib';
+import {
+    CategoryProfile,
+    DependencyError,
+    PipelineTarget,
+    autoStart,
+    getProfile,
+    reifyPipeline,
+} from '../backend';
+import ConfigErrorModal from '../components/ConfigErrorModal';
+import { ShortAppDetails } from '../context/appContext';
+import useProfiles from './useProfiles';
 
 export interface LaunchActions {
-    profile: CategoryProfile,
-    targets: LaunchTarget[]
-};
-
-type LaunchTarget = {
-    target: PipelineTarget,
-    action: () => Promise<void>
+    profile: CategoryProfile;
+    targets: LaunchTarget[];
 }
 
-const useLaunchActions = (appDetails: ShortAppDetails | null): LaunchActions[] => {
+type LaunchTarget = {
+    target: PipelineTarget;
+    action: () => Promise<void>;
+};
+
+const useLaunchActions = (
+    appDetails: ShortAppDetails | null,
+): LaunchActions[] => {
     let { profiles } = useProfiles();
 
     if (appDetails && profiles?.isOk) {
@@ -33,45 +42,42 @@ const useLaunchActions = (appDetails: ShortAppDetails | null): LaunchActions[] =
                 }
                 return matchedProfiles;
             } else {
-                return []
+                return [];
             }
         });
 
         return validProfiles.map((p) => {
-
-            const defaultTargets: LaunchTarget[] = []
+            const defaultTargets: LaunchTarget[] = [];
             const pipelineTargets: PipelineTarget[] = ['Desktop', 'Gamemode'];
 
             for (const key of pipelineTargets) {
                 const action = async () => {
-                    // HACK: QAM does weird caching that means the profile can be outdated, 
+                    // HACK: QAM does weird caching that means the profile can be outdated,
                     // so we reload the profile in the action to ensure it is current
                     const currentPipeline = await getProfile({
-                        profile_id: p.id
+                        profile_id: p.id,
                     });
 
-                    p = (currentPipeline?.isOk
-                        ? currentPipeline.data.profile
-                        : null
-                    ) ?? p;
+                    p =
+                        (currentPipeline?.isOk
+                            ? currentPipeline.data.profile
+                            : null) ?? p;
 
                     // Reify pipeline and run autostart procedure for target
 
-                    const reified = (await reifyPipeline({
-                        pipeline: p.pipeline
-                    }));
+                    const reified = await reifyPipeline({
+                        pipeline: p.pipeline,
+                    });
 
                     if (reified.isOk) {
                         const configErrors = reified.data.config_errors;
                         const errors: DependencyError[] = [];
                         for (const key in configErrors) {
-                            errors.push(...configErrors[key])
+                            errors.push(...configErrors[key]);
                         }
 
                         if (errors.length > 0) {
-                            showModal(
-                                <ConfigErrorModal errors={errors} />
-                            );
+                            showModal(<ConfigErrorModal errors={errors} />);
                         } else {
                             const res = await autoStart({
                                 user_id_64: appDetails.userId64,
@@ -79,7 +85,7 @@ const useLaunchActions = (appDetails: ShortAppDetails | null): LaunchActions[] =
                                 app_id: appDetails.appId.toString(),
                                 profile_id: p.id,
                                 game_title: appDetails.displayName,
-                                target: key as PipelineTarget
+                                target: key as PipelineTarget,
                             });
 
                             if (!res.isOk) {
@@ -93,8 +99,8 @@ const useLaunchActions = (appDetails: ShortAppDetails | null): LaunchActions[] =
 
                 const value = {
                     action,
-                    target: key as PipelineTarget
-                }
+                    target: key as PipelineTarget,
+                };
 
                 if (key === 'Gamemode') {
                     defaultTargets.push(value);
@@ -107,7 +113,7 @@ const useLaunchActions = (appDetails: ShortAppDetails | null): LaunchActions[] =
 
             const res = {
                 profile: p,
-                targets: defaultTargets
+                targets: defaultTargets,
             };
 
             return res;
@@ -115,6 +121,6 @@ const useLaunchActions = (appDetails: ShortAppDetails | null): LaunchActions[] =
     }
 
     return [];
-}
+};
 
 export default useLaunchActions;

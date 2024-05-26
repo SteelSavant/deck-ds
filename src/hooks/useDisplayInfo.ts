@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { getDisplayInfo } from "../backend";
-import { DisplayValues } from "../types/backend_api";
-import { Loading } from "../util/loading";
+import { useEffect, useState } from 'react';
+import { getDisplayInfo } from '../backend';
+import { DisplayValues } from '../types/backend_api';
+import { Loading } from '../util/loading';
 
 const useDisplayInfo = (): Loading<Array<DisplayValues>> => {
     const [result, setResult] = useState<Loading<Array<DisplayValues>>>(null);
@@ -17,16 +17,20 @@ const useDisplayInfo = (): Loading<Array<DisplayValues>> => {
                     return;
                 }
 
-                setResult(res.map((v) => {
-                    return v.available_values;
-                }));
+                setResult(
+                    res.map((v) => {
+                        return v.available_values;
+                    }),
+                );
             })();
         }
 
-        return () => { active = false; };
+        return () => {
+            active = false;
+        };
     });
 
     return result;
-}
+};
 
 export default useDisplayInfo;

@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
-import { getAudioDeviceInfo } from "../backend";
-import { GetAudioDeviceInfoResponse } from "../types/backend_api";
-import { Loading } from "../util/loading";
+import { useEffect, useState } from 'react';
+import { getAudioDeviceInfo } from '../backend';
+import { GetAudioDeviceInfoResponse } from '../types/backend_api';
+import { Loading } from '../util/loading';
 
 const useDisplayInfo = (): Loading<GetAudioDeviceInfoResponse> => {
-    const [result, setResult] = useState<Loading<GetAudioDeviceInfoResponse>>(null);
+    const [result, setResult] =
+        useState<Loading<GetAudioDeviceInfoResponse>>(null);
 
     useEffect(() => {
         let active = true;
@@ -17,16 +18,20 @@ const useDisplayInfo = (): Loading<GetAudioDeviceInfoResponse> => {
                     return;
                 }
 
-                setResult(res.map((v) => {
-                    return v;
-                }));
+                setResult(
+                    res.map((v) => {
+                        return v;
+                    }),
+                );
             })();
         }
 
-        return () => { active = false; };
+        return () => {
+            active = false;
+        };
     });
 
     return result;
-}
+};
 
 export default useDisplayInfo;

@@ -1,11 +1,10 @@
-import { ServerAPI } from "decky-frontend-lib";
-import { useEffect, useState } from "react";
+import { ServerAPI } from 'decky-frontend-lib';
+import { useEffect, useState } from 'react';
 
 interface PluginInfo {
-    name: string,
-    version: string,
+    name: string;
+    version: string;
 }
-
 
 function usePluginInfo(serverApi: ServerAPI): PluginInfo | null {
     let [state, setState] = useState<PluginInfo | null>(null);
@@ -15,14 +14,14 @@ function usePluginInfo(serverApi: ServerAPI): PluginInfo | null {
 
         if (state === null) {
             (async function load() {
-                const res = await serverApi.callPluginMethod("plugin_info", {});
+                const res = await serverApi.callPluginMethod('plugin_info', {});
 
                 if (!active) {
                     return;
                 }
 
                 if (!res.success) {
-                    console.log("error fetching plugin info:", res.result);
+                    console.log('error fetching plugin info:', res.result);
                     return;
                 }
 
@@ -30,9 +29,10 @@ function usePluginInfo(serverApi: ServerAPI): PluginInfo | null {
             })();
         }
 
-        return () => { active = false; };
+        return () => {
+            active = false;
+        };
     });
-
 
     return state;
 }

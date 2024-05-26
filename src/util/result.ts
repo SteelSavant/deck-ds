@@ -22,11 +22,13 @@ module Impl {
             if (this.isOk) {
                 return fn(this.data);
             } else {
-                return Err(this.err)
+                return Err(this.err);
             }
         }
 
-        public andThenAsync<R>(fn: (res: T) => Promise<Result<R, E>>): Promise<Result<R, E>> {
+        public andThenAsync<R>(
+            fn: (res: T) => Promise<Result<R, E>>,
+        ): Promise<Result<R, E>> {
             if (this.isOk) {
                 return fn(this.data);
             } else {
@@ -38,25 +40,27 @@ module Impl {
 
 export module Result {
     export interface Ok<T, E> {
-        isOk: true,
-        data: T,
-        map<R>(fn: (data: T) => R): Result<R, E>,
-        andThen<R>(fn: (res: T) => Result<R, E>): Result<R, E>
-        andThenAsync<R>(fn: (res: T) => Promise<Result<R, E>>): Promise<Result<R, E>>
-
+        isOk: true;
+        data: T;
+        map<R>(fn: (data: T) => R): Result<R, E>;
+        andThen<R>(fn: (res: T) => Result<R, E>): Result<R, E>;
+        andThenAsync<R>(
+            fn: (res: T) => Promise<Result<R, E>>,
+        ): Promise<Result<R, E>>;
     }
 
     export interface Err<T, E> {
-        isOk: false,
-        err: E,
-        map<R>(fn: (data: T) => R): Result<R, E>,
-        andThen<R>(fn: (res: T) => Result<R, E>): Result<R, E>,
-        andThenAsync<R>(fn: (res: T) => Promise<Result<R, E>>): Promise<Result<R, E>>
+        isOk: false;
+        err: E;
+        map<R>(fn: (data: T) => R): Result<R, E>;
+        andThen<R>(fn: (res: T) => Result<R, E>): Result<R, E>;
+        andThenAsync<R>(
+            fn: (res: T) => Promise<Result<R, E>>,
+        ): Promise<Result<R, E>>;
     }
 }
 
-
-export type Result<T, E> = Result.Ok<T, E> | Result.Err<T, E>
+export type Result<T, E> = Result.Ok<T, E> | Result.Err<T, E>;
 
 export function Ok<T, E>(data: T): Result.Ok<T, E> {
     return new Impl.ResultImpl(data, undefined as E, true);
