@@ -10,8 +10,11 @@ use crate::{
     db::ProfileDb,
     decky_env::DeckyEnv,
     pipeline::{action_registar::PipelineActionRegistrar, data::PipelineTarget},
-    settings::{self, AppId, GameId, ProfileId, Settings},
-    sys::steamos_session_select::{steamos_session_select, Session},
+    settings::{self, AppId, GameId, ProfileId, Settings, UserId},
+    sys::{
+        steam,
+        steamos_session_select::{steamos_session_select, Session},
+    },
 };
 
 use super::{
@@ -24,6 +27,8 @@ pub struct AutoStartRequest {
     game_id: Option<GameId>,
     app_id: AppId,
     profile_id: ProfileId,
+    user_id: UserId,
+    game_title: String,
     target: PipelineTarget,
 }
 
@@ -68,20 +73,44 @@ pub fn autostart(
                 let id = args
                     .game_id
                     .map(Either::Right)
-                    .unwrap_or(Either::Left(args.app_id));
+                    .unwrap_or(Either::Left(args.app_id.clone()));
 
                 let lock = settings.lock().expect("settings mutex should be lockable");
 
                 match args.target {
                     PipelineTarget::Desktop => {
+                        let use_controller_hack = pipeline
+                            .desktop_layout_config_hack_override
+                            .unwrap_or_else(|| {
+                                lock.get_global_cfg().use_desktop_controller_layout_hack
+                            });
+
                         let res = lock.set_autostart_cfg(&settings::AutoStartConfig {
                             game_id: id,
                             pipeline,
                             env,
                         });
+
                         match res {
                             Ok(_) => match steamos_session_select(Session::Plasma) {
-                                Ok(_) => ResponseOk.to_response(),
+                                Ok(_) => {
+                                    if use_controller_hack {
+                                        let res = steam::set_desktop_controller_hack(
+                                            &args.user_id,
+                                            &args.app_id,
+                                            &args.game_title,
+                                            decky_env.steam_dir(),
+                                        );
+
+                                        if let Err(err) = res {
+                                            log::warn!(
+                                                "unable to set desktop controller hack: {err}"
+                                            )
+                                        }
+                                    }
+
+                                    ResponseOk.to_response()
+                                }
                                 Err(err) => {
                                     // remove autostart config if session select fails to avoid issues
                                     // switching to desktop later

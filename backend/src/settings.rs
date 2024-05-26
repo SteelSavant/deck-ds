@@ -12,8 +12,9 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 newtype_uuid!(ProfileId);
-newtype_strid!("", AppId);
-newtype_strid!("", GameId);
+newtype_strid!("The AppId in Steam", AppId);
+newtype_strid!("The GameId in Steam", GameId);
+newtype_strid!("The UserId in steam", UserId);
 
 use crate::{
     decky_env::DeckyEnv,
@@ -48,6 +49,8 @@ pub struct GlobalConfig {
     pub primary_ui_target: PipelineTarget,
     /// Button chord to be used to exit profiles that register for exit hooks.
     pub exit_hooks: ExitHooks,
+    /// Overwrite the desktop layout with the game layout
+    pub use_desktop_controller_layout_hack: bool,
 }
 
 impl Settings {
