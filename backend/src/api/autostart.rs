@@ -95,6 +95,7 @@ pub fn autostart(
                             Ok(_) => match steamos_session_select(Session::Plasma) {
                                 Ok(_) => {
                                     if use_controller_hack {
+                                        log::debug!("setting desktop controller config hack");
                                         let res = steam::set_desktop_controller_hack(
                                             &args.user_id_64,
                                             &args.app_id,

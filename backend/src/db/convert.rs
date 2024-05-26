@@ -68,6 +68,8 @@ impl AppProfile {
                 o.exit_hooks_override = profile.pipeline.exit_hooks_override;
                 o.name = profile.pipeline.name;
                 o.platform.root = profile.pipeline.platform.root.clone();
+                o.desktop_layout_config_hack_override =
+                    profile.pipeline.desktop_layout_config_hack_override;
 
                 let platform = &mut o.platform;
 

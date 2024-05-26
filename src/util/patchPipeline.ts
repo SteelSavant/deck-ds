@@ -53,6 +53,7 @@ export interface PipelineInfo {
     exit_hooks_override?: ExitHooks | null | undefined,
     register_exit_hooks?: boolean | undefined,
     primary_target_override?: PipelineTarget | null | undefined,
+    desktop_layout_config_hack_override?: boolean | null | undefined,
 }
 
 
@@ -70,7 +71,10 @@ export async function patchPipeline(pipeline: PipelineDefinition, update: Pipeli
                 : info.exit_hooks_override,
             primary_target_override: info.primary_target_override === undefined
                 ? pipeline.primary_target_override
-                : info.primary_target_override
+                : info.primary_target_override,
+            desktop_layout_config_hack_override: info.desktop_layout_config_hack_override === undefined
+                ? pipeline.desktop_layout_config_hack_override
+                : info.desktop_layout_config_hack_override,
         });
     } else if (update.type === 'updatePlatform') {
         return Ok({
