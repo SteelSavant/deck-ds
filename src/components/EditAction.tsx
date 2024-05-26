@@ -723,7 +723,7 @@ export function InternalEditAction({
             return notConfigurable;
         default:
             const typecheck: never = type;
-            throw typecheck ?? 'action for edit failed to typecheck';
+            throw `action for edit failed to typecheck: ${typecheck}`;
     }
 }
 

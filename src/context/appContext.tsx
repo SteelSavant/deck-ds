@@ -503,7 +503,7 @@ function patchProfileOverridesForMissing(
 
             default:
                 const typecheck: never = type;
-                throw typecheck ?? 'runtime selection failed to typecheck';
+                throw `runtime selection failed to typecheck: ${typecheck}`;
         }
     }
 

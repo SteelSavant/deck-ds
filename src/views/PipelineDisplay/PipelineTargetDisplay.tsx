@@ -64,11 +64,10 @@ function buildSelection(
         case 'OneOf':
             return buildOneOf(selection.value, indentLevel, qamHiddenByParent);
         case 'AllOf':
-            // TODO::handle userdefined
             return buildAllOf(selection.value, indentLevel, qamHiddenByParent);
         default:
             const typecheck: never = type;
-            throw typecheck ?? 'buildSelection switch failed to typecheck';
+            throw `buildSelection switch failed to typecheck: ${typecheck}`;
     }
 }
 

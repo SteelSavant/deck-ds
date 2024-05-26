@@ -52,7 +52,7 @@ function DisplayError(error: DependencyError): ReactElement {
                 return `required secondary app preset ${error.value} must exist`;
             default:
                 const typecheck: never = type;
-                throw typecheck ?? 'DependencyError failed to typecheck';
+                throw `DependencyError failed to typecheck: ${typecheck}`;
         }
     })();
 

@@ -163,7 +163,7 @@ export default definePlugin((serverApi: ServerAPI) => {
                 }}
                 className={staticClasses.Title}
             >
-                <div>DeckDS</div>
+                <p>DeckDS</p>
                 <DialogButton
                     style={{
                         width: 'fit-content',
@@ -182,7 +182,7 @@ export default definePlugin((serverApi: ServerAPI) => {
                 </DialogButton>
             </Focusable>
         ),
-        title: <div>DeckDS</div>,
+        title: <p>DeckDS</p>,
         alwaysRender: true,
         content: <Content serverApi={serverApi} />,
         icon: (
