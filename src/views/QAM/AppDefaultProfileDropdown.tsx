@@ -16,42 +16,42 @@ export default function AppDefaultProfileDropdown({
     appDetails: ShortAppDetails;
     appProfile: AppProfile;
     launchActions: LaunchActions[];
-}): ReactElement {
+}): ReactElement | null {
     const appDetailsState = useAppState();
+
+    if (launchActions.length <= 1) {
+        return null;
+    }
 
     const selected =
         launchActions.find((a) => a.profile.id == appProfile.default_profile)
             ?.profile?.id ?? null;
 
-    if (launchActions.length > 1) {
-        return (
-            <PanelSection title="Default Profile">
-                <PanelSectionRow>
-                    <DropdownItem
-                        selectedOption={selected}
-                        rgOptions={[
-                            {
-                                label: 'Default',
-                                data: null,
-                            },
-                            ...launchActions.map((a) => {
-                                return {
-                                    label: a.profile.pipeline.name,
-                                    data: a.profile.id,
-                                };
-                            }),
-                        ]}
-                        onChange={async (option) => {
-                            appDetailsState.setAppProfileDefault(
-                                appDetails,
-                                option.data,
-                            );
-                        }}
-                    />
-                </PanelSectionRow>
-            </PanelSection>
-        );
-    } else {
-        return <div />;
-    }
+    return (
+        <PanelSection title="Default Profile">
+            <PanelSectionRow>
+                <DropdownItem
+                    selectedOption={selected}
+                    rgOptions={[
+                        {
+                            label: 'Default',
+                            data: null,
+                        },
+                        ...launchActions.map((a) => {
+                            return {
+                                label: a.profile.pipeline.name,
+                                data: a.profile.id,
+                            };
+                        }),
+                    ]}
+                    onChange={async (option) => {
+                        appDetailsState.setAppProfileDefault(
+                            appDetails,
+                            option.data,
+                        );
+                    }}
+                />
+            </PanelSectionRow>
+        </PanelSection>
+    );
 }

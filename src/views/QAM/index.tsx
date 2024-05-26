@@ -323,9 +323,7 @@ function AppProfileSection({
                                                 reified={reified}
                                                 target={t.target}
                                             />
-                                        ) : (
-                                            <div />
-                                        )}
+                                        ) : null}
                                     </>
                                 );
                             })}

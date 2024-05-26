@@ -12,8 +12,8 @@ export default function HandleLoading<T>({
     onOk: (value: T) => ReactElement;
     onErr?: (err: ApiError) => ReactElement;
     onLoading?: () => ReactElement;
-}): ReactElement {
-    const definiteOnLoading = onLoading ?? (() => <div />);
+}): ReactElement | null {
+    const definiteOnLoading = onLoading ?? (() => null);
     const definiteOnErr =
         onErr ??
         ((err) => (

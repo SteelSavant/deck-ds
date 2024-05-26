@@ -9,7 +9,7 @@ interface SecondaryPlayButtonProps {
     deckDSDesktopSentinel: 'sentinel';
 }
 
-export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): ReactElement {
+export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): ReactElement | null {
     const { appDetails, appProfile } = useAppState();
     const launchActions = useLaunchActions(appDetails);
     const [isFocused, setIsFocused] = useState(false);
@@ -76,7 +76,5 @@ export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): React
                 <IconForTarget target={target} />
             </DialogButton>
         </Focusable>
-    ) : (
-        <div />
-    );
+    ) : null;
 }

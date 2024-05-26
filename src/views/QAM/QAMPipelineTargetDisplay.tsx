@@ -92,7 +92,7 @@ function buildAction(
     return component;
 }
 
-function buildOneOf(oneOf: ActionOneOf): ReactElement {
+function buildOneOf(oneOf: ActionOneOf): ReactElement | null {
     const action = oneOf.actions.find((a) => a.id === oneOf.selection)!;
     return buildPipelineAction(action);
 }
@@ -101,7 +101,7 @@ function buildAllOf(allOf: PipelineAction[]): ReactElement {
     return <>{allOf.map((action) => buildPipelineAction(action))}</>;
 }
 
-function buildPipelineAction(action: PipelineAction): ReactElement {
+function buildPipelineAction(action: PipelineAction): ReactElement | null {
     const { dispatchUpdate } = useAppState();
 
     const profileBeingOverridden = useContext(ProfileContext);
@@ -109,7 +109,7 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
     const target = useContext(PipelineTargetContext);
 
     if (!action.is_visible_on_qam) {
-        return <div />;
+        return null;
     }
 
     const selection = action.selection;
@@ -134,7 +134,7 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                 return (
                     <>
                         <Header {...props} />
-                        {isEnabled ? buildAllOf(selection.value) : <div />}
+                        {isEnabled ? buildAllOf(selection.value) : null}
                     </>
                 );
             }
@@ -184,9 +184,7 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                             </Field>
                             {buildOneOf(selection.value)}
                         </>
-                    ) : (
-                        <div />
-                    )}
+                    ) : null}
                 </>
             );
         case 'Action':
@@ -201,7 +199,7 @@ function buildPipelineAction(action: PipelineAction): ReactElement {
                 return (
                     <>
                         <Header {...props} />
-                        {isEnabled ? actionComponent : <div />}
+                        {isEnabled ? actionComponent : null}
                     </>
                 );
             } else {
@@ -270,14 +268,12 @@ function EnabledComponent({
     isEnabled,
     forcedEnabled,
     action,
-}: HeaderProps): ReactElement {
+}: HeaderProps): ReactElement | null {
     const profileBeingOverridden = useContext(ProfileContext);
     const target = useContext(PipelineTargetContext);
     const { dispatchUpdate } = useAppState();
 
-    return forcedEnabled ? (
-        <div />
-    ) : (
+    return forcedEnabled ? null : (
         <Field focusable={false} label="Enabled">
             <Focusable>
                 <Toggle
@@ -312,9 +308,7 @@ function Header(props: HeaderProps): ReactElement {
                 label={displayName}
                 icon={<ActionIcon action={action} />}
             >
-                {errors.length === 0 ? (
-                    <div />
-                ) : (
+                {errors.length === 0 ? null : (
                     <ConfigErrorWarning errors={errors} />
                 )}
             </Field>

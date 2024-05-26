@@ -382,7 +382,7 @@ function ProfileTag({
 }: {
     tag: string;
     removeTag: (tag: string) => void;
-}): ReactElement {
+}): ReactElement | null {
     const display = collectionStore.userCollections.find(
         (uc) => uc.id === tag,
     )?.displayName;
@@ -403,7 +403,5 @@ function ProfileTag({
                 <FaX />
             </DialogButton>
         </div>
-    ) : (
-        <div />
-    );
+    ) : null;
 }
