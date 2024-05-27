@@ -7,14 +7,14 @@ import usePluginInfo from '../../hooks/usePluginInfo';
 
 const About: VFC = () => {
     const serverApi = useServerApi();
-    let pluginInfo = usePluginInfo(serverApi);
+    const pluginInfo = usePluginInfo(serverApi);
 
-    let fields = [
+    const fields = [
         pluginInfo
             ? {
                   label: `${pluginInfo.name} v${pluginInfo.version}`,
                   description:
-                      'Thanks to: AAGaming00, Beebles, EMERALD0874, NGenius, and all the other plugin devs',
+                      'Thanks to: AAGaming00, Beebles, EMERALD0874, NGenius, and all the other plugin devs.',
                   onClick: () =>
                       SteamClient.URL.ExecuteSteamURL(
                           'steam://openurl/https://github.com/SteelSavant/deck-ds',
@@ -115,7 +115,8 @@ const About: VFC = () => {
                     HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
                     CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
                     OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-                    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+                    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.{' '}
+                    <br />
                 </div>
             ),
         },

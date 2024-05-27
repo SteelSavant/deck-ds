@@ -30,6 +30,7 @@ export const GlobalSettingsPage: VFC = () => {
                             label="Exit Hooks"
                             description="The button chord to hold to exit the app in desktop mode, if enabled."
                             indentLevel={1}
+                            // TODO::consider dropdown arrow child to expand/hide the edit, since moving the "add chord button" into the field is inconvenient
                         />
                         <EditExitHooks
                             exitHooks={settings.exit_hooks}

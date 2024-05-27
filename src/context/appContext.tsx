@@ -515,25 +515,6 @@ function patchProfileOverridesForMissing(
             for (const v in actions) {
                 const i = parseInt(v);
 
-                // // console.log('before action:', JSON.stringify(actions[i]), 'toplevel:', toplevel[i + skip]);
-
-                // function idsEqual(a: string, b: string, target: string): boolean {
-                //     const lower = target.toLowerCase();
-                //     return a === b
-                //         || `${a}:${lower}` === b
-                //         || `${b}:${lower}` === a
-                //         || `${a}:${lower}` === `${b}:${lower}`
-                //         ;
-                // }
-
-                // // handle case where ids mismatch because a toplevel action is invalid for a target
-                // while (!idsEqual(actions[i].id, toplevel[i + skip]?.root, target) && i + skip < toplevel.length) {
-
-                //     skip += 1;
-                //     console.log('skip: ', skip);
-                // }
-
-                // // console.log('after action:', actions[i], 'toplevel:', toplevel[i + skip]);
                 const current_action = actions[i];
                 const toplevel_actions = toplevel[i + skip].actions;
                 patch(current_action.selection, toplevel_actions);
