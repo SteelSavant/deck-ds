@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { getToplevel } from "../backend";
-import { ToplevelInfo } from "../types/backend_api";
-import { Loading } from "../util/loading";
+import { useEffect, useState } from 'react';
+import { getToplevel } from '../backend';
+import { ToplevelInfo } from '../types/backend_api';
+import { Loading } from '../util/loading';
 
 const useToplevel = (): Loading<Array<ToplevelInfo>> => {
     const [result, setResult] = useState<Loading<Array<ToplevelInfo>>>(null);
@@ -17,16 +17,20 @@ const useToplevel = (): Loading<Array<ToplevelInfo>> => {
                     return;
                 }
 
-                setResult(res.map((v) => {
-                    return v.toplevel;
-                }));
+                setResult(
+                    res.map((v) => {
+                        return v.toplevel;
+                    }),
+                );
             })();
         }
 
-        return () => { active = false; };
+        return () => {
+            active = false;
+        };
     });
 
     return result;
-}
+};
 
 export default useToplevel;

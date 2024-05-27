@@ -1,19 +1,17 @@
 import { ServerAPI } from 'decky-frontend-lib';
 import * as React from 'react';
 
-
 type ModifiablePipelineContextProviderProps = {
-    children: React.ReactNode,
-    serverApi: ServerAPI
-}
+    children: React.ReactNode;
+    serverApi: ServerAPI;
+};
 
-const ServerApiContext = React.createContext<
-    ServerAPI | undefined
->(undefined)
+const ServerApiContext = React.createContext<ServerAPI | null>(null);
 
-
-
-function ServerApiProvider({ children, serverApi }: ModifiablePipelineContextProviderProps) {
+function ServerApiProvider({
+    children,
+    serverApi,
+}: ModifiablePipelineContextProviderProps) {
     return (
         <ServerApiContext.Provider value={serverApi}>
             {children}
@@ -22,11 +20,11 @@ function ServerApiProvider({ children, serverApi }: ModifiablePipelineContextPro
 }
 
 function useServerApi() {
-    const context = React.useContext(ServerApiContext)
-    if (context === undefined) {
-        throw new Error('useServerApi must be used within a ServerApiProvider')
+    const context = React.useContext(ServerApiContext);
+    if (context === null) {
+        throw new Error('useServerApi must be used within a ServerApiProvider');
     }
-    return context
+    return context;
 }
 
 export { ServerApiProvider, useServerApi };

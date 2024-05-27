@@ -1,12 +1,26 @@
-import { useEffect, useState } from "react";
-import { CategoryProfile, CreateProfileRequest, CreateProfileResponse, DeleteProfileRequest, Response, SetProfileRequest, createProfile, deleteProfile, getProfile, getProfiles, setProfile, } from "../backend";
-import { Loading } from "../util/loading";
+import { useEffect, useState } from 'react';
+import {
+    CategoryProfile,
+    CreateProfileRequest,
+    CreateProfileResponse,
+    DeleteProfileRequest,
+    Response,
+    SetProfileRequest,
+    createProfile,
+    deleteProfile,
+    getProfile,
+    getProfiles,
+    setProfile,
+} from '../backend';
+import { Loading } from '../util/loading';
 
 interface Profiles {
-    profiles: Loading<Array<CategoryProfile>>,
-    createProfile: (request: CreateProfileRequest) => Response<CreateProfileResponse>,
-    updateProfile: (request: SetProfileRequest) => Response<void>
-    deleteProfile: (request: DeleteProfileRequest) => Response<void>
+    profiles: Loading<Array<CategoryProfile>>;
+    createProfile: (
+        request: CreateProfileRequest,
+    ) => Response<CreateProfileResponse>;
+    updateProfile: (request: SetProfileRequest) => Response<void>;
+    deleteProfile: (request: DeleteProfileRequest) => Response<void>;
 }
 
 const useProfiles = (): Profiles => {
@@ -23,22 +37,29 @@ const useProfiles = (): Profiles => {
                     return;
                 }
 
-                setResult(res.map((v) => {
-                    v.profiles.sort((a, b) => {
-                        const aname = a.pipeline.name.toLowerCase();
-                        const bname = b.pipeline.name.toLowerCase();
-                        return aname < bname ? -1
-                            : aname > bname ? 1
-                                : a.id < b.id ? -1
-                                    : 1
-                    });
+                setResult(
+                    res.map((v) => {
+                        v.profiles.sort((a, b) => {
+                            const aname = a.pipeline.name.toLowerCase();
+                            const bname = b.pipeline.name.toLowerCase();
+                            return aname < bname
+                                ? -1
+                                : aname > bname
+                                ? 1
+                                : a.id < b.id
+                                ? -1
+                                : 1;
+                        });
 
-                    return v.profiles;
-                }));
+                        return v.profiles;
+                    }),
+                );
             })();
         }
 
-        return () => { active = false; };
+        return () => {
+            active = false;
+        };
     });
 
     return {
@@ -48,11 +69,13 @@ const useProfiles = (): Profiles => {
         createProfile: async (request) => {
             const res = await createProfile(request);
             if (res.isOk) {
-                const profileRes = await getProfile({ profile_id: res.data.profile_id });
+                const profileRes = await getProfile({
+                    profile_id: res.data.profile_id,
+                });
                 if (profileRes.isOk) {
                     const profile = profileRes.data.profile;
                     if (profile) {
-                        setResult(result?.map((v) => [...v, profile]))
+                        setResult(result?.map((v) => [...v, profile]));
                     }
                 }
             }
@@ -62,7 +85,13 @@ const useProfiles = (): Profiles => {
         updateProfile: async (request) => {
             const res = await setProfile(request);
             if (res.isOk) {
-                setResult(result?.map((v: CategoryProfile[]) => v.map((e) => e.id == request.profile.id ? request.profile : e)))
+                setResult(
+                    result?.map((v: CategoryProfile[]) =>
+                        v.map((e) =>
+                            e.id == request.profile.id ? request.profile : e,
+                        ),
+                    ),
+                );
             }
 
             return res;
@@ -70,12 +99,16 @@ const useProfiles = (): Profiles => {
         deleteProfile: async (request) => {
             const res = await deleteProfile(request);
             if (res.isOk) {
-                setResult(result?.map((v: CategoryProfile[]) => v.filter((e) => e.id !== request.profile)))
+                setResult(
+                    result?.map((v: CategoryProfile[]) =>
+                        v.filter((e) => e.id !== request.profile),
+                    ),
+                );
             }
 
             return res;
         },
     };
-}
+};
 
 export default useProfiles;

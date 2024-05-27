@@ -1,15 +1,14 @@
-import { DialogButton, Focusable } from "decky-frontend-lib";
-import { ReactElement, useEffect, useRef, useState } from "react";
-import { IconForTarget } from "../../components/IconForTarget";
-import { useAppState } from "../../context/appContext";
-import useAppTarget from "../../hooks/useAppTarget";
-import useLaunchActions from "../../hooks/useLaunchActions";
-
+import { DialogButton, Focusable } from 'decky-frontend-lib';
+import { ReactElement, useEffect, useRef, useState } from 'react';
+import { IconForTarget } from '../../components/IconForTarget';
+import { useAppState } from '../../context/appContext';
+import useAppTarget from '../../hooks/useAppTarget';
+import useLaunchActions from '../../hooks/useLaunchActions';
 
 interface PrimaryPlayButtonProps {
-    deckDSGameModeSentinel: 'sentinel',
-    hasStream: boolean,
-    playButton: any
+    deckDSGameModeSentinel: 'sentinel';
+    hasStream: boolean;
+    playButton: any;
 }
 
 export default function PrimaryPlayButton({
@@ -21,21 +20,29 @@ export default function PrimaryPlayButton({
     const [isFocused, setIsFocused] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
-
     const action = appProfile?.isOk
-        ? launchActions.find((a) =>
-            a.profile.id == appProfile.data.default_profile)
-        ?? launchActions[0]
+        ? launchActions.find(
+              (a) => a.profile.id == appProfile.data.default_profile,
+          ) ?? launchActions[0]
         : null;
 
-    const target = useAppTarget({ isPrimary: true, profileId: action?.profile.id });
-    console.log('primary play loading:',
-        'ad:', appDetails,
-        'ap:', appProfile,
-        'la:', launchActions,
-        'a:', action,
-        't', target,
-    )
+    const target = useAppTarget({
+        isPrimary: true,
+        profileId: action?.profile.id ?? null,
+    });
+    console.log(
+        'primary play loading:',
+        'ad:',
+        appDetails,
+        'ap:',
+        appProfile,
+        'la:',
+        launchActions,
+        'a:',
+        action,
+        't',
+        target,
+    );
 
     const onLaunch = action?.targets?.find((t) => t.target === target)?.action;
 
@@ -45,11 +52,13 @@ export default function PrimaryPlayButton({
         }, 750);
     }, []);
 
-    console.log('DeckDS: patching play button with target: ',
-        target, 'action:',
+    console.log(
+        'DeckDS: patching play button with target: ',
+        target,
+        'action:',
         action,
         'onLaunch:',
-        onLaunch
+        onLaunch,
     );
 
     const width = '100%';
@@ -61,7 +70,8 @@ export default function PrimaryPlayButton({
         <Focusable
             onFocus={() => {
                 setIsFocused(true);
-            }} onBlur={() => {
+            }}
+            onBlur={() => {
                 setIsFocused(false);
             }}
             style={{
@@ -71,24 +81,16 @@ export default function PrimaryPlayButton({
         >
             <DialogButton
                 // I would be thrilled if this matched the actual play button (including CSS loader styling), but with a custom icon + action, but alas...
-                // I genuinely don't know how to style things properly. 
+                // I genuinely don't know how to style things properly.
                 ref={ref}
                 onClick={onLaunch}
                 onOKButton={onLaunch}
                 onOKActionDescription={`Launch ${target}`}
                 style={{
-                    borderTopRightRadius: hasStream
-                        ? 0
-                        : undefined,
-                    borderBottomRightRadius: hasStream
-                        ? 0
-                        : undefined,
-                    color: isFocused
-                        ? 'white'
-                        : undefined,
-                    backgroundColor: isFocused
-                        ? okColor
-                        : 'transparent',
+                    borderTopRightRadius: hasStream ? 0 : undefined,
+                    borderBottomRightRadius: hasStream ? 0 : undefined,
+                    color: isFocused ? 'white' : undefined,
+                    backgroundColor: isFocused ? okColor : 'transparent',
                     alignContent: 'center',
                     justifyContent: 'left',
                     minWidth: '210px',
@@ -97,7 +99,7 @@ export default function PrimaryPlayButton({
                     height: height,
                     display: 'flex',
                     flexDirection: 'row',
-                    paddingTop: '12px'
+                    paddingTop: '12px',
                 }}
             >
                 <IconForTarget target={target} />
@@ -105,7 +107,7 @@ export default function PrimaryPlayButton({
                 Play
             </DialogButton>
         </Focusable>
-    ) : playButton;
-
-
+    ) : (
+        playButton
+    );
 }

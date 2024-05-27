@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
-import { CategoryProfile, getProfile, } from "../backend";
-import { Loading } from "../util/loading";
+import { useEffect, useState } from 'react';
+import { CategoryProfile, getProfile } from '../backend';
+import { Loading } from '../util/loading';
 
-const useProfile = (profileId: string | null): Loading<CategoryProfile | null | undefined> => {
-    const [result, setResult] = useState<Loading<CategoryProfile | null | undefined>>(null);
+const useProfile = (
+    profileId: string | null,
+): Loading<CategoryProfile | null> => {
+    const [result, setResult] = useState<Loading<CategoryProfile | null>>(null);
 
     useEffect(() => {
         let active = true;
@@ -16,14 +18,16 @@ const useProfile = (profileId: string | null): Loading<CategoryProfile | null | 
                     return;
                 }
 
-                setResult(res.map((p) => p.profile));
+                setResult(res.map((p) => p.profile ?? null));
             })();
         }
 
-        return () => { active = false; };
+        return () => {
+            active = false;
+        };
     }, [profileId]);
 
     return result;
-}
+};
 
 export default useProfile;

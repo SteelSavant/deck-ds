@@ -92,7 +92,7 @@ fn get_best_game_folder<P: AsRef<Path>>(
                 .fold((1., None), |acc, next| {
                     if next.file_name() == app_id.raw() {
                         // If the folder matches the app id, its the desired folder
-                        return (0., Some(next.path()));
+                        (0., Some(next.path()))
                     } else {
                         // Otherwise, take the best-matching non-steam config folder.
                         const TITLE_THRESH: f64 = 0.2;
@@ -102,7 +102,7 @@ fn get_best_game_folder<P: AsRef<Path>>(
                             Levenshtein::default(),
                         );
                         if title_distance < TITLE_THRESH && title_distance < acc.0 {
-                            return (title_distance, Some(next.path()));
+                            (title_distance, Some(next.path()))
                         } else {
                             acc
                         }
