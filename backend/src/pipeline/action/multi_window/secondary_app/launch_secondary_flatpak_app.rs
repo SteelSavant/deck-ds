@@ -108,7 +108,8 @@ impl FlatpakApp {
                 ]
                 .concat(),
             )
-            .spawn()?;
+            .spawn()
+            .context("flatpak process failed to spawn")?;
 
         sleep(Duration::from_millis(200));
 
@@ -124,7 +125,7 @@ impl FlatpakApp {
                 }
             }
             Ok(None) => Ok(Some(Pid::from_raw(child.id() as i32))),
-            Err(err) => Err(err)?,
+            Err(err) => Err(err).context("error waiting for flatpak process"),
         }
     }
 

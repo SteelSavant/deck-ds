@@ -338,6 +338,7 @@ impl PipelineContext {
             }
         }
 
+        let _ = self.kwin.reconfigure(); // restore kwin; since the result is ignored, the target doesn't matter
         let _ = std::fs::remove_file(self.get_state_path());
     }
 
@@ -456,7 +457,7 @@ impl PipelineExecutor {
             )));
 
             if let Err(err) = self.ctx.setup_action(action) {
-                log::error!("{}", err);
+                log::error!("{:#?}", err);
                 errors.push(err);
                 break;
             }
@@ -469,7 +470,7 @@ impl PipelineExecutor {
 
             // Run app
             if let Err(err) = self.run_app() {
-                log::error!("{}", err);
+                log::error!("{:#?}", err);
                 errors.push(err);
             }
         }
@@ -482,7 +483,7 @@ impl PipelineExecutor {
         } else {
             let err = anyhow::anyhow!("Encountered errors executing pipeline: {:?}", errors);
 
-            log::error!("{err}");
+            log::error!("{err:#?}");
             Err(err)
         }
     }
@@ -517,6 +518,11 @@ impl PipelineExecutor {
         }
 
         std::mem::swap(&mut tmp, &mut self.ctx.on_launch_callbacks);
+
+        if self.target == PipelineTarget::Desktop {
+            // reconfigure kwin after actions + callbacks have executed
+            self.ctx.kwin.reconfigure()?;
+        }
 
         let mut gilrs = gilrs::Gilrs::new().unwrap();
         let mut state = IndexMap::<GamepadId, (HashSet<Button>, Option<Instant>)>::new();

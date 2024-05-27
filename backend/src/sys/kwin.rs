@@ -81,15 +81,16 @@ impl KWin {
                 &is_enabled.to_string(),
             ])
             .output()?;
-        if set_cmd_out.status.success() {
-            self.reconfigure()
-        } else {
+
+        if !set_cmd_out.status.success() {
             Err(anyhow::anyhow!(
                 "Unable to {} {}: {}",
                 if is_enabled { "enable" } else { "disable" },
                 script_name,
                 String::from_utf8_lossy(&set_cmd_out.stderr)
             ))
+        } else {
+            Ok(())
         }
     }
 
@@ -201,7 +202,8 @@ impl KWin {
         )
     }
 
-    fn reconfigure(&self) -> Result<()> {
+    /// Reconfigure KWin. Only works in Desktop mode.
+    pub fn reconfigure(&self) -> Result<()> {
         let res = Command::new("qdbus")
             .args(["org.kde.KWin", "/KWin", "reconfigure"])
             .status()?;
