@@ -50,7 +50,7 @@ const useLaunchActions = (
             const defaultTargets: LaunchTarget[] = [];
             const pipelineTargets: PipelineTarget[] = ['Desktop', 'Gamemode'];
 
-            for (const key of pipelineTargets) {
+            for (const target of pipelineTargets) {
                 const action = async () => {
                     // HACK: QAM does weird caching that means the profile can be outdated,
                     // so we reload the profile in the action to ensure it is current
@@ -72,8 +72,13 @@ const useLaunchActions = (
                     if (reified.isOk) {
                         const configErrors = reified.data.config_errors;
                         const errors: DependencyError[] = [];
+                        const otherTag =
+                            target === 'Desktop' ? ':gamemode' : ':desktop';
                         for (const key in configErrors) {
-                            errors.push(...configErrors[key]);
+                            // only match config errors for this target
+                            if (!key.endsWith(otherTag)) {
+                                errors.push(...configErrors[key]);
+                            }
                         }
 
                         if (errors.length > 0) {
@@ -85,7 +90,7 @@ const useLaunchActions = (
                                 app_id: appDetails.appId.toString(),
                                 profile_id: p.id,
                                 game_title: appDetails.displayName,
-                                target: key as PipelineTarget,
+                                target: target as PipelineTarget,
                             });
 
                             if (!res.isOk) {
@@ -99,12 +104,12 @@ const useLaunchActions = (
 
                 const value = {
                     action,
-                    target: key as PipelineTarget,
+                    target: target as PipelineTarget,
                 };
 
-                if (key === 'Gamemode') {
+                if (target === 'Gamemode') {
                     defaultTargets.push(value);
-                } else if (key === 'Desktop') {
+                } else if (target === 'Desktop') {
                     defaultTargets.splice(0, 0, value);
                 } else {
                     // extra targets not planned or handled
