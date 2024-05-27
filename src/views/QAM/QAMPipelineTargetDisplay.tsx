@@ -216,7 +216,7 @@ interface HeaderProps {
     isEnabled: boolean;
     forcedEnabled: boolean;
     action: PipelineAction;
-    configErrors?: DependencyError[] | undefined;
+    configErrors?: DependencyError[];
 }
 
 function FromProfileComponent({ action }: { action: PipelineAction }) {

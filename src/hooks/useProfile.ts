@@ -4,9 +4,8 @@ import { Loading } from '../util/loading';
 
 const useProfile = (
     profileId: string | null,
-): Loading<CategoryProfile | null | undefined> => {
-    const [result, setResult] =
-        useState<Loading<CategoryProfile | null | undefined>>(null);
+): Loading<CategoryProfile | null> => {
+    const [result, setResult] = useState<Loading<CategoryProfile | null>>(null);
 
     useEffect(() => {
         let active = true;
@@ -19,7 +18,7 @@ const useProfile = (
                     return;
                 }
 
-                setResult(res.map((p) => p.profile));
+                setResult(res.map((p) => p.profile ?? null));
             })();
         }
 

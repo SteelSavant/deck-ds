@@ -3,8 +3,8 @@ import useGlobalSettings from './useGlobalSettings';
 import useProfile from './useProfile';
 
 export interface AppTargets {
-    primaryTarget?: PipelineTarget | null | undefined;
-    secondaryTarget?: PipelineTarget | null | undefined;
+    primaryTarget?: PipelineTarget | null;
+    secondaryTarget?: PipelineTarget | null;
 }
 
 export default function useAppTarget({
@@ -12,8 +12,8 @@ export default function useAppTarget({
     profileId,
 }: {
     isPrimary: boolean;
-    profileId: string | undefined;
-}): PipelineTarget | undefined {
+    profileId: string | null;
+}): PipelineTarget | null {
     const { settings } = useGlobalSettings();
     const profile = useProfile(profileId ?? null);
 
@@ -27,5 +27,5 @@ export default function useAppTarget({
         return isPrimary ? primaryTarget : secondaryTarget;
     }
 
-    return undefined;
+    return null;
 }

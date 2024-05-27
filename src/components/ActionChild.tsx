@@ -4,10 +4,10 @@ import { ReactElement } from 'react';
 export interface ActionChildProps {
     children?: ReactElement;
     label: string;
-    description?: string | undefined;
+    description?: string;
     indentLevel: number;
-    childrenLayout?: 'below' | 'inline' | undefined;
-    inlineWrap?: 'keep-inline' | 'shift-children-below' | undefined;
+    childrenLayout?: 'below' | 'inline';
+    inlineWrap?: 'keep-inline' | 'shift-children-below';
 }
 
 export type ActionChildBuilder = (props: ActionChildProps) => ReactElement;

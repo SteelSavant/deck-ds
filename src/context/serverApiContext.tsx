@@ -6,7 +6,7 @@ type ModifiablePipelineContextProviderProps = {
     serverApi: ServerAPI;
 };
 
-const ServerApiContext = React.createContext<ServerAPI | undefined>(undefined);
+const ServerApiContext = React.createContext<ServerAPI | null>(null);
 
 function ServerApiProvider({
     children,
@@ -21,7 +21,7 @@ function ServerApiProvider({
 
 function useServerApi() {
     const context = React.useContext(ServerApiContext);
-    if (context === undefined) {
+    if (context === null) {
         throw new Error('useServerApi must be used within a ServerApiProvider');
     }
     return context;

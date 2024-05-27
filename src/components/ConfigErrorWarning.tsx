@@ -7,7 +7,7 @@ import ConfigErrorModal from './ConfigErrorModal';
 export default function ConfigErrorWarning({
     errors,
 }: {
-    errors: DependencyError[] | undefined;
+    errors: DependencyError[];
 }): ReactElement | null {
     if (!errors || errors.length <= 0) {
         return null;

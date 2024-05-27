@@ -4,7 +4,7 @@ import { ReactElement } from 'react';
 export default function FocusableRow({
     children,
 }: {
-    children: (ReactElement | undefined)[];
+    children: (ReactElement | null)[];
 }): ReactElement {
     return (
         <Focusable

@@ -25,9 +25,10 @@ type ModifiablePipelineContextProviderProps = {
     onPipelineUpdate?: UpdatePipeline;
 };
 
-const ModifiablePipelineContainerStateContext = React.createContext<
-    { state: PipelineContainerState; dispatch: Dispatch } | undefined
->(undefined);
+const ModifiablePipelineContainerStateContext = React.createContext<{
+    state: PipelineContainerState;
+    dispatch: Dispatch;
+} | null>(null);
 
 function ModifiablePipelineContainerProvider({
     children,
@@ -86,7 +87,7 @@ function ModifiablePipelineContainerProvider({
 
 function useModifiablePipelineContainer() {
     const context = React.useContext(ModifiablePipelineContainerStateContext);
-    if (context === undefined) {
+    if (context === null) {
         throw new Error('useSettings must be used within a SettingsProvider');
     }
     return context;

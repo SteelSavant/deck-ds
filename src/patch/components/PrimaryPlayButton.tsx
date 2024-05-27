@@ -28,7 +28,7 @@ export default function PrimaryPlayButton({
 
     const target = useAppTarget({
         isPrimary: true,
-        profileId: action?.profile.id,
+        profileId: action?.profile.id ?? null,
     });
     console.log(
         'primary play loading:',

@@ -1367,7 +1367,7 @@ function CemuAudioSelector({
                                                     />
                                                 </div>
                                             </>
-                                        ) : undefined}
+                                        ) : null}
                                     </>
                                 );
                             },

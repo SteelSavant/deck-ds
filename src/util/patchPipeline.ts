@@ -64,12 +64,12 @@ export type PipelineUpdate =
       };
 
 export interface PipelineInfo {
-    description?: string | undefined;
-    name?: string | undefined;
-    exit_hooks_override?: ExitHooks | null | undefined;
-    register_exit_hooks?: boolean | undefined;
-    primary_target_override?: PipelineTarget | null | undefined;
-    desktop_layout_config_hack_override?: boolean | null | undefined;
+    description?: string;
+    name?: string;
+    exit_hooks_override?: ExitHooks | null;
+    register_exit_hooks?: boolean;
+    primary_target_override?: PipelineTarget | null;
+    desktop_layout_config_hack_override?: boolean | null;
 }
 
 export async function patchPipeline(

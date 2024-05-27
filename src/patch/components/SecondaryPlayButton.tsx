@@ -25,7 +25,7 @@ export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): React
 
     const target = useAppTarget({
         isPrimary: false,
-        profileId: action?.profile.id,
+        profileId: action?.profile.id ?? null,
     });
 
     let onLaunch = launchActions[0]?.targets?.find(

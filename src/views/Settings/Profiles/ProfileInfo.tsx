@@ -322,9 +322,9 @@ export default function ProfileInfo(
                                         });
                                     }}
                                 />
-                            ) : undefined}
+                            ) : null}
                         </>
-                    ) : undefined}
+                    ) : null}
                     <Field
                         label="Overwrite Desktop Controller Layout (Hack)"
                         description="Overwrites the main desktop controller layout with the layout of the app being launched, in case Steam fails to switch to the game's controller layout.
@@ -364,7 +364,7 @@ export default function ProfileInfo(
 }
 
 function mapControllerHackValueToSelection(
-    value: boolean | null | undefined,
+    value: boolean | null,
     global: boolean,
 ): string {
     if (value === false) {

@@ -12,7 +12,7 @@ import FocusableRow from './FocusableRow';
 
 interface EditExitHooksProps {
     exitHooks: ExitHooks;
-    indentLevel?: number | undefined;
+    indentLevel?: number;
     onChange: (hooks: ExitHooks) => void;
 }
 
@@ -102,7 +102,7 @@ export function EditExitHooks({
                                 >
                                     <FaTrash />
                                 </DialogButton>
-                            ) : undefined}
+                            ) : null}
                         </FocusableRow>
                     </Field>
                 );
@@ -116,7 +116,7 @@ export function EditExitHooks({
                         Add Chord Button
                     </DialogButton>
                 </Field>
-            ) : undefined}
+            ) : null}
         </>
     );
 }
