@@ -4,6 +4,7 @@ import {
     Navigation,
     PanelSection,
     Router,
+    showModal,
 } from 'decky-frontend-lib';
 import { Fragment, ReactElement } from 'react';
 import { FaGear, FaPlus } from 'react-icons/fa6';
@@ -11,11 +12,9 @@ import { RiArrowDownSFill, RiArrowRightSFill } from 'react-icons/ri';
 import {
     PipelineTarget,
     ReifyPipelineResponse,
-    createProfile,
-    getProfile,
     getTemplates,
-    setProfile,
 } from '../../backend';
+import { CreateProfileFromCollectionModal } from '../../components/CreateProfileFromCollectionModal';
 import FocusableRow from '../../components/FocusableRow';
 import HandleLoading from '../../components/HandleLoading';
 import { IconForTarget } from '../../components/IconForTarget';
@@ -93,67 +92,15 @@ function DeckDSProfilesForApp({
             {collectionStore.userCollections
                 .filter((uc) => uc.apps.get(appDetails.appId))
                 .map((c) => {
-                    function normalize(s: string) {
-                        return s.toLowerCase().replace(/\\s+/g, '');
-                    }
                     const createNewProfile = async () => {
                         const templates = await getTemplates();
                         if (templates.isOk) {
-                            const normalized = normalize(c.displayName);
-
-                            // TODO::better comparison
-                            const matchingTemplate =
-                                templates.data.templates.find((t) =>
-                                    t.tags.find(
-                                        (tag) => normalized === normalize(tag),
-                                    ),
-                                );
-                            const closeTemplate = templates.data.templates.find(
-                                (t) =>
-                                    t.tags.find((tag) =>
-                                        normalized.includes(normalize(tag)),
-                                    ),
+                            showModal(
+                                <CreateProfileFromCollectionModal
+                                    templates={templates.data.templates}
+                                    collection={c}
+                                />,
                             );
-                            const defaultTemplate =
-                                templates.data.templates.find(
-                                    (v) =>
-                                        v.id ===
-                                        '84f870e9-9491-41a9-8837-d5a6f591f687',
-                                )!; // hardcoded app template id
-
-                            const template =
-                                matchingTemplate ??
-                                closeTemplate ??
-                                defaultTemplate;
-                            const profile = await createProfile({
-                                pipeline: {
-                                    ...template.pipeline,
-                                    name: c.displayName,
-                                },
-                            });
-
-                            if (profile.isOk) {
-                                let id = profile.data.profile_id;
-
-                                const savedProfile = await getProfile({
-                                    profile_id: id,
-                                });
-
-                                if (savedProfile.isOk) {
-                                    await setProfile({
-                                        profile: {
-                                            ...savedProfile.data.profile!,
-                                            tags: [c.id],
-                                        },
-                                    });
-                                    Navigation.CloseSideMenus();
-                                    Navigation.Navigate(
-                                        `/deck-ds/settings/profiles/${id}`,
-                                    );
-                                } else {
-                                    // TODO::error handling
-                                }
-                            }
                         }
                     };
 
