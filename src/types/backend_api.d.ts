@@ -604,6 +604,10 @@ export interface GlobalConfig {
    */
   exit_hooks: ExitHooks;
   /**
+   * Logging level to use on startup. Uses the same number value as the typescript loglevels.
+   */
+  log_level: number;
+  /**
    * If `enable_ui_inject` is true, set the "Play" button to this target
    */
   primary_ui_target: PipelineTarget;

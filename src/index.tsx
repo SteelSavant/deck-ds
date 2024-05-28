@@ -20,6 +20,7 @@ import {
 } from './context/appContext';
 import { ServerApiProvider } from './context/serverApiContext';
 import patchLibraryApp from './patch/patchLibraryApp';
+import { initLogger, logger } from './util/log';
 import QAM from './views/QAM';
 import ProfileRoute from './views/Settings/Profiles/ProfileRoute';
 import SettingsRouter from './views/Settings/SettingsRouter';
@@ -36,6 +37,7 @@ var usdplReady = false;
 
 (async function () {
     await backend.initBackend();
+    await initLogger();
     usdplReady = true;
 })();
 
@@ -48,7 +50,7 @@ const Content: VFC<{ serverApi: ServerAPI }> = ({ serverApi }) => {
                 <ButtonItem
                     layout="below"
                     onClick={(_: MouseEvent) => {
-                        console.log(
+                        logger.info(
                             'DeckDS: manual reload after startup failure',
                         );
                         // reload();
@@ -86,9 +88,6 @@ export default definePlugin((serverApi: ServerAPI) => {
             const appIdStr = re.exec(currentRoute)![1]!;
             const appId = Number.parseInt(appIdStr);
             const overview = appStore.GetAppOverviewByAppID(appId);
-
-            console.log('app', App);
-            console.log('user', App.m_CurrentUser);
 
             appDetailsState.setOnAppPage({
                 appId,

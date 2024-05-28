@@ -42,6 +42,7 @@ import {
     init_usdpl,
     target_usdpl,
 } from './usdpl_front';
+import { logger } from './util/log';
 import { Err, Ok, Result } from './util/result';
 
 export {
@@ -186,12 +187,12 @@ export async function initBackend() {
     // init usdpl
     await init_embedded();
     init_usdpl(USDPL_PORT);
-    console.log('DeckDS: USDPL started for framework: ' + target_usdpl());
+    logger.debug('DeckDS: USDPL started for framework: ' + target_usdpl());
     const user_locale =
         navigator.languages && navigator.languages.length
             ? navigator.languages[0]
             : navigator.language;
-    console.log('DeckDS: locale', user_locale);
+    logger.debug('DeckDS: locale', user_locale);
     //let mo_path = "../plugins/DeckDS/translations/" + user_locale.toString() + ".mo";
     // await init_tr(user_locale);
     //await init_tr("../plugins/DeckDS/translations/test.mo");
@@ -231,26 +232,31 @@ async function call_backend_typed<T, R>(fn: string, arg: T): Response<R> {
             const end = i + windowLen;
             const slice = stringified.slice(i, end);
             if (slice.length > 0) {
-                // console.log('writing chunk', i / windowLen, 'of', bytesLen / windowLen);
+                logger.trace(
+                    'writing chunk',
+                    i / windowLen,
+                    'of',
+                    bytesLen / windowLen,
+                );
 
                 let res = await call_backend('chunked_request', [id, slice]);
                 let typed = handle_backend_response<R>(res); // not really <R>, but we'll never return the OK, so its fine.
 
                 if (!typed.isOk) {
-                    console.log('error chunking request', typed.err);
+                    logger.trace('error chunking request', typed.err);
                     return typed;
                 }
             }
         }
 
         let res = await call_backend(fn, ['Chunked', id]);
-        console.log('DeckDS: api', `${fn}(`, arg, ') ->', res);
+        logger.debug('DeckDS: api', `${fn}(`, arg, ') ->', res);
 
         return handle_backend_response(res);
     } else {
         const args = ['Full', arg];
         const res = await call_backend(fn, args);
-        console.log('DeckDS: api', `${fn}(`, arg, ') ->', res);
+        logger.debug('DeckDS: api', `${fn}(`, arg, ') ->', res);
 
         return handle_backend_response(res);
     }
@@ -264,11 +270,21 @@ function handle_backend_response<T>(res: any): Result<T, ApiError> {
             return Ok(res[1]); // no good way to typecheck here, so we assume the value is valid.
         }
         default: {
+            // res[2] is full error string, res[1] is display error
+            // TODO::consider proper error type
+
+            const unspecifiedMsg = 'unspecified error occurred';
+            const logFn =
+                code === StatusCode.BadRequest ? logger.warn : logger.error;
+
+            logFn(
+                'DeckDS backend encountered error:',
+                res[2] ?? unspecifiedMsg,
+            );
+
             return Err({
                 code: code,
-                err: res
-                    ? res[1] // assume an error string
-                    : 'unspecified error occurred',
+                err: res ? res[1] ?? res[2] ?? unspecifiedMsg : unspecifiedMsg,
             });
         }
     }
@@ -286,10 +302,6 @@ export enum LogLevel {
 
 export async function log(level: LogLevel, msg: string): Promise<boolean> {
     return (await call_backend('LOG', [level, msg]))[0];
-}
-
-export async function logPath(): Promise<String> {
-    return (await call_backend('LOGPATH', []))[0];
 }
 
 // API

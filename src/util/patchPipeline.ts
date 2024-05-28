@@ -147,10 +147,6 @@ export async function patchPipeline(
                         },
                     };
                 case 'updateProfileOverride':
-                    console.log(
-                        'sending update override action to backend:',
-                        update.profileOverride,
-                    );
                     return {
                         type: 'UpdateProfileOverride',
                         value: {

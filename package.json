@@ -47,6 +47,7 @@
   "dependencies": {
     "lodash": "^4.17.21",
     "react-icons": "^4.10.1",
+    "tslog": "^4.9.2",
     "usdpl-front": "file:src/usdpl_front"
   },
   "pnpm": {

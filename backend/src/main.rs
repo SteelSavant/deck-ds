@@ -92,6 +92,8 @@ fn main() -> Result<()> {
         }
     );
 
+    let settings = Settings::new(env::current_exe()?, &decky_env);
+
     let log_filepath = decky_env.decky_plugin_log_dir.join(log_file_name);
 
     WriteLogger::init(
@@ -101,7 +103,14 @@ fn main() -> Result<()> {
         },
         #[cfg(not(debug_assertions))]
         {
-            LevelFilter::Debug
+            match settings.get_global_cfg().log_level {
+                1 => LevelFilter::Trace,
+                2 => LevelFilter::Debug,
+                3 => LevelFilter::Info,
+                4 => LevelFilter::Warn,
+                5 => LevelFilter::Error,
+                _ => LevelFilter::max(),
+            }
         },
         Default::default(),
         std::fs::File::create(&log_filepath).unwrap(),
@@ -143,8 +152,6 @@ fn main() -> Result<()> {
     }
 
     let registrar = PipelineActionRegistrar::builder().with_core().build();
-
-    let settings = Settings::new(env::current_exe()?, &decky_env);
 
     let settings = Arc::new(Mutex::new(settings));
 

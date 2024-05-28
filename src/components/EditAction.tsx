@@ -1132,11 +1132,7 @@ function ExternalDisplaySettingsSelector({
                                 settings,
                                 comparator,
                             );
-                            console.log(
-                                `equal(${JSON.stringify(
-                                    v.data,
-                                )}, ${JSON.stringify(settings)}): ${equal}`,
-                            );
+
                             return equal;
                         });
                     }
@@ -1274,11 +1270,6 @@ function CemuAudioSelector({
                                         });
                                     }
                                 });
-
-                                console.log(
-                                    'selected (before):',
-                                    JSON.stringify(deviceSelected),
-                                );
 
                                 if (deviceSelected?.label === 'Custom') {
                                     deviceSelected =

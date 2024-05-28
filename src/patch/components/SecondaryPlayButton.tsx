@@ -4,6 +4,7 @@ import { IconForTarget } from '../../components/IconForTarget';
 import { useAppState } from '../../context/appContext';
 import useAppTarget from '../../hooks/useAppTarget';
 import useLaunchActions from '../../hooks/useLaunchActions';
+import { logger } from '../../util/log';
 
 interface SecondaryPlayButtonProps {
     deckDSDesktopSentinel: 'sentinel';
@@ -41,7 +42,7 @@ export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): React
             );
     }
 
-    console.log(
+    logger.debug(
         'DeckDS: patching secondary button with target: ',
         target,
         'action:',

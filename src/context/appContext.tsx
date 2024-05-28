@@ -20,6 +20,7 @@ import {
 import { PipelineActionLookup } from '../types/backend_api';
 import { MaybeString } from '../types/short';
 import { Loading } from '../util/loading';
+import { logger } from '../util/log';
 import { patchPipeline, PipelineUpdate } from '../util/patchPipeline';
 import { Result } from '../util/result';
 
@@ -108,14 +109,14 @@ export class ShortAppDetailsState {
 
         // defer updates to external profiles, to avoid complexity of local state
         if (action.externalProfile) {
-            console.log('is external profile update');
+            logger.debug('is external profile update');
             await this.updateExternalProfile(
                 action.externalProfile,
                 action.update,
             );
         } else {
             if (this.appProfile?.isOk) {
-                console.log(
+                logger.debug(
                     profileId,
                     'is pipeline update; current state:',
                     this.appProfile,
@@ -136,10 +137,10 @@ export class ShortAppDetailsState {
                     if (res.isOk) {
                         await res.data;
                     } else {
-                        console.log('error updating profile', res.err);
+                        logger.warn('error updating profile', res.err);
                     }
                 } else {
-                    console.log(
+                    logger.error(
                         'pipeline should already be loaded before updating',
                         pipeline,
                     );
@@ -162,7 +163,7 @@ export class ShortAppDetailsState {
         if (res?.isOk) {
             this.refetchProfile(defaultProfileId, appDetails.appId);
         } else {
-            console.log(
+            logger.error(
                 'failed to set app(',
                 appDetails.appId,
                 ') default to',
@@ -173,7 +174,7 @@ export class ShortAppDetailsState {
     }
 
     async loadProfileOverride(appId: number, profileId: string) {
-        console.log('loading app profile');
+        logger.debug('loading app profile');
         let shouldUpdate = false;
         if (this.appDetails?.appId === appId && this.appProfile?.isOk) {
             const overrides = this.appProfile.data.overrides;
@@ -183,7 +184,7 @@ export class ShortAppDetailsState {
                 });
                 if (res.isOk && res.data.pipeline) {
                     overrides[profileId] = res.data.pipeline;
-                    console.log(
+                    logger.debug(
                         'set override for',
                         profileId,
                         'to',
@@ -193,7 +194,7 @@ export class ShortAppDetailsState {
                 }
                 // TODO::error handling
             } else {
-                console.log('existing override found:', overrides[profileId]);
+                logger.debug('existing override found:', overrides[profileId]);
             }
 
             if (overrides[profileId]) {
@@ -207,7 +208,7 @@ export class ShortAppDetailsState {
                     ),
                 );
                 this.reifiedPipelines[profileId] = res;
-                console.log(
+                logger.debug(
                     'load reified to:',
                     this.reifiedPipelines[profileId],
                 );
@@ -245,7 +246,7 @@ export class ShortAppDetailsState {
             });
             this.refetchProfile(profileId, appId);
         } else {
-            console.log(
+            logger.debug(
                 'failed to set app(',
                 appId,
                 ') override for',
@@ -281,14 +282,14 @@ export class ShortAppDetailsState {
                 if (res?.isOk) {
                     this.refetchProfile(profileId);
                 } else {
-                    console.log('failed to set external profile', profileId);
+                    logger.warn('failed to set external profile', profileId);
                 }
             } else {
-                console.log('external profile', profileId, 'not found');
+                logger.warn('external profile', profileId, 'not found');
             }
             // TODO::error handling
         } else {
-            console.log('failed to fetch external profile', profileId);
+            logger.warn('failed to fetch external profile', profileId);
         }
 
         // TODO::error handling
@@ -317,7 +318,7 @@ export class ShortAppDetailsState {
                 }
 
                 if (!this.appProfile?.isOk) {
-                    console.log(
+                    logger.warn(
                         'failed to refetch app(',
                         appIdToMatch,
                         ')',
@@ -341,7 +342,7 @@ export class ShortAppDetailsState {
                         this.reifiedPipelines[k] = reified;
                     }
 
-                    console.log(
+                    logger.debug(
                         'refetched; updating to',
                         this.appProfile.data?.overrides,
                     );
@@ -358,12 +359,12 @@ export class ShortAppDetailsState {
         time: number,
     ) {
         const areEqual = _.isEqual(appDetails, this.appDetails);
-        console.log('trying to set app to', appDetails?.displayName);
+        logger.debug('trying to set app to', appDetails?.displayName);
         if (time < this.lastOnAppPageTime || areEqual) {
             return;
         }
 
-        console.log('setting app to ', appDetails?.displayName);
+        logger.debug('setting app to ', appDetails?.displayName);
 
         this.appDetails = appDetails;
         this.appProfile = null;
@@ -527,7 +528,7 @@ function patchProfileOverridesForMissing(
         }
     }
 
-    console.log('reify response after patch: ', response.pipeline);
+    logger.debug('reify response after patch: ', response.pipeline);
 
     return response;
 }

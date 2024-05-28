@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { PipelineContainer } from '../backend';
+import { logger } from '../util/log';
 import { PipelineUpdate, patchPipeline } from '../util/patchPipeline';
 
 interface PipelineContainerState {
@@ -37,10 +38,10 @@ function ModifiablePipelineContainerProvider({
 }: ModifiablePipelineContextProviderProps) {
     const [state, setState] = React.useState({ container: initialContainer });
 
-    console.log('modifiable pipeline', state.container.pipeline);
+    logger.debug('modifiable pipeline', state.container.pipeline);
 
     async function dispatch(action: StateAction) {
-        console.log('starting dispatch');
+        logger.trace('starting dispatch');
 
         const newContainer: PipelineContainer = await (async () => {
             const pipeline = state.container.pipeline;
@@ -66,13 +67,13 @@ function ModifiablePipelineContainerProvider({
             }
         })();
 
-        console.log('got container state', newContainer);
+        logger.debug('got container state', newContainer);
 
         if (onPipelineUpdate) {
             await onPipelineUpdate(newContainer); // perform arbitrary action, like saving, when the definition changes
         }
 
-        console.log('setting container state to', newContainer);
+        logger.debug('setting container state to', newContainer);
 
         setState({ container: newContainer });
     }

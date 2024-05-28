@@ -21,6 +21,7 @@ import ConfigErrorWarning from '../../components/ConfigErrorWarning';
 import { useAppState } from '../../context/appContext';
 import { ConfigErrorContext } from '../../context/configErrorContext';
 import { MaybeString } from '../../types/short';
+import { logger } from '../../util/log';
 import QAMEditAction from './QAMEditAction';
 
 const PipelineTargetContext = createContext<PipelineTarget>('Desktop');
@@ -70,7 +71,7 @@ function buildAction(
     const component = QAMEditAction({
         action,
         onChange: (updatedAction) => {
-            console.log('dispatching action edit', {
+            logger.debug('dispatching action edit', {
                 type: 'updateAction',
                 id: action_id,
                 action: updatedAction,
@@ -234,13 +235,13 @@ function FromProfileComponent({ action }: { action: PipelineAction }) {
                         const newOverride = value
                             ? null
                             : profileBeingOverridden;
-                        console.log(
+                        logger.debug(
                             'current profile override ',
                             action.profile_override,
                             'value:',
                             !action.profile_override,
                         );
-                        console.log(
+                        logger.debug(
                             'changed to',
                             value,
                             ', setting profile override to ',

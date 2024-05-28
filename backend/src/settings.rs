@@ -51,6 +51,9 @@ pub struct GlobalConfig {
     pub exit_hooks: ExitHooks,
     /// Overwrite the desktop layout with the game layout
     pub use_desktop_controller_layout_hack: bool,
+    /// Logging level to use on startup. Uses the same number value as the typescript loglevels.
+    #[default(3)]
+    pub log_level: u8,
 }
 
 impl Settings {
