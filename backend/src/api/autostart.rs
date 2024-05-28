@@ -92,33 +92,34 @@ pub fn autostart(
                         });
 
                         match res {
-                            Ok(_) => match steamos_session_select(Session::Plasma) {
-                                Ok(_) => {
-                                    if use_controller_hack {
-                                        log::debug!("setting desktop controller config hack");
-                                        let res = steam::set_desktop_controller_hack(
-                                            &args.user_id_64,
-                                            &args.app_id,
-                                            &args.game_title,
-                                            decky_env.steam_dir(),
-                                        );
+                            Ok(_) => {
+                                if use_controller_hack {
+                                    log::debug!("setting desktop controller config hack");
+                                    let res = steam::set_desktop_controller_hack(
+                                        &args.user_id_64,
+                                        &args.app_id,
+                                        &args.game_title,
+                                        decky_env.steam_dir(),
+                                    );
 
-                                        if let Err(err) = res {
-                                            log::warn!(
-                                                "unable to set desktop controller hack: {err:#?}"
-                                            )
-                                        }
+                                    if let Err(err) = res {
+                                        log::warn!(
+                                            "unable to set desktop controller hack: {err:#?}"
+                                        )
                                     }
+                                }
 
-                                    ResponseOk.to_response()
+                                match steamos_session_select(Session::Plasma) {
+                                    Ok(_) => ResponseOk.to_response(),
+
+                                    Err(err) => {
+                                        // remove autostart config if session select fails to avoid issues
+                                        // switching to desktop later
+                                        _ = lock.delete_autostart_cfg();
+                                        ResponseErr(StatusCode::ServerError, err).to_response()
+                                    }
                                 }
-                                Err(err) => {
-                                    // remove autostart config if session select fails to avoid issues
-                                    // switching to desktop later
-                                    _ = lock.delete_autostart_cfg();
-                                    ResponseErr(StatusCode::ServerError, err).to_response()
-                                }
-                            },
+                            }
                             Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
                         }
                     }
