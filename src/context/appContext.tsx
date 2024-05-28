@@ -359,12 +359,13 @@ export class ShortAppDetailsState {
         time: number,
     ) {
         const areEqual = _.isEqual(appDetails, this.appDetails);
-        logger.debug('trying to set app to', appDetails?.displayName);
+        logger.trace('trying to set app to', appDetails?.displayName);
+
         if (time < this.lastOnAppPageTime || areEqual) {
             return;
         }
 
-        logger.debug('setting app to ', appDetails?.displayName);
+        logger.trace('setting app to ', appDetails?.displayName);
 
         this.appDetails = appDetails;
         this.appProfile = null;

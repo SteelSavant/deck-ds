@@ -1,62 +1,61 @@
 {
-  "name": "deck-ds",
-  "version": "0.0.1",
-  "description": "Decky plugin for launching dual-screen games from game mode on Steam Deck",
-  "scripts": {
-    "build": "pnpm build_schema_types && shx rm -rf dist && rollup -c",
-    "build_schema_types": "pnpm json2ts ./backend/schema/schema.json src/types/backend_api.d.ts --additionalProperties=false",
-    "build_backend": "cargo build --release && mkdir -p bin && cp ./target/release/deck-ds ./bin/backend",
-    "build_all": "pnpm build_backend && pnpm generate_schema_types && pnpm build",
-    "generate_schema_types": "./bin/backend schema ./backend/schema",
-    "watch": "rollup -c -w",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SteelSavant/deck-ds.git"
-  },
-  "keywords": [
-    "decky",
-    "plugin",
-    "steam-deck",
-    "deck"
-  ],
-  "author": "SteelSavant",
-  "license": "GPL-3.0",
-  "bugs": {
-    "url": "https://github.com/SteelSavant/deck-ds/issues"
-  },
-  "homepage": "https://github.com/SteelSavant/deck-ds#readme",
-  "devDependencies": {
-    "@rollup/plugin-commonjs": "^21.1.0",
-    "@rollup/plugin-json": "^4.1.0",
-    "@rollup/plugin-node-resolve": "^13.3.0",
-    "@rollup/plugin-replace": "^4.0.0",
-    "@rollup/plugin-typescript": "^8.5.0",
-    "@types/lodash": "^4.14.202",
-    "@types/react": "16.14.0",
-    "@types/webpack": "^5.28.2",
-    "decky-frontend-lib": "^3.25.0",
-    "json-schema-to-typescript": "^13.1.1",
-    "rollup": "^2.79.1",
-    "rollup-plugin-import-assets": "^1.1.1",
-    "shx": "^0.3.4",
-    "tslib": "^2.6.2",
-    "typescript": "^4.9.5"
-  },
-  "dependencies": {
-    "lodash": "^4.17.21",
-    "react-icons": "^4.10.1",
-    "tslog": "^4.9.2",
-    "usdpl-front": "file:src/usdpl_front"
-  },
-  "pnpm": {
-    "peerDependencyRules": {
-      "ignoreMissing": [
-        "react",
-        "react-dom",
-        "decky-frontend-lib"
-      ]
+    "name": "deck-ds",
+    "version": "0.0.1",
+    "description": "Decky plugin for launching dual-screen games from game mode on Steam Deck",
+    "scripts": {
+        "build": "pnpm build_schema_types && shx rm -rf dist && rollup -c",
+        "build_schema_types": "pnpm json2ts ./backend/schema/schema.json src/types/backend_api.d.ts --additionalProperties=false",
+        "build_backend": "cargo build --release && mkdir -p bin && cp ./target/release/deck-ds ./bin/backend",
+        "build_all": "pnpm build_backend && pnpm generate_schema_types && pnpm build",
+        "generate_schema_types": "./bin/backend schema ./backend/schema",
+        "watch": "rollup -c -w",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/SteelSavant/deck-ds.git"
+    },
+    "keywords": [
+        "decky",
+        "plugin",
+        "steam-deck",
+        "deck"
+    ],
+    "author": "SteelSavant",
+    "license": "GPL-3.0",
+    "bugs": {
+        "url": "https://github.com/SteelSavant/deck-ds/issues"
+    },
+    "homepage": "https://github.com/SteelSavant/deck-ds#readme",
+    "devDependencies": {
+        "@rollup/plugin-commonjs": "^21.1.0",
+        "@rollup/plugin-json": "^4.1.0",
+        "@rollup/plugin-node-resolve": "^13.3.0",
+        "@rollup/plugin-replace": "^4.0.0",
+        "@rollup/plugin-typescript": "^8.5.0",
+        "@types/lodash": "^4.14.202",
+        "@types/react": "16.14.0",
+        "@types/webpack": "^5.28.2",
+        "decky-frontend-lib": "^3.25.0",
+        "json-schema-to-typescript": "^13.1.1",
+        "rollup": "^2.79.1",
+        "rollup-plugin-import-assets": "^1.1.1",
+        "shx": "^0.3.4",
+        "tslib": "^2.6.2",
+        "typescript": "^4.9.5"
+    },
+    "dependencies": {
+        "lodash": "^4.17.21",
+        "react-icons": "^4.10.1",
+        "usdpl-front": "file:src/usdpl_front"
+    },
+    "pnpm": {
+        "peerDependencyRules": {
+            "ignoreMissing": [
+                "react",
+                "react-dom",
+                "decky-frontend-lib"
+            ]
+        }
     }
-  }
 }

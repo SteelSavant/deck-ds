@@ -20,7 +20,7 @@ import {
 } from './context/appContext';
 import { ServerApiProvider } from './context/serverApiContext';
 import patchLibraryApp from './patch/patchLibraryApp';
-import { initLogger, logger } from './util/log';
+import { logger, LogLevel } from './util/log';
 import QAM from './views/QAM';
 import ProfileRoute from './views/Settings/Profiles/ProfileRoute';
 import SettingsRouter from './views/Settings/SettingsRouter';
@@ -37,7 +37,7 @@ var usdplReady = false;
 
 (async function () {
     await backend.initBackend();
-    await initLogger();
+
     usdplReady = true;
 })();
 
@@ -192,7 +192,7 @@ export default definePlugin((serverApi: ServerAPI) => {
             </div>
         ),
         onDismount: () => {
-            backend.log(backend.LogLevel.Debug, 'DeckDS shutting down');
+            backend.log(LogLevel.Debug, 'DeckDS shutting down');
 
             unlistenHistory();
             appDetailsState.setOnAppPage(null);

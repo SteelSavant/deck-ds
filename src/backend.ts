@@ -42,7 +42,7 @@ import {
     init_usdpl,
     target_usdpl,
 } from './usdpl_front';
-import { logger } from './util/log';
+import { LogLevel, logger } from './util/log';
 import { Err, Ok, Result } from './util/result';
 
 export {
@@ -163,10 +163,10 @@ export function resolve<T>(promise: Promise<T>, setter: (t: T) => void) {
     (async function () {
         let data = await promise;
         if (data != null) {
-            console.debug('Got resolved', data);
+            logger.debug('Got resolved', data);
             setter(data);
         } else {
-            console.warn('Resolve failed:', data, promise);
+            logger.warn('Resolve failed:', data, promise);
             log(LogLevel.Warn, 'A resolve failed');
         }
     })();
@@ -178,7 +178,7 @@ export function resolve_nullable<T>(
 ) {
     (async function () {
         let data = await promise;
-        console.debug('Got resolved', data);
+        logger.debug('Got resolved', data);
         setter(data);
     })();
 }
@@ -187,6 +187,8 @@ export async function initBackend() {
     // init usdpl
     await init_embedded();
     init_usdpl(USDPL_PORT);
+    await initLogger();
+
     logger.debug('DeckDS: USDPL started for framework: ' + target_usdpl());
     const user_locale =
         navigator.languages && navigator.languages.length
@@ -250,19 +252,19 @@ async function call_backend_typed<T, R>(fn: string, arg: T): Response<R> {
         }
 
         let res = await call_backend(fn, ['Chunked', id]);
-        logger.debug('DeckDS: api', `${fn}(`, arg, ') ->', res);
+        logger.debug('api (chunked)', `${fn}(`, arg, ') ->', res);
 
         return handle_backend_response(res);
     } else {
         const args = ['Full', arg];
         const res = await call_backend(fn, args);
-        logger.debug('DeckDS: api', `${fn}(`, arg, ') ->', res);
+        logger.debug('api (single)', `${fn}(`, arg, ') ->', res);
 
         return handle_backend_response(res);
     }
 }
 
-function handle_backend_response<T>(res: any): Result<T, ApiError> {
+function handle_backend_response<T>(res: any[]): Result<T, ApiError> {
     const code = res ? res[0] : 0;
 
     switch (code) {
@@ -273,7 +275,10 @@ function handle_backend_response<T>(res: any): Result<T, ApiError> {
             // res[2] is full error string, res[1] is display error
             // TODO::consider proper error type
 
+            res ??= [null, null];
+
             const unspecifiedMsg = 'unspecified error occurred';
+
             const logFn =
                 code === StatusCode.BadRequest ? logger.warn : logger.error;
 
@@ -284,7 +289,7 @@ function handle_backend_response<T>(res: any): Result<T, ApiError> {
 
             return Err({
                 code: code,
-                err: res ? res[1] ?? res[2] ?? unspecifiedMsg : unspecifiedMsg,
+                err: res[1] ?? res[2] ?? unspecifiedMsg,
             });
         }
     }
@@ -292,12 +297,19 @@ function handle_backend_response<T>(res: any): Result<T, ApiError> {
 
 // Logging
 
-export enum LogLevel {
-    Trace = 1,
-    Debug = 2,
-    Info = 3,
-    Warn = 4,
-    Error = 5,
+async function initLogger() {
+    try {
+        const currentSettings = await getSettings();
+        if (currentSettings.isOk) {
+            logger.minLevel = currentSettings.data.global_settings.log_level;
+        } else {
+            logger.error(
+                'failed to fetch backend settings when initializing logger',
+            );
+        }
+    } catch (ex) {
+        logger.error(ex);
+    }
 }
 
 export async function log(level: LogLevel, msg: string): Promise<boolean> {

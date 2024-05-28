@@ -5,6 +5,7 @@ import { EditAction } from '../../../components/EditAction';
 import { EditExitHooks } from '../../../components/EditExitHooks';
 import HandleLoading from '../../../components/HandleLoading';
 import useGlobalSettings from '../../../hooks/useGlobalSettings';
+import { LogLevel, logger } from '../../../util/log';
 
 export const GlobalSettingsPage: VFC = () => {
     const { settings, updateSettings } = useGlobalSettings();
@@ -139,6 +140,50 @@ export const GlobalSettingsPage: VFC = () => {
                                           }
                                         : undefined
                                 }
+                            />
+                        </Builder>
+                        <Field label="Debug" />
+                        <Builder
+                            indentLevel={1}
+                            label="Log Level"
+                            description="Sets the log level for both the frontend and backend. Useful for debugging. Don't touch this unless you need to."
+                        >
+                            <Dropdown
+                                selectedOption={settings.log_level}
+                                rgOptions={[
+                                    LogLevel.Trace,
+                                    LogLevel.Debug,
+                                    LogLevel.Info,
+                                    LogLevel.Warn,
+                                    LogLevel.Error,
+                                ].map((l) => {
+                                    const label = (function () {
+                                        switch (l) {
+                                            case LogLevel.Trace:
+                                                return 'Trace';
+                                            case LogLevel.Debug:
+                                                return 'Debug';
+                                            case LogLevel.Info:
+                                                return 'Info';
+                                            case LogLevel.Warn:
+                                                return 'Warn';
+                                            case LogLevel.Error:
+                                                return 'Error';
+                                        }
+                                    })();
+
+                                    return {
+                                        label,
+                                        data: l,
+                                    };
+                                })}
+                                onChange={(props) => {
+                                    logger.minLevel = props.data;
+                                    updateSettings({
+                                        ...settings,
+                                        log_level: props.data,
+                                    });
+                                }}
                             />
                         </Builder>
                     </>
