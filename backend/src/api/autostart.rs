@@ -10,11 +10,8 @@ use crate::{
     db::ProfileDb,
     decky_env::DeckyEnv,
     pipeline::{action_registar::PipelineActionRegistrar, data::PipelineTarget},
-    settings::{self, AppId, GameId, ProfileId, Settings, SteamUserId64},
-    sys::{
-        steam,
-        steamos_session_select::{steamos_session_select, Session},
-    },
+    settings::{self, AppId, GameId, ProfileId, Settings, SteamLaunchInfo, SteamUserId64},
+    sys::steamos_session_select::{steamos_session_select, Session},
 };
 
 use super::{
@@ -79,47 +76,28 @@ pub fn autostart(
 
                 match args.target {
                     PipelineTarget::Desktop => {
-                        let use_controller_hack = pipeline
-                            .desktop_layout_config_hack_override
-                            .unwrap_or_else(|| {
-                                lock.get_global_cfg().use_desktop_controller_layout_hack
-                            });
-
                         let res = lock.set_autostart_cfg(&settings::AutoStartConfig {
                             game_id: id,
                             pipeline,
                             env,
+                            launch_info: SteamLaunchInfo {
+                                app_id: args.app_id,
+                                user_id_64: args.user_id_64,
+                                game_title: args.game_title,
+                            },
                         });
 
                         match res {
-                            Ok(_) => {
-                                if use_controller_hack {
-                                    log::debug!("setting desktop controller config hack");
-                                    let res = steam::set_desktop_controller_hack(
-                                        &args.user_id_64,
-                                        &args.app_id,
-                                        &args.game_title,
-                                        decky_env.steam_dir(),
-                                    );
+                            Ok(_) => match steamos_session_select(Session::Plasma) {
+                                Ok(_) => ResponseOk.to_response(),
 
-                                    if let Err(err) = res {
-                                        log::warn!(
-                                            "unable to set desktop controller hack: {err:#?}"
-                                        )
-                                    }
+                                Err(err) => {
+                                    // remove autostart config if session select fails to avoid issues
+                                    // switching to desktop later
+                                    _ = lock.delete_autostart_cfg();
+                                    ResponseErr(StatusCode::ServerError, err).to_response()
                                 }
-
-                                match steamos_session_select(Session::Plasma) {
-                                    Ok(_) => ResponseOk.to_response(),
-
-                                    Err(err) => {
-                                        // remove autostart config if session select fails to avoid issues
-                                        // switching to desktop later
-                                        _ = lock.delete_autostart_cfg();
-                                        ResponseErr(StatusCode::ServerError, err).to_response()
-                                    }
-                                }
-                            }
+                            },
                             Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
                         }
                     }
@@ -129,6 +107,11 @@ pub fn autostart(
                                 game_id: id,
                                 pipeline,
                                 env,
+                                launch_info: SteamLaunchInfo {
+                                    app_id: args.app_id,
+                                    user_id_64: args.user_id_64,
+                                    game_title: args.game_title,
+                                },
                             },
                             PipelineTarget::Gamemode,
                         )

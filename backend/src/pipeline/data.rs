@@ -76,7 +76,6 @@ pub struct PipelineDefinition {
     pub should_register_exit_hooks: bool,
     pub exit_hooks_override: Option<ExitHooks>,
     pub primary_target_override: Option<PipelineTarget>,
-    pub desktop_layout_config_hack_override: Option<bool>,
     pub platform: TopLevelDefinition,
     // Additional top-level actions besides the main platform.
     pub toplevel: Vec<TopLevelDefinition>,
@@ -164,7 +163,6 @@ pub struct Pipeline {
     pub should_register_exit_hooks: bool,
     pub exit_hooks_override: Option<ExitHooks>,
     pub primary_target_override: Option<PipelineTarget>,
-    pub desktop_layout_config_hack_override: Option<bool>,
     pub targets: HashMap<PipelineTarget, RuntimeSelection>,
 }
 
@@ -324,7 +322,6 @@ impl PipelineDefinition {
             should_register_exit_hooks: self.should_register_exit_hooks,
             exit_hooks_override: self.exit_hooks_override.clone(),
             primary_target_override: self.primary_target_override,
-            desktop_layout_config_hack_override: self.desktop_layout_config_hack_override,
             targets,
         })
     }

@@ -211,7 +211,6 @@ mod tests {
                 should_register_exit_hooks: true,
                 exit_hooks_override: None,
                 primary_target_override: None,
-                desktop_layout_config_hack_override: None,
                 platform: TopLevelDefinition {
                     id: TopLevelId::nil(),
                     root: pipeline_action_id.clone(),
@@ -317,7 +316,6 @@ mod tests {
                     should_register_exit_hooks: true,
                     exit_hooks_override: None,
                     primary_target_override: None,
-                    desktop_layout_config_hack_override: None,
                     platform: TopLevelDefinition {
                         id: toplevel1,
                         root: targets1.clone(),
@@ -334,8 +332,6 @@ mod tests {
                     should_register_exit_hooks: true,
                     exit_hooks_override: None,
                     primary_target_override: None,
-                    desktop_layout_config_hack_override: None,
-
                     platform: TopLevelDefinition {
                         id: toplevel2,
                         root: targets2.clone(),

@@ -93,7 +93,6 @@ pub struct DbPipelineDefinition {
     pub primary_target_override: Option<PipelineTarget>,
     pub platform: DbTopLevelDefinition,
     pub toplevel: Vec<DbTopLevelDefinition>,
-    pub desktop_layout_config_hack_override: Option<bool>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]

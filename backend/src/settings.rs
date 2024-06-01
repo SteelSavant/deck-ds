@@ -178,6 +178,14 @@ pub struct AutoStartConfig {
     pub game_id: Either<AppId, GameId>,
     pub pipeline: Pipeline,
     pub env: DeckyEnv,
+    pub launch_info: SteamLaunchInfo,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SteamLaunchInfo {
+    pub app_id: AppId,
+    pub user_id_64: SteamUserId64,
+    pub game_title: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]

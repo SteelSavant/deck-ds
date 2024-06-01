@@ -25,6 +25,7 @@ pub mod cemu_audio;
 pub mod cemu_layout;
 pub mod citra_layout;
 mod desktop;
+pub mod desktop_controller_layout_hack;
 pub mod lime_3ds_layout;
 pub mod melonds_layout;
 pub mod multi_window;
