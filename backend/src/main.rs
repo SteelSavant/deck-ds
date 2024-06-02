@@ -145,6 +145,7 @@ fn main() -> Result<()> {
     let registrar = PipelineActionRegistrar::builder().with_core().build();
 
     let settings = Settings::new(env::current_exe()?, &decky_env);
+    let global_config = settings.get_global_cfg();
 
     let settings = Arc::new(Mutex::new(settings));
 
@@ -152,7 +153,7 @@ fn main() -> Result<()> {
     let secondary_app_manager = SecondaryAppManager::new(decky_env.asset_manager());
 
     // teardown persisted state
-    match PipelineContext::load(decky_env.clone()) {
+    match PipelineContext::load(global_config, decky_env.clone()) {
         Ok(Some(loaded)) => {
             log::info!("Tearing down last executed pipeline");
             // TODO::this will cause display-dependent actions to automatically fail, but
@@ -167,14 +168,14 @@ fn main() -> Result<()> {
         AppModes::Autostart { .. } => {
             sleep(Duration::from_millis(500));
 
+            let global_config = settings.lock().unwrap().get_global_cfg();
+
             // build the executor
             let executor = AutoStart::new(settings.clone())
                 .load()
-                .map(|l| l.build_executor(decky_env.clone()));
+                .map(|l| l.build_executor(global_config.clone(), decky_env.clone()));
 
             let thread_settings = settings.clone();
-
-            let global_config = settings.lock().unwrap().get_global_cfg();
 
             std::thread::spawn(move || loop {
                 // Ensure the autostart config gets removed, to avoid launching old configs
@@ -225,7 +226,8 @@ fn main() -> Result<()> {
 
                     let config = lock.get_global_cfg();
                     if config.restore_displays_if_not_executing_pipeline {
-                        let ctx = &mut PipelineContext::new(None, decky_env.clone());
+                        let ctx =
+                            &mut PipelineContext::new(None, config.clone(), decky_env.clone());
 
                         let res = config.display_restoration.desktop_only(ctx);
                         if let Err(err) = res {

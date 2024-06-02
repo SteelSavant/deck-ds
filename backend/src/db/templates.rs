@@ -43,6 +43,7 @@ pub fn build_templates(registrar: PipelineActionRegistrar) -> Vec<Template> {
                     should_register_exit_hooks: true,
                     exit_hooks_override: None,
                     toplevel: vec![],
+                    desktop_controller_layout_hack: Default::default(),
                 },
             }
         }

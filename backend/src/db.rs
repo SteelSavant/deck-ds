@@ -221,6 +221,7 @@ mod tests {
                     root: PipelineActionId::new("core:toplevel:secondary"),
                     actions: PipelineActionLookup::empty(),
                 }],
+                desktop_controller_layout_hack: Default::default(),
             },
         };
 
@@ -322,6 +323,7 @@ mod tests {
                         actions: actions1,
                     },
                     toplevel: vec![],
+                    desktop_controller_layout_hack: Default::default(),
                 },
             ),
             (
@@ -338,6 +340,7 @@ mod tests {
                         actions: actions2,
                     },
                     toplevel: vec![],
+                    desktop_controller_layout_hack: Default::default(),
                 },
             ),
         ]);

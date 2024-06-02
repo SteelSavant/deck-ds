@@ -9,6 +9,8 @@ use anyhow::{Context, Result};
 const STEAMID_64_IDENT: u64 = 76561197960265728;
 
 pub fn set_desktop_controller_hack<P: AsRef<Path>>(
+    hack_steam: bool,
+    hack_nonsteam: bool,
     launch_info: &SteamLaunchInfo,
     steam_dir: P,
 ) -> Result<()> {
@@ -33,16 +35,28 @@ pub fn set_desktop_controller_hack<P: AsRef<Path>>(
         &launch_info.game_title,
         steam_dir.as_ref(),
     )?;
+
     match best_controller_folder {
-        Some(folder) => std::fs::copy(folder.join("controller_neptune.vdf"), desktop_layout_path)
-            .map(|_| ())
-            .context("failed to copy controller config file"),
+        Some(LayoutPath::Steam(folder)) if hack_steam => {
+            std::fs::copy(folder.join("controller_neptune.vdf"), desktop_layout_path)
+                .map(|_| ())
+                .context("failed to copy steam controller config file")
+        }
+        Some(LayoutPath::NonSteam(folder)) if hack_nonsteam => {
+            std::fs::copy(folder.join("controller_neptune.vdf"), desktop_layout_path)
+                .map(|_| ())
+                .context("failed to copy nonsteam controller config file")
+        }
         None => {
             log::warn!(
-                "no config file found for {:?}: {} to copy",
+                "no controller config file found for {:?}: {} to copy",
                 &launch_info.app_id,
                 &launch_info.game_title
             );
+            Ok(())
+        }
+        _ => {
+            log::debug!("controller config file matched ignored type; ignoring");
             Ok(())
         }
     }
@@ -83,7 +97,7 @@ fn get_best_game_folder<P: AsRef<Path>>(
     app_id: &AppId,
     game_title: &str,
     steam_dir: P,
-) -> Result<Option<PathBuf>> {
+) -> Result<Option<LayoutPath>> {
     use str_distance::*;
 
     get_layout_dir(user, steam_dir)
@@ -94,7 +108,7 @@ fn get_best_game_folder<P: AsRef<Path>>(
                 .fold((1., None), |acc, next| {
                     if next.file_name() == app_id.raw() {
                         // If the folder matches the app id, its the desired folder
-                        (0., Some(next.path()))
+                        (0., Some(LayoutPath::Steam(next.path())))
                     } else {
                         // Otherwise, take the best-matching non-steam config folder.
                         const TITLE_THRESH: f64 = 0.2;
@@ -104,7 +118,7 @@ fn get_best_game_folder<P: AsRef<Path>>(
                             Levenshtein::default(),
                         );
                         if title_distance < TITLE_THRESH && title_distance < acc.0 {
-                            (title_distance, Some(next.path()))
+                            (title_distance, Some(LayoutPath::NonSteam(next.path())))
                         } else {
                             acc
                         }
@@ -117,6 +131,11 @@ fn get_best_game_folder<P: AsRef<Path>>(
 
 fn get_desktop_layout_path<P: AsRef<Path>>(user: &SteamUserId3, steam_dir: P) -> PathBuf {
     get_layout_path(user, "413080", steam_dir)
+}
+
+enum LayoutPath {
+    Steam(PathBuf),
+    NonSteam(PathBuf),
 }
 
 fn get_layout_path<P: AsRef<Path>>(user: &SteamUserId3, config_dir: &str, steam_dir: P) -> PathBuf {
@@ -196,6 +215,8 @@ mod tests {
         let user = get_user_64();
         let app_id = get_appid();
         set_desktop_controller_hack(
+            true,
+            true,
             &SteamLaunchInfo {
                 user_id_64: user,
                 app_id: app_id.clone(),
@@ -232,6 +253,8 @@ mod tests {
         let user = get_user_64();
         let app_id = AppId::new("00000");
         set_desktop_controller_hack(
+            true,
+            true,
             &SteamLaunchInfo {
                 user_id_64: user,
                 app_id,
@@ -270,6 +293,8 @@ mod tests {
         let user = get_user_64();
         let app_id = get_appid();
         set_desktop_controller_hack(
+            true,
+            true,
             &SteamLaunchInfo {
                 user_id_64: user,
                 app_id: app_id.clone(),

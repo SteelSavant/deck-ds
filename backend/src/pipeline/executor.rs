@@ -4,7 +4,6 @@ use either::Either;
 use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
 use nix::unistd::Pid;
-use strum::IntoEnumIterator;
 use type_reg::untagged::{TypeMap as SerdeMap, TypeReg};
 
 use std::marker::PhantomData;
@@ -62,6 +61,7 @@ pub struct PipelineContext {
     pub exit_hooks: Option<ExitHooks>,
     pub secondary_app: SecondaryAppManager,
     pub launch_info: Option<SteamLaunchInfo>,
+    pub global_config: GlobalConfig,
     /// actions that have run
     have_run: Vec<Action>,
     /// pipeline state
@@ -81,7 +81,11 @@ where
 }
 
 impl PipelineContext {
-    pub fn new(launch_info: Option<SteamLaunchInfo>, decky_env: Arc<DeckyEnv>) -> Self {
+    pub fn new(
+        launch_info: Option<SteamLaunchInfo>,
+        global_config: GlobalConfig,
+        decky_env: Arc<DeckyEnv>,
+    ) -> Self {
         PipelineContext {
             kwin: KWin::new(decky_env.asset_manager()),
             display: XDisplay::new().ok(),
@@ -92,6 +96,7 @@ impl PipelineContext {
             on_launch_callbacks: vec![],
             launch_info,
             decky_env,
+            global_config,
         }
     }
 
@@ -99,8 +104,8 @@ impl PipelineContext {
         self.on_launch_callbacks.push(callback);
     }
 
-    pub fn load(decky_env: Arc<DeckyEnv>) -> Result<Option<Self>> {
-        let mut default: PipelineContext = PipelineContext::new(None, decky_env);
+    pub fn load(global_config: GlobalConfig, decky_env: Arc<DeckyEnv>) -> Result<Option<Self>> {
+        let mut default: PipelineContext = PipelineContext::new(None, global_config, decky_env);
 
         let persisted = std::fs::read_to_string(default.get_state_path()).ok();
         let persisted = match persisted {
@@ -418,12 +423,13 @@ impl PipelineExecutor {
         target: PipelineTarget,
         decky_env: Arc<DeckyEnv>,
         launch_info: SteamLaunchInfo,
+        global_config: GlobalConfig,
     ) -> Result<Self> {
         let s = Self {
             game_id,
             pipeline: Some(pipeline),
             target,
-            ctx: PipelineContext::new(Some(launch_info), decky_env),
+            ctx: PipelineContext::new(Some(launch_info), global_config, decky_env),
         };
 
         Ok(s)
@@ -741,7 +747,7 @@ mod tests {
 
         let decky_env = Arc::new(DeckyEnv::new_test("ctx_serde"));
 
-        let mut ctx = PipelineContext::new(None, decky_env.clone());
+        let mut ctx = PipelineContext::new(None, Default::default(), decky_env.clone());
 
         let actions: Vec<Action> = vec![
             DesktopSessionHandler {
@@ -846,7 +852,7 @@ mod tests {
 
         ctx.persist()?;
 
-        let loaded = PipelineContext::load(decky_env.clone())
+        let loaded = PipelineContext::load(Default::default(), decky_env.clone())
             .with_context(|| "Persisted context should load")?
             .with_context(|| "Persisted context should exist")?;
 

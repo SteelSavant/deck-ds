@@ -7,7 +7,7 @@ use crate::{
         data::{PipelineAction, PipelineActionId, PipelineTarget, RuntimeSelection, TopLevelId},
         executor::PipelineExecutor,
     },
-    settings::Settings,
+    settings::{GlobalConfig, Settings},
 };
 
 pub struct AutoStart {
@@ -40,23 +40,27 @@ impl AutoStart {
                     a.pipeline.targets.insert(
                         PipelineTarget::Desktop,
                         RuntimeSelection::AllOf(
-                            vec![config.display_restoration.into(), desktop]
-                                .into_iter()
-                                .enumerate()
-                                .map(|(index, action)| {
-                                    let id = format!("internal:{index}");
-                                    PipelineAction {
-                                        id: PipelineActionId::new(&id),
-                                        toplevel_id: TopLevelId::nil(),
-                                        name: id,
-                                        description: None,
-                                        enabled: None,
-                                        profile_override: None,
-                                        selection: action,
-                                        is_visible_on_qam: false,
-                                    }
-                                })
-                                .collect(),
+                            vec![
+                                config.display_restoration.into(),
+                                a.pipeline.desktop_controller_layout_hack.into(),
+                                desktop,
+                            ]
+                            .into_iter()
+                            .enumerate()
+                            .map(|(index, action)| {
+                                let id = format!("internal:{index}");
+                                PipelineAction {
+                                    id: PipelineActionId::new(&id),
+                                    toplevel_id: TopLevelId::nil(),
+                                    name: id,
+                                    description: None,
+                                    enabled: None,
+                                    profile_override: None,
+                                    selection: action,
+                                    is_visible_on_qam: false,
+                                }
+                            })
+                            .collect(),
                         ),
                     );
                 }
@@ -77,13 +81,18 @@ impl LoadedAutoStart {
         Self { autostart, target }
     }
 
-    pub fn build_executor(self, decky_env: Arc<DeckyEnv>) -> Result<PipelineExecutor> {
+    pub fn build_executor(
+        self,
+        global_config: GlobalConfig,
+        decky_env: Arc<DeckyEnv>,
+    ) -> Result<PipelineExecutor> {
         PipelineExecutor::new(
             self.autostart.game_id,
             self.autostart.pipeline,
             self.target,
             decky_env,
             self.autostart.launch_info,
+            global_config,
         )
     }
 }

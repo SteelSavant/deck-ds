@@ -184,6 +184,7 @@ impl PipelineDefinition {
             primary_target_override: self.primary_target_override,
             platform,
             toplevel,
+            desktop_controller_layout_hack: self.desktop_controller_layout_hack.into(),
         };
 
         Ok(db_pipeline)

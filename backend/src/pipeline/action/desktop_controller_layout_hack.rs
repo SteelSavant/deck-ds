@@ -9,7 +9,7 @@ use crate::sys::steam;
 
 use super::{ActionId, ActionImpl, ActionType};
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
+#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
 pub struct DesktopControllerLayoutHack {
     pub id: ActionId,
     pub steam_override: Option<bool>,
@@ -27,7 +27,20 @@ impl ActionImpl for DesktopControllerLayoutHack {
 
     fn setup(&self, ctx: &mut crate::pipeline::executor::PipelineContext) -> anyhow::Result<()> {
         if let Some(launch_info) = ctx.launch_info.as_ref() {
-            steam::set_desktop_controller_hack(launch_info, &ctx.decky_env.steam_dir())
+            let hack_steam = self
+                .steam_override
+                .unwrap_or(ctx.global_config.use_steam_desktop_controller_layout_hack);
+            let hack_nonsteam = self.nonsteam_override.unwrap_or(
+                ctx.global_config
+                    .use_nonsteam_desktop_controller_layout_hack,
+            );
+
+            steam::set_desktop_controller_hack(
+                hack_steam,
+                hack_nonsteam,
+                launch_info,
+                &ctx.decky_env.steam_dir(),
+            )
         } else {
             Ok(())
         }
