@@ -225,7 +225,7 @@ fn main() -> Result<()> {
 
                     let config = lock.get_global_cfg();
                     if config.restore_displays_if_not_executing_pipeline {
-                        let ctx = &mut PipelineContext::new(decky_env.clone());
+                        let ctx = &mut PipelineContext::new(None, decky_env.clone());
 
                         let res = config.display_restoration.desktop_only(ctx);
                         if let Err(err) = res {

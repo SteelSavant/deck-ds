@@ -7,10 +7,10 @@ use native_db::transaction::RTransaction;
 use crate::{
     db::model::{
         DbAction, DbCemuAudio, DbCemuLayout, DbCitraLayout, DbConfigSelection,
-        DbDesktopSessionHandler, DbDisplayConfig, DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset,
-        DbLime3dsLayout, DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow,
-        DbPipelineActionSettings, DbPipelineDefinition, DbSourceFile, DbTopLevelDefinition,
-        DbVirtualScreen,
+        DbDesktopControllerLayoutHack, DbDesktopSessionHandler, DbDisplayConfig,
+        DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset, DbLime3dsLayout,
+        DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings,
+        DbPipelineDefinition, DbSourceFile, DbTopLevelDefinition, DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionType},
@@ -78,6 +78,10 @@ impl DbAction {
             ActionType::Lime3dsLayout => {
                 let action = ro.get().primary::<DbLime3dsLayout>(id)?;
                 action.map(|a| Action::Lime3dsLayout(a.into()))
+            }
+            ActionType::DesktopControllerLayoutHack => {
+                let action = ro.get().primary::<DbDesktopControllerLayoutHack>(id)?;
+                action.map(|a| Action::DesktopControllerLayoutHack(a.into()))
             }
         };
 

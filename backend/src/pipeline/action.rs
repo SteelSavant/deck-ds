@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+use desktop_controller_layout_hack::DesktopControllerLayoutHack;
 use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use strum::{Display, EnumIter, EnumString};
@@ -130,6 +131,7 @@ pub enum Action {
     LaunchSecondaryFlatpakApp(LaunchSecondaryFlatpakApp),
     LaunchSecondaryAppPreset(LaunchSecondaryAppPreset),
     MainAppAutomaticWindowing(MainAppAutomaticWindowing),
+    DesktopControllerLayoutHack(DesktopControllerLayoutHack),
 }
 
 impl<T: Into<Action>> From<T> for DefinitionSelection {
@@ -176,6 +178,9 @@ impl Action {
             Action::Lime3dsLayout(a) => {
                 Action::Lime3dsLayout(Lime3dsLayout(CitraLayout { id, ..a.0 }))
             }
+            Action::DesktopControllerLayoutHack(a) => {
+                Action::DesktopControllerLayoutHack(DesktopControllerLayoutHack { id, ..*a })
+            }
         }
     }
 }
@@ -188,6 +193,7 @@ pub enum ActionType {
     CemuAudio,
     CemuLayout,
     CitraLayout,
+    DesktopControllerLayoutHack,
     Lime3dsLayout,
     DesktopSessionHandler,
     DisplayConfig,

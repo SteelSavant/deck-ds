@@ -83,6 +83,7 @@ impl LoadedAutoStart {
             self.autostart.pipeline,
             self.target,
             decky_env,
+            self.autostart.launch_info,
         )
     }
 }

@@ -11,6 +11,7 @@ use crate::{
             cemu_audio::{CemuAudio, CemuAudioChannels, CemuAudioSetting, CemuAudioState},
             cemu_layout::{CemuLayout, CemuLayoutState},
             citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
+            desktop_controller_layout_hack::DesktopControllerLayoutHack,
             display_config::DisplayConfig,
             lime_3ds_layout::Lime3dsLayout,
             melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
@@ -1203,4 +1204,34 @@ pub enum DbCemuAudioChannels {
     Mono,
     Stereo,
     Surround,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[native_db]
+#[native_model(id = 1014, version = 1, with = NativeModelJSON)]
+pub struct DbDesktopControllerLayoutHack {
+    #[primary_key]
+    pub id: ActionId,
+    pub nonsteam_override: Option<bool>,
+    pub steam_override: Option<bool>,
+}
+
+impl From<DesktopControllerLayoutHack> for DbDesktopControllerLayoutHack {
+    fn from(value: DesktopControllerLayoutHack) -> Self {
+        Self {
+            id: value.id,
+            nonsteam_override: value.nonsteam_override,
+            steam_override: value.steam_override,
+        }
+    }
+}
+
+impl From<DbDesktopControllerLayoutHack> for DesktopControllerLayoutHack {
+    fn from(value: DbDesktopControllerLayoutHack) -> Self {
+        Self {
+            id: value.id,
+            nonsteam_override: value.nonsteam_override,
+            steam_override: value.steam_override,
+        }
+    }
 }

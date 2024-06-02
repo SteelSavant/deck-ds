@@ -2,19 +2,17 @@ use std::path::{Path, PathBuf};
 
 use crate::{
     macros::newtype_strid,
-    settings::{AppId, SteamUserId64},
+    settings::{AppId, SteamLaunchInfo, SteamUserId64},
 };
 use anyhow::{Context, Result};
 
 const STEAMID_64_IDENT: u64 = 76561197960265728;
 
 pub fn set_desktop_controller_hack<P: AsRef<Path>>(
-    user: &SteamUserId64,
-    app_id: &AppId,
-    game_title: &str,
+    launch_info: &SteamLaunchInfo,
     steam_dir: P,
 ) -> Result<()> {
-    let user: SteamUserId3 = user.into();
+    let user: SteamUserId3 = (&launch_info.user_id_64).into();
     let desktop_layout_path = get_desktop_layout_path(&user, steam_dir.as_ref());
     let desktop_layout_backup_path = desktop_layout_path.with_extension("vdf.bck");
 
@@ -29,8 +27,12 @@ pub fn set_desktop_controller_hack<P: AsRef<Path>>(
             .context("failed to create backup desktop controller config file")?;
     }
 
-    let best_controller_folder =
-        get_best_game_folder(&user, app_id, game_title, steam_dir.as_ref())?;
+    let best_controller_folder = get_best_game_folder(
+        &user,
+        &launch_info.app_id,
+        &launch_info.game_title,
+        steam_dir.as_ref(),
+    )?;
     match best_controller_folder {
         Some(folder) => std::fs::copy(folder.join("controller_neptune.vdf"), desktop_layout_path)
             .map(|_| ())
@@ -38,8 +40,8 @@ pub fn set_desktop_controller_hack<P: AsRef<Path>>(
         None => {
             log::warn!(
                 "no config file found for {:?}: {} to copy",
-                app_id,
-                game_title
+                &launch_info.app_id,
+                &launch_info.game_title
             );
             Ok(())
         }
@@ -193,7 +195,15 @@ mod tests {
         setup_dir(steam_dir);
         let user = get_user_64();
         let app_id = get_appid();
-        set_desktop_controller_hack(&user, &app_id, "some title", steam_dir).unwrap();
+        set_desktop_controller_hack(
+            &SteamLaunchInfo {
+                user_id_64: user,
+                app_id: app_id.clone(),
+                game_title: "some title".to_string(),
+            },
+            steam_dir,
+        )
+        .unwrap();
 
         let desktop_controller_path = get_desktop_layout_path(&get_user_3(), steam_dir);
         let backup = desktop_controller_path.with_extension("vdf.bck");
@@ -221,7 +231,15 @@ mod tests {
 
         let user = get_user_64();
         let app_id = AppId::new("00000");
-        set_desktop_controller_hack(&user, &app_id, "nonsteam", steam_dir).unwrap();
+        set_desktop_controller_hack(
+            &SteamLaunchInfo {
+                user_id_64: user,
+                app_id,
+                game_title: "nonsteam".to_string(),
+            },
+            steam_dir,
+        )
+        .unwrap();
 
         let desktop_controller_path = get_desktop_layout_path(&get_user_3(), steam_dir);
         let backup = desktop_controller_path.with_extension("vdf.bck");
@@ -250,8 +268,16 @@ mod tests {
         let steam_dir = "./test/out/steam/unset/steam";
         setup_dir(steam_dir);
         let user = get_user_64();
-        let appid = get_appid();
-        set_desktop_controller_hack(&user, &appid, "nonsteam", steam_dir).unwrap();
+        let app_id = get_appid();
+        set_desktop_controller_hack(
+            &SteamLaunchInfo {
+                user_id_64: user,
+                app_id: app_id.clone(),
+                game_title: "nonsteam".to_string(),
+            },
+            steam_dir,
+        )
+        .unwrap();
 
         let desktop_controller_path = get_desktop_layout_path(&get_user_3(), steam_dir);
         let backup = desktop_controller_path.with_extension("vdf.bck");
@@ -263,7 +289,7 @@ mod tests {
             std::fs::read_to_string(&get_layout_path(&get_user_3(), "nonsteam", steam_dir))
                 .unwrap();
         let steam_contents =
-            std::fs::read_to_string(&get_layout_path(&get_user_3(), &appid.raw(), steam_dir))
+            std::fs::read_to_string(&get_layout_path(&get_user_3(), &app_id.raw(), steam_dir))
                 .unwrap();
 
         assert!(!backup.exists());

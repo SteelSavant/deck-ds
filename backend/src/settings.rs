@@ -50,7 +50,7 @@ pub struct GlobalConfig {
     /// Button chord to be used to exit profiles that register for exit hooks.
     pub exit_hooks: ExitHooks,
     /// Overwrite the desktop layout with the game layout
-    pub use_desktop_controller_layout_hack: bool,
+    pub use_desktop_controller_layout_hack: bool, // TODO::consider separating setting steam vs non-steam
 }
 
 impl Settings {
@@ -181,7 +181,7 @@ pub struct AutoStartConfig {
     pub launch_info: SteamLaunchInfo,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SteamLaunchInfo {
     pub app_id: AppId,
     pub user_id_64: SteamUserId64,
