@@ -89,7 +89,8 @@ const useLaunchActions = (
                                 game_id: appDetails.gameId,
                                 app_id: appDetails.appId.toString(),
                                 profile_id: p.id,
-                                game_title: appDetails.displayName,
+                                game_title: appDetails.sortAs,
+                                is_steam_game: appDetails.isSteamGame,
                                 target: target as PipelineTarget,
                             });
 

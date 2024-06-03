@@ -5,10 +5,10 @@ use native_db::transaction::RwTransaction;
 use crate::{
     db::model::{
         DbAction, DbAppOverride, DbCategoryProfile, DbCemuAudio, DbCemuLayout, DbCitraLayout,
-        DbConfigSelection, DbDesktopSessionHandler, DbDisplayConfig, DbLaunchSecondaryApp,
-        DbLaunchSecondaryAppPreset, DbLime3dsLayout, DbMainAppAutomaticWindowing, DbMelonDSLayout,
-        DbMultiWindow, DbPipelineActionSettings, DbSourceFile, DbTopLevelDefinition,
-        DbVirtualScreen,
+        DbConfigSelection, DbDesktopControllerLayoutHack, DbDesktopSessionHandler, DbDisplayConfig,
+        DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset, DbLime3dsLayout,
+        DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings,
+        DbSourceFile, DbTopLevelDefinition, DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionId, ActionType, ErasedPipelineAction},
@@ -75,6 +75,9 @@ impl Action {
             }
             Action::Lime3dsLayout(action) => {
                 rw.insert::<DbLime3dsLayout>(action.into())?;
+            }
+            Action::DesktopControllerLayoutHack(action) => {
+                rw.insert::<DbDesktopControllerLayoutHack>(action.into())?;
             }
         };
 
@@ -245,6 +248,10 @@ impl DbAction {
             }
             ActionType::Lime3dsLayout => {
                 let action = rw.get().primary::<DbLime3dsLayout>(id)?;
+                action.map(|a| rw.remove(a))
+            }
+            ActionType::DesktopControllerLayoutHack => {
+                let action = rw.get().primary::<DbDesktopControllerLayoutHack>(id)?;
                 action.map(|a| rw.remove(a))
             }
         }

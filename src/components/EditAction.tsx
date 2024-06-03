@@ -721,6 +721,8 @@ export function InternalEditAction({
 
         case 'VirtualScreen':
             return notConfigurable;
+        case 'DesktopControllerLayoutHack':
+            throw new Error('layout hack not currently configurable as action'); // TODO::fix this
         default:
             const typecheck: never = type;
             throw `action for edit failed to typecheck: ${typecheck}`;

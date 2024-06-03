@@ -65,6 +65,7 @@ testing_logger = "0.1.1"
 edid-rs = "0.1.0"
 typemap-ors = "1.0.0"
 str-distance = "0.1.0"
+serde_with = "3.8.1"
 
 [features]
 default = ["online", "decky"]

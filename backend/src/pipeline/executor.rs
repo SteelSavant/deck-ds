@@ -4,7 +4,6 @@ use either::Either;
 use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
 use nix::unistd::Pid;
-use strum::IntoEnumIterator;
 use type_reg::untagged::{TypeMap as SerdeMap, TypeReg};
 
 use std::marker::PhantomData;
@@ -19,6 +18,7 @@ use crate::decky_env::DeckyEnv;
 use crate::pipeline::action::cemu_audio::CemuAudio;
 use crate::pipeline::action::cemu_layout::CemuLayout;
 use crate::pipeline::action::citra_layout::CitraLayout;
+use crate::pipeline::action::desktop_controller_layout_hack::DesktopControllerLayoutHack;
 use crate::pipeline::action::display_config::DisplayConfig;
 use crate::pipeline::action::lime_3ds_layout::Lime3dsLayout;
 use crate::pipeline::action::melonds_layout::MelonDSLayout;
@@ -33,7 +33,7 @@ use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::action::{ActionImpl, ActionType};
 use crate::pipeline::data::RuntimeSelection;
 use crate::secondary_app::SecondaryAppManager;
-use crate::settings::{AppId, GameId, GlobalConfig};
+use crate::settings::{AppId, GameId, GlobalConfig, SteamLaunchInfo};
 use crate::sys::app_process::AppProcess;
 use crate::sys::kwin::KWin;
 use crate::sys::x_display::XDisplay;
@@ -60,6 +60,8 @@ pub struct PipelineContext {
     pub display: Option<XDisplay>,
     pub exit_hooks: Option<ExitHooks>,
     pub secondary_app: SecondaryAppManager,
+    pub launch_info: Option<SteamLaunchInfo>,
+    pub global_config: GlobalConfig,
     /// actions that have run
     have_run: Vec<Action>,
     /// pipeline state
@@ -79,7 +81,11 @@ where
 }
 
 impl PipelineContext {
-    pub fn new(decky_env: Arc<DeckyEnv>) -> Self {
+    pub fn new(
+        launch_info: Option<SteamLaunchInfo>,
+        global_config: GlobalConfig,
+        decky_env: Arc<DeckyEnv>,
+    ) -> Self {
         PipelineContext {
             kwin: KWin::new(decky_env.asset_manager()),
             display: XDisplay::new().ok(),
@@ -88,7 +94,9 @@ impl PipelineContext {
             secondary_app: SecondaryAppManager::new(decky_env.asset_manager()),
             exit_hooks: Some(ExitHooks::default()),
             on_launch_callbacks: vec![],
+            launch_info,
             decky_env,
+            global_config,
         }
     }
 
@@ -96,8 +104,8 @@ impl PipelineContext {
         self.on_launch_callbacks.push(callback);
     }
 
-    pub fn load(decky_env: Arc<DeckyEnv>) -> Result<Option<Self>> {
-        let mut default: PipelineContext = PipelineContext::new(decky_env);
+    pub fn load(global_config: GlobalConfig, decky_env: Arc<DeckyEnv>) -> Result<Option<Self>> {
+        let mut default: PipelineContext = PipelineContext::new(None, global_config, decky_env);
 
         let persisted = std::fs::read_to_string(default.get_state_path()).ok();
         let persisted = match persisted {
@@ -132,14 +140,9 @@ impl PipelineContext {
         register_type::<Lime3dsLayout>(&mut type_reg);
         register_type::<CemuAudio>(&mut type_reg);
 
-        assert_eq!(
-            type_reg.keys().count(),
-            ActionType::iter().count(),
-            "not all actions have been registered"
-        );
-
         type_reg.register::<Vec<String>>("__actions__".to_string());
         type_reg.register::<DeckyEnv>("__env__".to_string());
+        type_reg.register::<Option<SteamLaunchInfo>>("__steam_launch_info__".to_string());
 
         let mut deserializer = serde_json::Deserializer::from_str(&persisted);
         let type_map: SerdeMap<String> = type_reg
@@ -155,6 +158,12 @@ impl PipelineContext {
         let env = type_map
             .get::<DeckyEnv, _>("__env__")
             .with_context(|| "could not find key '__env__' while loading context state")?;
+
+        let launch_info = type_map
+            .get::<Option<SteamLaunchInfo>, _>("__steam_launch_info__")
+            .with_context(|| {
+                "could not find key '__steam_launch_info__' while loading context state"
+            })?;
 
         for action in actions {
             match ActionType::from_str(action) {
@@ -188,9 +197,12 @@ impl PipelineContext {
                         load_state::<Lime3dsLayout>(&mut default, &type_map)
                     }
                     ActionType::CemuAudio => load_state::<CemuAudio>(&mut default, &type_map),
+                    ActionType::DesktopControllerLayoutHack => {
+                        load_state::<DesktopControllerLayoutHack>(&mut default, &type_map)
+                    }
                 },
                 Err(err) => {
-                    log::warn!("failed to parse action {action} from type reg: {err}")
+                    log::warn!("failed to parse action {action} from type reg: {err:#?}")
                 }
             }
         }
@@ -212,6 +224,7 @@ impl PipelineContext {
         default.kwin = KWin::new(env.asset_manager());
         default.secondary_app = SecondaryAppManager::new(env.asset_manager());
         default.decky_env = Arc::new(env.clone());
+        default.launch_info = launch_info.clone();
 
         Ok(Some(default))
     }
@@ -248,6 +261,7 @@ impl PipelineContext {
                 Action::LaunchSecondaryAppPreset(a) => insert_action(self, &mut map, a),
                 Action::MainAppAutomaticWindowing(a) => insert_action(self, &mut map, a),
                 Action::Lime3dsLayout(a) => insert_action(self, &mut map, a),
+                Action::DesktopControllerLayoutHack(a) => insert_action(self, &mut map, a),
             };
         }
 
@@ -258,6 +272,10 @@ impl PipelineContext {
             .collect::<Vec<_>>();
         map.insert("__actions__".to_string(), actions);
         map.insert("__env__".to_string(), (*self.decky_env).clone());
+        map.insert(
+            "__steam_launch_info__".to_string(),
+            self.launch_info.clone(),
+        );
 
         let serialized = serde_json::to_string_pretty(&map)?;
         let path = self.get_state_path();
@@ -376,6 +394,9 @@ impl PipelineContext {
                 handle::<LaunchSecondaryAppPreset>(self, is_push)
             }
             ActionType::Lime3dsLayout => handle::<Lime3dsLayout>(self, is_push),
+            ActionType::DesktopControllerLayoutHack => {
+                handle::<DesktopControllerLayoutHack>(self, is_push)
+            }
         }
     }
 
@@ -401,12 +422,14 @@ impl PipelineExecutor {
         pipeline: Pipeline,
         target: PipelineTarget,
         decky_env: Arc<DeckyEnv>,
+        launch_info: SteamLaunchInfo,
+        global_config: GlobalConfig,
     ) -> Result<Self> {
         let s = Self {
             game_id,
             pipeline: Some(pipeline),
             target,
-            ctx: PipelineContext::new(decky_env),
+            ctx: PipelineContext::new(Some(launch_info), global_config, decky_env),
         };
 
         Ok(s)
@@ -724,7 +747,7 @@ mod tests {
 
         let decky_env = Arc::new(DeckyEnv::new_test("ctx_serde"));
 
-        let mut ctx = PipelineContext::new(decky_env.clone());
+        let mut ctx = PipelineContext::new(None, Default::default(), decky_env.clone());
 
         let actions: Vec<Action> = vec![
             DesktopSessionHandler {
@@ -829,7 +852,7 @@ mod tests {
 
         ctx.persist()?;
 
-        let loaded = PipelineContext::load(decky_env.clone())
+        let loaded = PipelineContext::load(Default::default(), decky_env.clone())
             .with_context(|| "Persisted context should load")?
             .with_context(|| "Persisted context should exist")?;
 

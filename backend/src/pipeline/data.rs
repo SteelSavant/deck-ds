@@ -11,7 +11,10 @@ use anyhow::{Context, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use super::{action::Action, action_registar::PipelineActionRegistrar};
+use super::{
+    action::{desktop_controller_layout_hack::DesktopControllerLayoutHack, Action},
+    action_registar::PipelineActionRegistrar,
+};
 
 newtype_strid!(
     r#"Id in the form "plugin:group:action" | "plugin:group:action:variant""#,
@@ -76,10 +79,10 @@ pub struct PipelineDefinition {
     pub should_register_exit_hooks: bool,
     pub exit_hooks_override: Option<ExitHooks>,
     pub primary_target_override: Option<PipelineTarget>,
-    pub desktop_layout_config_hack_override: Option<bool>,
     pub platform: TopLevelDefinition,
     // Additional top-level actions besides the main platform.
     pub toplevel: Vec<TopLevelDefinition>,
+    pub desktop_controller_layout_hack: DesktopControllerLayoutHack,
 }
 
 /// The required button chord to hold to exit. At least 2 buttons are required.
@@ -164,8 +167,8 @@ pub struct Pipeline {
     pub should_register_exit_hooks: bool,
     pub exit_hooks_override: Option<ExitHooks>,
     pub primary_target_override: Option<PipelineTarget>,
-    pub desktop_layout_config_hack_override: Option<bool>,
     pub targets: HashMap<PipelineTarget, RuntimeSelection>,
+    pub desktop_controller_layout_hack: DesktopControllerLayoutHack,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -324,8 +327,8 @@ impl PipelineDefinition {
             should_register_exit_hooks: self.should_register_exit_hooks,
             exit_hooks_override: self.exit_hooks_override.clone(),
             primary_target_override: self.primary_target_override,
-            desktop_layout_config_hack_override: self.desktop_layout_config_hack_override,
             targets,
+            desktop_controller_layout_hack: self.desktop_controller_layout_hack,
         })
     }
 }

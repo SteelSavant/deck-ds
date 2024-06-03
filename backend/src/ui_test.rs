@@ -12,6 +12,7 @@ use crate::{
         },
         executor::PipelineContext,
     },
+    settings::GlobalConfig,
     sys,
 };
 
@@ -19,7 +20,7 @@ use crate::{
 pub fn ui_test(decky_env: Arc<DeckyEnv>) -> Result<()> {
     use sys::x_display::{ModePreference, Resolution};
 
-    let ctx = &mut PipelineContext::new(decky_env);
+    let ctx = &mut PipelineContext::new(None, GlobalConfig::default(), decky_env);
 
     let ui = DesktopSessionHandler {
         id: ActionId::nil(),

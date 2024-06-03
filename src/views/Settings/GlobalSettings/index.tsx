@@ -43,24 +43,47 @@ export const GlobalSettingsPage: VFC = () => {
                             }}
                         />
                         <Builder
-                            label="Overwrite Desktop Controller Layout (Hack)"
+                            label="Force App Controller Layout"
                             indentLevel={1}
-                            description="Overwrites the main desktop controller layout with the layout of the app being launched, in case Steam fails to switch to the game's controller layout.
-                        Currently only works for the Deck's built-in  controller."
+                            description="Forces Steam to use the controller layout for the given app, if defined. 
+                            Overrides the desktop configuration completely, and prevents controller layouts from context-switching. 
+                            Useful if/when Steam fails to apply controller layouts in Desktop mode."
+                        />
+                        <Builder
+                            label="Override for Steam Games"
+                            indentLevel={2}
                         >
                             <Toggle
                                 value={
-                                    settings.use_desktop_controller_layout_hack
+                                    settings.use_steam_desktop_controller_layout_hack
                                 }
                                 onChange={(value) => {
                                     updateSettings({
                                         ...settings,
-                                        use_desktop_controller_layout_hack:
+                                        use_steam_desktop_controller_layout_hack:
                                             value,
                                     });
                                 }}
                             />
                         </Builder>
+                        <Builder
+                            label="Override for Non-Steam Games"
+                            indentLevel={2}
+                        >
+                            <Toggle
+                                value={
+                                    settings.use_nonsteam_desktop_controller_layout_hack
+                                }
+                                onChange={(value) => {
+                                    updateSettings({
+                                        ...settings,
+                                        use_nonsteam_desktop_controller_layout_hack:
+                                            value,
+                                    });
+                                }}
+                            />
+                        </Builder>
+
                         <Field
                             focusable={false}
                             label="Display Settings"

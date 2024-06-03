@@ -32,7 +32,8 @@ export type ShortAppDetails = {
     appId: number;
     gameId: string;
     userId64: string;
-    displayName: string;
+    sortAs: string;
+    isSteamGame: boolean;
 };
 
 interface PublicAppState {
@@ -358,12 +359,12 @@ export class ShortAppDetailsState {
         time: number,
     ) {
         const areEqual = _.isEqual(appDetails, this.appDetails);
-        console.log('trying to set app to', appDetails?.displayName);
+        console.log('trying to set app to', appDetails?.sortAs);
         if (time < this.lastOnAppPageTime || areEqual) {
             return;
         }
 
-        console.log('setting app to ', appDetails?.displayName);
+        console.log('setting app to ', appDetails?.sortAs);
 
         this.appDetails = appDetails;
         this.appProfile = null;

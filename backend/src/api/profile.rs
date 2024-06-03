@@ -553,7 +553,8 @@ pub fn reify_pipeline(
         match args {
             Ok(args) => match profiles.get_profiles() {
                 Ok(profiles) => {
-                    let ctx = &mut PipelineContext::new(decky_env.clone());
+                    let ctx =
+                        &mut PipelineContext::new(None, Default::default(), decky_env.clone());
                     let res = args.pipeline.reify(&profiles, &registrar);
 
                     match res {
