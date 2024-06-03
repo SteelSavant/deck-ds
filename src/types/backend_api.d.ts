@@ -330,6 +330,7 @@ export interface AutoStartRequest {
   app_id: string;
   game_id?: string | null;
   game_title: string;
+  is_steam_game: boolean;
   profile_id: string;
   target: PipelineTarget;
   user_id_64: string;

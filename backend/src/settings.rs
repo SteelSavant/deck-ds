@@ -195,6 +195,7 @@ pub struct SteamLaunchInfo {
     pub app_id: AppId,
     pub user_id_64: SteamUserId64,
     pub game_title: String,
+    pub is_steam_game: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]

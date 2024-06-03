@@ -326,15 +326,16 @@ export default function ProfileInfo(
                         </>
                     ) : null}
                     <Field
-                        label="Overwrite Desktop Controller Layout (Hack)"
-                        description="Overwrites the main desktop controller layout with the layout of the app being launched, in case Steam fails to switch to the game's controller layout.
-                    Currently only works for the Deck's built-in controller."
+                        label="Force App Controller Layout"
+                        description="Forces Steam to use the controller layout for the given app, if defined. 
+                        Overrides the desktop configuration completely, and prevents controller layouts from context-switching. 
+                        Useful if/when Steam fails to apply controller layouts in Desktop mode."
                     />
-                    <Field label="Overwrite for Steam Games" indentLevel={1}>
+                    <Field label="Override for Steam Games" indentLevel={1}>
                         <Dropdown
                             selectedOption={
                                 profile.pipeline.desktop_controller_layout_hack
-                                    .steam_override
+                                    .steam_override ?? null
                             }
                             rgOptions={[null, true, false].map((v) => {
                                 return {
@@ -361,14 +362,11 @@ export default function ProfileInfo(
                             }}
                         />
                     </Field>
-                    <Field
-                        label="Overwrite for Non-Steam Games"
-                        indentLevel={1}
-                    >
+                    <Field label="Override for Non-Steam Games" indentLevel={1}>
                         <Dropdown
                             selectedOption={
                                 profile.pipeline.desktop_controller_layout_hack
-                                    .nonsteam_override
+                                    .nonsteam_override ?? null
                             }
                             rgOptions={[null, true, false].map((v) => {
                                 return {

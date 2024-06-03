@@ -1,11 +1,11 @@
 // TODO::this
 // Allow - global, enabled, disabled -- PER TARGET
 
-use anyhow::Ok;
+use anyhow::{Context, Ok};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::sys::steam;
+use crate::pipeline::executor::PipelineContext;
 
 use super::{ActionId, ActionImpl, ActionType};
 
@@ -25,7 +25,7 @@ impl ActionImpl for DesktopControllerLayoutHack {
         self.id
     }
 
-    fn setup(&self, ctx: &mut crate::pipeline::executor::PipelineContext) -> anyhow::Result<()> {
+    fn setup(&self, ctx: &mut PipelineContext) -> anyhow::Result<()> {
         if let Some(launch_info) = ctx.launch_info.as_ref() {
             let hack_steam = self
                 .steam_override
@@ -35,18 +35,35 @@ impl ActionImpl for DesktopControllerLayoutHack {
                     .use_nonsteam_desktop_controller_layout_hack,
             );
 
-            steam::set_desktop_controller_hack(
-                hack_steam,
-                hack_nonsteam,
-                launch_info,
-                &ctx.decky_env.steam_dir(),
-            )
-        } else {
-            Ok(())
-        }
-    }
+            if (!hack_steam && launch_info.is_steam_game)
+                || (!hack_nonsteam && !launch_info.is_steam_game)
+            {
+                return Ok(());
+            }
 
-    fn teardown(&self, ctx: &mut crate::pipeline::executor::PipelineContext) -> anyhow::Result<()> {
-        steam::unset_desktop_controller_hack(&ctx.decky_env.steam_dir())
+            ctx.register_on_launch_callback(Box::new(|_pid, ctx: &mut PipelineContext| {
+                let app_id = ctx
+                    .launch_info
+                    .as_ref()
+                    .expect("executing pipeline should have launch info")
+                    .app_id
+                    .clone();
+                let status = std::process::Command::new("steam")
+                    .arg(format!("steam://forceinputappid/{}", app_id.raw()))
+                    .output()
+                    .with_context(|| format!("Error starting application {:?}", app_id))?;
+
+                if !status.status.success() {
+                    log::error!(
+                        "Failed to force input after: {}",
+                        String::from_utf8_lossy(&status.stderr)
+                    )
+                }
+
+                Ok(())
+            }));
+        }
+
+        Ok(())
     }
 }

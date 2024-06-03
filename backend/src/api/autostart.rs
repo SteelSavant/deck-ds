@@ -11,10 +11,7 @@ use crate::{
     decky_env::DeckyEnv,
     pipeline::{action_registar::PipelineActionRegistrar, data::PipelineTarget},
     settings::{self, AppId, GameId, ProfileId, Settings, SteamLaunchInfo, SteamUserId64},
-    sys::{
-        steam,
-        steamos_session_select::{steamos_session_select, Session},
-    },
+    sys::steamos_session_select::{steamos_session_select, Session},
 };
 
 use super::{
@@ -30,6 +27,7 @@ pub struct AutoStartRequest {
     user_id_64: SteamUserId64,
     game_title: String,
     target: PipelineTarget,
+    is_steam_game: bool,
 }
 
 pub fn autostart(
@@ -49,6 +47,7 @@ pub fn autostart(
 
             lock.resolve(args)
         };
+
         match args {
             Ok(args) => {
                 let definition = profile_db
@@ -78,22 +77,13 @@ pub fn autostart(
                 let lock = settings.lock().expect("settings mutex should be lockable");
                 let global_config = lock.get_global_cfg();
 
-                let (steam, nonsteam) = (
-                    pipeline
-                        .desktop_controller_layout_hack
-                        .steam_override
-                        .unwrap_or(global_config.use_steam_desktop_controller_layout_hack),
-                    pipeline
-                        .desktop_controller_layout_hack
-                        .nonsteam_override
-                        .unwrap_or(global_config.use_nonsteam_desktop_controller_layout_hack),
-                );
-
                 let launch_info = SteamLaunchInfo {
                     app_id: args.app_id,
                     user_id_64: args.user_id_64,
                     game_title: args.game_title,
+                    is_steam_game: args.is_steam_game,
                 };
+
                 match args.target {
                     PipelineTarget::Desktop => {
                         let res = lock.set_autostart_cfg(&settings::AutoStartConfig {
@@ -105,15 +95,7 @@ pub fn autostart(
 
                         match res {
                             Ok(_) => match steamos_session_select(Session::Plasma) {
-                                Ok(_) => {
-                                    let _ = steam::set_desktop_controller_hack(
-                                        steam,
-                                        nonsteam,
-                                        &launch_info,
-                                        decky_env.steam_dir(),
-                                    );
-                                    ResponseOk.to_response()
-                                }
+                                Ok(_) => ResponseOk.to_response(),
 
                                 Err(err) => {
                                     // remove autostart config if session select fails to avoid issues

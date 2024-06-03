@@ -474,6 +474,7 @@
       "required": [
         "app_id",
         "game_title",
+        "is_steam_game",
         "profile_id",
         "target",
         "user_id_64"
@@ -490,6 +491,9 @@
         },
         "game_title": {
           "type": "string"
+        },
+        "is_steam_game": {
+          "type": "boolean"
         },
         "profile_id": {
           "type": "string",
