@@ -69,7 +69,8 @@ export interface PipelineInfo {
     exit_hooks_override?: ExitHooks | null;
     register_exit_hooks?: boolean;
     primary_target_override?: PipelineTarget | null;
-    desktop_layout_config_hack_override?: boolean | null;
+    steam_desktop_layout_config_hack_override?: boolean | null;
+    nonsteam_desktop_layout_config_hack_override?: boolean | null;
 }
 
 export async function patchPipeline(
@@ -92,10 +93,20 @@ export async function patchPipeline(
                 info.primary_target_override === undefined
                     ? pipeline.primary_target_override
                     : info.primary_target_override,
-            desktop_layout_config_hack_override:
-                info.desktop_layout_config_hack_override === undefined
-                    ? pipeline.desktop_layout_config_hack_override
-                    : info.desktop_layout_config_hack_override,
+            desktop_layout_config_hack_override: {
+                ...pipeline.desktop_controller_layout_hack,
+                steam_override:
+                    update.info.steam_desktop_layout_config_hack_override ===
+                    undefined
+                        ? pipeline.desktop_controller_layout_hack.steam_override
+                        : info.steam_desktop_layout_config_hack_override,
+                nonsteam_override:
+                    update.info.steam_desktop_layout_config_hack_override ===
+                    undefined
+                        ? pipeline.desktop_controller_layout_hack
+                              .nonsteam_override
+                        : info.nonsteam_desktop_layout_config_hack_override,
+            },
         });
     } else if (update.type === 'updatePlatform') {
         return Ok({

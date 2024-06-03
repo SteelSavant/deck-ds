@@ -47,20 +47,43 @@ export const GlobalSettingsPage: VFC = () => {
                             indentLevel={1}
                             description="Overwrites the main desktop controller layout with the layout of the app being launched, in case Steam fails to switch to the game's controller layout.
                         Currently only works for the Deck's built-in  controller."
+                        />
+
+                        <Builder
+                            label="Overwrite for Steam Games"
+                            indentLevel={2}
                         >
                             <Toggle
                                 value={
-                                    settings.use_desktop_controller_layout_hack
+                                    settings.use_steam_desktop_controller_layout_hack
                                 }
                                 onChange={(value) => {
                                     updateSettings({
                                         ...settings,
-                                        use_desktop_controller_layout_hack:
+                                        use_steam_desktop_controller_layout_hack:
                                             value,
                                     });
                                 }}
                             />
                         </Builder>
+                        <Builder
+                            label="Overwrite for Non-Steam Games"
+                            indentLevel={2}
+                        >
+                            <Toggle
+                                value={
+                                    settings.use_nonsteam_desktop_controller_layout_hack
+                                }
+                                onChange={(value) => {
+                                    updateSettings({
+                                        ...settings,
+                                        use_nonsteam_desktop_controller_layout_hack:
+                                            value,
+                                    });
+                                }}
+                            />
+                        </Builder>
+
                         <Field
                             focusable={false}
                             label="Display Settings"

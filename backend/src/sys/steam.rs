@@ -36,29 +36,30 @@ pub fn set_desktop_controller_hack<P: AsRef<Path>>(
         steam_dir.as_ref(),
     )?;
 
-    match best_controller_folder {
+    let controller_file = match best_controller_folder {
         Some(LayoutPath::Steam(folder)) if hack_steam => {
-            std::fs::copy(folder.join("controller_neptune.vdf"), desktop_layout_path)
-                .map(|_| ())
-                .context("failed to copy steam controller config file")
+            Some(folder.join("controller_neptune.vdf"))
         }
         Some(LayoutPath::NonSteam(folder)) if hack_nonsteam => {
-            std::fs::copy(folder.join("controller_neptune.vdf"), desktop_layout_path)
-                .map(|_| ())
-                .context("failed to copy nonsteam controller config file")
+            Some(folder.join("controller_neptune.vdf"))
         }
         None => {
-            log::warn!(
-                "no controller config file found for {:?}: {} to copy",
-                &launch_info.app_id,
-                &launch_info.game_title
-            );
-            Ok(())
+            // config not downloaded; find workshop
+            // find_workshop_file_for()
+            None
         }
         _ => {
             log::debug!("controller config file matched ignored type; ignoring");
-            Ok(())
+            None
         }
+    };
+
+    if let Some(controller_file) = controller_file {
+        std::fs::copy(controller_file, desktop_layout_path)
+            .map(|_| ())
+            .context("failed to copy nonsteam controller config file")
+    } else {
+        Ok(())
     }
 }
 
@@ -91,6 +92,15 @@ pub fn unset_desktop_controller_hack<P: AsRef<Path>>(steam_dir: P) -> Result<()>
 
     Ok(())
 }
+
+// fn find_workshop_file_for<P: AsRef<Path>>(
+//     user: &SteamUserId3,
+//     app_id: &AppId,
+//     game_title: &str,
+//     steam_dir: P,
+// ) -> Result<Option<LayoutPath>> {
+//     let  get_layout_dir(user, steam_dir).join("configset_controller_neptune.vdf");
+// }
 
 fn get_best_game_folder<P: AsRef<Path>>(
     user: &SteamUserId3,

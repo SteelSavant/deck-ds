@@ -329,28 +329,66 @@ export default function ProfileInfo(
                         label="Overwrite Desktop Controller Layout (Hack)"
                         description="Overwrites the main desktop controller layout with the layout of the app being launched, in case Steam fails to switch to the game's controller layout.
                     Currently only works for the Deck's built-in controller."
-                    >
+                    />
+                    <Field label="Overwrite for Steam Games" indentLevel={1}>
                         <Dropdown
                             selectedOption={
-                                profile.pipeline
-                                    .desktop_layout_config_hack_override
+                                profile.pipeline.desktop_controller_layout_hack
+                                    .steam_override
                             }
                             rgOptions={[null, true, false].map((v) => {
                                 return {
                                     label: mapControllerHackValueToSelection(
                                         v,
-                                        globalSettings.use_desktop_controller_layout_hack,
+                                        globalSettings.use_steam_desktop_controller_layout_hack,
                                     ),
                                     data: v,
                                 };
                             })}
                             onChange={(props) => {
+                                const data: boolean | null | undefined =
+                                    props.data;
+
                                 dispatch({
                                     update: {
                                         type: 'updatePipelineInfo',
                                         info: {
-                                            desktop_layout_config_hack_override:
-                                                props.data,
+                                            steam_desktop_layout_config_hack_override:
+                                                data,
+                                        },
+                                    },
+                                });
+                            }}
+                        />
+                    </Field>
+                    <Field
+                        label="Overwrite for Non-Steam Games"
+                        indentLevel={1}
+                    >
+                        <Dropdown
+                            selectedOption={
+                                profile.pipeline.desktop_controller_layout_hack
+                                    .nonsteam_override
+                            }
+                            rgOptions={[null, true, false].map((v) => {
+                                return {
+                                    label: mapControllerHackValueToSelection(
+                                        v,
+                                        globalSettings.use_nonsteam_desktop_controller_layout_hack,
+                                    ),
+                                    data: v,
+                                };
+                            })}
+                            onChange={(props) => {
+                                const data: boolean | null | undefined =
+                                    props.data;
+
+                                dispatch({
+                                    update: {
+                                        type: 'updatePipelineInfo',
+                                        info: {
+                                            nonsteam_desktop_layout_config_hack_override:
+                                                data,
                                         },
                                     },
                                 });

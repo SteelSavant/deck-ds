@@ -41,6 +41,7 @@ impl AutoStart {
                         PipelineTarget::Desktop,
                         RuntimeSelection::AllOf(
                             vec![
+                                // Add core desktop actions
                                 config.display_restoration.into(),
                                 a.pipeline.desktop_controller_layout_hack.into(),
                                 desktop,
