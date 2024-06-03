@@ -98,7 +98,6 @@ export async function patchPipeline(
                     : info.nonsteam_desktop_layout_config_hack_override,
         };
 
-        console.log('setting hack to:', hack);
 
         return Ok({
             ...pipeline,

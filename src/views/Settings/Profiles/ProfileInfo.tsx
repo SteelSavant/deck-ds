@@ -273,7 +273,7 @@ export default function ProfileInfo(
                                 focusable={false}
                                 indentLevel={1}
                                 label="Exit Hooks"
-                                description="The button chord to hold to exit the app in desktop mode."
+                                description="The button chord to hold to exit the app in desktop mode. These are the buttons mapped in Steam Input, not guaranteed to match the physical buttons on the controller."
                             >
                                 <Dropdown
                                     selectedOption={

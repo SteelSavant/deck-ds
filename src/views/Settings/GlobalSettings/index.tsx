@@ -29,7 +29,7 @@ export const GlobalSettingsPage: VFC = () => {
                         />
                         <Builder
                             label="Exit Hooks"
-                            description="The button chord to hold to exit the app in desktop mode, if enabled."
+                            description="The button chord to hold to exit the app in desktop mode, if enabled. These are the buttons mapped in Steam Input, not guaranteed to match the physical buttons."
                             indentLevel={1}
                             // TODO::consider dropdown arrow child to expand/hide the edit, since moving the "add chord button" into the field is inconvenient
                         />
