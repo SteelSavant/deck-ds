@@ -614,7 +614,7 @@ export interface GlobalConfig {
    */
   exit_hooks: ExitHooks;
   /**
-   * Logging level to use on startup. Uses the same number value as the typescript loglevels.
+   * Overwrite the desktop layout with the game layout
    */
   log_level: number;
   /**
@@ -626,9 +626,6 @@ export interface GlobalConfig {
    * Overwrite the desktop layout with the game layout
    */
   use_nonsteam_desktop_controller_layout_hack: boolean;
-  /**
-   * Overwrite the desktop layout with the game layout
-   */
   use_steam_desktop_controller_layout_hack: boolean;
 }
 export interface GetTemplatesResponse {

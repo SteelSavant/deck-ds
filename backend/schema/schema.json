@@ -1714,7 +1714,7 @@
           ]
         },
         "log_level": {
-          "description": "Logging level to use on startup. Uses the same number value as the typescript loglevels.",
+          "description": "Overwrite the desktop layout with the game layout",
           "type": "integer",
           "format": "uint8",
           "minimum": 0.0
@@ -1735,7 +1735,6 @@
           "type": "boolean"
         },
         "use_steam_desktop_controller_layout_hack": {
-          "description": "Overwrite the desktop layout with the game layout",
           "type": "boolean"
         }
       }
