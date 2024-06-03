@@ -7,10 +7,10 @@ use native_db::transaction::RTransaction;
 use crate::{
     db::model::{
         DbAction, DbCemuAudio, DbCemuLayout, DbCitraLayout, DbConfigSelection,
-        DbDesktopSessionHandler, DbDisplayConfig, DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset,
-        DbLime3dsLayout, DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow,
-        DbPipelineActionSettings, DbPipelineDefinition, DbSourceFile, DbTopLevelDefinition,
-        DbVirtualScreen,
+        DbDesktopControllerLayoutHack, DbDesktopSessionHandler, DbDisplayConfig,
+        DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset, DbLime3dsLayout,
+        DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings,
+        DbPipelineDefinition, DbSourceFile, DbTopLevelDefinition, DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionType},
@@ -79,6 +79,10 @@ impl DbAction {
                 let action = ro.get().primary::<DbLime3dsLayout>(id)?;
                 action.map(|a| Action::Lime3dsLayout(a.into()))
             }
+            ActionType::DesktopControllerLayoutHack => {
+                let action = ro.get().primary::<DbDesktopControllerLayoutHack>(id)?;
+                action.map(|a| Action::DesktopControllerLayoutHack(a.into()))
+            }
         };
 
         transformed.with_context(|| format!("failed to recover action {id:?}"))
@@ -114,9 +118,9 @@ impl DbPipelineDefinition {
             should_register_exit_hooks: self.should_register_exit_hooks,
             exit_hooks_override: self.exit_hooks_override.clone().map(ExitHooks::from),
             primary_target_override: self.primary_target_override,
-            desktop_layout_config_hack_override: self.desktop_layout_config_hack_override,
             platform,
             toplevel,
+            desktop_controller_layout_hack: self.desktop_controller_layout_hack.clone().into(),
         })
     }
 }

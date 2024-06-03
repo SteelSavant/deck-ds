@@ -1,3 +1,9 @@
+/*
+Useful Resources:
+- Steam Browser Protocol: https://developer.valvesoftware.com/wiki/Steam_browser_protocol
+- Steam Console Commands: https://gist.github.com/davispuh/6600880
+*/
+
 import {
     ButtonItem,
     definePlugin,
@@ -81,6 +87,14 @@ const History = findModuleChild((m) => {
 });
 
 export default definePlugin((serverApi: ServerAPI) => {
+    function isSteamGame(overview: any): boolean {
+        const hasOwnerAccountId = overview.owner_account_id !== undefined;
+        const wasPurchased = !!overview.rt_purchased_time;
+        const hasSize = overview.size_on_disk !== '0';
+
+        return hasOwnerAccountId || wasPurchased || hasSize;
+    }
+
     function updateAppDetails(this: any, currentRoute: string): void {
         const re = /^\/library\/app\/(\d+)(\/?.*)/;
 
@@ -92,8 +106,9 @@ export default definePlugin((serverApi: ServerAPI) => {
             appDetailsState.setOnAppPage({
                 appId,
                 gameId: overview.m_gameid,
-                displayName: overview.display_name,
+                sortAs: overview.sort_as,
                 userId64: App.m_CurrentUser.strSteamID,
+                isSteamGame: isSteamGame(overview),
             });
         } else {
             appDetailsState.setOnAppPage(null);

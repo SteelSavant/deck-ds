@@ -343,6 +343,24 @@
               "$ref": "#/definitions/MainAppAutomaticWindowing"
             }
           }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "DesktopControllerLayoutHack"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/DesktopControllerLayoutHack"
+            }
+          }
         }
       ]
     },
@@ -456,6 +474,7 @@
       "required": [
         "app_id",
         "game_title",
+        "is_steam_game",
         "profile_id",
         "target",
         "user_id_64"
@@ -472,6 +491,9 @@
         },
         "game_title": {
           "type": "string"
+        },
+        "is_steam_game": {
+          "type": "boolean"
         },
         "profile_id": {
           "type": "string",
@@ -1105,6 +1127,30 @@
         }
       ]
     },
+    "DesktopControllerLayoutHack": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "nonsteam_override": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "steam_override": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
     "DesktopSessionHandler": {
       "type": "object",
       "required": [
@@ -1648,7 +1694,8 @@
         "log_level",
         "primary_ui_target",
         "restore_displays_if_not_executing_pipeline",
-        "use_desktop_controller_layout_hack"
+        "use_nonsteam_desktop_controller_layout_hack",
+        "use_steam_desktop_controller_layout_hack"
       ],
       "properties": {
         "display_restoration": {
@@ -1683,7 +1730,11 @@
         "restore_displays_if_not_executing_pipeline": {
           "type": "boolean"
         },
-        "use_desktop_controller_layout_hack": {
+        "use_nonsteam_desktop_controller_layout_hack": {
+          "description": "Overwrite the desktop layout with the game layout",
+          "type": "boolean"
+        },
+        "use_steam_desktop_controller_layout_hack": {
           "description": "Overwrite the desktop layout with the game layout",
           "type": "boolean"
         }
@@ -2061,6 +2112,7 @@
       "type": "object",
       "required": [
         "description",
+        "desktop_controller_layout_hack",
         "name",
         "should_register_exit_hooks",
         "targets"
@@ -2069,11 +2121,8 @@
         "description": {
           "type": "string"
         },
-        "desktop_layout_config_hack_override": {
-          "type": [
-            "boolean",
-            "null"
-          ]
+        "desktop_controller_layout_hack": {
+          "$ref": "#/definitions/DesktopControllerLayoutHack"
         },
         "exit_hooks_override": {
           "anyOf": [
@@ -2352,6 +2401,7 @@
     "PipelineDefinition": {
       "type": "object",
       "required": [
+        "desktop_controller_layout_hack",
         "id",
         "name",
         "platform",
@@ -2359,11 +2409,8 @@
         "toplevel"
       ],
       "properties": {
-        "desktop_layout_config_hack_override": {
-          "type": [
-            "boolean",
-            "null"
-          ]
+        "desktop_controller_layout_hack": {
+          "$ref": "#/definitions/DesktopControllerLayoutHack"
         },
         "exit_hooks_override": {
           "anyOf": [

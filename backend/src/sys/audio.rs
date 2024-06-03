@@ -72,21 +72,20 @@ fn parse_pactl_list(output: &str) -> Vec<AudioDeviceInfo> {
 
     for line in output.lines() {
         let trimmed = line.trim_start();
-        log::debug!("pactl line: {trimmed}");
         if let Some(captures) = trimmed.strip_prefix("Name: ") {
-            log::debug!("pactl got name: {captures}");
+            log::trace!("pactl got name: {captures}");
             name = captures.trim().to_string();
         } else if let Some(captures) = trimmed.strip_prefix("Description: ") {
-            log::debug!("pactl got description: {captures}");
+            log::trace!("pactl got description: {captures}");
             description = Some(captures.trim().to_string());
         } else if let Some(captures) = trimmed.strip_prefix("Sample Specification: ") {
-            log::debug!(
+            log::trace!(
                 "pactl got spec: {:?}",
                 captures.split_whitespace().collect::<Vec<_>>()
             );
             if let Some(channels_str) = captures.split_whitespace().nth(1) {
                 if let Ok(channelsval) = channels_str.trim_end_matches("ch").parse::<u8>() {
-                    log::debug!("pactl got channels: {channelsval:?}");
+                    log::trace!("pactl got channels: {channelsval:?}");
 
                     info.push(AudioDeviceInfo {
                         description: description.unwrap_or(name.clone()),

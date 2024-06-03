@@ -10,6 +10,8 @@ use smart_default::SmartDefault;
 use anyhow::{Context, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
+use serde_with::DefaultOnError;
 
 newtype_uuid!(ProfileId);
 newtype_strid!("The AppId in Steam", AppId);
@@ -36,8 +38,10 @@ pub struct Settings {
     env_source_path: PathBuf,
 }
 
+#[serde_as]
 #[derive(Debug, SmartDefault, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct GlobalConfig {
+    #[serde_as(deserialize_as = "DefaultOnError")]
     pub display_restoration: DesktopSessionHandler,
     #[default(false)]
     pub restore_displays_if_not_executing_pipeline: bool,
@@ -48,12 +52,16 @@ pub struct GlobalConfig {
     #[default(PipelineTarget::Gamemode)]
     pub primary_ui_target: PipelineTarget,
     /// Button chord to be used to exit profiles that register for exit hooks.
+    #[serde_as(deserialize_as = "DefaultOnError")]
     pub exit_hooks: ExitHooks,
     /// Overwrite the desktop layout with the game layout
-    pub use_desktop_controller_layout_hack: bool,
-    /// Logging level to use on startup. Uses the same number value as the typescript loglevels.
     #[default(3)]
     pub log_level: u8,
+    #[default(false)]
+    pub use_steam_desktop_controller_layout_hack: bool,
+    #[default(false)]
+    /// Overwrite the desktop layout with the game layout
+    pub use_nonsteam_desktop_controller_layout_hack: bool,
 }
 
 impl Settings {
@@ -181,6 +189,15 @@ pub struct AutoStartConfig {
     pub game_id: Either<AppId, GameId>,
     pub pipeline: Pipeline,
     pub env: DeckyEnv,
+    pub launch_info: SteamLaunchInfo,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SteamLaunchInfo {
+    pub app_id: AppId,
+    pub user_id_64: SteamUserId64,
+    pub game_title: String,
+    pub is_steam_game: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]

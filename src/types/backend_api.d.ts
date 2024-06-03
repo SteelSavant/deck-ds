@@ -99,6 +99,10 @@ export type Action =
   | {
       type: "MainAppAutomaticWindowing";
       value: MainAppAutomaticWindowing;
+    }
+  | {
+      type: "DesktopControllerLayoutHack";
+      value: DesktopControllerLayoutHack;
     };
 export type RelativeLocation = "Above" | "Below" | "LeftOf" | "RightOf" | "SameAs";
 export type ExternalDisplaySettings =
@@ -326,6 +330,7 @@ export interface AutoStartRequest {
   app_id: string;
   game_id?: string | null;
   game_title: string;
+  is_steam_game: boolean;
   profile_id: string;
   target: PipelineTarget;
   user_id_64: string;
@@ -334,7 +339,7 @@ export interface CreateProfileRequest {
   pipeline: PipelineDefinition;
 }
 export interface PipelineDefinition {
-  desktop_layout_config_hack_override?: boolean | null;
+  desktop_controller_layout_hack: DesktopControllerLayoutHack;
   exit_hooks_override?: ExitHooks | null;
   id: string;
   name: string;
@@ -342,6 +347,11 @@ export interface PipelineDefinition {
   primary_target_override?: PipelineTarget | null;
   should_register_exit_hooks: boolean;
   toplevel: TopLevelDefinition[];
+}
+export interface DesktopControllerLayoutHack {
+  id: string;
+  nonsteam_override?: boolean | null;
+  steam_override?: boolean | null;
 }
 /**
  * Defines a top-level action, with a root id and a unique set of actions. This allows multiple top-level actions of the same type, without complicating the structure too much.
@@ -615,7 +625,11 @@ export interface GlobalConfig {
   /**
    * Overwrite the desktop layout with the game layout
    */
-  use_desktop_controller_layout_hack: boolean;
+  use_nonsteam_desktop_controller_layout_hack: boolean;
+  /**
+   * Overwrite the desktop layout with the game layout
+   */
+  use_steam_desktop_controller_layout_hack: boolean;
 }
 export interface GetTemplatesResponse {
   templates: Template[];
@@ -654,7 +668,7 @@ export interface ReifyPipelineResponse {
 }
 export interface Pipeline {
   description: string;
-  desktop_layout_config_hack_override?: boolean | null;
+  desktop_controller_layout_hack: DesktopControllerLayoutHack;
   exit_hooks_override?: ExitHooks | null;
   name: string;
   primary_target_override?: PipelineTarget | null;
