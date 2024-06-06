@@ -38,7 +38,7 @@ Configuration is handled through profiles. Profiles can be applied to Steam cate
 
 Each profile allows configuring the application platform (either native or an emulator), as well as settings specific to each launch target.
 
-Profiles each have (up to) two launch targets: Desktop, and Gamemode. This allows customizing settings, such as display layout, per-profile and per-game, with different settings for Desktop and Gamemode; useful for Nintendo DS and 3DS emulators specifically.
+Platforms each have (up to) two launch targets: Desktop, and Gamemode. This allows customizing settings, such as display layout, per-profile and per-game, with different settings for Desktop and Gamemode; useful for Nintendo DS and 3DS emulators specifically.
 
 Currently, only display settings and (for emulators) emulator install source and layout options are configurable.
 
@@ -47,7 +47,6 @@ Currently, only display settings and (for emulators) emulator install source and
 DeckDS also has basic support for changing display settings when swapping to desktop mode normally, in addition to when launching games. Configurable settings include:
 
 -   Resolution
--   Refresh Rate
 -   Enabling/disabling the Deck's internal display
 -   Setting the location of the Deck's internal display relative to the primary output
 
