@@ -121,7 +121,9 @@ pub fn test_error() -> impl Fn(super::ApiParameterType) -> super::ApiParameterTy
     move |_| {
         ResponseErr(
             StatusCode::ServerError,
-            anyhow::anyhow!("An expected error occurred").context("This is a test error"),
+            anyhow::anyhow!("An expected error occurred")
+                .context("May you never see a real one.")
+                .context("This is a test."),
         )
         .to_response()
     }
