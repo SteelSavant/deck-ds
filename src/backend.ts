@@ -189,12 +189,12 @@ export async function initBackend() {
     init_usdpl(USDPL_PORT);
     await initLogger();
 
-    logger.debug('DeckDS: USDPL started for framework: ' + target_usdpl());
+    logger.debug('USDPL started for framework: ' + target_usdpl());
     const user_locale =
         navigator.languages && navigator.languages.length
             ? navigator.languages[0]
             : navigator.language;
-    logger.debug('DeckDS: locale', user_locale);
+    logger.debug('locale', user_locale);
     //let mo_path = "../plugins/DeckDS/translations/" + user_locale.toString() + ".mo";
     // await init_tr(user_locale);
     //await init_tr("../plugins/DeckDS/translations/test.mo");
@@ -216,7 +216,12 @@ export type Response<T> = Promise<Result<T, ApiError>>;
 
 let _id = 0;
 
-async function call_backend_typed<T, R>(fn: string, arg: T): Response<R> {
+async function call_backend_typed<T, R>(
+    fn: string,
+    arg?: T | null,
+): Response<R> {
+    arg = arg ?? null;
+
     // USDPL has a comparatively small content limit, so we chunk manually to bypass.
     const stringified = JSON.stringify(arg);
     const bytesLen = stringified.length;
@@ -242,7 +247,7 @@ async function call_backend_typed<T, R>(fn: string, arg: T): Response<R> {
                 );
 
                 let res = await call_backend('chunked_request', [id, slice]);
-                let typed = handle_backend_response<R>(res); // not really <R>, but we'll never return the OK, so its fine.
+                let typed = handle_backend_response<never>(res);
 
                 if (!typed.isOk) {
                     logger.trace('error chunking request', typed.err);
@@ -279,10 +284,11 @@ function handle_backend_response<T>(res: any[]): Result<T, ApiError> {
 
             const unspecifiedMsg = 'unspecified error occurred';
 
-            const logFn =
-                code === StatusCode.BadRequest ? logger.warn : logger.error;
+            const level =
+                code === StatusCode.BadRequest ? LogLevel.Warn : LogLevel.Error;
 
-            logFn(
+            logger.log(
+                level,
                 'DeckDS backend encountered error:',
                 res[2] ?? unspecifiedMsg,
             );
@@ -349,7 +355,7 @@ export async function deleteProfile(
 }
 
 export async function getProfiles(): Response<GetProfilesResponse> {
-    return await call_backend_typed('get_profiles', null);
+    return await call_backend_typed('get_profiles');
 }
 
 // AppProfile
@@ -394,37 +400,43 @@ export async function reifyPipeline(
 }
 
 export async function getToplevel(): Response<GetTopLevelResponse> {
-    return await call_backend_typed('get_toplevel', null);
+    return await call_backend_typed('get_toplevel');
 }
 
 // Templates
 
 export async function getTemplates(): Response<GetTemplatesResponse> {
-    return await call_backend_typed('get_templates', null);
+    return await call_backend_typed('get_templates');
 }
 
 // Secondary Apps
 
 export async function getSecondaryAppInfo(): Response<GetSecondaryAppInfoResponse> {
-    return await call_backend_typed('get_secondary_app_info', null);
+    return await call_backend_typed('get_secondary_app_info');
 }
 
 // Settings
 
 export async function getSettings(): Response<GetSettingsResponse> {
-    return await call_backend_typed('get_settings', null);
+    return await call_backend_typed('get_settings');
 }
 
 export async function setSettings(request: SetSettingsRequest): Response<void> {
     return await call_backend_typed('set_settings', request);
 }
 
-// system Info
+// System Info
 
 export async function getDisplayInfo(): Response<GetDisplayInfoResponse> {
-    return await call_backend_typed('get_display_info', null);
+    return await call_backend_typed('get_display_info');
 }
 
 export async function getAudioDeviceInfo(): Response<GetAudioDeviceInfoResponse> {
-    return await call_backend_typed('get_audio_device_info', null);
+    return await call_backend_typed('get_audio_device_info');
+}
+
+// Test
+
+export async function testBackendError(): Response<never> {
+    return await call_backend_typed('test_error');
 }

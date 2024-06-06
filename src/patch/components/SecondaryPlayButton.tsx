@@ -43,7 +43,7 @@ export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): React
     }
 
     logger.debug(
-        'DeckDS: patching secondary button with target: ',
+        'patching secondary button with target: ',
         target,
         'action:',
         action,

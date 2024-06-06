@@ -15,31 +15,29 @@ class Logger {
     }
 
     public trace(...args: any[]) {
-        this.logInternal(LogLevel.Trace, args);
+        this.log(LogLevel.Trace, args);
     }
 
     public debug(...args: any[]) {
-        this.logInternal(LogLevel.Debug, args);
+        this.log(LogLevel.Debug, args);
     }
 
     public info(...args: any[]) {
-        this.logInternal(LogLevel.Info, args);
+        this.log(LogLevel.Info, args);
     }
 
     public warn(...args: any[]) {
-        this.logInternal(LogLevel.Warn, args);
+        this.log(LogLevel.Warn, args);
     }
 
     public error(...args: any[]) {
-        this.logInternal(LogLevel.Error, args);
+        this.log(LogLevel.Error, args);
     }
 
-    private logInternal(level: LogLevel, ...args: any[]) {
+    public log(level: LogLevel, ...args: any[]) {
         if (level >= this.minLevel) {
             // TODO::would be nice if these formatted like normal console.log.
-            console.log(
-                ...[`DeckDS::${this.getStringForLevel(level)}:`, ...args],
-            );
+            console.log(`DeckDS::${this.getStringForLevel(level)}:`, ...args);
         }
     }
 

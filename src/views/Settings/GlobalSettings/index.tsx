@@ -1,18 +1,45 @@
-import { Dropdown, Field, Toggle } from 'decky-frontend-lib';
-import { Fragment, VFC } from 'react';
+import { DialogButton, Dropdown, Field, Toggle } from 'decky-frontend-lib';
+import { Fragment, VFC, useEffect, useState } from 'react';
+import { testBackendError } from '../../../backend';
 import { ActionChild } from '../../../components/ActionChild';
 import { EditAction } from '../../../components/EditAction';
 import { EditExitHooks } from '../../../components/EditExitHooks';
 import HandleLoading from '../../../components/HandleLoading';
+import { useServerApi } from '../../../context/serverApiContext';
 import useGlobalSettings from '../../../hooks/useGlobalSettings';
 import { LogLevel, logger } from '../../../util/log';
 
 export const GlobalSettingsPage: VFC = () => {
     const { settings, updateSettings } = useGlobalSettings();
 
+    const haveSettings = settings?.isOk;
+
+    const [debug, setDebug] = useState(false);
+
+    // toggle debug settings on if they've been changed previously
+    useEffect(() => {
+        if (haveSettings) {
+            const usingDefaultDebugSettings =
+                settings.data.log_level === LogLevel.Info;
+            setDebug(!usingDefaultDebugSettings);
+        }
+    }, [haveSettings]);
+
+    const serverApi = useServerApi();
+
     const Builder = ActionChild;
 
-    // TODO::global config for editing exit hooks
+    async function testError() {
+        const res = await testBackendError();
+        if (res.isOk) {
+            throw Error('Test error should be error');
+        }
+
+        serverApi.toaster.toast({
+            title: 'Error',
+            body: res.err.err,
+        });
+    }
 
     return (
         <HandleLoading
@@ -165,50 +192,71 @@ export const GlobalSettingsPage: VFC = () => {
                                 }
                             />
                         </Builder>
-                        <Field label="Debug" />
-                        <Builder
-                            indentLevel={1}
-                            label="Log Level"
-                            description="Sets the log level for both the frontend and backend. Useful for debugging. Don't touch this unless you need to."
+                        <Field
+                            label="Debug"
+                            description="Advanced options for development/troubleshooting. Don't touch this unless you need to."
                         >
-                            <Dropdown
-                                selectedOption={settings.log_level}
-                                rgOptions={[
-                                    LogLevel.Trace,
-                                    LogLevel.Debug,
-                                    LogLevel.Info,
-                                    LogLevel.Warn,
-                                    LogLevel.Error,
-                                ].map((l) => {
-                                    const label = (function () {
-                                        switch (l) {
-                                            case LogLevel.Trace:
-                                                return 'Trace';
-                                            case LogLevel.Debug:
-                                                return 'Debug';
-                                            case LogLevel.Info:
-                                                return 'Info';
-                                            case LogLevel.Warn:
-                                                return 'Warn';
-                                            case LogLevel.Error:
-                                                return 'Error';
-                                        }
-                                    })();
+                            <Toggle value={debug} onChange={setDebug} />
+                        </Field>
+                        {debug ? (
+                            <>
+                                <Builder
+                                    indentLevel={1}
+                                    label="Log Level"
+                                    description="Sets the log level for both the frontend and backend. Useful for debugging."
+                                >
+                                    <Dropdown
+                                        selectedOption={settings.log_level}
+                                        rgOptions={[
+                                            LogLevel.Trace,
+                                            LogLevel.Debug,
+                                            LogLevel.Info,
+                                            LogLevel.Warn,
+                                            LogLevel.Error,
+                                        ].map((l) => {
+                                            const label = (function () {
+                                                switch (l) {
+                                                    case LogLevel.Trace:
+                                                        return 'Trace';
+                                                    case LogLevel.Debug:
+                                                        return 'Debug';
+                                                    case LogLevel.Info:
+                                                        return 'Info';
+                                                    case LogLevel.Warn:
+                                                        return 'Warn';
+                                                    case LogLevel.Error:
+                                                        return 'Error';
+                                                }
+                                            })();
 
-                                    return {
-                                        label,
-                                        data: l,
-                                    };
-                                })}
-                                onChange={(props) => {
-                                    logger.minLevel = props.data;
-                                    updateSettings({
-                                        ...settings,
-                                        log_level: props.data,
-                                    });
-                                }}
-                            />
-                        </Builder>
+                                            return {
+                                                label,
+                                                data: l,
+                                            };
+                                        })}
+                                        onChange={(props) => {
+                                            logger.minLevel = props.data;
+                                            updateSettings({
+                                                ...settings,
+                                                log_level: props.data,
+                                            });
+                                        }}
+                                    />
+                                </Builder>
+                                <Builder
+                                    indentLevel={1}
+                                    label="Backend Error Test"
+                                    description="Tests backend error response + notification."
+                                >
+                                    <DialogButton
+                                        onOKButton={testError}
+                                        onClick={testError}
+                                    >
+                                        Test
+                                    </DialogButton>
+                                </Builder>
+                            </>
+                        ) : null}
                     </>
                 );
             }}

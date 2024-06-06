@@ -5,7 +5,6 @@ Useful Resources:
 */
 
 import {
-    ButtonItem,
     definePlugin,
     DialogButton,
     findModuleChild,
@@ -26,7 +25,7 @@ import {
 } from './context/appContext';
 import { ServerApiProvider } from './context/serverApiContext';
 import patchLibraryApp from './patch/patchLibraryApp';
-import { logger, LogLevel } from './util/log';
+import { LogLevel } from './util/log';
 import QAM from './views/QAM';
 import ProfileRoute from './views/Settings/Profiles/ProfileRoute';
 import SettingsRouter from './views/Settings/SettingsRouter';
@@ -53,17 +52,6 @@ const Content: VFC<{ serverApi: ServerAPI }> = ({ serverApi }) => {
         return (
             <PanelSection>
                 USDPL or DeckDS's backend did not start correctly!
-                <ButtonItem
-                    layout="below"
-                    onClick={(_: MouseEvent) => {
-                        logger.info(
-                            'DeckDS: manual reload after startup failure',
-                        );
-                        // reload();
-                    }}
-                >
-                    Reload
-                </ButtonItem>
             </PanelSection>
         );
     }

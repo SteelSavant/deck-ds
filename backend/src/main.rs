@@ -91,9 +91,8 @@ fn main() -> Result<()> {
         }
     );
 
-    let settings = Settings::new(env::current_exe()?, &decky_env);
-
     let log_filepath = decky_env.decky_plugin_log_dir.join(log_file_name);
+    let settings = Settings::new(env::current_exe()?, &decky_env);
 
     WriteLogger::init(
         #[cfg(debug_assertions)]
@@ -152,7 +151,6 @@ fn main() -> Result<()> {
 
     let registrar = PipelineActionRegistrar::builder().with_core().build();
 
-    let settings = Settings::new(env::current_exe()?, &decky_env);
     let global_config = settings.get_global_cfg();
 
     let settings = Arc::new(Mutex::new(settings));
@@ -358,7 +356,9 @@ fn main() -> Result<()> {
                         settings.clone(),
                         decky_env.clone(),
                     ),
-                );
+                )
+                // test
+                .register("test_error", crate::api::general::test_error());
 
             instance
                 .run_blocking()

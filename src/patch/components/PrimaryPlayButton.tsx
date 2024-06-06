@@ -55,7 +55,7 @@ export default function PrimaryPlayButton({
     }, []);
 
     logger.debug(
-        'DeckDS: patching play button with target: ',
+        'patching play button with target: ',
         target,
         'action:',
         action,

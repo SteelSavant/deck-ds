@@ -65,8 +65,8 @@ struct ResponseErr(StatusCode, anyhow::Error);
 impl ToResponseType for ResponseErr {
     fn to_response(&self) -> ApiParameterType {
         log::warn!("returning error response: {:#?}", self.1);
-        let display_err = Primitive::String(format!("Error: {}", self.1));
-        let log_err = Primitive::String(format!("Error: {:#?}", self.1));
+        let display_err = Primitive::String(format!("{}", self.1));
+        let log_err = Primitive::String(format!("{:#?}", self.1));
 
         vec![self.0.into(), display_err, log_err]
     }
