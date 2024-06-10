@@ -1,6 +1,7 @@
 import { ConfirmModal, Dropdown, Navigation } from 'decky-frontend-lib';
 import { ReactElement, useState } from 'react';
 import { Template, createProfile, getProfile, setProfile } from '../backend';
+import { logger } from '../util/log';
 
 export function CreateProfileFromCollectionModal({
     templates,
@@ -73,8 +74,17 @@ export function CreateProfileFromCollectionModal({
                             closeModal!();
                         } else {
                             setDone(false);
-                            // TODO::error handling
+                            logger.toastWarn(
+                                'Failed to create set:',
+                                savedProfile.err.err,
+                            );
                         }
+                    } else {
+                        setDone(true);
+                        logger.toastWarn(
+                            'Failed to create set:',
+                            profile.err.err,
+                        );
                     }
                 }
             }}

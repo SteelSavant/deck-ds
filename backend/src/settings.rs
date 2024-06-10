@@ -54,8 +54,10 @@ pub struct GlobalConfig {
     /// Button chord to be used to exit profiles that register for exit hooks.
     #[serde_as(deserialize_as = "DefaultOnError")]
     pub exit_hooks: ExitHooks,
-    #[default(false)]
     /// Overwrite the desktop layout with the game layout
+    #[default(3)]
+    pub log_level: u8,
+    #[default(false)]
     pub use_steam_desktop_controller_layout_hack: bool,
     #[default(false)]
     /// Overwrite the desktop layout with the game layout

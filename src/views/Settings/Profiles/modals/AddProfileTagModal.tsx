@@ -1,22 +1,31 @@
 import { ConfirmModal, Dropdown, Focusable } from 'decky-frontend-lib';
 import { ReactElement, useState } from 'react';
+import { logger } from '../../../../util/log';
+import { Result } from '../../../../util/result';
 
 export default function CreateProfileTagModal({
     onSave,
     closeModal,
 }: {
-    onSave: (tag: string) => void;
+    onSave: (
+        tag: string,
+    ) => Promise<Result<void, string>> | Result<void, string>;
     closeModal?: () => void;
 }): ReactElement {
     const [selected, setSelected] = useState<string | null>(null);
     return (
         <ConfirmModal
             strTitle="Add Collection"
-            onOK={() => {
+            onOK={async () => {
                 if (selected != null) {
-                    onSave(selected);
+                    const res = await onSave(selected);
+
+                    if (res.isOk) {
+                        closeModal!();
+                    } else {
+                        logger.toastWarn('Failed to create profile:', res.err);
+                    }
                 }
-                closeModal!();
             }}
             onCancel={closeModal}
             onEscKeypress={closeModal}

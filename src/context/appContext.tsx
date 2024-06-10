@@ -20,6 +20,7 @@ import {
 import { PipelineActionLookup } from '../types/backend_api';
 import { MaybeString } from '../types/short';
 import { Loading } from '../util/loading';
+import { logger } from '../util/log';
 import { patchPipeline, PipelineUpdate } from '../util/patchPipeline';
 import { Result } from '../util/result';
 
@@ -109,14 +110,14 @@ export class ShortAppDetailsState {
 
         // defer updates to external profiles, to avoid complexity of local state
         if (action.externalProfile) {
-            console.log('is external profile update');
+            logger.debug('is external profile update');
             await this.updateExternalProfile(
                 action.externalProfile,
                 action.update,
             );
         } else {
             if (this.appProfile?.isOk) {
-                console.log(
+                logger.debug(
                     profileId,
                     'is pipeline update; current state:',
                     this.appProfile,
@@ -137,10 +138,10 @@ export class ShortAppDetailsState {
                     if (res.isOk) {
                         await res.data;
                     } else {
-                        console.log('error updating profile', res.err);
+                        logger.toastWarn('error updating profile', res.err);
                     }
                 } else {
-                    console.log(
+                    logger.toastError(
                         'pipeline should already be loaded before updating',
                         pipeline,
                     );
@@ -163,18 +164,17 @@ export class ShortAppDetailsState {
         if (res?.isOk) {
             this.refetchProfile(defaultProfileId, appDetails.appId);
         } else {
-            console.log(
+            logger.toastError(
                 'failed to set app(',
                 appDetails.appId,
                 ') default to',
                 defaultProfileId,
             );
         }
-        // TODO::error handling
     }
 
     async loadProfileOverride(appId: number, profileId: string) {
-        console.log('loading app profile');
+        logger.debug('loading app profile');
         let shouldUpdate = false;
         if (this.appDetails?.appId === appId && this.appProfile?.isOk) {
             const overrides = this.appProfile.data.overrides;
@@ -184,17 +184,21 @@ export class ShortAppDetailsState {
                 });
                 if (res.isOk && res.data.pipeline) {
                     overrides[profileId] = res.data.pipeline;
-                    console.log(
+                    logger.debug(
                         'set override for',
                         profileId,
                         'to',
                         overrides[profileId],
                     );
                     shouldUpdate = true;
+                } else if (!res.isOk) {
+                    logger.toastWarn(
+                        'Failed to initialize app profile:',
+                        res.err.err,
+                    );
                 }
-                // TODO::error handling
             } else {
-                console.log('existing override found:', overrides[profileId]);
+                logger.debug('existing override found:', overrides[profileId]);
             }
 
             if (overrides[profileId]) {
@@ -208,7 +212,7 @@ export class ShortAppDetailsState {
                     ),
                 );
                 this.reifiedPipelines[profileId] = res;
-                console.log(
+                logger.debug(
                     'load reified to:',
                     this.reifiedPipelines[profileId],
                 );
@@ -246,14 +250,13 @@ export class ShortAppDetailsState {
             });
             this.refetchProfile(profileId, appId);
         } else {
-            console.log(
+            logger.toastWarn(
                 'failed to set app(',
                 appId,
                 ') override for',
                 profileId,
             );
         }
-        // TODO::error handling
     }
 
     private async updateExternalProfile(
@@ -282,17 +285,14 @@ export class ShortAppDetailsState {
                 if (res?.isOk) {
                     this.refetchProfile(profileId);
                 } else {
-                    console.log('failed to set external profile', profileId);
+                    logger.warn('failed to set external profile', profileId);
                 }
             } else {
-                console.log('external profile', profileId, 'not found');
+                logger.toastWarn('external profile', profileId, 'not found');
             }
-            // TODO::error handling
         } else {
-            console.log('failed to fetch external profile', profileId);
+            logger.toastWarn('failed to fetch external profile', profileId);
         }
-
-        // TODO::error handling
     }
 
     private async refetchProfile(
@@ -318,7 +318,7 @@ export class ShortAppDetailsState {
                 }
 
                 if (!this.appProfile?.isOk) {
-                    console.log(
+                    logger.toastWarn(
                         'failed to refetch app(',
                         appIdToMatch,
                         ')',
@@ -342,7 +342,7 @@ export class ShortAppDetailsState {
                         this.reifiedPipelines[k] = reified;
                     }
 
-                    console.log(
+                    logger.debug(
                         'refetched; updating to',
                         this.appProfile.data?.overrides,
                     );
@@ -359,12 +359,13 @@ export class ShortAppDetailsState {
         time: number,
     ) {
         const areEqual = _.isEqual(appDetails, this.appDetails);
-        console.log('trying to set app to', appDetails?.sortAs);
+        logger.trace('trying to set app to', appDetails?.sortAs);
+
         if (time < this.lastOnAppPageTime || areEqual) {
             return;
         }
 
-        console.log('setting app to ', appDetails?.sortAs);
+        logger.trace('setting app to ', appDetails?.sortAs);
 
         this.appDetails = appDetails;
         this.appProfile = null;
@@ -528,7 +529,7 @@ function patchProfileOverridesForMissing(
         }
     }
 
-    console.log('reify response after patch: ', response.pipeline);
+    logger.debug('reify response after patch: ', response.pipeline);
 
     return response;
 }

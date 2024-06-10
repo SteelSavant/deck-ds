@@ -1,17 +1,39 @@
-import { Dropdown, Field, Toggle } from 'decky-frontend-lib';
-import { Fragment, VFC } from 'react';
+import { DialogButton, Dropdown, Field, Toggle } from 'decky-frontend-lib';
+import { Fragment, VFC, useEffect, useState } from 'react';
+import { testBackendError } from '../../../backend';
 import { ActionChild } from '../../../components/ActionChild';
 import { EditAction } from '../../../components/EditAction';
 import { EditExitHooks } from '../../../components/EditExitHooks';
 import HandleLoading from '../../../components/HandleLoading';
 import useGlobalSettings from '../../../hooks/useGlobalSettings';
+import { LogLevel, logger } from '../../../util/log';
 
 export const GlobalSettingsPage: VFC = () => {
     const { settings, updateSettings } = useGlobalSettings();
 
+    const haveSettings = settings?.isOk;
+
+    const [debug, setDebug] = useState(false);
+
+    // toggle debug settings on if they've been changed previously
+    useEffect(() => {
+        if (haveSettings) {
+            const usingDefaultDebugSettings =
+                settings.data.log_level === LogLevel.Info;
+            setDebug(!usingDefaultDebugSettings);
+        }
+    }, [haveSettings]);
+
     const Builder = ActionChild;
 
-    // TODO::global config for editing exit hooks
+    async function testError() {
+        const res = await testBackendError();
+        if (res.isOk) {
+            throw Error('Test error should be error');
+        }
+
+        logger.toastError(res.err.err);
+    }
 
     return (
         <HandleLoading
@@ -28,18 +50,20 @@ export const GlobalSettingsPage: VFC = () => {
                         />
                         <Builder
                             label="Exit Hooks"
-                            description="The button chord to hold to exit the app in desktop mode, if enabled."
+                            description="The button chord to hold to exit the app in desktop mode, if enabled. These are the buttons mapped in Steam Input, not guaranteed to match the physical buttons."
                             indentLevel={1}
                             // TODO::consider dropdown arrow child to expand/hide the edit, since moving the "add chord button" into the field is inconvenient
                         />
                         <EditExitHooks
                             exitHooks={settings.exit_hooks}
                             indentLevel={2}
-                            onChange={(hooks) => {
-                                updateSettings({
+                            onChange={async (hooks) => {
+                                const res = await updateSettings({
                                     ...settings,
                                     exit_hooks: hooks,
                                 });
+
+                                return res.mapErr((e) => e.err);
                             }}
                         />
                         <Builder
@@ -57,12 +81,19 @@ export const GlobalSettingsPage: VFC = () => {
                                 value={
                                     settings.use_steam_desktop_controller_layout_hack
                                 }
-                                onChange={(value) => {
-                                    updateSettings({
+                                onChange={async (value) => {
+                                    const res = await updateSettings({
                                         ...settings,
                                         use_steam_desktop_controller_layout_hack:
                                             value,
                                     });
+
+                                    if (!res.isOk) {
+                                        logger.toastWarn(
+                                            'Failed to update settings:',
+                                            res.err.err,
+                                        );
+                                    }
                                 }}
                             />
                         </Builder>
@@ -74,12 +105,19 @@ export const GlobalSettingsPage: VFC = () => {
                                 value={
                                     settings.use_nonsteam_desktop_controller_layout_hack
                                 }
-                                onChange={(value) => {
-                                    updateSettings({
+                                onChange={async (value) => {
+                                    const res = await updateSettings({
                                         ...settings,
                                         use_nonsteam_desktop_controller_layout_hack:
                                             value,
                                     });
+
+                                    if (!res.isOk) {
+                                        logger.toastWarn(
+                                            'Failed to update settings:',
+                                            res.err.err,
+                                        );
+                                    }
                                 }}
                             />
                         </Builder>
@@ -95,14 +133,21 @@ export const GlobalSettingsPage: VFC = () => {
                                 value: settings.display_restoration,
                             }}
                             indentLevel={1}
-                            onChange={(action) => {
+                            onChange={async (action) => {
                                 if (action.type !== 'DesktopSessionHandler') {
                                     throw 'display settings are incorrect type; something has gone terribly wrong...';
                                 }
-                                updateSettings({
+                                const res = await updateSettings({
                                     ...settings,
                                     display_restoration: action.value,
                                 });
+
+                                if (!res.isOk) {
+                                    logger.toastWarn(
+                                        'Failed to update settings:',
+                                        res.err.err,
+                                    );
+                                }
                             }}
                         />
                         <Builder
@@ -114,12 +159,19 @@ export const GlobalSettingsPage: VFC = () => {
                                 value={
                                     settings.restore_displays_if_not_executing_pipeline
                                 }
-                                onChange={(value) => {
-                                    updateSettings({
+                                onChange={async (value) => {
+                                    const res = await updateSettings({
                                         ...settings,
                                         restore_displays_if_not_executing_pipeline:
                                             value,
                                     });
+
+                                    if (!res.isOk) {
+                                        logger.toastWarn(
+                                            'Failed to update settings:',
+                                            res.err.err,
+                                        );
+                                    }
                                 }}
                             />
                         </Builder>
@@ -131,11 +183,18 @@ export const GlobalSettingsPage: VFC = () => {
                         >
                             <Toggle
                                 value={settings.enable_ui_inject}
-                                onChange={(value) => {
-                                    updateSettings({
+                                onChange={async (value) => {
+                                    const res = await updateSettings({
                                         ...settings,
                                         enable_ui_inject: value,
                                     });
+
+                                    if (!res.isOk) {
+                                        logger.toastWarn(
+                                            'Failed to update settings:',
+                                            res.err.err,
+                                        );
+                                    }
                                 }}
                             />
                         </Builder>
@@ -154,16 +213,95 @@ export const GlobalSettingsPage: VFC = () => {
                                 })}
                                 onChange={
                                     settings.enable_ui_inject
-                                        ? (data) => {
-                                              updateSettings({
+                                        ? async (data) => {
+                                              const res = await updateSettings({
                                                   ...settings,
                                                   primary_ui_target: data.data,
                                               });
+
+                                              if (!res.isOk) {
+                                                  logger.toastWarn(
+                                                      'Failed to update settings:',
+                                                      res.err.err,
+                                                  );
+                                              }
                                           }
                                         : undefined
                                 }
                             />
                         </Builder>
+                        <Field
+                            label="Developer"
+                            description="Advanced options for development/troubleshooting. Don't touch this unless you need to."
+                        >
+                            <Toggle value={debug} onChange={setDebug} />
+                        </Field>
+                        {debug ? (
+                            <>
+                                <Builder
+                                    indentLevel={1}
+                                    label="Log Level"
+                                    description="Sets the log level for both the frontend and backend. Useful for debugging."
+                                >
+                                    <Dropdown
+                                        selectedOption={settings.log_level}
+                                        rgOptions={[
+                                            LogLevel.Trace,
+                                            LogLevel.Debug,
+                                            LogLevel.Info,
+                                            LogLevel.Warn,
+                                            LogLevel.Error,
+                                        ].map((l) => {
+                                            const label = (function () {
+                                                switch (l) {
+                                                    case LogLevel.Trace:
+                                                        return 'Trace';
+                                                    case LogLevel.Debug:
+                                                        return 'Debug';
+                                                    case LogLevel.Info:
+                                                        return 'Info';
+                                                    case LogLevel.Warn:
+                                                        return 'Warn';
+                                                    case LogLevel.Error:
+                                                        return 'Error';
+                                                }
+                                            })();
+
+                                            return {
+                                                label,
+                                                data: l,
+                                            };
+                                        })}
+                                        onChange={async (props) => {
+                                            logger.minLevel = props.data;
+                                            const res = await updateSettings({
+                                                ...settings,
+                                                log_level: props.data,
+                                            });
+
+                                            if (!res.isOk) {
+                                                logger.toastWarn(
+                                                    'Failed to update settings:',
+                                                    res.err.err,
+                                                );
+                                            }
+                                        }}
+                                    />
+                                </Builder>
+                                <Builder
+                                    indentLevel={1}
+                                    label="Backend Error Test"
+                                    description="Tests backend error response + notification."
+                                >
+                                    <DialogButton
+                                        onOKButton={testError}
+                                        onClick={testError}
+                                    >
+                                        Test
+                                    </DialogButton>
+                                </Builder>
+                            </>
+                        ) : null}
                     </>
                 );
             }}

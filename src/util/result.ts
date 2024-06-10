@@ -18,6 +18,14 @@ module Impl {
             }
         }
 
+        public mapErr<R>(fn: (err: E) => R): Result<T, R> {
+            if (this.isOk) {
+                return Ok(this.data);
+            } else {
+                return Err(fn(this.err));
+            }
+        }
+
         public andThen<R>(fn: (res: T) => Result<R, E>): Result<R, E> {
             if (this.isOk) {
                 return fn(this.data);
@@ -43,6 +51,7 @@ export module Result {
         isOk: true;
         data: T;
         map<R>(fn: (data: T) => R): Result<R, E>;
+        mapErr<R>(fn: (data: E) => R): Result<T, R>;
         andThen<R>(fn: (res: T) => Result<R, E>): Result<R, E>;
         andThenAsync<R>(
             fn: (res: T) => Promise<Result<R, E>>,
@@ -53,6 +62,7 @@ export module Result {
         isOk: false;
         err: E;
         map<R>(fn: (data: T) => R): Result<R, E>;
+        mapErr<R>(fn: (data: E) => R): Result<T, R>;
         andThen<R>(fn: (res: T) => Result<R, E>): Result<R, E>;
         andThenAsync<R>(
             fn: (res: T) => Promise<Result<R, E>>,

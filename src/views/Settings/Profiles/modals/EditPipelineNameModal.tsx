@@ -1,6 +1,8 @@
 import { ConfirmModal, TextField } from 'decky-frontend-lib';
 import { ReactElement, useState } from 'react';
 import { PipelineDefinition } from '../../../../backend';
+import { logger } from '../../../../util/log';
+import { Result } from '../../../../util/result';
 
 export default function EditProfileNameModal({
     pipeline,
@@ -8,7 +10,9 @@ export default function EditProfileNameModal({
     closeModal,
 }: {
     pipeline: PipelineDefinition;
-    onSave: (name: string) => void;
+    onSave: (
+        name: string,
+    ) => Promise<Result<void, string>> | Result<void, string>;
     closeModal?: () => void;
 }): ReactElement {
     const [name, setName] = useState(pipeline.name);
@@ -18,9 +22,14 @@ export default function EditProfileNameModal({
             strTitle="Edit Profile Name"
             strOKButtonText="Save"
             strCancelButtonText="Cancel"
-            onOK={() => {
-                onSave(name);
-                closeModal!();
+            onOK={async () => {
+                const res = await onSave(name);
+
+                if (res.isOk) {
+                    closeModal!();
+                } else {
+                    logger.toastWarn('Failed to update profile name:', res.err);
+                }
             }}
             onCancel={closeModal}
             onEscKeypress={closeModal}

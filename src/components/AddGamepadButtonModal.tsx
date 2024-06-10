@@ -1,6 +1,8 @@
 import { ConfirmModal, Dropdown } from 'decky-frontend-lib';
 import { ReactElement, useState } from 'react';
 import { GamepadButtonSelection } from '../backend';
+import { logger } from '../util/log';
+import { Result } from '../util/result';
 
 export function AddGamepadButtonModal({
     buttons,
@@ -8,7 +10,9 @@ export function AddGamepadButtonModal({
     closeModal,
 }: {
     buttons: GamepadButtonSelection[];
-    onSave: (button: GamepadButtonSelection) => void;
+    onSave: (
+        button: GamepadButtonSelection,
+    ) => Promise<Result<void, string>> | Result<void, string>;
     closeModal?: () => void;
 }): ReactElement {
     const [button, setButton] = useState<GamepadButtonSelection>(buttons[0]);
@@ -16,12 +20,16 @@ export function AddGamepadButtonModal({
 
     return (
         <ConfirmModal
-            onOK={() => {
+            onOK={async () => {
                 if (!done) {
                     setDone(true);
-                    onSave(button);
+                    const res = await onSave(button);
+                    if (res.isOk) {
+                        closeModal!();
+                    } else {
+                        logger.toastWarn(res.err);
+                    }
                 }
-                closeModal!();
             }}
             onCancel={closeModal}
             onEscKeypress={closeModal}

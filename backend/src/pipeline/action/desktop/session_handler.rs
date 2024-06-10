@@ -196,7 +196,7 @@ impl ActionImpl for DesktopSessionHandler {
 
         let secondary_text = match &ctx.exit_hooks {
             Some(hooks) =>
-                    format!("hold \"{}\"\nto exit game after launch", hooks.iter().map(|v| format!("{v}")).collect::<Vec<_>>().join("\" + \"")),
+                    format!("hold WHATEVER STEAM INPUT HAS BOUND for \n\"{}\"\nto exit game after launch", hooks.iter().map(|v| format!("{v}")).collect::<Vec<_>>().join("\" + \"")),
                     None =>"exit hooks not registered;\nuse Steam Input mapping or press (Alt+F4) to exit\ngame after launch".to_string()
         };
 

@@ -13,7 +13,7 @@ import {
     Response,
 } from '../../../backend';
 import FocusableRow from '../../../components/FocusableRow';
-import { useServerApi } from '../../../context/serverApiContext';
+import { logger } from '../../../util/log';
 
 export default function ProfileMenuItem({
     profile,
@@ -22,8 +22,6 @@ export default function ProfileMenuItem({
     profile: CategoryProfile;
     deleteProfile: (request: DeleteProfileRequest) => Response<void>;
 }): ReactElement {
-    const serverApi = useServerApi();
-
     function viewProfile() {
         const route = `/deck-ds/settings/profiles/${profile.id}`;
         Navigation.Navigate(route);
@@ -40,10 +38,10 @@ export default function ProfileMenuItem({
                 onOK={async () => {
                     const res = await deleteProfile({ profile: profile.id });
                     if (!res.isOk) {
-                        serverApi.toaster.toast({
-                            title: 'Error',
-                            body: `Failed to delete profile.`,
-                        });
+                        logger.toastError(
+                            `Failed to delete profile.`,
+                            res.err.err,
+                        );
                     }
                 }}
             />,

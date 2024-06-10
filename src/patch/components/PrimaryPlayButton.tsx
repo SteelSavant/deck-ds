@@ -4,6 +4,7 @@ import { IconForTarget } from '../../components/IconForTarget';
 import { useAppState } from '../../context/appContext';
 import useAppTarget from '../../hooks/useAppTarget';
 import useLaunchActions from '../../hooks/useLaunchActions';
+import { logger } from '../../util/log';
 
 interface PrimaryPlayButtonProps {
     deckDSGameModeSentinel: 'sentinel';
@@ -30,7 +31,8 @@ export default function PrimaryPlayButton({
         isPrimary: true,
         profileId: action?.profile.id ?? null,
     });
-    console.log(
+
+    logger.trace(
         'primary play loading:',
         'ad:',
         appDetails,
@@ -52,8 +54,8 @@ export default function PrimaryPlayButton({
         }, 750);
     }, []);
 
-    console.log(
-        'DeckDS: patching play button with target: ',
+    logger.debug(
+        'patching play button with target: ',
         target,
         'action:',
         action,

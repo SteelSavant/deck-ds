@@ -3,12 +3,16 @@ import { ReactElement, useState } from 'react';
 import HandleLoading from '../../../../components/HandleLoading';
 import useToplevel from '../../../../hooks/useToplevel';
 import { ToplevelInfo } from '../../../../types/backend_api';
+import { logger } from '../../../../util/log';
+import { Result } from '../../../../util/result';
 
 export default function AddToplevelActionModal({
     onSave,
     closeModal,
 }: {
-    onSave: (info: ToplevelInfo) => void;
+    onSave: (
+        info: ToplevelInfo,
+    ) => Promise<Result<void, string>> | Result<void, string>;
     closeModal?: () => void;
 }): ReactElement {
     const toplevel = useToplevel();
@@ -17,13 +21,25 @@ export default function AddToplevelActionModal({
     return (
         <ConfirmModal
             strTitle="Add Action"
-            onOK={() => {
-                if (state) {
-                    onSave(state);
-                } else if (toplevel?.isOk && toplevel.data[0]) {
-                    onSave(toplevel.data[0]);
+            onOK={async () => {
+                const saved = await (async function () {
+                    if (state) {
+                        return await onSave(state);
+                    } else if (toplevel?.isOk && toplevel.data[0]) {
+                        return await onSave(toplevel.data[0]);
+                    } else {
+                        return null;
+                    }
+                })();
+
+                if (saved && !saved.isOk) {
+                    logger.toastWarn(
+                        'Failed to add toplevel action:',
+                        saved.err,
+                    );
+                } else {
+                    closeModal!();
                 }
-                closeModal!();
             }}
             onCancel={closeModal}
             onEscKeypress={closeModal}

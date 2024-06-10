@@ -1691,6 +1691,7 @@
         "display_restoration",
         "enable_ui_inject",
         "exit_hooks",
+        "log_level",
         "primary_ui_target",
         "restore_displays_if_not_executing_pipeline",
         "use_nonsteam_desktop_controller_layout_hack",
@@ -1712,6 +1713,12 @@
             }
           ]
         },
+        "log_level": {
+          "description": "Overwrite the desktop layout with the game layout",
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        },
         "primary_ui_target": {
           "description": "If `enable_ui_inject` is true, set the \"Play\" button to this target",
           "allOf": [
@@ -1728,7 +1735,6 @@
           "type": "boolean"
         },
         "use_steam_desktop_controller_layout_hack": {
-          "description": "Overwrite the desktop layout with the game layout",
           "type": "boolean"
         }
       }

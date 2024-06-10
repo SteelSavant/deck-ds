@@ -11,7 +11,6 @@ import {
     ModifiablePipelineContainerProvider,
     useModifiablePipelineContainer,
 } from '../../../context/modifiablePipelineContext';
-import { useServerApi } from '../../../context/serverApiContext';
 import useProfile from '../../../hooks/useProfile';
 import PipelineDisplay from '../../PipelineDisplay';
 import ProfileInfo from './ProfileInfo';
@@ -20,8 +19,6 @@ import EditProfileNameModal from './modals/EditPipelineNameModal';
 export default function ProfilePreviewRoute(): ReactElement {
     const { profileid } = useParams<{ profileid: string }>();
     const profile = useProfile(profileid);
-
-    const serverApi = useServerApi();
 
     return (
         <HandleLoading
@@ -44,16 +41,9 @@ export default function ProfilePreviewRoute(): ReactElement {
                                     throw 'PipelineContainer should be CategoryProfile';
                                 }
 
-                                const res = await setProfile({
+                                return await setProfile({
                                     profile: profile,
                                 });
-
-                                if (!res.isOk) {
-                                    serverApi.toaster.toast({
-                                        title: 'Error',
-                                        body: 'Failed to update profile.',
-                                    });
-                                }
                             }}
                         >
                             <PipelineDisplay
@@ -75,16 +65,18 @@ function PipelineHeader(container: PipelineContainer): ReactElement {
         showModal(
             <EditProfileNameModal
                 pipeline={state.container.pipeline}
-                onSave={(name) => {
-                    dispatch({
-                        update: {
-                            type: 'updatePipelineInfo',
-                            info: {
-                                ...container.pipeline,
-                                name: name,
+                onSave={async (name) => {
+                    return (
+                        await dispatch({
+                            update: {
+                                type: 'updatePipelineInfo',
+                                info: {
+                                    ...container.pipeline,
+                                    name: name,
+                                },
                             },
-                        },
-                    });
+                        })
+                    ).mapErr((e) => e.err);
                 }}
             />,
         );

@@ -752,8 +752,6 @@ function SecondaryFlatpakApp({
         <HandleLoading
             value={secondaryInfo}
             onOk={(secondaryInfo) => {
-                // TODO::per-arg reorderable list (likely in a popup-menu), rather than a comma-separated list
-
                 const windowing = cloned.value.windowing_behavior;
 
                 var i = 0;
@@ -1134,11 +1132,7 @@ function ExternalDisplaySettingsSelector({
                                 settings,
                                 comparator,
                             );
-                            console.log(
-                                `equal(${JSON.stringify(
-                                    v.data,
-                                )}, ${JSON.stringify(settings)}): ${equal}`,
-                            );
+
                             return equal;
                         });
                     }
@@ -1276,11 +1270,6 @@ function CemuAudioSelector({
                                         });
                                     }
                                 });
-
-                                console.log(
-                                    'selected (before):',
-                                    JSON.stringify(deviceSelected),
-                                );
 
                                 if (deviceSelected?.label === 'Custom') {
                                     deviceSelected =

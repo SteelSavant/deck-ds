@@ -5,7 +5,6 @@ Useful Resources:
 */
 
 import {
-    ButtonItem,
     definePlugin,
     DialogButton,
     findModuleChild,
@@ -26,6 +25,7 @@ import {
 } from './context/appContext';
 import { ServerApiProvider } from './context/serverApiContext';
 import patchLibraryApp from './patch/patchLibraryApp';
+import { logger, LogLevel } from './util/log';
 import QAM from './views/QAM';
 import ProfileRoute from './views/Settings/Profiles/ProfileRoute';
 import SettingsRouter from './views/Settings/SettingsRouter';
@@ -42,26 +42,18 @@ var usdplReady = false;
 
 (async function () {
     await backend.initBackend();
+
     usdplReady = true;
 })();
 
 const Content: VFC<{ serverApi: ServerAPI }> = ({ serverApi }) => {
+    logger.toaster = serverApi.toaster;
+
     if (!usdplReady) {
         // Not translated on purpose (to avoid USDPL issues)
         return (
             <PanelSection>
                 USDPL or DeckDS's backend did not start correctly!
-                <ButtonItem
-                    layout="below"
-                    onClick={(_: MouseEvent) => {
-                        console.log(
-                            'DeckDS: manual reload after startup failure',
-                        );
-                        // reload();
-                    }}
-                >
-                    Reload
-                </ButtonItem>
             </PanelSection>
         );
     }
@@ -85,6 +77,8 @@ const History = findModuleChild((m) => {
 });
 
 export default definePlugin((serverApi: ServerAPI) => {
+    logger.toaster = serverApi.toaster;
+
     function isSteamGame(overview: any): boolean {
         const hasOwnerAccountId = overview.owner_account_id !== undefined;
         const wasPurchased = !!overview.rt_purchased_time;
@@ -100,10 +94,6 @@ export default definePlugin((serverApi: ServerAPI) => {
             const appIdStr = re.exec(currentRoute)![1]!;
             const appId = Number.parseInt(appIdStr);
             const overview = appStore.GetAppOverviewByAppID(appId);
-
-            console.log('app', App);
-            console.log('user', App.m_CurrentUser);
-            console.log('overview', overview);
 
             appDetailsState.setOnAppPage({
                 appId,
@@ -209,7 +199,7 @@ export default definePlugin((serverApi: ServerAPI) => {
             </div>
         ),
         onDismount: () => {
-            backend.log(backend.LogLevel.Debug, 'DeckDS shutting down');
+            backend.log(LogLevel.Debug, 'DeckDS shutting down');
 
             unlistenHistory();
             appDetailsState.setOnAppPage(null);

@@ -42,6 +42,7 @@ import {
     init_usdpl,
     target_usdpl,
 } from './usdpl_front';
+import { LogLevel, logger } from './util/log';
 import { Err, Ok, Result } from './util/result';
 
 export {
@@ -162,10 +163,10 @@ export function resolve<T>(promise: Promise<T>, setter: (t: T) => void) {
     (async function () {
         let data = await promise;
         if (data != null) {
-            console.debug('Got resolved', data);
+            logger.debug('Got resolved', data);
             setter(data);
         } else {
-            console.warn('Resolve failed:', data, promise);
+            logger.warn('Resolve failed:', data, promise);
             log(LogLevel.Warn, 'A resolve failed');
         }
     })();
@@ -177,7 +178,7 @@ export function resolve_nullable<T>(
 ) {
     (async function () {
         let data = await promise;
-        console.debug('Got resolved', data);
+        logger.debug('Got resolved', data);
         setter(data);
     })();
 }
@@ -186,12 +187,14 @@ export async function initBackend() {
     // init usdpl
     await init_embedded();
     init_usdpl(USDPL_PORT);
-    console.log('DeckDS: USDPL started for framework: ' + target_usdpl());
+    await initLogger();
+
+    logger.debug('USDPL started for framework: ' + target_usdpl());
     const user_locale =
         navigator.languages && navigator.languages.length
             ? navigator.languages[0]
             : navigator.language;
-    console.log('DeckDS: locale', user_locale);
+    logger.debug('locale', user_locale);
     //let mo_path = "../plugins/DeckDS/translations/" + user_locale.toString() + ".mo";
     // await init_tr(user_locale);
     //await init_tr("../plugins/DeckDS/translations/test.mo");
@@ -213,7 +216,12 @@ export type Response<T> = Promise<Result<T, ApiError>>;
 
 let _id = 0;
 
-async function call_backend_typed<T, R>(fn: string, arg: T): Response<R> {
+async function call_backend_typed<T, R>(
+    fn: string,
+    arg?: T | null,
+): Response<R> {
+    arg = arg ?? null;
+
     // USDPL has a comparatively small content limit, so we chunk manually to bypass.
     const stringified = JSON.stringify(arg);
     const bytesLen = stringified.length;
@@ -231,32 +239,37 @@ async function call_backend_typed<T, R>(fn: string, arg: T): Response<R> {
             const end = i + windowLen;
             const slice = stringified.slice(i, end);
             if (slice.length > 0) {
-                // console.log('writing chunk', i / windowLen, 'of', bytesLen / windowLen);
+                logger.trace(
+                    'writing chunk',
+                    i / windowLen,
+                    'of',
+                    bytesLen / windowLen,
+                );
 
                 let res = await call_backend('chunked_request', [id, slice]);
-                let typed = handle_backend_response<R>(res); // not really <R>, but we'll never return the OK, so its fine.
+                let typed = handle_backend_response<never>(res);
 
                 if (!typed.isOk) {
-                    console.log('error chunking request', typed.err);
+                    logger.trace('error chunking request', typed.err);
                     return typed;
                 }
             }
         }
 
         let res = await call_backend(fn, ['Chunked', id]);
-        console.log('DeckDS: api', `${fn}(`, arg, ') ->', res);
+        logger.debug('api (chunked)', `${fn}(`, arg, ') ->', res);
 
         return handle_backend_response(res);
     } else {
         const args = ['Full', arg];
         const res = await call_backend(fn, args);
-        console.log('DeckDS: api', `${fn}(`, arg, ') ->', res);
+        logger.debug('api (single)', `${fn}(`, arg, ') ->', res);
 
         return handle_backend_response(res);
     }
 }
 
-function handle_backend_response<T>(res: any): Result<T, ApiError> {
+function handle_backend_response<T>(res: any[]): Result<T, ApiError> {
     const code = res ? res[0] : 0;
 
     switch (code) {
@@ -264,11 +277,25 @@ function handle_backend_response<T>(res: any): Result<T, ApiError> {
             return Ok(res[1]); // no good way to typecheck here, so we assume the value is valid.
         }
         default: {
+            // res[2] is full error string, res[1] is display error
+            // TODO::consider proper error type
+
+            res ??= [null, null];
+
+            const unspecifiedMsg = 'unspecified error occurred';
+
+            const level =
+                code === StatusCode.BadRequest ? LogLevel.Warn : LogLevel.Error;
+
+            logger.log(
+                level,
+                'DeckDS backend encountered error:',
+                res[2] ?? unspecifiedMsg,
+            );
+
             return Err({
                 code: code,
-                err: res
-                    ? res[1] // assume an error string
-                    : 'unspecified error occurred',
+                err: res[1] ?? res[2] ?? unspecifiedMsg,
             });
         }
     }
@@ -276,20 +303,23 @@ function handle_backend_response<T>(res: any): Result<T, ApiError> {
 
 // Logging
 
-export enum LogLevel {
-    Trace = 1,
-    Debug = 2,
-    Info = 3,
-    Warn = 4,
-    Error = 5,
+async function initLogger() {
+    try {
+        const currentSettings = await getSettings();
+        if (currentSettings.isOk) {
+            logger.minLevel = currentSettings.data.global_settings.log_level;
+        } else {
+            logger.error(
+                'failed to fetch backend settings when initializing logger',
+            );
+        }
+    } catch (ex) {
+        logger.error(ex);
+    }
 }
 
 export async function log(level: LogLevel, msg: string): Promise<boolean> {
     return (await call_backend('LOG', [level, msg]))[0];
-}
-
-export async function logPath(): Promise<String> {
-    return (await call_backend('LOGPATH', []))[0];
 }
 
 // API
@@ -325,7 +355,7 @@ export async function deleteProfile(
 }
 
 export async function getProfiles(): Response<GetProfilesResponse> {
-    return await call_backend_typed('get_profiles', null);
+    return await call_backend_typed('get_profiles');
 }
 
 // AppProfile
@@ -370,37 +400,43 @@ export async function reifyPipeline(
 }
 
 export async function getToplevel(): Response<GetTopLevelResponse> {
-    return await call_backend_typed('get_toplevel', null);
+    return await call_backend_typed('get_toplevel');
 }
 
 // Templates
 
 export async function getTemplates(): Response<GetTemplatesResponse> {
-    return await call_backend_typed('get_templates', null);
+    return await call_backend_typed('get_templates');
 }
 
 // Secondary Apps
 
 export async function getSecondaryAppInfo(): Response<GetSecondaryAppInfoResponse> {
-    return await call_backend_typed('get_secondary_app_info', null);
+    return await call_backend_typed('get_secondary_app_info');
 }
 
 // Settings
 
 export async function getSettings(): Response<GetSettingsResponse> {
-    return await call_backend_typed('get_settings', null);
+    return await call_backend_typed('get_settings');
 }
 
 export async function setSettings(request: SetSettingsRequest): Response<void> {
     return await call_backend_typed('set_settings', request);
 }
 
-// system Info
+// System Info
 
 export async function getDisplayInfo(): Response<GetDisplayInfoResponse> {
-    return await call_backend_typed('get_display_info', null);
+    return await call_backend_typed('get_display_info');
 }
 
 export async function getAudioDeviceInfo(): Response<GetAudioDeviceInfoResponse> {
-    return await call_backend_typed('get_audio_device_info', null);
+    return await call_backend_typed('get_audio_device_info');
+}
+
+// Test
+
+export async function testBackendError(): Response<never> {
+    return await call_backend_typed('test_error');
 }

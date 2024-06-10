@@ -614,6 +614,10 @@ export interface GlobalConfig {
    */
   exit_hooks: ExitHooks;
   /**
+   * Overwrite the desktop layout with the game layout
+   */
+  log_level: number;
+  /**
    * If `enable_ui_inject` is true, set the "Play" button to this target
    */
   primary_ui_target: PipelineTarget;
@@ -622,9 +626,6 @@ export interface GlobalConfig {
    * Overwrite the desktop layout with the game layout
    */
   use_nonsteam_desktop_controller_layout_hack: boolean;
-  /**
-   * Overwrite the desktop layout with the game layout
-   */
   use_steam_desktop_controller_layout_hack: boolean;
 }
 export interface GetTemplatesResponse {

@@ -1,5 +1,6 @@
 import { ServerAPI } from 'decky-frontend-lib';
 import { useEffect, useState } from 'react';
+import { logger } from '../util/log';
 
 interface PluginInfo {
     name: string;
@@ -21,7 +22,7 @@ function usePluginInfo(serverApi: ServerAPI): PluginInfo | null {
                 }
 
                 if (!res.success) {
-                    console.log('error fetching plugin info:', res.result);
+                    logger.error('error fetching plugin info:', res.result);
                     return;
                 }
 

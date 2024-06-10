@@ -9,6 +9,7 @@ import {
 } from '../backend';
 import ConfigErrorModal from '../components/ConfigErrorModal';
 import { ShortAppDetails } from '../context/appContext';
+import { logger } from '../util/log';
 import useProfiles from './useProfiles';
 
 export interface LaunchActions {
@@ -95,11 +96,19 @@ const useLaunchActions = (
                             });
 
                             if (!res.isOk) {
-                                // TODO::handle error
+                                logger.toastError(
+                                    'Failed to launch app:',
+                                    res.err.err,
+                                );
                             }
                         }
                     } else {
-                        // TODO::handle error
+                        if (!reified.isOk) {
+                            logger.toastError(
+                                'Failed to load profile to launch app:',
+                                reified.err.err,
+                            );
+                        }
                     }
                 };
 

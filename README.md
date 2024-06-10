@@ -1,4 +1,5 @@
-# DeckDS 
+# DeckDS
+
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/S6S7U6S4P)
 
 DeckDS is a Steam Deck plugin for easily configuring and launching multi-window applications from Gamemode.
@@ -16,42 +17,38 @@ DeckDS allows launching Steam applications (both Steam and non-Steam titles are 
 
 Configuration and display/window management for a small selection of emulators are currently supported. The following table lists the support status of supported emulators by install source:
 
-- ✅ : Supported
-- ☑️  : If it exists, should work if the emulator settings location is configured. 
-- 🚧 : Planned/In-Progress
-- ❌ : Not Supported/Not Planned
+-   ✅ : Supported
+-   ☑️ : If it exists, should work if the emulator settings location is configured.
+-   🚧 : Planned/In-Progress
+-   ❌ : Not Supported/Not Planned
 
-|              | Flatpak  | AppImage | Emudeck (Proton) | Other Portable/Binary | RetroArch 
-|--------------|----------|----------|------------------|-----------------------|-----------
-| Dolphin/mGBA | 🚧       | 🚧       | ➖               |  🚧                  | ❌         
-| Cemu         | ✅       | ✅       | ✅               | ☑️                    | ❌         
-| Citra*        | ✅       | ☑️        | ➖               | ☑️                    | ❌   
-| Lime3DS      | ✅       | ☑️        | ➖               | ☑️                    | ❌   
-| MelonDS      | ✅       | ☑️        | ➖               | ☑️                    | ❌        
+|              | Flatpak | AppImage | Emudeck (Proton) | Other Portable/Binary | RetroArch |
+| ------------ | ------- | -------- | ---------------- | --------------------- | --------- |
+| Dolphin/mGBA | 🚧      | 🚧       | ➖               | 🚧                    | ❌        |
+| Cemu         | ✅      | ✅       | ✅               | ☑️                    | ❌        |
+| Citra\*      | ✅      | ☑️       | ➖               | ☑️                    | ❌        |
+| Lime3DS      | ✅      | ☑️       | ➖               | ☑️                    | ❌        |
+| MelonDS      | ✅      | ☑️       | ➖               | ☑️                    | ❌        |
 
+\*Development of Citra is discontinued. Consider Lime3DS (supported), or another fork. Compatibility for other Citra forks not guaranteed. Other Citra forks may or may not fullscreen and/or snap windows automatically.
 
-*Development of Citra is discontinued. Consider Lime3DS (supported), or another fork. 
-
-Other forks include, but may not be limited to [Lemonade](https://github.com/Lemonade-emu/Lemonade). 
-Compatibility not guaranteed. Other Citra forks may for may not fullscreen and/or snap windows automatically.
-
-### Configuration 
+### Configuration
 
 Configuration is handled through profiles. Profiles can be applied to Steam categories, and can be overridden per-game to provide the best experience.
 
 Each profile allows configuring the application platform (either native or an emulator), as well as settings specific to each launch target.
 
-Profiles each have (up to) two launch targets: Desktop, and Gamemode. This allows customizing settings, such as display layout, per-profile and per-game, with different settings for Desktop and Gamemode; useful for Nintendo DS and 3DS emulators specifically.
+Platforms each have (up to) two launch targets: Desktop, and Gamemode. This allows customizing settings, such as display layout, per-profile and per-game, with different settings for Desktop and Gamemode; useful for Nintendo DS and 3DS emulators specifically.
 
 Currently, only display settings and (for emulators) emulator install source and layout options are configurable.
 
 ### Desktop Display Settings
 
 DeckDS also has basic support for changing display settings when swapping to desktop mode normally, in addition to when launching games. Configurable settings include:
-- Resolution
-- Refresh Rate
-- Enabling/disabling the Deck's internal display
-- Setting the location of the Deck's internal display relative to the primary output
+
+-   Resolution
+-   Enabling/disabling the Deck's internal display
+-   Setting the location of the Deck's internal display relative to the primary output
 
 ## Decky Loader
 
@@ -59,14 +56,14 @@ This plugin requires [Decky Loader](https://github.com/SteamDeckHomebrew/decky-l
 
 ## Supported Platforms
 
-This plugin is only supported on Steam Deck. I do not currently have the resources to develop for and test against other hardware or software platforms. That being said, if you're wont to tinker, tinker away; all I ask is that you don't file issues for problems encountered on other platforms. 
+This plugin is only supported on Steam Deck. I do not currently have the resources to develop for and test against other hardware or software platforms. That being said, if you're wont to tinker, tinker away; all I ask is that you don't file issues for problems encountered on other platforms.
 
 Desktop mode functionality makes use of:
 
-- the `steamos-session-select` command for mode switching
-- KDE's autostart functionality
-- the KWin window manager
-- `xrandr` (x11)
+-   the `steamos-session-select` command for mode switching
+-   KDE's autostart functionality
+-   the KWin window manager
+-   `xrandr` (x11)
 
 It will not work without them.
 

@@ -115,7 +115,22 @@ pub fn get_audio_device_info(
     }
 }
 
+/// Error Msg Test
+
+pub fn test_error() -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
+    move |_| {
+        ResponseErr(
+            StatusCode::ServerError,
+            anyhow::anyhow!("An expected error occurred")
+                .context("May you never see a real one.")
+                .context("This is a test."),
+        )
+        .to_response()
+    }
+}
+
 /// API web method to send log messages to the back-end log, callable from the front-end
+
 pub fn log_it() -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |params| {
         if let Some(Primitive::F64(level)) = params.first() {

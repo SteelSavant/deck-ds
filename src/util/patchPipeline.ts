@@ -98,7 +98,6 @@ export async function patchPipeline(
                     : info.nonsteam_desktop_layout_config_hack_override,
         };
 
-        console.log('setting hack to:', hack);
 
         return Ok({
             ...pipeline,
@@ -165,10 +164,6 @@ export async function patchPipeline(
                         },
                     };
                 case 'updateProfileOverride':
-                    console.log(
-                        'sending update override action to backend:',
-                        update.profileOverride,
-                    );
                     return {
                         type: 'UpdateProfileOverride',
                         value: {

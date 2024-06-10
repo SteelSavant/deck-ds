@@ -96,8 +96,9 @@ impl DeckyEnv {
             &self.decky_plugin_log_dir,
         ] {
             if !dir.exists() {
-                crate::util::create_dir_all(dir).expect("should be able to create dir in env");
-                // TODO::error handling
+                crate::util::create_dir_all(dir).unwrap_or_else(|err| {
+                    panic!("should be able to create env dir {dir:?}: {err:#?}")
+                });
             }
         }
     }
