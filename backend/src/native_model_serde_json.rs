@@ -16,7 +16,7 @@ impl<T: for<'a> Deserialize<'a>> native_model::Decode<T> for NativeModelJSON {
     fn decode(data: Vec<u8>) -> Result<T, Self::Error> {
         let res = serde_json::from_slice::<T>(&data);
 
-        Ok(res.unwrap())
+        res
     }
 }
 
