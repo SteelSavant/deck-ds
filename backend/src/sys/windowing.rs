@@ -22,7 +22,7 @@ pub fn get_active_window_info() -> Result<WindowInfo> {
     if cmd.status.success() {
         let out = String::from_utf8_lossy(&cmd.stdout);
         let mut lines = out.lines();
-        let name = lines.next()?.to_string();
+        let name = lines.next().unwrap().to_string();
 
         Ok(WindowInfo {
             name,
