@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { GlobalConfig, getSettings, setSettings } from '../backend';
 import { Loading } from '../util/loading';
-import { Err, Ok } from '../util/result';
+import { Ok } from '../util/result';
 
 const useGlobalSettings = () => {
     const [state, setState] = useState<Loading<GlobalConfig>>();
@@ -27,14 +27,15 @@ const useGlobalSettings = () => {
     }, [state]);
 
     const updateSettings = async (settings: GlobalConfig) => {
-        setState(Ok(settings));
         let res = await setSettings({
             global_settings: settings,
         });
 
-        if (!res.isOk) {
-            setState(Err(res.err));
+        if (res.isOk) {
+            setState(Ok(settings));
         }
+
+        return res;
     };
 
     return { settings: state, updateSettings };

@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { PipelineContainer } from '../backend';
+import { ApiError, PipelineContainer } from '../backend';
 import { logger } from '../util/log';
 import { PipelineUpdate, patchPipeline } from '../util/patchPipeline';
+import { Ok, Result } from '../util/result';
 
 interface PipelineContainerState {
     container: PipelineContainer;
@@ -16,9 +17,11 @@ export interface StateAction {
     update: PipelineUpdate | ProfileUpdate;
 }
 
-type Dispatch = (action: StateAction) => Promise<void>;
+type Dispatch = (action: StateAction) => Promise<Result<void, ApiError>>;
 
-type UpdatePipeline = (pipelineSettings: PipelineContainer) => void;
+type UpdatePipeline = (
+    pipelineSettings: PipelineContainer,
+) => Promise<Result<void, ApiError>>;
 
 type ModifiablePipelineContextProviderProps = {
     children: React.ReactNode;
@@ -40,42 +43,54 @@ function ModifiablePipelineContainerProvider({
 
     logger.debug('modifiable pipeline', state.container.pipeline);
 
-    async function dispatch(action: StateAction) {
+    async function dispatch(
+        action: StateAction,
+    ): Promise<Result<void, ApiError>> {
         logger.trace('starting dispatch');
 
-        const newContainer: PipelineContainer = await (async () => {
-            const pipeline = state.container.pipeline;
+        const newContainer: Result<PipelineContainer, ApiError> =
+            await (async () => {
+                const pipeline = state.container.pipeline;
 
-            const updateType = action.update.type;
-            if (updateType === 'updateTags') {
-                return {
-                    ...state.container,
-                    tags: action.update.tags,
-                };
-            } else {
-                const newPipeline = await patchPipeline(
-                    pipeline,
-                    action.update,
-                );
-                if (newPipeline.isOk) {
-                    return {
+                const updateType = action.update.type;
+                if (updateType === 'updateTags') {
+                    return Ok({
                         ...state.container,
-                        pipeline: newPipeline.data,
-                    };
+                        tags: action.update.tags,
+                    });
+                } else {
+                    const newPipeline = await patchPipeline(
+                        pipeline,
+                        action.update,
+                    );
+
+                    return newPipeline.map((pipeline) => {
+                        return {
+                            ...state.container,
+                            pipeline,
+                        };
+                    });
                 }
-                throw newPipeline.err;
-            }
-        })();
+            })();
 
         logger.debug('got container state', newContainer);
 
-        if (onPipelineUpdate) {
-            await onPipelineUpdate(newContainer); // perform arbitrary action, like saving, when the definition changes
-        }
+        var v: void;
+        let res: Result<void, ApiError> = Ok(v);
 
-        logger.debug('setting container state to', newContainer);
+        return newContainer.andThenAsync(async (newContainer) => {
+            if (onPipelineUpdate) {
+                res = await onPipelineUpdate(newContainer); // perform arbitrary action, like saving, when the definition changes
+            }
 
-        setState({ container: newContainer });
+            if (res.isOk) {
+                logger.debug('setting container state to', newContainer);
+
+                setState({ container: newContainer });
+            }
+
+            return res;
+        });
     }
 
     const value = { state, dispatch };

@@ -1,3 +1,5 @@
+import { Toaster } from 'decky-frontend-lib';
+
 export enum LogLevel {
     Trace = 1,
     Debug = 2,
@@ -39,6 +41,22 @@ class Logger {
             // TODO::would be nice if these formatted like normal console.log.
             console.log(`DeckDS::${this.getStringForLevel(level)}:`, ...args);
         }
+    }
+
+    public toastWarn(toaster: Toaster, ...args: any[]) {
+        this.warn(...args);
+        toaster.toast({
+            title: 'Error', // don't differentiate between warning and error to the user, since either way, something broke.
+            body: args.join(' '),
+        });
+    }
+
+    public toastError(toaster: Toaster, ...args: any[]) {
+        this.error(...args);
+        toaster.toast({
+            title: 'Error',
+            body: args.join(' '),
+        });
     }
 
     private getStringForLevel(level: LogLevel) {

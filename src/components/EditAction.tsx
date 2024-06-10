@@ -752,8 +752,6 @@ function SecondaryFlatpakApp({
         <HandleLoading
             value={secondaryInfo}
             onOk={(secondaryInfo) => {
-                // TODO::per-arg reorderable list (likely in a popup-menu), rather than a comma-separated list
-
                 const windowing = cloned.value.windowing_behavior;
 
                 var i = 0;

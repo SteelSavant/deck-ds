@@ -1,5 +1,6 @@
 // Adapted from https://github.com/OMGDuke/SDH-GameThemeMusic/blob/main/src/state/ShortAppDetailsState.tsx
 
+import { Toaster } from 'decky-frontend-lib';
 import _ from 'lodash';
 import { createContext, FC, useContext, useEffect, useState } from 'react';
 import {
@@ -71,6 +72,11 @@ export class ShortAppDetailsState {
     } = {};
     private openViews: { [k: string]: { [k: string]: boolean } } = {};
     private lastOnAppPageTime: number = 0;
+    private toaster: Toaster;
+
+    public constructor(toaster: Toaster) {
+        this.toaster = toaster;
+    }
 
     // You can listen to this eventBus' 'stateUpdate' event and use that to trigger a useState or other function that causes a re-render
     public readonly eventBus = new EventTarget();
@@ -138,10 +144,15 @@ export class ShortAppDetailsState {
                     if (res.isOk) {
                         await res.data;
                     } else {
-                        logger.warn('error updating profile', res.err);
+                        logger.toastWarn(
+                            this.toaster,
+                            'error updating profile',
+                            res.err,
+                        );
                     }
                 } else {
-                    logger.error(
+                    logger.toastError(
+                        this.toaster,
                         'pipeline should already be loaded before updating',
                         pipeline,
                     );
@@ -164,14 +175,14 @@ export class ShortAppDetailsState {
         if (res?.isOk) {
             this.refetchProfile(defaultProfileId, appDetails.appId);
         } else {
-            logger.error(
+            logger.toastError(
+                this.toaster,
                 'failed to set app(',
                 appDetails.appId,
                 ') default to',
                 defaultProfileId,
             );
         }
-        // TODO::error handling
     }
 
     async loadProfileOverride(appId: number, profileId: string) {
@@ -192,8 +203,13 @@ export class ShortAppDetailsState {
                         overrides[profileId],
                     );
                     shouldUpdate = true;
+                } else if (!res.isOk) {
+                    logger.toastWarn(
+                        this.toaster,
+                        'Failed to initialize app profile:',
+                        res.err.err,
+                    );
                 }
-                // TODO::error handling
             } else {
                 logger.debug('existing override found:', overrides[profileId]);
             }
@@ -247,14 +263,14 @@ export class ShortAppDetailsState {
             });
             this.refetchProfile(profileId, appId);
         } else {
-            logger.debug(
+            logger.toastWarn(
+                this.toaster,
                 'failed to set app(',
                 appId,
                 ') override for',
                 profileId,
             );
         }
-        // TODO::error handling
     }
 
     private async updateExternalProfile(
@@ -286,14 +302,20 @@ export class ShortAppDetailsState {
                     logger.warn('failed to set external profile', profileId);
                 }
             } else {
-                logger.warn('external profile', profileId, 'not found');
+                logger.toastWarn(
+                    this.toaster,
+                    'external profile',
+                    profileId,
+                    'not found',
+                );
             }
-            // TODO::error handling
         } else {
-            logger.warn('failed to fetch external profile', profileId);
+            logger.toastWarn(
+                this.toaster,
+                'failed to fetch external profile',
+                profileId,
+            );
         }
-
-        // TODO::error handling
     }
 
     private async refetchProfile(
@@ -319,7 +341,8 @@ export class ShortAppDetailsState {
                 }
 
                 if (!this.appProfile?.isOk) {
-                    logger.warn(
+                    logger.toastWarn(
+                        this.toaster,
                         'failed to refetch app(',
                         appIdToMatch,
                         ')',

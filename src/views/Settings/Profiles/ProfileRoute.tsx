@@ -44,16 +44,9 @@ export default function ProfilePreviewRoute(): ReactElement {
                                     throw 'PipelineContainer should be CategoryProfile';
                                 }
 
-                                const res = await setProfile({
+                                return await setProfile({
                                     profile: profile,
                                 });
-
-                                if (!res.isOk) {
-                                    serverApi.toaster.toast({
-                                        title: 'Error',
-                                        body: 'Failed to update profile.',
-                                    });
-                                }
                             }}
                         >
                             <PipelineDisplay
@@ -75,16 +68,18 @@ function PipelineHeader(container: PipelineContainer): ReactElement {
         showModal(
             <EditProfileNameModal
                 pipeline={state.container.pipeline}
-                onSave={(name) => {
-                    dispatch({
-                        update: {
-                            type: 'updatePipelineInfo',
-                            info: {
-                                ...container.pipeline,
-                                name: name,
+                onSave={async (name) => {
+                    return (
+                        await dispatch({
+                            update: {
+                                type: 'updatePipelineInfo',
+                                info: {
+                                    ...container.pipeline,
+                                    name: name,
+                                },
                             },
-                        },
-                    });
+                        })
+                    ).mapErr((e) => e.err);
                 }}
             />,
         );

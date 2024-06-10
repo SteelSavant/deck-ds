@@ -16,9 +16,11 @@ import {
 import { EditExitHooks } from '../../../components/EditExitHooks';
 import HandleLoading from '../../../components/HandleLoading';
 import { useModifiablePipelineContainer } from '../../../context/modifiablePipelineContext';
+import { useServerApi } from '../../../context/serverApiContext';
 import useGlobalSettings from '../../../hooks/useGlobalSettings';
 import useTemplates from '../../../hooks/useTemplates';
 import useToplevel from '../../../hooks/useToplevel';
+import { logger } from '../../../util/log';
 import AddProfileTagModal from './modals/AddProfileTagModal';
 import AddToplevelActionModal from './modals/AddToplevelActionModal';
 
@@ -31,6 +33,8 @@ export default function ProfileInfo(
 
     const profile: CategoryProfile = container;
 
+    const serverApi = useServerApi();
+
     const { dispatch } = useModifiablePipelineContainer();
 
     const { settings } = useGlobalSettings();
@@ -38,27 +42,37 @@ export default function ProfileInfo(
     const templates = useTemplates();
     const toplevel = useToplevel();
 
-    function removeTag(tag: string) {
-        dispatch({
+    async function removeTag(tag: string) {
+        const res = await dispatch({
             update: {
                 type: 'updateTags',
                 tags: profile.tags.filter((t) => t !== tag),
             },
         });
+
+        if (!res.isOk) {
+            logger.toastWarn(
+                serverApi.toaster,
+                'Failed to remove tag:',
+                res.err.err,
+            );
+        }
     }
 
     function addTag() {
         showModal(
             <AddProfileTagModal
-                onSave={(tag) => {
+                onSave={async (tag) => {
                     const unique = new Set(profile.tags);
                     unique.delete(tag);
-                    dispatch({
-                        update: {
-                            type: 'updateTags',
-                            tags: [...unique, tag], // set unique tags; no duplicates. If tag exists in
-                        },
-                    });
+                    return (
+                        await dispatch({
+                            update: {
+                                type: 'updateTags',
+                                tags: [...unique, tag], // set unique tags; no duplicates. If tag exists in
+                            },
+                        })
+                    ).mapErr((v) => v.err);
                 }}
             />,
         );
@@ -67,26 +81,36 @@ export default function ProfileInfo(
     function addTopLevelAction() {
         showModal(
             <AddToplevelActionModal
-                onSave={(info) => {
-                    dispatch({
-                        update: {
-                            type: 'addTopLevel',
-                            action_id: info.id,
-                        },
-                    });
+                onSave={async (info) => {
+                    return (
+                        await dispatch({
+                            update: {
+                                type: 'addTopLevel',
+                                action_id: info.id,
+                            },
+                        })
+                    ).mapErr((v) => v.err);
                 }}
             />,
         );
     }
 
-    function deleteToplevelAction(id: string): void {
+    async function deleteToplevelAction(id: string): Promise<void> {
         // TODO::make this a confirm modal
-        dispatch({
+        const res = await dispatch({
             update: {
                 type: 'removeTopLevel',
                 id: id,
             },
         });
+
+        if (!res.isOk) {
+            logger.toastWarn(
+                serverApi.toaster,
+                'Failed to remove toplevel action:',
+                res.err.err,
+            );
+        }
     }
 
     const loading =
@@ -125,13 +149,23 @@ export default function ProfileInfo(
                                     data: t.pipeline.platform.root,
                                 };
                             })}
-                            onChange={(v) => {
-                                dispatch({
+                            onChange={async (v) => {
+                                const res = await dispatch({
                                     update: {
                                         type: 'updatePlatform',
                                         platform: v.data,
                                     },
                                 });
+
+                                if (!res.isOk) {
+                                    if (!res.isOk) {
+                                        logger.toastWarn(
+                                            serverApi.toaster,
+                                            'Failed to update platform:',
+                                            res.err.err,
+                                        );
+                                    }
+                                }
                             }}
                         />
                     </Field>
@@ -235,8 +269,8 @@ export default function ProfileInfo(
                                     };
                                 }),
                             ]}
-                            onChange={(option) => {
-                                dispatch({
+                            onChange={async (option) => {
+                                const res = await dispatch({
                                     update: {
                                         type: 'updatePipelineInfo',
                                         info: {
@@ -245,6 +279,14 @@ export default function ProfileInfo(
                                         },
                                     },
                                 });
+
+                                if (!res.isOk) {
+                                    logger.toastWarn(
+                                        serverApi.toaster,
+                                        'Failed to update primary target:',
+                                        res.err.err,
+                                    );
+                                }
                             }}
                         />
                     </Field>
@@ -255,8 +297,8 @@ export default function ProfileInfo(
                     >
                         <Toggle
                             value={profile.pipeline.should_register_exit_hooks}
-                            onChange={(value) => {
-                                dispatch({
+                            onChange={async (value) => {
+                                const res = await dispatch({
                                     update: {
                                         type: 'updatePipelineInfo',
                                         info: {
@@ -264,6 +306,14 @@ export default function ProfileInfo(
                                         },
                                     },
                                 });
+
+                                if (!res.isOk) {
+                                    logger.toastWarn(
+                                        serverApi.toaster,
+                                        'Failed to update exit hooks:',
+                                        res.err.err,
+                                    );
+                                }
                             }}
                         />
                     </Field>
@@ -292,8 +342,8 @@ export default function ProfileInfo(
                                                 globalSettings.exit_hooks,
                                         },
                                     ]}
-                                    onChange={(option) => {
-                                        dispatch({
+                                    onChange={async (option) => {
+                                        const res = await dispatch({
                                             update: {
                                                 type: 'updatePipelineInfo',
                                                 info: {
@@ -302,6 +352,14 @@ export default function ProfileInfo(
                                                 },
                                             },
                                         });
+
+                                        if (!res.isOk) {
+                                            logger.toastWarn(
+                                                serverApi.toaster,
+                                                'Failed to update exit hooks:',
+                                                res.err.err,
+                                            );
+                                        }
                                     }}
                                 />
                             </Field>
@@ -311,15 +369,18 @@ export default function ProfileInfo(
                                         profile.pipeline.exit_hooks_override
                                     }
                                     indentLevel={1}
-                                    onChange={(hooks) => {
-                                        dispatch({
-                                            update: {
-                                                type: 'updatePipelineInfo',
-                                                info: {
-                                                    exit_hooks_override: hooks,
+                                    onChange={async (hooks) => {
+                                        return (
+                                            await dispatch({
+                                                update: {
+                                                    type: 'updatePipelineInfo',
+                                                    info: {
+                                                        exit_hooks_override:
+                                                            hooks,
+                                                    },
                                                 },
-                                            },
-                                        });
+                                            })
+                                        ).mapErr((e) => e.err);
                                     }}
                                 />
                             ) : null}
@@ -346,11 +407,11 @@ export default function ProfileInfo(
                                     data: v,
                                 };
                             })}
-                            onChange={(props) => {
+                            onChange={async (props) => {
                                 const data: boolean | null | undefined =
                                     props.data;
 
-                                dispatch({
+                                const res = await dispatch({
                                     update: {
                                         type: 'updatePipelineInfo',
                                         info: {
@@ -359,6 +420,14 @@ export default function ProfileInfo(
                                         },
                                     },
                                 });
+
+                                if (!res.isOk) {
+                                    logger.toastWarn(
+                                        serverApi.toaster,
+                                        'Failed to update update controller override:',
+                                        res.err.err,
+                                    );
+                                }
                             }}
                         />
                     </Field>
@@ -377,11 +446,11 @@ export default function ProfileInfo(
                                     data: v,
                                 };
                             })}
-                            onChange={(props) => {
+                            onChange={async (props) => {
                                 const data: boolean | null | undefined =
                                     props.data;
 
-                                dispatch({
+                                const res = await dispatch({
                                     update: {
                                         type: 'updatePipelineInfo',
                                         info: {
@@ -390,6 +459,14 @@ export default function ProfileInfo(
                                         },
                                     },
                                 });
+
+                                if (!res.isOk) {
+                                    logger.toastWarn(
+                                        serverApi.toaster,
+                                        'Failed to update update controller override:',
+                                        res.err.err,
+                                    );
+                                }
                             }}
                         />
                     </Field>

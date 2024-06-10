@@ -63,11 +63,13 @@ export const GlobalSettingsPage: VFC = () => {
                         <EditExitHooks
                             exitHooks={settings.exit_hooks}
                             indentLevel={2}
-                            onChange={(hooks) => {
-                                updateSettings({
+                            onChange={async (hooks) => {
+                                const res = await updateSettings({
                                     ...settings,
                                     exit_hooks: hooks,
                                 });
+
+                                return res.mapErr((e) => e.err);
                             }}
                         />
                         <Builder
@@ -85,12 +87,20 @@ export const GlobalSettingsPage: VFC = () => {
                                 value={
                                     settings.use_steam_desktop_controller_layout_hack
                                 }
-                                onChange={(value) => {
-                                    updateSettings({
+                                onChange={async (value) => {
+                                    const res = await updateSettings({
                                         ...settings,
                                         use_steam_desktop_controller_layout_hack:
                                             value,
                                     });
+
+                                    if (!res.isOk) {
+                                        logger.toastWarn(
+                                            serverApi.toaster,
+                                            'Failed to update settings:',
+                                            res.err.err,
+                                        );
+                                    }
                                 }}
                             />
                         </Builder>
@@ -102,12 +112,20 @@ export const GlobalSettingsPage: VFC = () => {
                                 value={
                                     settings.use_nonsteam_desktop_controller_layout_hack
                                 }
-                                onChange={(value) => {
-                                    updateSettings({
+                                onChange={async (value) => {
+                                    const res = await updateSettings({
                                         ...settings,
                                         use_nonsteam_desktop_controller_layout_hack:
                                             value,
                                     });
+
+                                    if (!res.isOk) {
+                                        logger.toastWarn(
+                                            serverApi.toaster,
+                                            'Failed to update settings:',
+                                            res.err.err,
+                                        );
+                                    }
                                 }}
                             />
                         </Builder>
@@ -123,14 +141,22 @@ export const GlobalSettingsPage: VFC = () => {
                                 value: settings.display_restoration,
                             }}
                             indentLevel={1}
-                            onChange={(action) => {
+                            onChange={async (action) => {
                                 if (action.type !== 'DesktopSessionHandler') {
                                     throw 'display settings are incorrect type; something has gone terribly wrong...';
                                 }
-                                updateSettings({
+                                const res = await updateSettings({
                                     ...settings,
                                     display_restoration: action.value,
                                 });
+
+                                if (!res.isOk) {
+                                    logger.toastWarn(
+                                        serverApi.toaster,
+                                        'Failed to update settings:',
+                                        res.err.err,
+                                    );
+                                }
                             }}
                         />
                         <Builder
@@ -142,12 +168,20 @@ export const GlobalSettingsPage: VFC = () => {
                                 value={
                                     settings.restore_displays_if_not_executing_pipeline
                                 }
-                                onChange={(value) => {
-                                    updateSettings({
+                                onChange={async (value) => {
+                                    const res = await updateSettings({
                                         ...settings,
                                         restore_displays_if_not_executing_pipeline:
                                             value,
                                     });
+
+                                    if (!res.isOk) {
+                                        logger.toastWarn(
+                                            serverApi.toaster,
+                                            'Failed to update settings:',
+                                            res.err.err,
+                                        );
+                                    }
                                 }}
                             />
                         </Builder>
@@ -159,11 +193,19 @@ export const GlobalSettingsPage: VFC = () => {
                         >
                             <Toggle
                                 value={settings.enable_ui_inject}
-                                onChange={(value) => {
-                                    updateSettings({
+                                onChange={async (value) => {
+                                    const res = await updateSettings({
                                         ...settings,
                                         enable_ui_inject: value,
                                     });
+
+                                    if (!res.isOk) {
+                                        logger.toastWarn(
+                                            serverApi.toaster,
+                                            'Failed to update settings:',
+                                            res.err.err,
+                                        );
+                                    }
                                 }}
                             />
                         </Builder>
@@ -182,18 +224,26 @@ export const GlobalSettingsPage: VFC = () => {
                                 })}
                                 onChange={
                                     settings.enable_ui_inject
-                                        ? (data) => {
-                                              updateSettings({
+                                        ? async (data) => {
+                                              const res = await updateSettings({
                                                   ...settings,
                                                   primary_ui_target: data.data,
                                               });
+
+                                              if (!res.isOk) {
+                                                  logger.toastWarn(
+                                                      serverApi.toaster,
+                                                      'Failed to update settings:',
+                                                      res.err.err,
+                                                  );
+                                              }
                                           }
                                         : undefined
                                 }
                             />
                         </Builder>
                         <Field
-                            label="Debug"
+                            label="Developer"
                             description="Advanced options for development/troubleshooting. Don't touch this unless you need to."
                         >
                             <Toggle value={debug} onChange={setDebug} />
@@ -234,12 +284,20 @@ export const GlobalSettingsPage: VFC = () => {
                                                 data: l,
                                             };
                                         })}
-                                        onChange={(props) => {
+                                        onChange={async (props) => {
                                             logger.minLevel = props.data;
-                                            updateSettings({
+                                            const res = await updateSettings({
                                                 ...settings,
                                                 log_level: props.data,
                                             });
+
+                                            if (!res.isOk) {
+                                                logger.toastWarn(
+                                                    serverApi.toaster,
+                                                    'Failed to update settings:',
+                                                    res.err.err,
+                                                );
+                                            }
                                         }}
                                     />
                                 </Builder>

@@ -1,6 +1,8 @@
 import { ConfirmModal, Dropdown, Navigation } from 'decky-frontend-lib';
 import { ReactElement, useState } from 'react';
 import { Template, createProfile, getProfile, setProfile } from '../backend';
+import { useServerApi } from '../context/serverApiContext';
+import { logger } from '../util/log';
 
 export function CreateProfileFromCollectionModal({
     templates,
@@ -11,6 +13,7 @@ export function CreateProfileFromCollectionModal({
     templates: Template[];
     closeModal?: () => void;
 }): ReactElement {
+    const serverApi = useServerApi();
     const normalized = normalize(collection.displayName);
 
     // TODO::better comparison
@@ -73,8 +76,19 @@ export function CreateProfileFromCollectionModal({
                             closeModal!();
                         } else {
                             setDone(false);
-                            // TODO::error handling
+                            logger.toastWarn(
+                                serverApi.toaster,
+                                'Failed to create set:',
+                                savedProfile.err.err,
+                            );
                         }
+                    } else {
+                        setDone(true);
+                        logger.toastWarn(
+                            serverApi.toaster,
+                            'Failed to create set:',
+                            profile.err.err,
+                        );
                     }
                 }
             }}

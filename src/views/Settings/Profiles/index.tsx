@@ -8,15 +8,20 @@ import { VFC } from 'react';
 import { FaPlus } from 'react-icons/fa6';
 import { createProfile, getTemplates } from '../../../backend';
 import HandleLoading from '../../../components/HandleLoading';
+import { useServerApi } from '../../../context/serverApiContext';
 import useProfiles from '../../../hooks/useProfiles';
+import { logger } from '../../../util/log';
 import ProfileMenuItem from './ProfileMenuItem';
 
 export const ProfilesPage: VFC = () => {
+    const serverApi = useServerApi();
     const { profiles, deleteProfile } = useProfiles();
 
     const createNewProfile = async () => {
         const templates = await getTemplates();
         if (templates.isOk) {
+            // TODO::this should probably use the platform modal...
+
             // hardcoded app template id
             const appTemplate = templates.data.templates.find(
                 (v) => v.id === '84f870e9-9491-41a9-8837-d5a6f591f687',
@@ -28,11 +33,22 @@ export const ProfilesPage: VFC = () => {
             if (profile.isOk) {
                 let id = profile.data.profile_id;
                 Navigation.Navigate(`/deck-ds/settings/profiles/${id}`);
+            } else {
+                logger.toastWarn(
+                    serverApi.toaster,
+                    'Failed to create profile:',
+                    profile.err.err,
+                );
             }
+        } else {
+            logger.toastError(
+                serverApi.toaster,
+                'Failed to load templates:',
+                templates.err.err,
+            );
         }
     };
 
-    // TODO:: make profiles reorderable
     return (
         <HandleLoading
             value={profiles}

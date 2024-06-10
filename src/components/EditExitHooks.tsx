@@ -5,15 +5,18 @@ import {
     GamepadButtonSelection,
     gamepadButtonSelectionOptions,
 } from '../backend';
+import { useServerApi } from '../context/serverApiContext';
 import { ExitHooks } from '../types/backend_api';
 import { labelForGamepadButton } from '../util/display';
+import { logger } from '../util/log';
+import { Result } from '../util/result';
 import { AddGamepadButtonModal } from './AddGamepadButtonModal';
 import FocusableRow from './FocusableRow';
 
 interface EditExitHooksProps {
     exitHooks: ExitHooks;
     indentLevel?: number;
-    onChange: (hooks: ExitHooks) => void;
+    onChange: (hooks: ExitHooks) => Promise<Result<void, string>>;
 }
 
 export function EditExitHooks({
@@ -21,6 +24,8 @@ export function EditExitHooks({
     indentLevel,
     onChange,
 }: EditExitHooksProps): ReactElement {
+    const serverApi = useServerApi();
+
     const flattenedHooks = [
         [exitHooks[0]],
         [exitHooks[1]],
@@ -31,13 +36,21 @@ export function EditExitHooks({
             (v) => !flattenedHooks.includes(v),
         );
 
-    function deleteExitHook(i: number) {
+    async function deleteExitHook(i: number) {
         flattenedHooks.splice(i, 1);
-        onChange([
+        const res = await onChange([
             flattenedHooks[0],
             flattenedHooks[1],
             flattenedHooks.slice(2),
         ]);
+
+        if (!res.isOk) {
+            logger.toastWarn(
+                serverApi.toaster,
+                'Error deleting hook button:',
+                res.err,
+            );
+        }
     }
 
     function onAddExitHook() {
@@ -71,16 +84,23 @@ export function EditExitHooks({
                                             data: v,
                                         };
                                     })}
-                                onChange={(props) => {
+                                onChange={async (props) => {
                                     const data: GamepadButtonSelection =
                                         props.data;
                                     const index = flattenedHooks.indexOf(hook);
                                     flattenedHooks.splice(index, 1, data);
-                                    onChange([
+                                    const res = await onChange([
                                         flattenedHooks[0],
                                         flattenedHooks[1],
                                         flattenedHooks.slice(2),
                                     ]);
+                                    if (!res.isOk) {
+                                        logger.toastWarn(
+                                            serverApi.toaster,
+                                            'Error updating hook button:',
+                                            res.err,
+                                        );
+                                    }
                                 }}
                             />
                             {flattenedHooks.length > 2 ? (
