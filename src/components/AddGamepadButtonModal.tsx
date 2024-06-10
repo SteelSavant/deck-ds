@@ -1,7 +1,6 @@
 import { ConfirmModal, Dropdown } from 'decky-frontend-lib';
 import { ReactElement, useState } from 'react';
 import { GamepadButtonSelection } from '../backend';
-import { useServerApi } from '../context/serverApiContext';
 import { logger } from '../util/log';
 import { Result } from '../util/result';
 
@@ -16,7 +15,6 @@ export function AddGamepadButtonModal({
     ) => Promise<Result<void, string>> | Result<void, string>;
     closeModal?: () => void;
 }): ReactElement {
-    const serverApi = useServerApi();
     const [button, setButton] = useState<GamepadButtonSelection>(buttons[0]);
     const [done, setDone] = useState(false);
 
@@ -29,7 +27,7 @@ export function AddGamepadButtonModal({
                     if (res.isOk) {
                         closeModal!();
                     } else {
-                        logger.toastWarn(serverApi.toaster, res.err);
+                        logger.toastWarn(res.err);
                     }
                 }
             }}

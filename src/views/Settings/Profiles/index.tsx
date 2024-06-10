@@ -8,13 +8,11 @@ import { VFC } from 'react';
 import { FaPlus } from 'react-icons/fa6';
 import { createProfile, getTemplates } from '../../../backend';
 import HandleLoading from '../../../components/HandleLoading';
-import { useServerApi } from '../../../context/serverApiContext';
 import useProfiles from '../../../hooks/useProfiles';
 import { logger } from '../../../util/log';
 import ProfileMenuItem from './ProfileMenuItem';
 
 export const ProfilesPage: VFC = () => {
-    const serverApi = useServerApi();
     const { profiles, deleteProfile } = useProfiles();
 
     const createNewProfile = async () => {
@@ -34,18 +32,10 @@ export const ProfilesPage: VFC = () => {
                 let id = profile.data.profile_id;
                 Navigation.Navigate(`/deck-ds/settings/profiles/${id}`);
             } else {
-                logger.toastWarn(
-                    serverApi.toaster,
-                    'Failed to create profile:',
-                    profile.err.err,
-                );
+                logger.toastWarn('Failed to create profile:', profile.err.err);
             }
         } else {
-            logger.toastError(
-                serverApi.toaster,
-                'Failed to load templates:',
-                templates.err.err,
-            );
+            logger.toastError('Failed to load templates:', templates.err.err);
         }
     };
 

@@ -5,7 +5,6 @@ import { ActionChild } from '../../../components/ActionChild';
 import { EditAction } from '../../../components/EditAction';
 import { EditExitHooks } from '../../../components/EditExitHooks';
 import HandleLoading from '../../../components/HandleLoading';
-import { useServerApi } from '../../../context/serverApiContext';
 import useGlobalSettings from '../../../hooks/useGlobalSettings';
 import { LogLevel, logger } from '../../../util/log';
 
@@ -25,8 +24,6 @@ export const GlobalSettingsPage: VFC = () => {
         }
     }, [haveSettings]);
 
-    const serverApi = useServerApi();
-
     const Builder = ActionChild;
 
     async function testError() {
@@ -35,10 +32,7 @@ export const GlobalSettingsPage: VFC = () => {
             throw Error('Test error should be error');
         }
 
-        serverApi.toaster.toast({
-            title: 'Error',
-            body: res.err.err,
-        });
+        logger.toastError(res.err.err);
     }
 
     return (
@@ -96,7 +90,6 @@ export const GlobalSettingsPage: VFC = () => {
 
                                     if (!res.isOk) {
                                         logger.toastWarn(
-                                            serverApi.toaster,
                                             'Failed to update settings:',
                                             res.err.err,
                                         );
@@ -121,7 +114,6 @@ export const GlobalSettingsPage: VFC = () => {
 
                                     if (!res.isOk) {
                                         logger.toastWarn(
-                                            serverApi.toaster,
                                             'Failed to update settings:',
                                             res.err.err,
                                         );
@@ -152,7 +144,6 @@ export const GlobalSettingsPage: VFC = () => {
 
                                 if (!res.isOk) {
                                     logger.toastWarn(
-                                        serverApi.toaster,
                                         'Failed to update settings:',
                                         res.err.err,
                                     );
@@ -177,7 +168,6 @@ export const GlobalSettingsPage: VFC = () => {
 
                                     if (!res.isOk) {
                                         logger.toastWarn(
-                                            serverApi.toaster,
                                             'Failed to update settings:',
                                             res.err.err,
                                         );
@@ -201,7 +191,6 @@ export const GlobalSettingsPage: VFC = () => {
 
                                     if (!res.isOk) {
                                         logger.toastWarn(
-                                            serverApi.toaster,
                                             'Failed to update settings:',
                                             res.err.err,
                                         );
@@ -232,7 +221,6 @@ export const GlobalSettingsPage: VFC = () => {
 
                                               if (!res.isOk) {
                                                   logger.toastWarn(
-                                                      serverApi.toaster,
                                                       'Failed to update settings:',
                                                       res.err.err,
                                                   );
@@ -293,7 +281,6 @@ export const GlobalSettingsPage: VFC = () => {
 
                                             if (!res.isOk) {
                                                 logger.toastWarn(
-                                                    serverApi.toaster,
                                                     'Failed to update settings:',
                                                     res.err.err,
                                                 );

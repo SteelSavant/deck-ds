@@ -12,6 +12,8 @@ class Logger {
     /// please don't set this outside of the init function (in the backend)
     public minLevel: LogLevel;
 
+    public toaster: Toaster | null = null;
+
     public constructor() {
         this.minLevel = LogLevel.Info;
     }
@@ -43,20 +45,26 @@ class Logger {
         }
     }
 
-    public toastWarn(toaster: Toaster, ...args: any[]) {
+    public toastWarn(...args: any[]) {
         this.warn(...args);
-        toaster.toast({
-            title: 'Error', // don't differentiate between warning and error to the user, since either way, something broke.
-            body: args.join(' '),
-        });
+        const toaster = this.toaster;
+        if (toaster) {
+            toaster.toast({
+                title: 'Error', // don't differentiate between warning and error to the user, since either way, something broke.
+                body: args.join(' '),
+            });
+        }
     }
 
-    public toastError(toaster: Toaster, ...args: any[]) {
+    public toastError(...args: any[]) {
         this.error(...args);
-        toaster.toast({
-            title: 'Error',
-            body: args.join(' '),
-        });
+        const toaster = this.toaster;
+        if (toaster) {
+            toaster.toast({
+                title: 'Error',
+                body: args.join(' '),
+            });
+        }
     }
 
     private getStringForLevel(level: LogLevel) {

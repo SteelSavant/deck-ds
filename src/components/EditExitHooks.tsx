@@ -5,7 +5,6 @@ import {
     GamepadButtonSelection,
     gamepadButtonSelectionOptions,
 } from '../backend';
-import { useServerApi } from '../context/serverApiContext';
 import { ExitHooks } from '../types/backend_api';
 import { labelForGamepadButton } from '../util/display';
 import { logger } from '../util/log';
@@ -24,8 +23,6 @@ export function EditExitHooks({
     indentLevel,
     onChange,
 }: EditExitHooksProps): ReactElement {
-    const serverApi = useServerApi();
-
     const flattenedHooks = [
         [exitHooks[0]],
         [exitHooks[1]],
@@ -45,11 +42,7 @@ export function EditExitHooks({
         ]);
 
         if (!res.isOk) {
-            logger.toastWarn(
-                serverApi.toaster,
-                'Error deleting hook button:',
-                res.err,
-            );
+            logger.toastWarn('Error deleting hook button:', res.err);
         }
     }
 
@@ -96,7 +89,6 @@ export function EditExitHooks({
                                     ]);
                                     if (!res.isOk) {
                                         logger.toastWarn(
-                                            serverApi.toaster,
                                             'Error updating hook button:',
                                             res.err,
                                         );

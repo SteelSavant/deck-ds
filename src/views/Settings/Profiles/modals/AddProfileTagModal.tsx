@@ -1,6 +1,5 @@
 import { ConfirmModal, Dropdown, Focusable } from 'decky-frontend-lib';
 import { ReactElement, useState } from 'react';
-import { useServerApi } from '../../../../context/serverApiContext';
 import { logger } from '../../../../util/log';
 import { Result } from '../../../../util/result';
 
@@ -13,7 +12,6 @@ export default function CreateProfileTagModal({
     ) => Promise<Result<void, string>> | Result<void, string>;
     closeModal?: () => void;
 }): ReactElement {
-    const serverApi = useServerApi();
     const [selected, setSelected] = useState<string | null>(null);
     return (
         <ConfirmModal
@@ -25,11 +23,7 @@ export default function CreateProfileTagModal({
                     if (res.isOk) {
                         closeModal!();
                     } else {
-                        logger.toastWarn(
-                            serverApi.toaster,
-                            'Failed to create profile:',
-                            res.err,
-                        );
+                        logger.toastWarn('Failed to create profile:', res.err);
                     }
                 }
             }}

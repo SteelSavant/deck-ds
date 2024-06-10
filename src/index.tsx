@@ -25,7 +25,7 @@ import {
 } from './context/appContext';
 import { ServerApiProvider } from './context/serverApiContext';
 import patchLibraryApp from './patch/patchLibraryApp';
-import { LogLevel } from './util/log';
+import { logger, LogLevel } from './util/log';
 import QAM from './views/QAM';
 import ProfileRoute from './views/Settings/Profiles/ProfileRoute';
 import SettingsRouter from './views/Settings/SettingsRouter';
@@ -47,6 +47,8 @@ var usdplReady = false;
 })();
 
 const Content: VFC<{ serverApi: ServerAPI }> = ({ serverApi }) => {
+    logger.toaster = serverApi.toaster;
+
     if (!usdplReady) {
         // Not translated on purpose (to avoid USDPL issues)
         return (
@@ -75,6 +77,8 @@ const History = findModuleChild((m) => {
 });
 
 export default definePlugin((serverApi: ServerAPI) => {
+    logger.toaster = serverApi.toaster;
+
     function isSteamGame(overview: any): boolean {
         const hasOwnerAccountId = overview.owner_account_id !== undefined;
         const wasPurchased = !!overview.rt_purchased_time;

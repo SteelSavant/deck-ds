@@ -11,7 +11,6 @@ import {
     ModifiablePipelineContainerProvider,
     useModifiablePipelineContainer,
 } from '../../../context/modifiablePipelineContext';
-import { useServerApi } from '../../../context/serverApiContext';
 import useProfile from '../../../hooks/useProfile';
 import PipelineDisplay from '../../PipelineDisplay';
 import ProfileInfo from './ProfileInfo';
@@ -20,8 +19,6 @@ import EditProfileNameModal from './modals/EditPipelineNameModal';
 export default function ProfilePreviewRoute(): ReactElement {
     const { profileid } = useParams<{ profileid: string }>();
     const profile = useProfile(profileid);
-
-    const serverApi = useServerApi();
 
     return (
         <HandleLoading

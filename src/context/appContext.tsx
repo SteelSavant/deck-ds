@@ -1,6 +1,5 @@
 // Adapted from https://github.com/OMGDuke/SDH-GameThemeMusic/blob/main/src/state/ShortAppDetailsState.tsx
 
-import { Toaster } from 'decky-frontend-lib';
 import _ from 'lodash';
 import { createContext, FC, useContext, useEffect, useState } from 'react';
 import {
@@ -72,11 +71,6 @@ export class ShortAppDetailsState {
     } = {};
     private openViews: { [k: string]: { [k: string]: boolean } } = {};
     private lastOnAppPageTime: number = 0;
-    private toaster: Toaster;
-
-    public constructor(toaster: Toaster) {
-        this.toaster = toaster;
-    }
 
     // You can listen to this eventBus' 'stateUpdate' event and use that to trigger a useState or other function that causes a re-render
     public readonly eventBus = new EventTarget();
@@ -144,15 +138,10 @@ export class ShortAppDetailsState {
                     if (res.isOk) {
                         await res.data;
                     } else {
-                        logger.toastWarn(
-                            this.toaster,
-                            'error updating profile',
-                            res.err,
-                        );
+                        logger.toastWarn('error updating profile', res.err);
                     }
                 } else {
                     logger.toastError(
-                        this.toaster,
                         'pipeline should already be loaded before updating',
                         pipeline,
                     );
@@ -176,7 +165,6 @@ export class ShortAppDetailsState {
             this.refetchProfile(defaultProfileId, appDetails.appId);
         } else {
             logger.toastError(
-                this.toaster,
                 'failed to set app(',
                 appDetails.appId,
                 ') default to',
@@ -205,7 +193,6 @@ export class ShortAppDetailsState {
                     shouldUpdate = true;
                 } else if (!res.isOk) {
                     logger.toastWarn(
-                        this.toaster,
                         'Failed to initialize app profile:',
                         res.err.err,
                     );
@@ -264,7 +251,6 @@ export class ShortAppDetailsState {
             this.refetchProfile(profileId, appId);
         } else {
             logger.toastWarn(
-                this.toaster,
                 'failed to set app(',
                 appId,
                 ') override for',
@@ -302,19 +288,10 @@ export class ShortAppDetailsState {
                     logger.warn('failed to set external profile', profileId);
                 }
             } else {
-                logger.toastWarn(
-                    this.toaster,
-                    'external profile',
-                    profileId,
-                    'not found',
-                );
+                logger.toastWarn('external profile', profileId, 'not found');
             }
         } else {
-            logger.toastWarn(
-                this.toaster,
-                'failed to fetch external profile',
-                profileId,
-            );
+            logger.toastWarn('failed to fetch external profile', profileId);
         }
     }
 
@@ -342,7 +319,6 @@ export class ShortAppDetailsState {
 
                 if (!this.appProfile?.isOk) {
                     logger.toastWarn(
-                        this.toaster,
                         'failed to refetch app(',
                         appIdToMatch,
                         ')',

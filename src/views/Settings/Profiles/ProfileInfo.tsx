@@ -16,7 +16,6 @@ import {
 import { EditExitHooks } from '../../../components/EditExitHooks';
 import HandleLoading from '../../../components/HandleLoading';
 import { useModifiablePipelineContainer } from '../../../context/modifiablePipelineContext';
-import { useServerApi } from '../../../context/serverApiContext';
 import useGlobalSettings from '../../../hooks/useGlobalSettings';
 import useTemplates from '../../../hooks/useTemplates';
 import useToplevel from '../../../hooks/useToplevel';
@@ -32,8 +31,6 @@ export default function ProfileInfo(
     }
 
     const profile: CategoryProfile = container;
-
-    const serverApi = useServerApi();
 
     const { dispatch } = useModifiablePipelineContainer();
 
@@ -51,11 +48,7 @@ export default function ProfileInfo(
         });
 
         if (!res.isOk) {
-            logger.toastWarn(
-                serverApi.toaster,
-                'Failed to remove tag:',
-                res.err.err,
-            );
+            logger.toastWarn('Failed to remove tag:', res.err.err);
         }
     }
 
@@ -105,11 +98,7 @@ export default function ProfileInfo(
         });
 
         if (!res.isOk) {
-            logger.toastWarn(
-                serverApi.toaster,
-                'Failed to remove toplevel action:',
-                res.err.err,
-            );
+            logger.toastWarn('Failed to remove toplevel action:', res.err.err);
         }
     }
 
@@ -160,7 +149,6 @@ export default function ProfileInfo(
                                 if (!res.isOk) {
                                     if (!res.isOk) {
                                         logger.toastWarn(
-                                            serverApi.toaster,
                                             'Failed to update platform:',
                                             res.err.err,
                                         );
@@ -282,7 +270,6 @@ export default function ProfileInfo(
 
                                 if (!res.isOk) {
                                     logger.toastWarn(
-                                        serverApi.toaster,
                                         'Failed to update primary target:',
                                         res.err.err,
                                     );
@@ -309,7 +296,6 @@ export default function ProfileInfo(
 
                                 if (!res.isOk) {
                                     logger.toastWarn(
-                                        serverApi.toaster,
                                         'Failed to update exit hooks:',
                                         res.err.err,
                                     );
@@ -355,7 +341,6 @@ export default function ProfileInfo(
 
                                         if (!res.isOk) {
                                             logger.toastWarn(
-                                                serverApi.toaster,
                                                 'Failed to update exit hooks:',
                                                 res.err.err,
                                             );
@@ -423,7 +408,6 @@ export default function ProfileInfo(
 
                                 if (!res.isOk) {
                                     logger.toastWarn(
-                                        serverApi.toaster,
                                         'Failed to update update controller override:',
                                         res.err.err,
                                     );
@@ -462,7 +446,6 @@ export default function ProfileInfo(
 
                                 if (!res.isOk) {
                                     logger.toastWarn(
-                                        serverApi.toaster,
                                         'Failed to update update controller override:',
                                         res.err.err,
                                     );

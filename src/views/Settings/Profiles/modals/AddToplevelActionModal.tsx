@@ -1,7 +1,6 @@
 import { ConfirmModal, Dropdown } from 'decky-frontend-lib';
 import { ReactElement, useState } from 'react';
 import HandleLoading from '../../../../components/HandleLoading';
-import { useServerApi } from '../../../../context/serverApiContext';
 import useToplevel from '../../../../hooks/useToplevel';
 import { ToplevelInfo } from '../../../../types/backend_api';
 import { logger } from '../../../../util/log';
@@ -16,7 +15,6 @@ export default function AddToplevelActionModal({
     ) => Promise<Result<void, string>> | Result<void, string>;
     closeModal?: () => void;
 }): ReactElement {
-    const serverApi = useServerApi();
     const toplevel = useToplevel();
     const [state, setState] = useState<ToplevelInfo | null>(null);
 
@@ -36,7 +34,6 @@ export default function AddToplevelActionModal({
 
                 if (saved && !saved.isOk) {
                     logger.toastWarn(
-                        serverApi.toaster,
                         'Failed to add toplevel action:',
                         saved.err,
                     );
