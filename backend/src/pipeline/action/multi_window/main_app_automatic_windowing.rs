@@ -33,7 +33,7 @@ impl ActionImpl for MainAppAutomaticWindowing {
         let window_ctx = ctx.kwin.start_tracking_new_windows()?;
 
         ctx.register_on_launch_callback(Box::new(move |_pid, ctx| {
-            let new_windows = window_ctx.get_new_window_clients(Duration::from_secs(60))?;
+            let new_windows = window_ctx.get_new_window_clients(Duration::from_secs(30))?;
 
             // TODO::actually get best window
 
@@ -41,6 +41,8 @@ impl ActionImpl for MainAppAutomaticWindowing {
                 .into_iter()
                 .last()
                 .context("automatic windowing expected to find a window")?;
+
+            log::debug!("using {best_window:?} as app window");
 
             let multi = Action::from(MultiWindow {
                 id,

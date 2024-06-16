@@ -289,16 +289,19 @@ mod window_tracking {
                         Box::new(move |message, _connection| -> bool {
                             log::debug!("dbus message: {:?}", message);
                             if let Some(_member) = message.member() {
-                                if let Some(arg) = message.get1() {
-                                    match serde_json::de::from_str::<Vec<KWinClientInfo>>(arg) {
-                                        Ok(mut update) => {
-                                            let mut lock = info_ref.write().unwrap();
-                                            std::mem::swap(lock.as_mut(), &mut update);
-                                        }
-                                        Err(err) => {
-                                            log::warn!("Failed to deserialize dbus result: {err}")
-                                        }
-                                    }
+                                if let Some(arg) = message.get1::<String>() {
+                                    let mut lock = info_ref.write().unwrap();
+
+                                    let mut info =
+                                        serde_json::from_str::<Vec<KWinClientInfo>>(&arg)
+                                            .expect("json from dbus should parse");
+
+                                    std::mem::swap(lock.as_mut(), &mut info);
+                                    log::debug!(
+                                        "updated client windows for {} to {:?}",
+                                        script_name,
+                                        lock,
+                                    );
                                 }
                             }
                             true
@@ -335,12 +338,14 @@ mod window_tracking {
 
             self.kill_tx.send(())?;
 
-            Ok(self
-                .msg_thread
-                .take()
-                .unwrap()
-                .join()
-                .map_err(|err| anyhow::anyhow!("failed to join dbus message thread: {err:#?}"))?)
+            let windows =
+                self.msg_thread.take().unwrap().join().map_err(|err| {
+                    anyhow::anyhow!("failed to join dbus message thread: {err:#?}")
+                })?;
+
+            log::debug!("using client windows: {windows:?}");
+
+            Ok(windows)
         }
 
         fn get_kwin_proxy(kwin_conn: &Connection) -> Proxy<&Connection> {
@@ -371,9 +376,9 @@ let clients = [];
 function updateClients() {{
     console.log('updating clients to', clients);
 
-    callDBus("{dbus_addr}", "/", "", "updateClients", clients);
+    callDBus("{dbus_addr}", "/", "", "updateClients", JSON.stringify(clients));
 
-    console.log('sending msg over dbus:', clients);
+    console.log('sending msg over dbus:', JSON.stringify(clients));
 }}
 
 workspace.clientAdded.connect((client) => {{

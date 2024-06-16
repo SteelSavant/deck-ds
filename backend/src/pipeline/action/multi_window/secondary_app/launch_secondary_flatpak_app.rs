@@ -58,13 +58,13 @@ impl ActionImpl for LaunchSecondaryFlatpakApp {
             options,
         });
 
-        let new_windows = window_ctx.get_new_window_clients(Duration::from_secs(60))?;
+        let new_windows = window_ctx.get_new_window_clients(Duration::from_secs(10))?;
 
         // TODO::actually get best window
 
         let best_window = new_windows
             .into_iter()
-            .last()
+            .next()
             .context("secondary app windowing expected to find a window")?;
 
         SecondaryAppWindowOptions {
