@@ -13,9 +13,7 @@ use crate::{
         executor::PipelineContext,
     },
     secondary_app::FlatpakApp,
-    sys::{
-        flatpak::check_running_flatpaks, windowing::get_window_info_from_pid_default_active_after,
-    },
+    sys::flatpak::check_running_flatpaks,
     util::escape_string_for_regex,
 };
 
@@ -46,6 +44,8 @@ impl ActionImpl for LaunchSecondaryFlatpakApp {
             .get_state_index::<Self>()
             .expect("state slot should exist");
 
+        let window_ctx = ctx.kwin.start_tracking_new_windows()?;
+
         let pid = self
             .app
             .setup()?
@@ -58,12 +58,18 @@ impl ActionImpl for LaunchSecondaryFlatpakApp {
             options,
         });
 
-        let window_info =
-            get_window_info_from_pid_default_active_after(pid, Duration::from_secs(2))?; // TODO::find a better way to link a flatpak pid to its actual window (sandboxing means x11 sees the pid as either 0 or 2, instead of the one reported)
+        let new_windows = window_ctx.get_new_window_clients(Duration::from_secs(60))?;
+
+        // TODO::actually get best window
+
+        let best_window = new_windows
+            .into_iter()
+            .last()
+            .context("secondary app windowing expected to find a window")?;
 
         SecondaryAppWindowOptions {
-            window_matcher: escape_string_for_regex(window_info.name),
-            classes: window_info.classes,
+            window_matcher: escape_string_for_regex(best_window.caption),
+            classes: best_window.window_classes,
             windowing_behavior: self.windowing_behavior,
             screen_preference: self.screen_preference,
         }

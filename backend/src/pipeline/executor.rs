@@ -49,7 +49,7 @@ pub struct PipelineExecutor {
     ctx: PipelineContext,
 }
 
-type OnLaunchCallback = Box<dyn Fn(Pid, &mut PipelineContext) -> Result<()>>;
+type OnLaunchCallback = Box<dyn FnOnce(Pid, &mut PipelineContext) -> Result<()>>;
 
 pub struct PipelineContext {
     /// Decky environment variables for the session
@@ -536,11 +536,11 @@ impl PipelineExecutor {
         let mut tmp = vec![];
         std::mem::swap(&mut tmp, &mut self.ctx.on_launch_callbacks);
 
-        for callback in tmp.iter() {
+        for callback in tmp.into_iter() {
             callback(app_process.get_pid(), &mut self.ctx)?;
         }
 
-        std::mem::swap(&mut tmp, &mut self.ctx.on_launch_callbacks);
+        std::mem::swap(&mut vec![], &mut self.ctx.on_launch_callbacks);
 
         if self.target == PipelineTarget::Desktop {
             // reconfigure kwin after actions + callbacks have executed

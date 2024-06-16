@@ -5,5 +5,4 @@ pub mod flatpak;
 pub mod kwin;
 pub mod steam;
 pub mod steamos_session_select;
-pub mod windowing;
 pub mod x_display;

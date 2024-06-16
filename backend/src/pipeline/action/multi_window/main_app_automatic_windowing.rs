@@ -1,11 +1,11 @@
 use std::time::Duration;
 
+use anyhow::Context;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     pipeline::action::{Action, ActionId, ActionImpl, ActionType, ErasedPipelineAction},
-    sys::windowing::get_window_info_from_pid_default_active_after,
     util::escape_string_for_regex,
 };
 
@@ -30,8 +30,18 @@ impl ActionImpl for MainAppAutomaticWindowing {
         let id = self.id;
         let general = self.general.clone();
 
-        ctx.register_on_launch_callback(Box::new(move |pid, ctx| {
-            let info = get_window_info_from_pid_default_active_after(pid, Duration::from_secs(5))?;
+        let window_ctx = ctx.kwin.start_tracking_new_windows()?;
+
+        ctx.register_on_launch_callback(Box::new(move |_pid, ctx| {
+            let new_windows = window_ctx.get_new_window_clients(Duration::from_secs(60))?;
+
+            // TODO::actually get best window
+
+            let best_window = new_windows
+                .into_iter()
+                .last()
+                .context("automatic windowing expected to find a window")?;
+
             let multi = Action::from(MultiWindow {
                 id,
                 general: general.clone(),
@@ -39,9 +49,9 @@ impl ActionImpl for MainAppAutomaticWindowing {
                 citra: None,
                 dolphin: None,
                 custom: Some(CustomWindowOptions {
-                    primary_window_matcher: Some(escape_string_for_regex(info.name)),
+                    primary_window_matcher: Some(escape_string_for_regex(best_window.caption)),
                     secondary_window_matcher: None,
-                    classes: info.classes,
+                    classes: best_window.window_classes,
                     ..Default::default()
                 }),
             });

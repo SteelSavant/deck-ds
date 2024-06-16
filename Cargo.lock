@@ -1102,6 +1102,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e8566979429cf69b49a5c740c60791108e86440e8be149bbea4fe54d2c32d6e2"
 
 [[package]]
+name = "dbus"
+version = "0.9.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1bb21987b9fb1613058ba3843121dd18b163b254d8a6e797e144cbac14d96d1b"
+dependencies = [
+ "libc",
+ "libdbus-sys",
+ "winapi",
+]
+
+[[package]]
 name = "deck-ds"
 version = "0.2.0"
 dependencies = [
@@ -1109,6 +1120,7 @@ dependencies = [
  "async-trait",
  "clap",
  "configparser",
+ "dbus",
  "derive_more",
  "dirs",
  "edid-rs",
@@ -1139,6 +1151,7 @@ dependencies = [
  "smart-default",
  "str-distance",
  "strum",
+ "tempfile",
  "testing_logger",
  "thiserror",
  "type_reg",
@@ -2324,6 +2337,15 @@ name = "libc"
 version = "0.2.155"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97b3888a4aecf77e811145cadf6eef5901f4782c53886191b2f693f24761847c"
+
+[[package]]
+name = "libdbus-sys"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06085512b750d640299b79be4bad3d2fa90a9c00b1fd9e1b46364f66f0485c72"
+dependencies = [
+ "pkg-config",
+]
 
 [[package]]
 name = "libloading"
