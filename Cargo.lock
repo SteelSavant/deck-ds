@@ -1156,6 +1156,7 @@ dependencies = [
  "thiserror",
  "type_reg",
  "typemap-ors",
+ "unicode-segmentation",
  "ureq",
  "usdpl-back",
  "uuid",

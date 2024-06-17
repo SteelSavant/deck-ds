@@ -295,8 +295,9 @@ impl PipelineDefinition {
     ) -> Result<Pipeline> {
         let targets = PipelineTarget::iter()
             .map(|t: PipelineTarget| {
+                // put platform after toplevel actions for now, to simplify automatic windowing, since the main app
                 let platform_ref = &self.platform;
-                let toplevel = [vec![platform_ref], self.toplevel.iter().collect()].concat();
+                let toplevel = [self.toplevel.iter().collect(), vec![platform_ref]].concat();
 
                 let reified: Vec<_> = toplevel
                     .iter()

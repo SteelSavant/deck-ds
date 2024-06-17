@@ -13,8 +13,11 @@ use crate::{
         executor::PipelineContext,
     },
     secondary_app::FlatpakApp,
-    sys::flatpak::check_running_flatpaks,
-    util::escape_string_for_regex,
+    sys::{
+        flatpak::{check_running_flatpaks, list_installed_flatpaks},
+        kwin::KWinClientMatcher,
+    },
+    util::{escape_string_for_regex, get_maybe_window_names_classes_from_title},
 };
 
 use super::{
@@ -58,14 +61,15 @@ impl ActionImpl for LaunchSecondaryFlatpakApp {
             options,
         });
 
-        let new_windows = window_ctx.get_new_window_clients(Duration::from_secs(10))?;
-
-        // TODO::actually get best window
-
-        let best_window = new_windows
-            .into_iter()
-            .next()
-            .context("secondary app windowing expected to find a window")?;
+        let best_window = window_ctx
+            .get_best_window_client(KWinClientMatcher {
+                min_delay: Duration::from_secs(2),
+                max_delay: Duration::from_secs(30),
+                preferred_ord_if_no_match: std::cmp::Ordering::Less,
+                maybe_strings: self.app.get_maybe_window_names_classes(),
+                // match_fn: Box::new(move |clients| clients.into_iter().next().cloned()),
+            })?
+            .context("automatic windowing expected to find a window")?;
 
         SecondaryAppWindowOptions {
             window_matcher: escape_string_for_regex(best_window.caption),
@@ -122,6 +126,7 @@ impl FlatpakApp {
         match child.try_wait() {
             Ok(Some(v)) => {
                 if v.success() {
+                    log::warn!("flatpak process for {} exited immediately...", self.app_id);
                     Ok(None)
                 } else {
                     Err(anyhow::anyhow!(
@@ -135,28 +140,31 @@ impl FlatpakApp {
         }
     }
 
-    fn teardown(&self, pid: Pid) -> Result<()> {
-        let running = check_running_flatpaks()?;
+    fn teardown(&self, _pid: Pid) -> Result<()> {
+        // Don't teardown; -p arg already does it; TODO::clean this up
+        // let running = check_running_flatpaks()?;
 
-        if running
-            .iter()
-            .any(|v| v.pid == pid && v.app_id == self.app_id)
-        {
-            let status = Command::new("flatpak")
-                .args(["kill", &self.app_id])
-                .status()?;
+        // if running
+        //     .iter()
+        //     .any(|v| v.pid == pid && v.app_id == self.app_id)
+        // {
+        //     let status = Command::new("flatpak")
+        //         .args(["kill", &self.app_id])
+        //         .status()?;
 
-            if status.success() {
-                log::debug!("Closed flatpak with pid {pid}");
+        //     if status.success() {
+        //         log::debug!("Closed flatpak with pid {pid}");
 
-                Ok(())
-            } else {
-                Err(anyhow::anyhow!("failed to kill flatpak {}", self.app_id))
-            }
-        } else {
-            log::debug!("Failed to find running flatpak with pid {pid} in {running:?}");
-            Ok(())
-        }
+        //         Ok(())
+        //     } else {
+        //         Err(anyhow::anyhow!("failed to kill flatpak {}", self.app_id))
+        //     }
+        // } else {
+        //     log::debug!("Failed to find running flatpak with pid {pid} in {running:?}");
+        //     Ok(())
+        // }
+
+        Ok(())
     }
 
     fn get_dependencies(&self) -> Vec<Dependency> {
@@ -164,5 +172,27 @@ impl FlatpakApp {
             Dependency::Flatpak(self.app_id.clone()),
             Dependency::System("xdotool".to_string()),
         ]
+    }
+
+    fn get_maybe_window_names_classes(&self) -> Vec<String> {
+        let title = list_installed_flatpaks()
+            .unwrap_or_default()
+            .into_iter()
+            .find(|v| v.app_id == self.app_id)
+            .map(|v| v.name);
+        let id = self.app_id.to_string();
+        let mut parts = self
+            .app_id
+            .split(".")
+            .map(|v| v.to_string())
+            .collect::<Vec<_>>();
+
+        parts.push(id);
+
+        if let Some(title) = title {
+            parts.append(&mut get_maybe_window_names_classes_from_title(&title));
+        }
+
+        parts
     }
 }

@@ -6,7 +6,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     pipeline::action::{Action, ActionId, ActionImpl, ActionType, ErasedPipelineAction},
-    util::escape_string_for_regex,
+    sys::kwin::KWinClientMatcher,
+    util::{escape_string_for_regex, get_maybe_window_names_classes_from_title},
 };
 
 use super::primary_windowing::{CustomWindowOptions, GeneralOptions, MultiWindow};
@@ -32,14 +33,26 @@ impl ActionImpl for MainAppAutomaticWindowing {
 
         let window_ctx = ctx.kwin.start_tracking_new_windows()?;
 
+        let launch_info = ctx
+            .launch_info
+            .as_ref()
+            .expect("main app automatic windowing requires launch info");
+
+        let maybe_strings = get_maybe_window_names_classes_from_title(&launch_info.game_title);
+
         ctx.register_on_launch_callback(Box::new(move |_pid, ctx| {
-            let new_windows = window_ctx.get_new_window_clients(Duration::from_secs(30))?;
+            log::debug!("main app automatic windowing callback");
 
-            // TODO::actually get best window
-
-            let best_window = new_windows
-                .into_iter()
-                .last()
+            let best_window = window_ctx
+                .get_best_window_client(KWinClientMatcher {
+                    min_delay: Duration::from_secs(5),
+                    max_delay: Duration::from_secs(30),
+                    preferred_ord_if_no_match: std::cmp::Ordering::Greater,
+                    maybe_strings, // match_fn: Box::new(move |clients| {
+                                   //     maybe_strings;
+                                   //     clients.into_iter().last().cloned()
+                                   // }),
+                })?
                 .context("automatic windowing expected to find a window")?;
 
             log::debug!("using {best_window:?} as app window");

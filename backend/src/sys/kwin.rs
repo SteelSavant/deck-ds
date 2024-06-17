@@ -4,6 +4,8 @@ use std::{ffi::OsStr, path::PathBuf, process::Command, str::FromStr};
 
 use crate::asset::{Asset, AssetManager};
 
+pub use window_tracking::KWinClientMatcher;
+
 #[derive(Debug)]
 pub struct KWin {
     assets_manager: AssetManager<'static>,
@@ -226,10 +228,11 @@ impl KWin {
 // Window tracking adapted from https://github.com/jinliu/kdotool
 mod window_tracking {
     use std::{
+        cmp::Ordering,
         ops::Deref,
-        sync::{mpsc::Sender, Arc, RwLock},
-        thread::{sleep, JoinHandle},
-        time::Duration,
+        sync::{mpsc::Sender, Arc, Mutex},
+        thread::JoinHandle,
+        time::{Duration, Instant},
     };
 
     use super::*;
@@ -239,6 +242,7 @@ mod window_tracking {
         message::MatchRule,
     };
     use serde::Deserialize;
+    use str_distance::str_distance_normalized;
 
     use std::io::Write;
 
@@ -246,8 +250,8 @@ mod window_tracking {
         script_name: uuid::Uuid,
         script_id: i32,
         kwin_conn: Connection,
-        msg_thread: Option<JoinHandle<Vec<KWinClientInfo>>>,
-        kill_tx: Sender<()>,
+        msg_thread: Option<JoinHandle<Option<KWinClientInfo>>>,
+        kill_tx: Sender<Option<KWinClientMatcher>>,
     }
 
     impl KWinNewWindowTrackingScope {
@@ -259,7 +263,8 @@ mod window_tracking {
 
             let self_conn = SyncConnection::new_session()?;
 
-            let script_text = Self::get_script_text(&self_conn.unique_name().to_string());
+            let script_text =
+                Self::get_script_text(&self_conn.unique_name().to_string(), script_name);
 
             let mut script_file = tempfile::NamedTempFile::with_prefix("DeckDS-")?;
 
@@ -275,46 +280,200 @@ mod window_tracking {
                 "loadScript",
                 (script_file_path.to_str().unwrap(), &script_name.to_string()),
             )?;
-            log::debug!("Script ID: {script_id}");
+            log::debug!("Script ID: {script_id} @ {script_file_path:?}");
 
-            let (kill_tx, kill_rx) = std::sync::mpsc::channel::<()>();
+            let (kill_tx, kill_rx) = std::sync::mpsc::channel::<Option<KWinClientMatcher>>();
             // setup message receiver
-            let msg_thread: JoinHandle<Vec<KWinClientInfo>> = std::thread::spawn(move || {
-                let info: Arc<RwLock<Vec<KWinClientInfo>>> = Arc::new(RwLock::new(vec![]));
-
-                {
-                    let info_ref = info.clone();
-                    let _receiver = self_conn.start_receive(
-                        MatchRule::new_method_call(),
-                        Box::new(move |message, _connection| -> bool {
-                            log::debug!("dbus message: {:?}", message);
-                            if let Some(_member) = message.member() {
-                                if let Some(arg) = message.get1::<String>() {
-                                    let mut lock = info_ref.write().unwrap();
-
-                                    let mut info =
-                                        serde_json::from_str::<Vec<KWinClientInfo>>(&arg)
-                                            .expect("json from dbus should parse");
-
-                                    std::mem::swap(lock.as_mut(), &mut info);
-                                    log::debug!(
-                                        "updated client windows for {} to {:?}",
-                                        script_name,
-                                        lock,
-                                    );
-                                }
-                            }
-                            true
-                        }),
+            let msg_thread = std::thread::spawn(move || {
+                fn get_best_match<'a>(
+                    maybe_strings: &[String],
+                    clients: &'a [KWinClientInfo],
+                ) -> Option<&'a KWinClientInfo> {
+                    log::debug!(
+                        "Checking clients {:?} against strings {:?}",
+                        clients,
+                        maybe_strings
                     );
+
+                    struct Match<'a> {
+                        caption_score: f64,
+                        window_class_score: f64,
+                        client: &'a KWinClientInfo,
+                    }
+
+                    let matches = clients.iter().filter_map(|c| {
+                        const THRESH: f64 = 0.4;
+
+                        let caption_score = maybe_strings.iter().fold(1., |acc, item| {
+                            str_distance_normalized(
+                                item.to_lowercase(),
+                                c.caption.to_lowercase(),
+                                str_distance::JaroWinkler::default(),
+                            )
+                            .min(acc)
+                        });
+
+                        let window_class_score = maybe_strings.iter().fold(1., |acc, item| {
+                            c.window_classes
+                                .iter()
+                                .fold(1., |acc, wc| {
+                                    str_distance_normalized(
+                                        item.to_lowercase(),
+                                        wc.to_lowercase(),
+                                        str_distance::JaroWinkler::default(),
+                                    )
+                                    .min(acc)
+                                })
+                                .min(acc)
+                        });
+
+                        log::debug!(
+                            "client {c:?} has scores ({caption_score},{window_class_score})"
+                        );
+
+                        if caption_score < THRESH || window_class_score < THRESH {
+                            Some(Match {
+                                caption_score,
+                                window_class_score,
+                                client: c,
+                            })
+                        } else {
+                            None
+                        }
+                    });
+
+                    matches
+                        .reduce(|acc, m| {
+                            let acc_score = acc.caption_score + acc.window_class_score;
+                            let m_score = m.caption_score + m.window_class_score;
+
+                            if acc_score < m_score {
+                                acc
+                            } else {
+                                m
+                            }
+                        })
+                        .map(|v| v.client)
                 }
 
-                while kill_rx.try_recv() == Err(std::sync::mpsc::TryRecvError::Empty) {
+                let info: Arc<Mutex<Vec<KWinClientInfo>>> = Arc::new(Mutex::new(vec![]));
+
+                let info_ref = info.clone();
+                let receiver = self_conn.start_receive(
+                    MatchRule::new_method_call(),
+                    Box::new(move |message, _connection| -> bool {
+                        log::debug!("got dbus message: {:?}", message);
+
+                        if let Some(_member) = message.member() {
+                            let (token, arg) = message.get2::<String, String>();
+
+                            log::debug!("got token: {token:?}");
+                            log::debug!("got arg: {arg:?}");
+
+                            let token =
+                                uuid::Uuid::parse_str(&token.expect("expected token from dbus"))
+                                    .expect("dbus token should be valid uuid");
+
+                            log::debug!("actual token: {token}");
+
+                            if token != script_name {
+                                log::debug!(
+                                    "tokens don't match; {token} != {script_name} ; returning"
+                                );
+                                return false;
+                            }
+
+                            let arg = arg.expect("dbus arg should be valid");
+
+                            log::debug!("actual arg: {arg}");
+                            let poisoned = info_ref.is_poisoned();
+                            log::debug!("lock poisoned: {poisoned}");
+                            let lock = info_ref.try_lock();
+                            log::warn!("TRYING LOCK IN DBUS CALLBACK");
+
+                            log::debug!("lock res: {lock:?}");
+
+                            if let Ok(mut lock) = lock {
+                                log::debug!("locked lock");
+
+                                if let Err(err) = serde_json::from_str::<Vec<KWinClientInfo>>(&arg)
+                                {
+                                    log::error!("err: {err:#?}");
+                                }
+
+                                let mut info = serde_json::from_str::<Vec<KWinClientInfo>>(&arg)
+                                    .expect("json from dbus should parse");
+
+                                log::debug!("parsed info: {info:?}");
+
+                                std::mem::swap(lock.as_mut(), &mut info);
+                                log::debug!(
+                                    "updated client windows for {} to {:?}",
+                                    script_name,
+                                    lock,
+                                );
+                            }
+                        }
+                        true
+                    }),
+                );
+
+                let mut signal = kill_rx.try_recv();
+
+                while matches!(signal, Err(std::sync::mpsc::TryRecvError::Empty)) {
                     self_conn.process(Duration::from_millis(1000)).unwrap();
+                    signal = kill_rx.try_recv();
                 }
 
-                let lock = info.read().unwrap();
-                lock.deref().clone()
+                log::debug!("Got end signal value: {}", signal.is_ok());
+
+                if let Ok(Some(matcher)) = signal {
+                    let mut found_instant: Option<Instant> = None;
+                    let timeout_instant = Instant::now();
+
+                    while timeout_instant.elapsed() < matcher.max_delay
+                        && (found_instant.is_none()
+                            || found_instant.unwrap().elapsed() < matcher.min_delay)
+                    {
+                        let has_match = {
+                            let lock = info.lock().unwrap();
+                            log::warn!("LOCKING IN ELAPSED LOOP");
+                            get_best_match(&matcher.maybe_strings, &lock.deref()).is_some()
+                        };
+
+                        if has_match {
+                            if found_instant.is_none() {
+                                log::debug!("found match; setting instant");
+                                found_instant = Some(Instant::now());
+                            }
+                        } else if found_instant.is_some() {
+                            log::debug!("lost match; removing instant");
+                            found_instant = None;
+                        } else {
+                            log::debug!("checking...");
+                        }
+
+                        self_conn.process(Duration::from_millis(5000)).unwrap();
+                    }
+
+                    self_conn.stop_receive(receiver);
+
+                    let lock = info.lock().unwrap();
+                    log::warn!("LOCKING FOR FINAL RESULT");
+                    let best = get_best_match(&matcher.maybe_strings, &lock.deref());
+
+                    log::debug!("returning best match: {best:?}");
+
+                    best.or_else(|| match matcher.preferred_ord_if_no_match {
+                        Ordering::Less => lock.deref().iter().next(),
+                        Ordering::Equal => None,
+                        Ordering::Greater => lock.deref().iter().last(),
+                    })
+                    .cloned()
+                } else {
+                    self_conn.stop_receive(receiver);
+                    None
+                }
             });
 
             let res = Self {
@@ -333,19 +492,22 @@ mod window_tracking {
             Ok(res)
         }
 
-        pub fn get_new_window_clients(mut self, delay: Duration) -> Result<Vec<KWinClientInfo>> {
-            sleep(delay);
+        pub fn get_best_window_client(
+            mut self,
+            matcher: KWinClientMatcher,
+        ) -> Result<Option<KWinClientInfo>> {
+            log::debug!("joining windowing thread");
 
-            self.kill_tx.send(())?;
+            self.kill_tx.send(Some(matcher))?;
 
-            let windows =
+            let window =
                 self.msg_thread.take().unwrap().join().map_err(|err| {
                     anyhow::anyhow!("failed to join dbus message thread: {err:#?}")
                 })?;
 
-            log::debug!("using client windows: {windows:?}");
+            log::debug!("using client window: {window:?}");
 
-            Ok(windows)
+            Ok(window)
         }
 
         fn get_kwin_proxy(kwin_conn: &Connection) -> Proxy<&Connection> {
@@ -366,8 +528,8 @@ mod window_tracking {
             )
         }
 
-        fn get_script_text(dbus_addr: &str) -> String {
-            let script = format!(
+        fn get_script_text(dbus_addr: &str, script_name: uuid::Uuid) -> String {
+            format!(
                 r#"
 console.log("!!!!!! Matching windows for {dbus_addr} !!!!!!");
 
@@ -376,12 +538,14 @@ let clients = [];
 function updateClients() {{
     console.log('updating clients to', clients);
 
-    callDBus("{dbus_addr}", "/", "", "updateClients", JSON.stringify(clients));
+    callDBus("{dbus_addr}", "/", "", "updateClients", "{script_name}", JSON.stringify(clients));
 
     console.log('sending msg over dbus:', JSON.stringify(clients));
 }}
 
 workspace.clientAdded.connect((client) => {{
+    if (!client.normalWindow) return;
+
     console.log('matcher got new client');
 
     const info = {{
@@ -400,10 +564,7 @@ workspace.clientRemoved.connect((client) => {{
     updateClients();
 }});
 "#
-            );
-            log::debug!("creating script for dbus address {dbus_addr}:\n\n{script}\n\n");
-
-            script
+            )
         }
     }
 
@@ -415,7 +576,7 @@ workspace.clientRemoved.connect((client) => {{
                 (&self.script_name.to_string(),),
             );
 
-            let _ = self.kill_tx.send(());
+            let _ = self.kill_tx.send(None);
         }
     }
 
@@ -423,5 +584,16 @@ workspace.clientRemoved.connect((client) => {{
     pub struct KWinClientInfo {
         pub caption: String,
         pub window_classes: Vec<String>,
+    }
+    pub struct KWinClientMatcher {
+        /// minimum delay to wait for new windows after finding a matcher
+        pub min_delay: Duration,
+        /// maximum delay to wait for windows
+        pub max_delay: Duration,
+        /// If no match found, where to pull from as a default; `Ordering::Equal` if no default, otherwise `Ordering::Less` for first found window, `Ordering::Greater` for last found window.
+        pub preferred_ord_if_no_match: Ordering,
+        /// Possible strings for either the window title or class. We're guessing here.
+        pub maybe_strings: Vec<String>, // /// Function from which to match windows
+                                        // pub match_fn: Box<dyn Send + Sync + Fn(&[KWinClientInfo]) -> Option<KWinClientInfo>>,
     }
 }

@@ -68,6 +68,7 @@ str-distance = "0.1.0"
 serde_with = "3.8.1"
 dbus = "0.9.7"
 tempfile = "3.10.1"
+unicode-segmentation = "1.11.0"
 
 [features]
 default = ["online", "decky"]
