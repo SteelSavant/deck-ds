@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     pipeline::action::{Action, ActionId, ActionImpl, ActionType, ErasedPipelineAction},
+    settings::SteamLaunchInfo,
     sys::kwin::KWinClientMatcher,
     util::{escape_string_for_regex, get_maybe_window_names_classes_from_title},
 };
@@ -38,7 +39,7 @@ impl ActionImpl for MainAppAutomaticWindowing {
             .as_ref()
             .expect("main app automatic windowing requires launch info");
 
-        let maybe_strings = get_maybe_window_names_classes_from_title(&launch_info.game_title);
+        let maybe_strings = get_maybe_window_names_from_launch_info(&launch_info);
 
         ctx.register_on_launch_callback(Box::new(move |_pid, ctx| {
             log::debug!("main app automatic windowing callback");
@@ -103,3 +104,24 @@ impl ActionImpl for MainAppAutomaticWindowing {
         )
     }
 }
+
+fn get_maybe_window_names_from_launch_info(launch_info: &SteamLaunchInfo) -> Vec<String> {
+    let mut maybes = get_maybe_window_names_classes_from_title(&launch_info.game_title);
+    maybes.push(format!("steam_app_{}", launch_info.app_id.raw()));
+
+    maybes
+}
+
+// Totally Broken:
+// - Nidhogg (closes immediately)
+// - Ultimate Chicken Horse (closes immediately)
+// - Peggle (horrible flickering, wrong window size)
+// - Broforce (closes immediately)
+// - Castle Crashers (closes immediately)
+
+// Broken (Fixable)
+// - Lovers in a Dangerous Spacetime (wrong window size) [Fixable in game settings]
+
+// Work:
+// - Everspace (questionable resolution)
+// - One Step From Eden

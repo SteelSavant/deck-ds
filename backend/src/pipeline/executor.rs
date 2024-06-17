@@ -504,7 +504,7 @@ impl PipelineExecutor {
         if errors.is_empty() {
             Ok(())
         } else {
-            let err = anyhow::anyhow!("Encountered errors executing pipeline: {:?}", errors);
+            let err = anyhow::anyhow!("Encountered errors executing pipeline: {:#?}", errors);
 
             log::error!("{err:#?}");
             Err(err)

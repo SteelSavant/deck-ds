@@ -555,7 +555,6 @@ workspace.clientRemoved.connect((client) => {{
         /// If no match found, where to pull from as a default; `Ordering::Equal` if no default, otherwise `Ordering::Less` for first found window, `Ordering::Greater` for last found window.
         pub preferred_ord_if_no_match: Ordering,
         /// Possible strings for either the window title or class. We're guessing here.
-        pub maybe_strings: Vec<String>, // /// Function from which to match windows
-                                        // pub match_fn: Box<dyn Send + Sync + Fn(&[KWinClientInfo]) -> Option<KWinClientInfo>>,
+        pub maybe_strings: Vec<String>,
     }
 }
