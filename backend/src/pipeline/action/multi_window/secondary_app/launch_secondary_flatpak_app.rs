@@ -67,7 +67,6 @@ impl ActionImpl for LaunchSecondaryFlatpakApp {
                 max_delay: Duration::from_secs(30),
                 preferred_ord_if_no_match: std::cmp::Ordering::Less,
                 maybe_strings: self.app.get_maybe_window_names_classes(),
-                // match_fn: Box::new(move |clients| clients.into_iter().next().cloned()),
             })?
             .context("automatic windowing expected to find a window")?;
 
@@ -82,19 +81,15 @@ impl ActionImpl for LaunchSecondaryFlatpakApp {
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {
-        if let Some(pid) = ctx.get_state::<Self>().and_then(|state| {
+        if let Some(state) = ctx.get_state::<Self>() {
             let index = ctx
                 .get_state_index::<Self>()
                 .expect("state slot should exist");
 
             let _ = state.options.write(&ctx.kwin, index); // ignore result for now
+        };
 
-            state.pid
-        }) {
-            self.app.teardown(pid)
-        } else {
-            Ok(())
-        }
+        Ok(())
     }
 
     fn get_dependencies(&self, _ctx: &PipelineContext) -> Vec<Dependency> {
@@ -138,33 +133,6 @@ impl FlatpakApp {
             Ok(None) => Ok(Some(Pid::from_raw(child.id() as i32))),
             Err(err) => Err(err).context("error waiting for flatpak process"),
         }
-    }
-
-    fn teardown(&self, _pid: Pid) -> Result<()> {
-        // Don't teardown; -p arg already does it; TODO::clean this up
-        // let running = check_running_flatpaks()?;
-
-        // if running
-        //     .iter()
-        //     .any(|v| v.pid == pid && v.app_id == self.app_id)
-        // {
-        //     let status = Command::new("flatpak")
-        //         .args(["kill", &self.app_id])
-        //         .status()?;
-
-        //     if status.success() {
-        //         log::debug!("Closed flatpak with pid {pid}");
-
-        //         Ok(())
-        //     } else {
-        //         Err(anyhow::anyhow!("failed to kill flatpak {}", self.app_id))
-        //     }
-        // } else {
-        //     log::debug!("Failed to find running flatpak with pid {pid} in {running:?}");
-        //     Ok(())
-        // }
-
-        Ok(())
     }
 
     fn get_dependencies(&self) -> Vec<Dependency> {

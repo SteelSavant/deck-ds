@@ -272,15 +272,14 @@ mod window_tracking {
 
             let script_file_path = script_file.into_temp_path();
 
-            log::debug!("===== Load script into KWin =====");
-
             let script_id: i32;
             (script_id,) = kwin_proxy.method_call(
                 "org.kde.kwin.Scripting",
                 "loadScript",
                 (script_file_path.to_str().unwrap(), &script_name.to_string()),
             )?;
-            log::debug!("Script ID: {script_id} @ {script_file_path:?}");
+
+            log::debug!("started window tracking scipt id: {script_id} @ {script_file_path:?}");
 
             let (kill_tx, kill_rx) = std::sync::mpsc::channel::<Option<KWinClientMatcher>>();
             // setup message receiver
@@ -289,12 +288,6 @@ mod window_tracking {
                     maybe_strings: &[String],
                     clients: &'a [KWinClientInfo],
                 ) -> Option<&'a KWinClientInfo> {
-                    log::debug!(
-                        "Checking clients {:?} against strings {:?}",
-                        clients,
-                        maybe_strings
-                    );
-
                     struct Match<'a> {
                         caption_score: f64,
                         window_class_score: f64,
@@ -327,8 +320,8 @@ mod window_tracking {
                                 .min(acc)
                         });
 
-                        log::debug!(
-                            "client {c:?} has scores ({caption_score},{window_class_score})"
+                        log::trace!(
+                            "window client {c:?} has scores ({caption_score},{window_class_score})"
                         );
 
                         if caption_score < THRESH || window_class_score < THRESH {
@@ -362,22 +355,17 @@ mod window_tracking {
                 let receiver = self_conn.start_receive(
                     MatchRule::new_method_call(),
                     Box::new(move |message, _connection| -> bool {
-                        log::debug!("got dbus message: {:?}", message);
+                        log::trace!("got dbus message: {:?}", message);
 
                         if let Some(_member) = message.member() {
                             let (token, arg) = message.get2::<String, String>();
-
-                            log::debug!("got token: {token:?}");
-                            log::debug!("got arg: {arg:?}");
 
                             let token =
                                 uuid::Uuid::parse_str(&token.expect("expected token from dbus"))
                                     .expect("dbus token should be valid uuid");
 
-                            log::debug!("actual token: {token}");
-
                             if token != script_name {
-                                log::debug!(
+                                log::trace!(
                                     "tokens don't match; {token} != {script_name} ; returning"
                                 );
                                 return false;
@@ -385,29 +373,12 @@ mod window_tracking {
 
                             let arg = arg.expect("dbus arg should be valid");
 
-                            log::debug!("actual arg: {arg}");
-                            let poisoned = info_ref.is_poisoned();
-                            log::debug!("lock poisoned: {poisoned}");
-                            let lock = info_ref.try_lock();
-                            log::warn!("TRYING LOCK IN DBUS CALLBACK");
-
-                            log::debug!("lock res: {lock:?}");
-
-                            if let Ok(mut lock) = lock {
-                                log::debug!("locked lock");
-
-                                if let Err(err) = serde_json::from_str::<Vec<KWinClientInfo>>(&arg)
-                                {
-                                    log::error!("err: {err:#?}");
-                                }
-
+                            if let Ok(mut lock) = info_ref.try_lock() {
                                 let mut info = serde_json::from_str::<Vec<KWinClientInfo>>(&arg)
                                     .expect("json from dbus should parse");
 
-                                log::debug!("parsed info: {info:?}");
-
                                 std::mem::swap(lock.as_mut(), &mut info);
-                                log::debug!(
+                                log::trace!(
                                     "updated client windows for {} to {:?}",
                                     script_name,
                                     lock,
@@ -425,7 +396,7 @@ mod window_tracking {
                     signal = kill_rx.try_recv();
                 }
 
-                log::debug!("Got end signal value: {}", signal.is_ok());
+                log::trace!("Got end signal value: {}", signal.is_ok());
 
                 if let Ok(Some(matcher)) = signal {
                     let mut found_instant: Option<Instant> = None;
@@ -437,20 +408,15 @@ mod window_tracking {
                     {
                         let has_match = {
                             let lock = info.lock().unwrap();
-                            log::warn!("LOCKING IN ELAPSED LOOP");
                             get_best_match(&matcher.maybe_strings, &lock.deref()).is_some()
                         };
 
                         if has_match {
                             if found_instant.is_none() {
-                                log::debug!("found match; setting instant");
                                 found_instant = Some(Instant::now());
                             }
                         } else if found_instant.is_some() {
-                            log::debug!("lost match; removing instant");
                             found_instant = None;
-                        } else {
-                            log::debug!("checking...");
                         }
 
                         self_conn.process(Duration::from_millis(5000)).unwrap();
@@ -459,10 +425,7 @@ mod window_tracking {
                     self_conn.stop_receive(receiver);
 
                     let lock = info.lock().unwrap();
-                    log::warn!("LOCKING FOR FINAL RESULT");
                     let best = get_best_match(&matcher.maybe_strings, &lock.deref());
-
-                    log::debug!("returning best match: {best:?}");
 
                     best.or_else(|| match matcher.preferred_ord_if_no_match {
                         Ordering::Less => lock.deref().iter().next(),
@@ -484,7 +447,6 @@ mod window_tracking {
                 kill_tx,
             };
 
-            log::debug!("===== Run script =====");
             let script_proxy = res.get_script_proxy();
 
             script_proxy.method_call("org.kde.kwin.Script", "run", ())?;
@@ -496,7 +458,7 @@ mod window_tracking {
             mut self,
             matcher: KWinClientMatcher,
         ) -> Result<Option<KWinClientInfo>> {
-            log::debug!("joining windowing thread");
+            log::trace!("joining windowing thread");
 
             self.kill_tx.send(Some(matcher))?;
 
@@ -505,7 +467,7 @@ mod window_tracking {
                     anyhow::anyhow!("failed to join dbus message thread: {err:#?}")
                 })?;
 
-            log::debug!("using client window: {window:?}");
+            log::trace!("using client window: {window:?}");
 
             Ok(window)
         }
