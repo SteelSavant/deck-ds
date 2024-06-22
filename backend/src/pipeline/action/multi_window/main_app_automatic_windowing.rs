@@ -3,11 +3,12 @@ use std::time::Duration;
 use anyhow::Context;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use smart_default::SmartDefault;
 
 use crate::{
     pipeline::action::{Action, ActionId, ActionImpl, ActionType, ErasedPipelineAction},
     settings::SteamLaunchInfo,
-    sys::kwin::KWinClientMatcher,
+    sys::{kwin::KWinClientMatcher, x_display::Resolution},
     util::{escape_string_for_regex, get_maybe_window_names_classes_from_title},
 };
 
@@ -17,6 +18,49 @@ use super::primary_windowing::{CustomWindowOptions, GeneralOptions, MultiWindow}
 pub struct MainAppAutomaticWindowing {
     pub id: ActionId,
     pub general: GeneralOptions,
+    pub gamescope: GamescopeOptions,
+}
+
+#[derive(Debug, Clone, SmartDefault, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct GamescopeOptions {
+    #[default(true)]
+    pub use_gamescope: bool,
+    pub game_resolution: Option<Resolution>,
+    pub game_refresh: Option<u16>,
+    pub fullscreen_option: GamescopeFullscreenOption,
+    pub scaler: GamescopeScaler,
+    pub filter: GamescopeFilter,
+    #[default(10)]
+    pub fsr_sharpness: u8,
+    #[default(10)]
+    pub nis_sharpness: u8,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+
+pub enum GamescopeFullscreenOption {
+    #[default]
+    Borderless,
+    Fullscreen,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub enum GamescopeScaler {
+    #[default]
+    Auto,
+    Integer,
+    Fit,
+    Fill,
+    Stretch,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub enum GamescopeFilter {
+    #[default]
+    Linear,
+    FSR,
+    NIS,
+    Pixel,
 }
 
 impl ActionImpl for MainAppAutomaticWindowing {
@@ -108,20 +152,20 @@ impl ActionImpl for MainAppAutomaticWindowing {
 fn get_maybe_window_names_from_launch_info(launch_info: &SteamLaunchInfo) -> Vec<String> {
     let mut maybes = get_maybe_window_names_classes_from_title(&launch_info.game_title);
     maybes.push(format!("steam_app_{}", launch_info.app_id.raw()));
-
+    maybes.push("gamescope".to_string()); // TODO::only if launching from inside gamescope
     maybes
 }
 
 // Totally Broken:
-// - Nidhogg (closes immediately)
 // - Peggle (horrible flickering, wrong window size)
-// - Broforce (closes immediately)
 // - Castle Crashers (wrong window size, panics on resizing)
 
 // Broken (Fixable)
 // - Lovers in a Dangerous Spacetime (wrong window size) [Fixable in game settings]
+// - Nidhogg (window doesn't start fullscreen)
 
 // Work:
 // - Everspace (questionable resolution)
-// - One Step From Eden
-// - Ultimate Chicken Horse
+// - One Step From Eden (questionable resolution?)
+// - Ultimate Chicken Horse (questionable resolution)
+// - Broforce (questionable resolution?)

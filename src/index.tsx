@@ -33,6 +33,7 @@ import SettingsRouter from './views/Settings/SettingsRouter';
 declare global {
     let collectionStore: CollectionStore;
     let appStore: AppStore;
+    let appDetailsStore: AppDetailsStore;
     let App: App;
 }
 
@@ -79,6 +80,8 @@ const History = findModuleChild((m) => {
 export default definePlugin((serverApi: ServerAPI) => {
     logger.toaster = serverApi.toaster;
 
+    console.log('Steam Client:', SteamClient);
+
     function isSteamGame(overview: any): boolean {
         const hasOwnerAccountId = overview.owner_account_id !== undefined;
         const wasPurchased = !!overview.rt_purchased_time;
@@ -94,6 +97,12 @@ export default definePlugin((serverApi: ServerAPI) => {
             const appIdStr = re.exec(currentRoute)![1]!;
             const appId = Number.parseInt(appIdStr);
             const overview = appStore.GetAppOverviewByAppID(appId);
+
+            console.log('steam client app overview:', overview);
+            console.log(
+                'steam client app details',
+                appDetailsStore.GetAppDetails(appId),
+            );
 
             appDetailsState.setOnAppPage({
                 appId,

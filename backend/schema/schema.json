@@ -1483,6 +1483,97 @@
         "R2"
       ]
     },
+    "GamescopeFilter": {
+      "type": "string",
+      "enum": [
+        "Linear",
+        "FSR",
+        "NIS",
+        "Pixel"
+      ]
+    },
+    "GamescopeFullscreenOption": {
+      "type": "string",
+      "enum": [
+        "Borderless",
+        "Fullscreen"
+      ]
+    },
+    "GamescopeOptions": {
+      "type": "object",
+      "required": [
+        "fsr_sharpness",
+        "fullscreen_option",
+        "nis_sharpness",
+        "use_gamescope"
+      ],
+      "properties": {
+        "filter": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GamescopeFilter"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fsr_sharpness": {
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        "fullscreen_option": {
+          "$ref": "#/definitions/GamescopeFullscreenOption"
+        },
+        "game_refresh": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint16",
+          "minimum": 0.0
+        },
+        "game_resolution": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Resolution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "nis_sharpness": {
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        "scaler": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GamescopeScaler"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "use_gamescope": {
+          "type": "boolean"
+        }
+      }
+    },
+    "GamescopeScaler": {
+      "type": "string",
+      "enum": [
+        "Auto",
+        "Integer",
+        "Fit",
+        "Fill",
+        "Stretch"
+      ]
+    },
     "GeneralOptions": {
       "type": "object",
       "required": [
@@ -1800,10 +1891,14 @@
     "MainAppAutomaticWindowing": {
       "type": "object",
       "required": [
+        "gamescope",
         "general",
         "id"
       ],
       "properties": {
+        "gamescope": {
+          "$ref": "#/definitions/GamescopeOptions"
+        },
         "general": {
           "$ref": "#/definitions/GeneralOptions"
         },

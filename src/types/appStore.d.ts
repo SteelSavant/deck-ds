@@ -12,3 +12,11 @@ type AppStore = {
     GetAppOverviewByAppID: (appId: number) => SteamAppOverview | null;
     m_mapStoreTagLocalization: StoreTagLocalizationMap;
 };
+
+type AppDetailsStore = {
+    GetAppDetails(id: number): SteamAppDetails;
+};
+
+type SteamAppDetails = {
+    strLaunchOptions: string;
+};

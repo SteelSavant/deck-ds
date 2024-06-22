@@ -864,6 +864,7 @@ impl PipelineActionRegistarBuilder {
                         selection: MainAppAutomaticWindowing{
                             id: ActionId::nil(),
                             general: Default::default(),
+                            gamescope: Default::default(),
                         }.into(),
                     })
                 })

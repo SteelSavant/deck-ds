@@ -16,7 +16,10 @@ use crate::{
             lime_3ds_layout::Lime3dsLayout,
             melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
             multi_window::{
-                main_app_automatic_windowing::MainAppAutomaticWindowing,
+                main_app_automatic_windowing::{
+                    GamescopeFilter, GamescopeFullscreenOption, GamescopeOptions, GamescopeScaler,
+                    MainAppAutomaticWindowing,
+                },
                 primary_windowing::{
                     CemuWindowOptions, CitraWindowOptions, CustomWindowOptions,
                     DolphinWindowOptions, GeneralOptions,
@@ -1068,6 +1071,7 @@ pub struct DbMainAppAutomaticWindowing {
     #[primary_key]
     id: ActionId,
     general: DbMultiWindowGeneralOptions,
+    gamescope: DbGamescopeOptions,
 }
 
 impl From<MainAppAutomaticWindowing> for DbMainAppAutomaticWindowing {
@@ -1075,6 +1079,7 @@ impl From<MainAppAutomaticWindowing> for DbMainAppAutomaticWindowing {
         Self {
             id: value.id,
             general: value.general.into(),
+            gamescope: value.gamescope.into(),
         }
     }
 }
@@ -1084,8 +1089,103 @@ impl From<DbMainAppAutomaticWindowing> for MainAppAutomaticWindowing {
         Self {
             id: value.id,
             general: value.general.into(),
+            gamescope: value.gamescope.into(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DbGamescopeOptions {
+    pub use_gamescope: bool,
+    pub game_resolution: Option<Resolution>,
+    pub game_refresh: Option<u16>,
+    pub fullscreen_option: DbGamescopeFullscreenOption,
+    pub scaler: DbGamescopeScaler,
+    pub filter: DbGamescopeFilter,
+    pub fsr_sharpness: u8,
+    pub nis_sharpness: u8,
+}
+
+impl From<GamescopeOptions> for DbGamescopeOptions {
+    fn from(value: GamescopeOptions) -> Self {
+        Self {
+            use_gamescope: value.use_gamescope,
+            game_resolution: value.game_resolution,
+            game_refresh: value.game_refresh,
+            nis_sharpness: value.nis_sharpness,
+            fsr_sharpness: value.fsr_sharpness,
+            fullscreen_option: match value.fullscreen_option {
+                GamescopeFullscreenOption::Borderless => DbGamescopeFullscreenOption::Borderless,
+                GamescopeFullscreenOption::Fullscreen => DbGamescopeFullscreenOption::Fullscreen,
+            },
+            scaler: match value.scaler {
+                GamescopeScaler::Auto => DbGamescopeScaler::Auto,
+                GamescopeScaler::Integer => DbGamescopeScaler::Integer,
+                GamescopeScaler::Fit => DbGamescopeScaler::Fit,
+                GamescopeScaler::Fill => DbGamescopeScaler::Fill,
+                GamescopeScaler::Stretch => DbGamescopeScaler::Stretch,
+            },
+            filter: match value.filter {
+                GamescopeFilter::Linear => DbGamescopeFilter::Linear,
+                GamescopeFilter::FSR => DbGamescopeFilter::FSR,
+                GamescopeFilter::NIS => DbGamescopeFilter::NIS,
+                GamescopeFilter::Pixel => DbGamescopeFilter::Pixel,
+            },
+        }
+    }
+}
+
+impl From<DbGamescopeOptions> for GamescopeOptions {
+    fn from(value: DbGamescopeOptions) -> Self {
+        Self {
+            use_gamescope: value.use_gamescope,
+            game_resolution: value.game_resolution,
+            game_refresh: value.game_refresh,
+            nis_sharpness: value.nis_sharpness,
+            fsr_sharpness: value.fsr_sharpness,
+            fullscreen_option: match value.fullscreen_option {
+                DbGamescopeFullscreenOption::Borderless => GamescopeFullscreenOption::Borderless,
+                DbGamescopeFullscreenOption::Fullscreen => GamescopeFullscreenOption::Fullscreen,
+            },
+            scaler: match value.scaler {
+                DbGamescopeScaler::Auto => GamescopeScaler::Auto,
+                DbGamescopeScaler::Integer => GamescopeScaler::Integer,
+                DbGamescopeScaler::Fit => GamescopeScaler::Fit,
+                DbGamescopeScaler::Fill => GamescopeScaler::Fill,
+                DbGamescopeScaler::Stretch => GamescopeScaler::Stretch,
+            },
+            filter: match value.filter {
+                DbGamescopeFilter::Linear => GamescopeFilter::Linear,
+                DbGamescopeFilter::FSR => GamescopeFilter::FSR,
+                DbGamescopeFilter::NIS => GamescopeFilter::NIS,
+                DbGamescopeFilter::Pixel => GamescopeFilter::Pixel,
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+
+pub enum DbGamescopeFullscreenOption {
+    Borderless,
+    Fullscreen,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum DbGamescopeScaler {
+    Auto,
+    Integer,
+    Fit,
+    Fill,
+    Stretch,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum DbGamescopeFilter {
+    Linear,
+    FSR,
+    NIS,
+    Pixel,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

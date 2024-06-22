@@ -14,11 +14,22 @@ import { FaFile } from 'react-icons/fa';
 import { FaPlus, FaTrash } from 'react-icons/fa6';
 import {
     Action,
+    AudioDeviceInfo,
+    CemuAudio,
+    CemuAudioChannels,
+    CemuAudioSetting,
     CemuWindowOptions,
     CitraWindowOptions,
+    CustomWindowOptions,
     DolphinWindowOptions,
     ExternalDisplaySettings,
+    GamescopeFilter,
+    GamescopeFullscreenOption,
+    GamescopeScaler,
+    LaunchSecondaryAppPreset,
+    LaunchSecondaryFlatpakApp,
     LimitedMultiWindowLayout,
+    ModePreference,
     MultiWindowLayout,
     RelativeLocation,
     citraLayoutOptions,
@@ -31,16 +42,7 @@ import { useServerApi } from '../context/serverApiContext';
 import useAudioDeviceInfo from '../hooks/useAudioDeviceInfo';
 import useDisplayInfo from '../hooks/useDisplayInfo';
 import useSecondaryAppInfo from '../hooks/useSecondaryAppPresetInfo';
-import {
-    AudioDeviceInfo,
-    CemuAudio,
-    CemuAudioChannels,
-    CemuAudioSetting,
-    CustomWindowOptions,
-    LaunchSecondaryAppPreset,
-    LaunchSecondaryFlatpakApp,
-    ModePreference,
-} from '../types/backend_api';
+
 import { labelForCamelCase, labelForKebabCase } from '../util/display';
 import { ActionChild, ActionChildBuilder } from './ActionChild';
 import HandleLoading from './HandleLoading';
@@ -688,6 +690,27 @@ export function InternalEditAction({
             );
         }
         case 'MainAppAutomaticWindowing':
+            const general = cloned.value.general;
+            const gamescope = cloned.value.gamescope;
+
+            const fullscreenOptions: GamescopeFullscreenOption[] = [
+                'Borderless',
+                'Fullscreen',
+            ];
+            const scalerOptions: GamescopeScaler[] = [
+                'Auto',
+                'Integer',
+                'Fit',
+                'Stretch',
+                'Fill',
+            ];
+            const filterOptions: GamescopeFilter[] = [
+                'Linear',
+                'Pixel',
+                'FSR',
+                'NIS',
+            ];
+
             return (
                 <>
                     <Builder
@@ -696,9 +719,9 @@ export function InternalEditAction({
                         description="Keep app windows above others."
                     >
                         <Toggle
-                            value={cloned.value.general.keep_above}
+                            value={general.keep_above}
                             onChange={(isEnabled) => {
-                                cloned.value.general.keep_above = isEnabled;
+                                general.keep_above = isEnabled;
                                 onChange(cloned);
                             }}
                         />
@@ -709,13 +732,124 @@ export function InternalEditAction({
                         description="Use the Deck's embedded display as the main display, instead of as the secondary display."
                     >
                         <Toggle
-                            value={cloned.value.general.swap_screens}
+                            value={general.swap_screens}
                             onChange={(isEnabled) => {
-                                cloned.value.general.swap_screens = isEnabled;
+                                general.swap_screens = isEnabled;
                                 onChange(cloned);
                             }}
                         />
                     </Builder>
+                    <Builder
+                        indentLevel={indentLevel}
+                        label="Use Gamescope"
+                        description="Launch the game within gamescope. Fixes windowing issues for most titles."
+                    >
+                        <Toggle
+                            value={gamescope.use_gamescope}
+                            onChange={(isEnabled) => {
+                                gamescope.use_gamescope = isEnabled;
+                                onChange(cloned);
+                            }}
+                        />
+                    </Builder>
+                    {gamescope.use_gamescope ? (
+                        <>
+                            <Builder
+                                indentLevel={indentLevel + 1}
+                                label="Fullscreen Mode"
+                                description="Fullscreen mode to use for the app window."
+                            >
+                                <Dropdown
+                                    selectedOption={gamescope.fullscreen_option}
+                                    rgOptions={fullscreenOptions.map((f) => {
+                                        return {
+                                            label: labelForCamelCase(f),
+                                            data: f,
+                                        };
+                                    })}
+                                    onChange={(v) => {
+                                        gamescope.fullscreen_option = v.data;
+                                        onChange(cloned);
+                                    }}
+                                />
+                            </Builder>
+                            <Builder
+                                indentLevel={indentLevel + 1}
+                                label="Scaling Mode"
+                                description="Scaling mode to use for the app window."
+                            >
+                                <Dropdown
+                                    selectedOption={gamescope.scaler}
+                                    rgOptions={scalerOptions.map((f) => {
+                                        return {
+                                            label: labelForCamelCase(f),
+                                            data: f,
+                                        };
+                                    })}
+                                    onChange={(v) => {
+                                        gamescope.scaler = v.data;
+                                        onChange(cloned);
+                                    }}
+                                />
+                            </Builder>
+                            <Builder
+                                indentLevel={indentLevel + 1}
+                                label="Scaling Filter"
+                                description="Scaling filter to use for the app window."
+                            >
+                                <Dropdown
+                                    selectedOption={gamescope.filter}
+                                    rgOptions={filterOptions.map((f) => {
+                                        return {
+                                            label: labelForCamelCase(f),
+                                            data: f,
+                                        };
+                                    })}
+                                    onChange={(v) => {
+                                        gamescope.filter = v.data;
+                                        onChange(cloned);
+                                    }}
+                                />
+                            </Builder>
+                            {gamescope.filter === 'FSR' ? (
+                                <SliderField
+                                    label="FSR Sharpness"
+                                    value={
+                                        5 - ((gamescope.fsr_sharpness / 4) | 0)
+                                    }
+                                    indentLevel={indentLevel + 1}
+                                    min={0}
+                                    max={5}
+                                    bottomSeparator="none"
+                                    notchCount={5}
+                                    showValue={true}
+                                    onChange={(value) => {
+                                        gamescope.fsr_sharpness =
+                                            20 - value * 4;
+                                        onChange(cloned);
+                                    }}
+                                />
+                            ) : gamescope.filter === 'NIS' ? (
+                                <SliderField
+                                    label="NIS Sharpness"
+                                    value={
+                                        10 - ((gamescope.fsr_sharpness / 2) | 0)
+                                    }
+                                    indentLevel={indentLevel + 1}
+                                    min={0}
+                                    max={10}
+                                    bottomSeparator="none"
+                                    notchCount={10}
+                                    showValue={true}
+                                    onChange={(value) => {
+                                        gamescope.nis_sharpness =
+                                            20 - value * 2;
+                                        onChange(cloned);
+                                    }}
+                                />
+                            ) : null}
+                        </>
+                    ) : null}
                 </>
             );
 
