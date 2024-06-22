@@ -114,10 +114,9 @@ fn get_maybe_window_names_from_launch_info(launch_info: &SteamLaunchInfo) -> Vec
 
 // Totally Broken:
 // - Nidhogg (closes immediately)
-// - Ultimate Chicken Horse (closes immediately)
 // - Peggle (horrible flickering, wrong window size)
 // - Broforce (closes immediately)
-// - Castle Crashers (closes immediately)
+// - Castle Crashers (wrong window size, panics on resizing)
 
 // Broken (Fixable)
 // - Lovers in a Dangerous Spacetime (wrong window size) [Fixable in game settings]
@@ -125,3 +124,4 @@ fn get_maybe_window_names_from_launch_info(launch_info: &SteamLaunchInfo) -> Vec
 // Work:
 // - Everspace (questionable resolution)
 // - One Step From Eden
+// - Ultimate Chicken Horse

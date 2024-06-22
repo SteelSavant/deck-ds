@@ -13,10 +13,7 @@ use crate::{
         executor::PipelineContext,
     },
     secondary_app::FlatpakApp,
-    sys::{
-        flatpak::{check_running_flatpaks, list_installed_flatpaks},
-        kwin::KWinClientMatcher,
-    },
+    sys::{flatpak::list_installed_flatpaks, kwin::KWinClientMatcher},
     util::{escape_string_for_regex, get_maybe_window_names_classes_from_title},
 };
 

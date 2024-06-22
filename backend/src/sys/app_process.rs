@@ -162,6 +162,12 @@ impl AppProcess {
         let child = branchs
             .next()
             .ok_or(anyhow::anyhow!("app process not found"))?;
+
+        if child.contains("iscriptevaluator.exe") {
+            return Err(anyhow::anyhow!("app still launching"));
+        }
+
+        log::debug!("found app process from pstree: {child}");
         Self::get_pid_from_branch(child)
     }
 }
