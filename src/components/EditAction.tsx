@@ -814,36 +814,30 @@ export function InternalEditAction({
                             {gamescope.filter === 'FSR' ? (
                                 <SliderField
                                     label="FSR Sharpness"
-                                    value={
-                                        5 - ((gamescope.fsr_sharpness / 4) | 0)
-                                    }
+                                    value={gamescope.fsr_sharpness}
                                     indentLevel={indentLevel + 1}
                                     min={0}
-                                    max={5}
+                                    max={20}
                                     bottomSeparator="none"
                                     notchCount={5}
                                     showValue={true}
                                     onChange={(value) => {
-                                        gamescope.fsr_sharpness =
-                                            20 - value * 4;
+                                        gamescope.fsr_sharpness = value;
                                         onChange(cloned);
                                     }}
                                 />
                             ) : gamescope.filter === 'NIS' ? (
                                 <SliderField
                                     label="NIS Sharpness"
-                                    value={
-                                        10 - ((gamescope.fsr_sharpness / 2) | 0)
-                                    }
+                                    value={gamescope.nis_sharpness}
                                     indentLevel={indentLevel + 1}
                                     min={0}
-                                    max={10}
+                                    max={20}
                                     bottomSeparator="none"
-                                    notchCount={10}
+                                    notchCount={5}
                                     showValue={true}
                                     onChange={(value) => {
-                                        gamescope.nis_sharpness =
-                                            20 - value * 2;
+                                        gamescope.nis_sharpness = value;
                                         onChange(cloned);
                                     }}
                                 />
