@@ -77,6 +77,7 @@ export {
     LimitedMultiWindowLayout,
     ModePreference,
     MultiWindowLayout,
+    Pipeline,
     PipelineAction,
     PipelineDefinition,
     PipelineTarget,

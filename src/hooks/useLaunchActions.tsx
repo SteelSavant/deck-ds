@@ -9,6 +9,7 @@ import {
 } from '../backend';
 import ConfigErrorModal from '../components/ConfigErrorModal';
 import { ShortAppDetails } from '../context/appContext';
+import { setupClientPipeline } from '../pipeline/client_pipeline';
 import { logger } from '../util/log';
 import useProfiles from './useProfiles';
 
@@ -85,20 +86,32 @@ const useLaunchActions = (
                         if (errors.length > 0) {
                             showModal(<ConfigErrorModal errors={errors} />);
                         } else {
-                            const res = await autoStart({
-                                user_id_64: appDetails.userId64,
-                                game_id: appDetails.gameId,
-                                app_id: appDetails.appId.toString(),
-                                profile_id: p.id,
-                                game_title: appDetails.sortAs,
-                                is_steam_game: appDetails.isSteamGame,
-                                target: target as PipelineTarget,
-                            });
+                            // TODO::teardown pipeline on
+                            // - plugin startup
+                            // - app close (only possible when launch fails, or for game-mode)
+                            const res = await (
+                                await setupClientPipeline(
+                                    reified.data.pipeline,
+                                    target,
+                                )
+                            ).andThenAsync(async () =>
+                                (
+                                    await autoStart({
+                                        user_id_64: appDetails.userId64,
+                                        game_id: appDetails.gameId,
+                                        app_id: appDetails.appId.toString(),
+                                        profile_id: p.id,
+                                        game_title: appDetails.sortAs,
+                                        is_steam_game: appDetails.isSteamGame,
+                                        target: target,
+                                    })
+                                ).mapErr((v) => v.err),
+                            );
 
                             if (!res.isOk) {
                                 logger.toastError(
                                     'Failed to launch app:',
-                                    res.err.err,
+                                    res.err,
                                 );
                             }
                         }
