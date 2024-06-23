@@ -568,7 +568,10 @@ impl PipelineExecutor {
                         let elapsed = time.elapsed().unwrap_or_default();
                         Instant::now() - elapsed
                     }
-                    log::trace!("Event: {:?}", event);
+                    // TODO::figure out how to get raw button presses, instead of mapped ones, to allow both the steam button in chords, and not having to depend on input mapping
+                    // TODO::hooks for force window unfocus (for games like Lovers in a Dangerous Spacetime)
+                    // TODO::get keyboard to appear when gamescope is focused (kinda works, but very inconsistent)
+                    log::debug!("Event: {:?}", event); // TODO::trace
                     match event {
                         EventType::ButtonPressed(btn, _) => {
                             let entry = state.entry(id).or_default();

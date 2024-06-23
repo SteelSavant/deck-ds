@@ -155,17 +155,3 @@ fn get_maybe_window_names_from_launch_info(launch_info: &SteamLaunchInfo) -> Vec
     maybes.push("gamescope".to_string()); // TODO::only if launching from inside gamescope
     maybes
 }
-
-// Totally Broken:
-// - Peggle (horrible flickering, wrong window size)
-// - Castle Crashers (wrong window size, panics on resizing)
-
-// Broken (Fixable)
-// - Lovers in a Dangerous Spacetime (wrong window size) [Fixable in game settings]
-// - Nidhogg (window doesn't start fullscreen)
-
-// Work:
-// - Everspace (questionable resolution)
-// - One Step From Eden (questionable resolution?)
-// - Ultimate Chicken Horse (questionable resolution)
-// - Broforce (questionable resolution?)
