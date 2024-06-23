@@ -4,6 +4,7 @@
   "description": "Marker type for generating API json schema types for ts",
   "type": "object",
   "required": [
+    "add_client_teardown_action_request",
     "autostart_request",
     "create_profile_request",
     "create_profile_response",
@@ -11,6 +12,7 @@
     "get_app_profile_request",
     "get_app_profile_response",
     "get_audio_device_info",
+    "get_client_teardown_actions_response",
     "get_default_app_override_for_profile_request",
     "get_default_app_override_for_profile_response",
     "get_display_info",
@@ -25,12 +27,16 @@
     "patch_pipeline_action_response",
     "reify_pipeline_request",
     "reify_pipeline_response",
+    "remove_client_teardown_actions_request",
     "set_app_profile_override_request",
     "set_app_profile_settings_request",
     "set_profile_request",
     "set_settings_request"
   ],
   "properties": {
+    "add_client_teardown_action_request": {
+      "$ref": "#/definitions/AddClientTeardownActionRequest"
+    },
     "autostart_request": {
       "$ref": "#/definitions/AutoStartRequest"
     },
@@ -51,6 +57,9 @@
     },
     "get_audio_device_info": {
       "$ref": "#/definitions/GetAudioDeviceInfoResponse"
+    },
+    "get_client_teardown_actions_response": {
+      "$ref": "#/definitions/GetClientTeardownActionsResponse"
     },
     "get_default_app_override_for_profile_request": {
       "$ref": "#/definitions/GetDefaultAppOverrideForProfileRequest"
@@ -93,6 +102,9 @@
     },
     "reify_pipeline_response": {
       "$ref": "#/definitions/ReifyPipelineResponse"
+    },
+    "remove_client_teardown_actions_request": {
+      "$ref": "#/definitions/RemoveClientTeardownActionsRequest"
     },
     "set_app_profile_override_request": {
       "$ref": "#/definitions/SetAppProfileOverrideRequest"
@@ -363,6 +375,17 @@
           }
         }
       ]
+    },
+    "AddClientTeardownActionRequest": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "properties": {
+        "action": {
+          "$ref": "#/definitions/ClientTeardownAction"
+        }
+      }
     },
     "AppImageSource": {
       "type": "string",
@@ -801,6 +824,38 @@
           "$ref": "#/definitions/LimitedMultiWindowLayout"
         }
       }
+    },
+    "ClientTeardownAction": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "action_id",
+            "app_id",
+            "previous_launch_options",
+            "type"
+          ],
+          "properties": {
+            "action_id": {
+              "type": "string"
+            },
+            "app_id": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "previous_launch_options": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "MainAppAutomaticWindowing"
+              ]
+            }
+          }
+        }
+      ]
     },
     "ConfigSelection": {
       "description": "Configured selection for an specific pipeline. Only user values are saved; everything else is pulled at runtime to ensure it's up to date.",
@@ -1502,21 +1557,16 @@
     "GamescopeOptions": {
       "type": "object",
       "required": [
+        "filter",
         "fsr_sharpness",
         "fullscreen_option",
         "nis_sharpness",
+        "scaler",
         "use_gamescope"
       ],
       "properties": {
         "filter": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/GamescopeFilter"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "$ref": "#/definitions/GamescopeFilter"
         },
         "fsr_sharpness": {
           "type": "integer",
@@ -1550,14 +1600,7 @@
           "minimum": 0.0
         },
         "scaler": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/GamescopeScaler"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "$ref": "#/definitions/GamescopeScaler"
         },
         "use_gamescope": {
           "type": "boolean"
@@ -1629,6 +1672,20 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/AudioDeviceInfo"
+          }
+        }
+      }
+    },
+    "GetClientTeardownActionsResponse": {
+      "type": "object",
+      "required": [
+        "actions"
+      ],
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ClientTeardownAction"
           }
         }
       }
@@ -2595,6 +2652,21 @@
         "RightOf",
         "SameAs"
       ]
+    },
+    "RemoveClientTeardownActionsRequest": {
+      "type": "object",
+      "required": [
+        "ids"
+      ],
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
     },
     "Resolution": {
       "type": "object",

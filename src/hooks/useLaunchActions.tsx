@@ -91,6 +91,7 @@ const useLaunchActions = (
                             // - app close (only possible when launch fails, or for game-mode)
                             const res = await (
                                 await setupClientPipeline(
+                                    appDetails.appId,
                                     reified.data.pipeline,
                                     target,
                                 )

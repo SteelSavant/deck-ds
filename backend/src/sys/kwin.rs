@@ -320,7 +320,7 @@ mod window_tracking {
                                 .min(acc)
                         });
 
-                        log::trace!(
+                        log::debug!(
                             "window client {c:?} has scores ({caption_score},{window_class_score})"
                         );
 
@@ -498,24 +498,44 @@ console.log("!!!!!! Matching windows for {dbus_addr} !!!!!!");
 let clients = [];
 
 function updateClients() {{
-    console.log('updating clients to', clients);
+    try {{
+        const badWindows = [{{
+            caption: 'gamescope',
+            windowClass: 'gamescope'
+        }}, {{
+            caption: 'Steam',
+            windowClass: 'steam'
+        }}];
 
-    callDBus("{dbus_addr}", "/", "", "updateClients", "{script_name}", JSON.stringify(clients));
+        const filteredClients = clients.filter((c) => !badWindows.find((bw) => {{
+            const windowClass = c.resourceClass.toString().toLowerCase();
+            return bw.caption === c.caption && windowClass.includes(bw.windowClass);
+        }})).map((client) => {{
+            return {{
+                id: client.windowId,
+                caption: client.caption,
+                window_classes: client.resourceClass.toString().toLowerCase().split(' ')
+            }}
+        }});
 
-    console.log('sending msg over dbus:', JSON.stringify(clients));
+        const stringified = JSON.stringify(filteredClients);
+        console.log('sending msg over dbus:', stringified);
+
+        callDBus("{dbus_addr}", "/", "", "updateClients", "{script_name}", stringified);
+    }} catch(ex) {{
+        console.error('update clients threw', ex);
+    }}
 }}
 
 workspace.clientAdded.connect((client) => {{
     if (!client.normalWindow) return;
 
-    console.log('matcher got new client');
+    client.captionChanged.connect(updateClients);
 
-    const info = {{
-        id: client.windowId,
-        caption: client.caption,
-        window_classes: client.resourceClass.toString().toLowerCase().split(' ')
-    }};
-    clients = [...clients, info];
+    console.log('matcher got new client', client.caption);
+
+ 
+    clients = [...clients, client];
     updateClients();
 }});
 

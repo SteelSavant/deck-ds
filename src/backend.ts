@@ -1,4 +1,5 @@
 import {
+    AddClientTeardownActionRequest,
     AutoStartRequest,
     CategoryProfile,
     CitraLayoutOption,
@@ -9,6 +10,7 @@ import {
     GetAppProfileRequest,
     GetAppProfileResponse,
     GetAudioDeviceInfoResponse,
+    GetClientTeardownActionsResponse,
     GetDefaultAppOverrideForProfileRequest,
     GetDefaultAppOverrideForProfileResponse,
     GetDisplayInfoResponse,
@@ -28,6 +30,7 @@ import {
     PipelineDefinition,
     ReifyPipelineRequest,
     ReifyPipelineResponse,
+    RemoveClientTeardownActionsRequest,
     SecondaryAppScreenPreference,
     SecondaryAppWindowingBehavior,
     SetAppProfileOverrideRequest,
@@ -411,6 +414,24 @@ export async function reifyPipeline(
 
 export async function getToplevel(): Response<GetTopLevelResponse> {
     return await call_backend_typed('get_toplevel');
+}
+
+// Client Pipeline
+
+export async function addClientTeardownAction(
+    request: AddClientTeardownActionRequest,
+): Response<void> {
+    return await call_backend_typed('add_client_teardown_action', request);
+}
+
+export async function removeClientTeardownActions(
+    request: RemoveClientTeardownActionsRequest,
+): Response<void> {
+    return await call_backend_typed('remove_client_teardown_actions', request);
+}
+
+export async function getClientTeardownActions(): Response<GetClientTeardownActionsResponse> {
+    return await call_backend_typed('get_client_teardown_actions');
 }
 
 // Templates

@@ -25,6 +25,7 @@ import {
 } from './context/appContext';
 import { ServerApiProvider } from './context/serverApiContext';
 import patchLibraryApp from './patch/patchLibraryApp';
+import { teardownClientPipeline } from './pipeline/client_pipeline';
 import { logger, LogLevel } from './util/log';
 import QAM from './views/QAM';
 import ProfileRoute from './views/Settings/Profiles/ProfileRoute';
@@ -43,6 +44,7 @@ var usdplReady = false;
 
 (async function () {
     await backend.initBackend();
+    await teardownClientPipeline();
 
     usdplReady = true;
 })();
@@ -165,6 +167,21 @@ export default definePlugin((serverApi: ServerAPI) => {
         Router.Navigate('/deck-ds/settings/profiles');
     };
 
+    let appStateRegistrar: any;
+    try {
+        appStateRegistrar =
+            SteamClient.GameSessions.RegisterForAppLifetimeNotifications(
+                async (update: any) => {
+                    console.log('app lifecycle update:', update);
+                    if (!update.bRunning) {
+                        await teardownClientPipeline(update.unAppID);
+                    }
+                },
+            );
+    } catch (ex) {
+        logger.error('failed to register for app lifetime notifications:', ex);
+    }
+
     return {
         titleView: (
             <Focusable
@@ -221,6 +238,8 @@ export default definePlugin((serverApi: ServerAPI) => {
                 '/deck-ds/settings/templates/:templateid',
             );
             serverApi.routerHook.removeRoute('/deck-ds/settings/:setting');
+
+            appStateRegistrar?.unregister();
         },
     };
 });
