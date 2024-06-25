@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use dbus::{blocking::Connection, channel::Sender};
 
 use std::{ffi::OsStr, path::PathBuf, process::Command, str::FromStr};
 
@@ -576,5 +577,24 @@ workspace.clientRemoved.connect((client) => {{
         pub preferred_ord_if_no_match: Ordering,
         /// Possible strings for either the window title or class. We're guessing here.
         pub maybe_strings: Vec<String>,
+    }
+}
+
+pub fn next_active_window() -> Result<()> {
+    let out = Command::new("qdbus")
+        .args([
+            "org.kde.kglobalaccel",
+            "/component/kwin",
+            "invokeShortcut",
+            "\"Walk Through Windows\"",
+        ])
+        .output()?;
+    if out.status.success() {
+        Ok(())
+    } else {
+        Err(anyhow::anyhow!(
+            "Failed to switch task windows: {}",
+            String::from_utf8_lossy(&out.stderr).to_string()
+        ))
     }
 }
