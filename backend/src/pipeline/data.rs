@@ -1,5 +1,10 @@
 use derive_more::Display;
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    marker::PhantomData,
+    time::{Duration, Instant},
+};
+use steamdeck_controller_hidraw::SteamDeckGamepadButton;
 use strum::{EnumIter, IntoEnumIterator};
 
 use crate::{
@@ -9,7 +14,7 @@ use crate::{
 use anyhow::{Context, Result};
 
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use super::{
     action::{desktop_controller_layout_hack::DesktopControllerLayoutHack, Action},
@@ -77,7 +82,7 @@ pub struct PipelineDefinition {
     pub id: PipelineDefinitionId,
     pub name: String,
     pub should_register_exit_hooks: bool,
-    pub exit_hooks_override: Option<ExitHooks>,
+    pub exit_hooks_override: Option<BtnChord>,
     pub primary_target_override: Option<PipelineTarget>,
     pub platform: TopLevelDefinition,
     // Additional top-level actions besides the main platform.
@@ -85,21 +90,79 @@ pub struct PipelineDefinition {
     pub desktop_controller_layout_hack: DesktopControllerLayoutHack,
 }
 
-/// The required button chord to hold to exit. At least 2 buttons are required.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-pub struct ExitHooks(pub GamepadButton, pub GamepadButton, pub Vec<GamepadButton>);
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub enum PressType {
+    Regular,
+    Long,
+}
 
-impl ExitHooks {
-    pub fn iter(&self) -> impl Iterator<Item = &GamepadButton> {
-        [&self.0, &self.1].into_iter().chain(self.2.iter())
+impl PressType {
+    fn matches_duration(&self, duration: Duration) -> bool {
+        let millis = duration.as_millis();
+        match self {
+            PressType::Regular => millis >= 100,
+            PressType::Long => millis >= 5000,
+        }
     }
 }
 
-impl Default for ExitHooks {
-    fn default() -> Self {
-        // Start + Select would be ideal defaults, but if desktop layouts break (again),
-        // it becomes impossible to use because holding Start swaps the action set.
-        Self(GamepadButton::L1, GamepadButton::East, vec![])
+/// A button chord. At least 2 buttons are required.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct BtnChord {
+    #[serde(
+        serialize_with = "serialize_steamdeck_gamepad_button",
+        deserialize_with = "deserialize_steamdeck_gamepad_button"
+    )]
+    #[schemars(with = "u32")]
+    pub btns: SteamDeckGamepadButton,
+    pub press: PressType,
+    /// Phantom exists to prevent struct instantiation without passing through the `new` function for validation
+    phantom: PhantomData<()>,
+}
+
+fn serialize_steamdeck_gamepad_button<S>(
+    x: &SteamDeckGamepadButton,
+    s: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    s.serialize_u32(x.bits())
+}
+
+fn deserialize_steamdeck_gamepad_button<'de, D>(d: D) -> Result<SteamDeckGamepadButton, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    u32::deserialize(d).map(|v| SteamDeckGamepadButton::from_bits_retain(v))
+}
+
+impl BtnChord {
+    pub fn new(btns: SteamDeckGamepadButton, press: PressType) -> Self {
+        assert!(btns.into_iter().count() >= 2);
+        Self {
+            btns,
+            press,
+            phantom: Default::default(),
+        }
+    }
+
+    pub fn matches(&self, presses: &HashMap<SteamDeckGamepadButton, Instant>) -> bool {
+        let pressed = presses
+            .iter()
+            .filter(|(k, v)| {
+                let elapsed = v.elapsed();
+
+                self.btns.contains(**k) && self.press.matches_duration(elapsed)
+            })
+            .fold(SteamDeckGamepadButton::empty(), |acc, v| {
+                if self.press.matches_duration(v.1.elapsed()) {
+                    acc | *v.0
+                } else {
+                    acc
+                }
+            });
+        self.btns.contains(pressed)
     }
 }
 
@@ -165,7 +228,7 @@ pub struct Pipeline {
     pub name: String,
     pub description: String,
     pub should_register_exit_hooks: bool,
-    pub exit_hooks_override: Option<ExitHooks>,
+    pub exit_hooks_override: Option<BtnChord>,
     pub primary_target_override: Option<PipelineTarget>,
     pub targets: HashMap<PipelineTarget, RuntimeSelection>,
     pub desktop_controller_layout_hack: DesktopControllerLayoutHack,

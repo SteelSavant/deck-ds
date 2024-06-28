@@ -12,6 +12,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use serde_with::DefaultOnError;
+use steamdeck_controller_hidraw::*;
 
 newtype_uuid!(ProfileId);
 newtype_strid!("The AppId in Steam", AppId);
@@ -23,7 +24,7 @@ use crate::{
     macros::{newtype_strid, newtype_uuid},
     pipeline::{
         action::session_handler::DesktopSessionHandler,
-        data::{ExitHooks, Pipeline, PipelineDefinition, PipelineTarget},
+        data::{BtnChord, Pipeline, PipelineDefinition, PipelineTarget, PressType},
     },
     util::create_dir_all,
     PACKAGE_NAME,
@@ -52,8 +53,17 @@ pub struct GlobalConfig {
     #[default(PipelineTarget::Gamemode)]
     pub primary_ui_target: PipelineTarget,
     /// Button chord to be used to exit profiles that register for exit hooks.
-    #[serde_as(deserialize_as = "DefaultOnError")]
-    pub exit_hooks: ExitHooks,
+    #[default(BtnChord::new(
+        SteamDeckGamepadButton::STEAM | SteamDeckGamepadButton::EAST,
+        PressType::Long
+    ))]
+    pub exit_hooks: BtnChord,
+    /// Button chord to be used to exit profiles that register for exit hooks.
+    #[default(BtnChord::new(
+        SteamDeckGamepadButton::STEAM | SteamDeckGamepadButton::QAM,
+        PressType::Regular,
+    ))]
+    pub next_window_hooks: BtnChord,
     /// Overwrite the desktop layout with the game layout
     #[default(3)]
     pub log_level: u8,

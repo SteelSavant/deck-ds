@@ -530,6 +530,29 @@
         }
       }
     },
+    "BtnChord": {
+      "description": "A button chord. At least 2 buttons are required.",
+      "type": "object",
+      "required": [
+        "btns",
+        "phantom",
+        "press"
+      ],
+      "properties": {
+        "btns": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0.0
+        },
+        "phantom": {
+          "description": "Phantom exists to prevent struct instantiation without passing through the `new` function for validation",
+          "type": "null"
+        },
+        "press": {
+          "$ref": "#/definitions/PressType"
+        }
+      }
+    },
     "CategoryProfile": {
       "type": "object",
       "required": [
@@ -1326,26 +1349,6 @@
         "CemuProton"
       ]
     },
-    "ExitHooks": {
-      "description": "The required button chord to hold to exit. At least 2 buttons are required.",
-      "type": "array",
-      "items": [
-        {
-          "$ref": "#/definitions/GamepadButton"
-        },
-        {
-          "$ref": "#/definitions/GamepadButton"
-        },
-        {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/GamepadButton"
-          }
-        }
-      ],
-      "maxItems": 3,
-      "minItems": 3
-    },
     "ExternalDisplaySettings": {
       "oneOf": [
         {
@@ -1515,27 +1518,6 @@
         "Citra",
         "MelonDS",
         "Lime3ds"
-      ]
-    },
-    "GamepadButton": {
-      "type": "string",
-      "enum": [
-        "Start",
-        "Select",
-        "North",
-        "East",
-        "South",
-        "West",
-        "RightThumb",
-        "LeftThumb",
-        "DPadUp",
-        "DPadLeft",
-        "DPadRight",
-        "DPadDown",
-        "L1",
-        "L2",
-        "R1",
-        "R2"
       ]
     },
     "GamescopeFilter": {
@@ -1840,6 +1822,7 @@
         "enable_ui_inject",
         "exit_hooks",
         "log_level",
+        "next_window_hooks",
         "primary_ui_target",
         "restore_displays_if_not_executing_pipeline",
         "use_nonsteam_desktop_controller_layout_hack",
@@ -1857,7 +1840,7 @@
           "description": "Button chord to be used to exit profiles that register for exit hooks.",
           "allOf": [
             {
-              "$ref": "#/definitions/ExitHooks"
+              "$ref": "#/definitions/BtnChord"
             }
           ]
         },
@@ -1866,6 +1849,14 @@
           "type": "integer",
           "format": "uint8",
           "minimum": 0.0
+        },
+        "next_window_hooks": {
+          "description": "Button chord to be used to exit profiles that register for exit hooks.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/BtnChord"
+            }
+          ]
         },
         "primary_ui_target": {
           "description": "If `enable_ui_inject` is true, set the \"Play\" button to this target",
@@ -2278,7 +2269,7 @@
         "exit_hooks_override": {
           "anyOf": [
             {
-              "$ref": "#/definitions/ExitHooks"
+              "$ref": "#/definitions/BtnChord"
             },
             {
               "type": "null"
@@ -2566,7 +2557,7 @@
         "exit_hooks_override": {
           "anyOf": [
             {
-              "$ref": "#/definitions/ExitHooks"
+              "$ref": "#/definitions/BtnChord"
             },
             {
               "type": "null"
@@ -2609,6 +2600,13 @@
       "enum": [
         "Desktop",
         "Gamemode"
+      ]
+    },
+    "PressType": {
+      "type": "string",
+      "enum": [
+        "Regular",
+        "Long"
       ]
     },
     "ReifyPipelineRequest": {

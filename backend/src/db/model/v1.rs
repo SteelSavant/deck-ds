@@ -1,6 +1,7 @@
 use native_db::*;
 use native_model::{native_model, Model};
 use serde::{Deserialize, Serialize};
+use steamdeck_controller_hidraw::SteamDeckGamepadButton;
 
 use std::path::PathBuf;
 
@@ -33,8 +34,8 @@ use crate::{
             ActionId,
         },
         data::{
-            ExitHooks, GamepadButton, PipelineActionId, PipelineDefinitionId, PipelineTarget,
-            TopLevelId,
+            BtnChord, GamepadButton, PipelineActionId, PipelineDefinitionId, PipelineTarget,
+            PressType, TopLevelId,
         },
     },
     secondary_app::{FlatpakApp, SecondaryApp, SecondaryAppPresetId},
@@ -93,7 +94,7 @@ pub struct DbPipelineDefinition {
     pub id: PipelineDefinitionId,
     pub name: String,
     pub should_register_exit_hooks: bool,
-    pub exit_hooks_override: Option<DbExitHooks>,
+    pub exit_hooks_override: Option<DbBtnChord>,
     pub primary_target_override: Option<PipelineTarget>,
     pub platform: DbTopLevelDefinition,
     pub toplevel: Vec<DbTopLevelDefinition>,
@@ -101,17 +102,35 @@ pub struct DbPipelineDefinition {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct DbExitHooks(pub GamepadButton, pub GamepadButton, pub Vec<GamepadButton>);
+pub struct DbBtnChord(u32, DbPressType);
 
-impl From<ExitHooks> for DbExitHooks {
-    fn from(value: ExitHooks) -> Self {
-        Self(value.0, value.1, value.2)
+#[derive(Clone, Copy, Serialize, Deserialize)]
+enum DbPressType {
+    Regular,
+    Long,
+}
+
+impl From<BtnChord> for DbBtnChord {
+    fn from(value: BtnChord) -> Self {
+        Self(
+            value.btns.bits(),
+            match value.press {
+                PressType::Long => DbPressType::Long,
+                PressType::Regular => DbPressType::Regular,
+            },
+        )
     }
 }
 
-impl From<DbExitHooks> for ExitHooks {
-    fn from(value: DbExitHooks) -> Self {
-        Self(value.0, value.1, value.2)
+impl From<DbBtnChord> for BtnChord {
+    fn from(value: DbBtnChord) -> Self {
+        Self::new(
+            SteamDeckGamepadButton::from_bits_retain(value.0),
+            match value.1 {
+                DbPressType::Regular => PressType::Regular,
+                DbPressType::Long => PressType::Long,
+            },
+        )
     }
 }
 

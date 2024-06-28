@@ -1,11 +1,12 @@
 use anyhow::{anyhow, Context, Result};
 use egui::ahash::HashSet;
 use either::Either;
-use gilrs::{Button, Event, EventType, Gamepad, GamepadId};
 use indexmap::IndexMap;
 use nix::unistd::Pid;
+use steamdeck_controller_hidraw::{SteamDeckDevice, SteamDeckGamepadButton};
 use type_reg::untagged::{TypeMap as SerdeMap, TypeReg};
 
+use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::process::Command;
@@ -31,16 +32,16 @@ use crate::pipeline::action::session_handler::DesktopSessionHandler;
 use crate::pipeline::action::source_file::SourceFile;
 use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::action::{ActionImpl, ActionType};
-use crate::pipeline::data::RuntimeSelection;
+use crate::pipeline::data::{PressType, RuntimeSelection};
 use crate::secondary_app::SecondaryAppManager;
 use crate::settings::{AppId, GameId, GlobalConfig, SteamLaunchInfo};
 use crate::sys::app_process::AppProcess;
-use crate::sys::kwin::KWin;
+use crate::sys::kwin::{next_active_window, KWin};
 use crate::sys::x_display::XDisplay;
 
 use super::action::session_handler::UiEvent;
 use super::action::{Action, ErasedPipelineAction};
-use super::data::{ExitHooks, GamepadButton, Pipeline, PipelineTarget};
+use super::data::{BtnChord, GamepadButton, Pipeline, PipelineTarget};
 
 pub struct PipelineExecutor {
     game_id: Either<AppId, GameId>,
@@ -58,7 +59,8 @@ pub struct PipelineContext {
     pub kwin: KWin,
     /// Display handler,
     pub display: Option<XDisplay>,
-    pub exit_hooks: Option<ExitHooks>,
+    pub exit_hooks: Option<BtnChord>,
+    pub next_window_hooks: Option<BtnChord>,
     pub secondary_app: SecondaryAppManager,
     pub launch_info: Option<SteamLaunchInfo>,
     pub global_config: GlobalConfig,
@@ -92,7 +94,14 @@ impl PipelineContext {
             state: TypeMap::new(),
             have_run: vec![],
             secondary_app: SecondaryAppManager::new(decky_env.asset_manager()),
-            exit_hooks: Some(ExitHooks::default()),
+            exit_hooks: Some(BtnChord::new(
+                SteamDeckGamepadButton::STEAM | SteamDeckGamepadButton::EAST, //tmp
+                PressType::Long,
+            )),
+            next_window_hooks: Some(BtnChord::new(
+                SteamDeckGamepadButton::STEAM | SteamDeckGamepadButton::QAM, // tmp
+                PressType::Regular,
+            )),
             on_launch_callbacks: vec![],
             launch_info,
             decky_env,
@@ -547,8 +556,8 @@ impl PipelineExecutor {
             self.ctx.kwin.reconfigure()?;
         }
 
-        let mut gilrs = gilrs::Gilrs::new().unwrap();
-        let mut state = IndexMap::<GamepadId, (HashSet<Button>, Option<Instant>)>::new();
+        let mut device = SteamDeckDevice::best()?;
+        let mut state = HashMap::<SteamDeckGamepadButton, Instant>::new();
 
         self.ctx.send_ui_event(UiEvent::ClearStatus);
         self.ctx.send_ui_event(UiEvent::UpdateWindowLevel(
@@ -557,77 +566,47 @@ impl PipelineExecutor {
 
         log::debug!("Waiting for app process to close...");
 
+        let (tx, rx) = std::sync::mpsc::channel::<SteamDeckGamepadButton>();
+
+        if self.ctx.exit_hooks.is_some() || self.ctx.next_window_hooks.is_some() {
+            std::thread::spawn(move || {
+                device.event_loop(tx);
+            });
+        } else {
+            drop(tx);
+        }
+
+        let mut ignore_next_window_input = false;
+
         while app_process.is_alive() {
             std::thread::sleep(std::time::Duration::from_millis(100));
 
-            if let Some(hooks) = self.ctx.exit_hooks.clone() {
-                let btns: Vec<Button> = hooks.iter().map(|v| (*v).into()).collect();
-
-                while let Some(Event { id, event, time }) = gilrs.next_event() {
-                    fn create_instant(time: SystemTime) -> Instant {
-                        let elapsed = time.elapsed().unwrap_or_default();
-                        Instant::now() - elapsed
-                    }
-                    // TODO::figure out how to get raw button presses, instead of mapped ones, to allow both the steam button in chords, and not having to depend on input mapping
-                    // TODO::hooks for force window unfocus (for games like Lovers in a Dangerous Spacetime)
-                    // TODO::get keyboard to appear when gamescope is focused (kinda works, but very inconsistent)
-                    log::debug!("Event: {:?}", event); // TODO::trace
-                    match event {
-                        EventType::ButtonPressed(btn, _) => {
-                            let entry = state.entry(id).or_default();
-                            if btns.contains(&btn) {
-                                entry.0.insert(btn);
-                            }
-
-                            if entry.0.len() == btns.len() && entry.1.is_none() {
-                                entry.1 = Some(create_instant(time))
-                            }
-                        }
-                        EventType::ButtonReleased(btn, _) => {
-                            let entry = state.entry(id).or_default();
-                            if btns.contains(&btn) {
-                                entry.0.remove(&btn);
-                                entry.1 = None;
-                            }
-                        }
-                        EventType::Connected => {
-                            let gamepad = gilrs.gamepad(id);
-
-                            fn check_pressed(gamepad: Gamepad, btn: Button) -> bool {
-                                gamepad
-                                    .button_data(btn)
-                                    .map(|data| data.is_pressed())
-                                    .unwrap_or_default()
-                            }
-
-                            for btn in btns.iter() {
-                                let pressed = check_pressed(gamepad, *btn);
-                                if pressed {
-                                    let entry = state.entry(id).or_default();
-                                    entry.0.insert(*btn);
-
-                                    if entry.0.len() == btns.len() && entry.1.is_none() {
-                                        entry.1 = Some(create_instant(time))
-                                    }
-                                }
-                            }
-                        }
-                        EventType::Disconnected => {
-                            state.swap_remove(&id);
-                        }
-                        _ => (),
-                    }
+            while let Ok(btns) = rx.try_recv() {
+                state.retain(|k, _| btns.contains(*k));
+                for btn in btns.iter() {
+                    state.entry(btn).or_insert(Instant::now());
                 }
+            }
 
-                log::trace!("Gamepad State: {state:?}");
+            log::debug!("Gamepad State: {state:?}"); // TODO::trace
 
-                for (_, instant) in state.values() {
-                    let hold_duration = std::time::Duration::from_secs(2);
-                    if matches!(instant, &Some(i) if i.elapsed() > hold_duration) {
-                        log::info!("Received exit signal. Closing application...");
+            if let Some(hooks) = self.ctx.exit_hooks {
+                if hooks.matches(&state) {
+                    return app_process.kill();
+                }
+            }
 
-                        return app_process.kill();
+            if let Some(hooks) = self.ctx.next_window_hooks {
+                if hooks.matches(&state) {
+                    if !ignore_next_window_input {
+                        ignore_next_window_input = true;
+
+                        if let Err(err) = next_active_window() {
+                            log::warn!("Failed to switch active window: {err:#?}");
+                        }
                     }
+                } else {
+                    ignore_next_window_input = false;
                 }
             }
         }
@@ -697,31 +676,6 @@ impl Action {
             }
             ExecActionType::Setup => self.setup(ctx),
             ExecActionType::Teardown => self.teardown(ctx),
-        }
-    }
-}
-
-impl From<GamepadButton> for Button {
-    fn from(value: GamepadButton) -> Self {
-        match value {
-            GamepadButton::Start => Button::Start,
-            GamepadButton::Select => Button::Select,
-            GamepadButton::North => Button::North,
-            GamepadButton::East => Button::East,
-            GamepadButton::South => Button::South,
-            GamepadButton::West => Button::West,
-            GamepadButton::RightThumb => Button::RightThumb,
-            GamepadButton::LeftThumb => Button::LeftThumb,
-            GamepadButton::DPadUp => Button::DPadUp,
-            GamepadButton::DPadLeft => Button::DPadLeft,
-            GamepadButton::DPadRight => Button::DPadRight,
-            GamepadButton::DPadDown => Button::DPadDown,
-            GamepadButton::L1 => Button::LeftTrigger,
-            GamepadButton::L2 => Button::LeftTrigger2,
-            GamepadButton::R1 => Button::RightTrigger,
-            GamepadButton::R2 => Button::RightTrigger2,
-            // If it can be determined what "C" and "Z" map to, they exist as well.
-            // "Mode" is not used as SteamOS overrides it.
         }
     }
 }

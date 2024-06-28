@@ -7,15 +7,26 @@ use crate::{
 
 use super::{
     action::{
-        cemu_audio::{CemuAudio, CemuAudioChannels, CemuAudioSetting, CemuAudioState}, cemu_layout::{CemuLayout, CemuLayoutState}, citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState}, desktop_controller_layout_hack::DesktopControllerLayoutHack, display_config::DisplayConfig, lime_3ds_layout::Lime3dsLayout, melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption}, multi_window::{
+        cemu_audio::{CemuAudio, CemuAudioChannels, CemuAudioSetting, CemuAudioState},
+        cemu_layout::{CemuLayout, CemuLayoutState},
+        citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
+        desktop_controller_layout_hack::DesktopControllerLayoutHack,
+        display_config::DisplayConfig,
+        lime_3ds_layout::Lime3dsLayout,
+        melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
+        multi_window::{
             main_app_automatic_windowing::MainAppAutomaticWindowing,
             primary_windowing::{
                 CemuWindowOptions, CitraWindowOptions, GeneralOptions, MultiWindow,
             },
             secondary_app::{LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp},
-        }, session_handler::{DesktopSessionHandler, ExternalDisplaySettings, RelativeLocation}, source_file::{
+        },
+        session_handler::{DesktopSessionHandler, ExternalDisplaySettings, RelativeLocation},
+        source_file::{
             AppImageSource, CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile,
-        }, virtual_screen::VirtualScreen, ActionId
+        },
+        virtual_screen::VirtualScreen,
+        ActionId,
     },
     data::{
         DefinitionSelection, PipelineActionDefinition, PipelineActionId, PipelineActionLookup,
@@ -295,7 +306,7 @@ impl PipelineActionRegistarBuilder {
                     )
                     .with_action(
                         "desktop_controller_hack", 
-                        Some(PipelineTarget::Desktop), 
+                        Some(PipelineTarget::Desktop),
                         PipelineActionDefinitionBuilder {
                             name: "Desktop Controller Layout Hack".to_string(),
                             description: Some("Forces the desktop controller layout to match the layout for the game.".to_string()),
@@ -304,7 +315,7 @@ impl PipelineActionRegistarBuilder {
                             is_visible_on_qam: false,
                             selection: DesktopControllerLayoutHack {
                                 id: ActionId::nil(),
-                                steam_override: None, 
+                                steam_override: None,
                                 nonsteam_override: None,
                             }.into(),
                         }

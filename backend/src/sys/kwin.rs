@@ -1,5 +1,4 @@
 use anyhow::{Context, Result};
-use dbus::{blocking::Connection, channel::Sender};
 
 use std::{ffi::OsStr, path::PathBuf, process::Command, str::FromStr};
 
