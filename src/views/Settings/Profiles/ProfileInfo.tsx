@@ -13,7 +13,7 @@ import {
     PipelineContainer,
     isCategoryProfile,
 } from '../../../backend';
-import { EditExitHooks } from '../../../components/EditExitHooks';
+import { EditHooks } from '../../../components/EditHooks';
 import HandleLoading from '../../../components/HandleLoading';
 import { useModifiablePipelineContainer } from '../../../context/modifiablePipelineContext';
 import useGlobalSettings from '../../../hooks/useGlobalSettings';
@@ -349,7 +349,7 @@ export default function ProfileInfo(
                                 />
                             </Field>
                             {profile.pipeline.exit_hooks_override ? (
-                                <EditExitHooks
+                                <EditHooks
                                     exitHooks={
                                         profile.pipeline.exit_hooks_override
                                     }

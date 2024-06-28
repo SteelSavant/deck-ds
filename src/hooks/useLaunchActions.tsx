@@ -1,4 +1,4 @@
-import { showModal } from 'decky-frontend-lib';
+import { showModal, sleep } from 'decky-frontend-lib';
 import {
     CategoryProfile,
     DependencyError,
@@ -32,6 +32,7 @@ const useLaunchActions = (
         const loadedProfiles = profiles.data;
         const includedProfiles = new Set<string>();
         const validProfiles = collectionStore.userCollections.flatMap((uc) => {
+            sleep(1000);
             const containsApp = uc.apps.get(appDetails.appId);
 
             if (containsApp) {

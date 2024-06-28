@@ -1,4 +1,4 @@
-import { GamepadButtonSelection } from '../backend';
+import { gamepadButtonSelectionOptions } from '../backend';
 
 export function labelForCamelCase(s: string, separator = ' '): string {
     const splitIndexes: number[] = [];
@@ -29,36 +29,6 @@ export function labelForKebabCase(s: string): string {
         .join('-');
 }
 
-export function labelForGamepadButton(btn: GamepadButtonSelection): string {
-    switch (btn) {
-        case 'Start':
-        case 'Select':
-        case 'RightThumb':
-        case 'LeftThumb':
-            return labelForCamelCase(btn);
-        case 'North':
-            return 'Y (North)';
-        case 'East':
-            return 'B (East)';
-        case 'South':
-            return 'A (South)';
-        case 'West':
-            return 'X (West)';
-        case 'DPadUp':
-        case 'DPadLeft':
-        case 'DPadRight':
-        case 'DPadDown':
-            return btn.replace('Pad', 'Pad ');
-        case 'L1':
-            return 'L1 (Left Bumper)';
-        case 'L2':
-            return 'L2 (Left Trigger)';
-        case 'R1':
-            return 'R1 (Right Bumper)';
-        case 'R2':
-            return 'R2 (Right Trigger)';
-        default:
-            const typecheck: never = btn;
-            throw `display gamepad button failed to typecheck: ${typecheck}`;
-    }
+export function labelForGamepadButton(btn: number): string {
+    return gamepadButtonSelectionOptions.get(btn) ?? 'unknown';
 }

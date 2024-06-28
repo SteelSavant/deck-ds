@@ -34,8 +34,7 @@ use crate::{
             ActionId,
         },
         data::{
-            BtnChord, GamepadButton, PipelineActionId, PipelineDefinitionId, PipelineTarget,
-            PressType, TopLevelId,
+            BtnChord, PipelineActionId, PipelineDefinitionId, PipelineTarget, PressType, TopLevelId,
         },
     },
     secondary_app::{FlatpakApp, SecondaryApp, SecondaryAppPresetId},

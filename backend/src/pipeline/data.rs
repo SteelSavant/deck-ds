@@ -166,53 +166,6 @@ impl BtnChord {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-pub enum GamepadButton {
-    Start,
-    Select,
-    North,
-    East,
-    South,
-    West,
-    RightThumb,
-    LeftThumb,
-    DPadUp,
-    DPadLeft,
-    DPadRight,
-    DPadDown,
-    L1,
-    L2,
-    R1,
-    R2,
-}
-
-impl std::fmt::Display for GamepadButton {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                GamepadButton::Start => "Start",
-                GamepadButton::Select => "Select",
-                GamepadButton::North => "Y (North)",
-                GamepadButton::East => "B (East)",
-                GamepadButton::South => "A (South)",
-                GamepadButton::West => "X (West)",
-                GamepadButton::RightThumb => "Right Thumb",
-                GamepadButton::LeftThumb => "Left Thumb",
-                GamepadButton::DPadUp => "DPad Up",
-                GamepadButton::DPadLeft => "DPad Left",
-                GamepadButton::DPadRight => "DPad Right",
-                GamepadButton::DPadDown => "DPad Down",
-                GamepadButton::L1 => "L1 (Left Bumper)",
-                GamepadButton::L2 => "L2 (Left Trigger)",
-                GamepadButton::R1 => "R1 (Right Bumper)",
-                GamepadButton::R2 => "R2 (Right Trigger)",
-            }
-        )
-    }
-}
-
 /// Defines a top-level action, with a root id and a unique set of actions.
 /// This allows multiple top-level actions of the same type, without complicating
 /// the structure too much.

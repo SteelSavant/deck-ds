@@ -7,8 +7,8 @@ import {
     patchPipelineAction,
 } from '../backend';
 import {
+    BtnChord,
     DesktopControllerLayoutHack,
-    ExitHooks,
     PipelineActionUpdate,
 } from '../types/backend_api';
 import { MaybeString } from '../types/short';
@@ -70,7 +70,8 @@ export type PipelineUpdate =
 export interface PipelineInfo {
     description?: string;
     name?: string;
-    exit_hooks_override?: ExitHooks | null;
+    exit_hooks_override?: BtnChord | null;
+    next_window_hooks_override?: BtnChord | null;
     register_exit_hooks?: boolean;
     primary_target_override?: PipelineTarget | null;
     steam_desktop_layout_config_hack_override?: boolean | null;
@@ -97,7 +98,6 @@ export async function patchPipeline(
                     ? pipeline.desktop_controller_layout_hack.nonsteam_override
                     : info.nonsteam_desktop_layout_config_hack_override,
         };
-
 
         return Ok({
             ...pipeline,

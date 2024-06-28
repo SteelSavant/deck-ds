@@ -3,7 +3,7 @@ import { Fragment, VFC, useEffect, useState } from 'react';
 import { testBackendError } from '../../../backend';
 import { ActionChild } from '../../../components/ActionChild';
 import { EditAction } from '../../../components/EditAction';
-import { EditExitHooks } from '../../../components/EditExitHooks';
+import { EditHooks } from '../../../components/EditHooks';
 import HandleLoading from '../../../components/HandleLoading';
 import useGlobalSettings from '../../../hooks/useGlobalSettings';
 import { LogLevel, logger } from '../../../util/log';
@@ -54,7 +54,7 @@ export const GlobalSettingsPage: VFC = () => {
                             indentLevel={1}
                             // TODO::consider dropdown arrow child to expand/hide the edit, since moving the "add chord button" into the field is inconvenient
                         />
-                        <EditExitHooks
+                        <EditHooks
                             exitHooks={settings.exit_hooks}
                             indentLevel={2}
                             onChange={async (hooks) => {

@@ -1,7 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use egui::ahash::HashSet;
 use either::Either;
-use indexmap::IndexMap;
 use nix::unistd::Pid;
 use steamdeck_controller_hidraw::{SteamDeckDevice, SteamDeckGamepadButton};
 use type_reg::untagged::{TypeMap as SerdeMap, TypeReg};
@@ -12,7 +10,7 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::str::FromStr;
 use std::sync::Arc;
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Duration, Instant};
 use typemap_ors::{Key, TypeMap};
 
 use crate::decky_env::DeckyEnv;
@@ -41,7 +39,7 @@ use crate::sys::x_display::XDisplay;
 
 use super::action::session_handler::UiEvent;
 use super::action::{Action, ErasedPipelineAction};
-use super::data::{BtnChord, GamepadButton, Pipeline, PipelineTarget};
+use super::data::{BtnChord, Pipeline, PipelineTarget};
 
 pub struct PipelineExecutor {
     game_id: Either<AppId, GameId>,

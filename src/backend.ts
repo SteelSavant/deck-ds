@@ -6,7 +6,6 @@ import {
     CreateProfileRequest,
     CreateProfileResponse,
     DeleteProfileRequest,
-    GamepadButton,
     GetAppProfileRequest,
     GetAppProfileResponse,
     GetAudioDeviceInfoResponse,
@@ -114,24 +113,39 @@ export type DefinitionOneOf = { selection: string; actions: string[] };
 export type PipelineActionSettings = PipelineActionSettingsFor_ConfigSelection;
 
 export type GamepadButtonSelection = GamepadButton;
-export const gamepadButtonSelectionOptions: GamepadButtonSelection[] = [
-    'Start',
-    'Select',
-    'South',
-    'East',
-    'West',
-    'North',
-    'DPadUp',
-    'DPadDown',
-    'DPadLeft',
-    'DPadRight',
-    'L1',
-    'L2',
-    'R1',
-    'R2',
-    'LeftThumb',
-    'RightThumb',
-];
+// TODO::don't hardcode this; get it from the display map rust-side
+export const gamepadButtonSelectionOptions = new Map<number, string>(
+    [
+        'R1',
+        'R2',
+        'L1',
+        'L2',
+        'NORTH',
+        'EAST',
+        'WEST',
+        'SOUTH',
+        'DPAD_UP',
+        'DPAD_RIGHT',
+        'DPAD_LEFT',
+        'DPAD_DOWN',
+        'START',
+        'SELECT',
+        'RSTICK',
+        'LSTICK',
+        'STEAM',
+        'QAM',
+        'R4',
+        'R5',
+        'L4',
+        'L5',
+        'RSTICK_TOUCH',
+        'LSTICK_TOUCH',
+        'LPAD',
+        'RPAD',
+        'LPAD_TOUCH',
+        'RPAD_TOUCH',
+    ].map((v, i) => [1 << (i + 1), v]),
+);
 
 export interface AppProfileOveride {
     profileId: string;
