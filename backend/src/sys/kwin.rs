@@ -1,6 +1,9 @@
 use anyhow::{Context, Result};
+use regex::Regex;
 
-use std::{ffi::OsStr, path::PathBuf, process::Command, str::FromStr};
+use std::{
+    ffi::OsStr, path::PathBuf, process::Command, str::FromStr, thread::sleep, time::Duration,
+};
 
 use crate::asset::{Asset, AssetManager};
 
@@ -588,8 +591,9 @@ pub fn next_active_window() -> Result<()> {
             "Walk Through Windows",
         ])
         .output()?;
+
     if out.status.success() {
-        // This is desirable, but broken in the current version of KDE; technically possible with xdotool and a kwinscript
+        // This is the best way, but broken in the current version of KDE; for now, using xdotool instead
 
         // let out = Command::new("qdbus")
         // .args([
@@ -599,6 +603,37 @@ pub fn next_active_window() -> Result<()> {
         //     "MoveMouseToFocus",
         // ])
         // .output()?;
+
+        sleep(Duration::from_secs(2));
+
+        if let Ok(out) = Command::new("xdotool")
+            .args(["getwindowfocus", "getwindowgeometry"])
+            .output()
+        {
+            if out.status.success() {
+                let out = String::from_utf8_lossy(&out.stdout);
+                let position = Regex::new(r"Position: (\d+),(\d+)")
+                    .unwrap()
+                    .captures(&out)
+                    .and_then(|v| v.get(1).and_then(|x| v.get(2).map(|y| (x, y))));
+                let geometry = Regex::new(r"Geometry: (\d+)x(\d+)")
+                    .unwrap()
+                    .captures(&out)
+                    .and_then(|v| v.get(1).and_then(|w| v.get(2).map(|h| (w, h))));
+                if let (Some(p), Some(g)) = (position, geometry) {
+                    let x: u32 = p.0.as_str().parse().unwrap();
+                    let y: u32 = p.1.as_str().parse().unwrap();
+                    let w: u32 = g.0.as_str().parse().unwrap();
+                    let h: u32 = g.1.as_str().parse().unwrap();
+
+                    let mx = x + (w / 2);
+                    let my = y + (h / 2);
+                    let _ = Command::new("xdotool")
+                        .args(["movemouse", &mx.to_string(), &my.to_string()])
+                        .output();
+                }
+            }
+        }
 
         Ok(())
     } else {

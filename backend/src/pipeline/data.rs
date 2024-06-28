@@ -101,7 +101,7 @@ impl PressType {
     fn matches_duration(&self, duration: Duration) -> bool {
         let millis = duration.as_millis();
         match self {
-            PressType::Short => millis >= 100,
+            PressType::Short => millis >= 20,
             PressType::Long => millis >= 5000,
         }
     }
