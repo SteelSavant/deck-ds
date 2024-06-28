@@ -1820,7 +1820,6 @@
       "required": [
         "display_restoration",
         "enable_ui_inject",
-        "exit_hooks",
         "log_level",
         "next_window_hooks",
         "primary_ui_target",
@@ -1836,14 +1835,6 @@
           "description": "If true, inject buttons onto app action bar",
           "type": "boolean"
         },
-        "exit_hooks": {
-          "description": "Button chord to be used to exit profiles that register for exit hooks.",
-          "allOf": [
-            {
-              "$ref": "#/definitions/BtnChord"
-            }
-          ]
-        },
         "log_level": {
           "description": "Overwrite the desktop layout with the game layout",
           "type": "integer",
@@ -1851,7 +1842,7 @@
           "minimum": 0.0
         },
         "next_window_hooks": {
-          "description": "Button chord to be used to exit profiles that register for exit hooks.",
+          "description": "Button chord to be used to exit profiles that register for exit hooks. Button chord to be used to exit profiles that register for exit hooks.",
           "allOf": [
             {
               "$ref": "#/definitions/BtnChord"
@@ -2256,7 +2247,6 @@
         "description",
         "desktop_controller_layout_hack",
         "name",
-        "should_register_exit_hooks",
         "targets"
       ],
       "properties": {
@@ -2265,16 +2255,6 @@
         },
         "desktop_controller_layout_hack": {
           "$ref": "#/definitions/DesktopControllerLayoutHack"
-        },
-        "exit_hooks_override": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/BtnChord"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "name": {
           "type": "string"
@@ -2288,9 +2268,6 @@
               "type": "null"
             }
           ]
-        },
-        "should_register_exit_hooks": {
-          "type": "boolean"
         },
         "targets": {
           "type": "object",
@@ -2547,22 +2524,11 @@
         "id",
         "name",
         "platform",
-        "should_register_exit_hooks",
         "toplevel"
       ],
       "properties": {
         "desktop_controller_layout_hack": {
           "$ref": "#/definitions/DesktopControllerLayoutHack"
-        },
-        "exit_hooks_override": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/BtnChord"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "id": {
           "type": "string",
@@ -2584,9 +2550,6 @@
             }
           ]
         },
-        "should_register_exit_hooks": {
-          "type": "boolean"
-        },
         "toplevel": {
           "type": "array",
           "items": {
@@ -2605,7 +2568,7 @@
     "PressType": {
       "type": "string",
       "enum": [
-        "Regular",
+        "Short",
         "Long"
       ]
     },

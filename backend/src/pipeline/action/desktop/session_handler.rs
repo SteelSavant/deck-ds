@@ -201,7 +201,8 @@ impl ActionImpl for DesktopSessionHandler {
             let mut map = SteamDeckGamepadButton::value_to_display_name();
 
             format!(
-                "hold \n\"{}\"\n{action}",
+                "{} press \"{}\"\n{action}",
+                hooks.press.to_string().to_lowercase(),
                 hooks
                     .btns
                     .iter()

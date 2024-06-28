@@ -12,7 +12,6 @@ export type ClientTeardownAction = {
   type: "MainAppAutomaticWindowing";
 };
 export type PipelineTarget = "Desktop" | "Gamemode";
-export type PressType = "Regular" | "Long";
 /**
  * Configured selection for an specific pipeline. Only user values are saved; everything else is pulled at runtime to ensure it's up to date.
  */
@@ -197,6 +196,7 @@ export type SecondaryApp = {
   args: string[];
   type: "Flatpak";
 };
+export type PressType = "Short" | "Long";
 export type PipelineActionUpdate =
   | {
       type: "UpdateEnabled";
@@ -332,29 +332,16 @@ export interface CreateProfileRequest {
 }
 export interface PipelineDefinition {
   desktop_controller_layout_hack: DesktopControllerLayoutHack;
-  exit_hooks_override?: BtnChord | null;
   id: string;
   name: string;
   platform: TopLevelDefinition;
   primary_target_override?: PipelineTarget | null;
-  should_register_exit_hooks: boolean;
   toplevel: TopLevelDefinition[];
 }
 export interface DesktopControllerLayoutHack {
   id: string;
   nonsteam_override?: boolean | null;
   steam_override?: boolean | null;
-}
-/**
- * A button chord. At least 2 buttons are required.
- */
-export interface BtnChord {
-  btns: number;
-  /**
-   * Phantom exists to prevent struct instantiation without passing through the `new` function for validation
-   */
-  phantom: null;
-  press: PressType;
 }
 /**
  * Defines a top-level action, with a root id and a unique set of actions. This allows multiple top-level actions of the same type, without complicating the structure too much.
@@ -627,15 +614,11 @@ export interface GlobalConfig {
    */
   enable_ui_inject: boolean;
   /**
-   * Button chord to be used to exit profiles that register for exit hooks.
-   */
-  exit_hooks: BtnChord;
-  /**
    * Overwrite the desktop layout with the game layout
    */
   log_level: number;
   /**
-   * Button chord to be used to exit profiles that register for exit hooks.
+   * Button chord to be used to exit profiles that register for exit hooks. Button chord to be used to exit profiles that register for exit hooks.
    */
   next_window_hooks: BtnChord;
   /**
@@ -648,6 +631,17 @@ export interface GlobalConfig {
    */
   use_nonsteam_desktop_controller_layout_hack: boolean;
   use_steam_desktop_controller_layout_hack: boolean;
+}
+/**
+ * A button chord. At least 2 buttons are required.
+ */
+export interface BtnChord {
+  btns: number;
+  /**
+   * Phantom exists to prevent struct instantiation without passing through the `new` function for validation
+   */
+  phantom: null;
+  press: PressType;
 }
 export interface GetTemplatesResponse {
   templates: Template[];
@@ -687,10 +681,8 @@ export interface ReifyPipelineResponse {
 export interface Pipeline {
   description: string;
   desktop_controller_layout_hack: DesktopControllerLayoutHack;
-  exit_hooks_override?: BtnChord | null;
   name: string;
   primary_target_override?: PipelineTarget | null;
-  should_register_exit_hooks: boolean;
   targets: {
     [k: string]: RuntimeSelection;
   };

@@ -425,7 +425,7 @@ mod window_tracking {
                     self_conn.stop_receive(receiver);
 
                     let lock = info.lock().unwrap();
-                    let best = get_best_match(&matcher.maybe_strings, &lock.deref());
+                    let best = get_best_match(&matcher.maybe_strings, lock.deref());
 
                     best.or_else(|| match matcher.preferred_ord_if_no_match {
                         Ordering::Less => lock.deref().iter().next(),
@@ -585,10 +585,21 @@ pub fn next_active_window() -> Result<()> {
             "org.kde.kglobalaccel",
             "/component/kwin",
             "invokeShortcut",
-            "\"Walk Through Windows\"",
+            "Walk Through Windows",
         ])
         .output()?;
     if out.status.success() {
+        // This is desirable, but broken in the current version of KDE; technically possible with xdotool and a kwinscript
+
+        // let out = Command::new("qdbus")
+        // .args([
+        //     "org.kde.kglobalaccel",
+        //     "/component/kwin",
+        //     "invokeShortcut",
+        //     "MoveMouseToFocus",
+        // ])
+        // .output()?;
+
         Ok(())
     } else {
         Err(anyhow::anyhow!(

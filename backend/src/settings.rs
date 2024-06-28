@@ -53,15 +53,15 @@ pub struct GlobalConfig {
     #[default(PipelineTarget::Gamemode)]
     pub primary_ui_target: PipelineTarget,
     /// Button chord to be used to exit profiles that register for exit hooks.
-    #[default(BtnChord::new(
-        SteamDeckGamepadButton::STEAM | SteamDeckGamepadButton::EAST,
-        PressType::Long
-    ))]
-    pub exit_hooks: BtnChord,
+    // #[default(BtnChord::new(
+    //     SteamDeckGamepadButton::STEAM | SteamDeckGamepadButton::EAST,
+    //     PressType::Long
+    // ))]
+    // pub exit_hooks: BtnChord,
     /// Button chord to be used to exit profiles that register for exit hooks.
     #[default(BtnChord::new(
         SteamDeckGamepadButton::STEAM | SteamDeckGamepadButton::QAM,
-        PressType::Regular,
+        PressType::Short,
     ))]
     pub next_window_hooks: BtnChord,
     /// Overwrite the desktop layout with the game layout

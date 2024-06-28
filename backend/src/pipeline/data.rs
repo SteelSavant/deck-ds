@@ -81,8 +81,9 @@ pub struct Template {
 pub struct PipelineDefinition {
     pub id: PipelineDefinitionId,
     pub name: String,
-    pub should_register_exit_hooks: bool,
-    pub exit_hooks_override: Option<BtnChord>,
+    // pub should_register_exit_hooks: bool,
+    // pub exit_hooks_override: Option<BtnChord>,
+    // pub next_window_hooks_override: Option<BtnChord>,
     pub primary_target_override: Option<PipelineTarget>,
     pub platform: TopLevelDefinition,
     // Additional top-level actions besides the main platform.
@@ -90,9 +91,9 @@ pub struct PipelineDefinition {
     pub desktop_controller_layout_hack: DesktopControllerLayoutHack,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Display, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub enum PressType {
-    Regular,
+    Short,
     Long,
 }
 
@@ -100,7 +101,7 @@ impl PressType {
     fn matches_duration(&self, duration: Duration) -> bool {
         let millis = duration.as_millis();
         match self {
-            PressType::Regular => millis >= 100,
+            PressType::Short => millis >= 100,
             PressType::Long => millis >= 5000,
         }
     }
@@ -162,7 +163,8 @@ impl BtnChord {
                     acc
                 }
             });
-        self.btns.contains(pressed)
+
+        self.btns.intersection(pressed) == self.btns
     }
 }
 
@@ -180,8 +182,9 @@ pub struct TopLevelDefinition {
 pub struct Pipeline {
     pub name: String,
     pub description: String,
-    pub should_register_exit_hooks: bool,
-    pub exit_hooks_override: Option<BtnChord>,
+    // pub should_register_exit_hooks: bool,
+    // pub exit_hooks_override: Option<BtnChord>,
+    // pub next_window_hooks_override: Option<BtnChord>,
     pub primary_target_override: Option<PipelineTarget>,
     pub targets: HashMap<PipelineTarget, RuntimeSelection>,
     pub desktop_controller_layout_hack: DesktopControllerLayoutHack,
@@ -341,8 +344,9 @@ impl PipelineDefinition {
         Ok(Pipeline {
             name: self.name.clone(),
             description,
-            should_register_exit_hooks: self.should_register_exit_hooks,
-            exit_hooks_override: self.exit_hooks_override.clone(),
+            // should_register_exit_hooks: self.should_register_exit_hooks,
+            // exit_hooks_override: self.exit_hooks_override,
+            // next_window_hooks_override: self.next_window_hooks_override,
             primary_target_override: self.primary_target_override,
             targets,
             desktop_controller_layout_hack: self.desktop_controller_layout_hack,

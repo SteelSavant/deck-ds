@@ -1,7 +1,6 @@
 use native_db::*;
 use native_model::{native_model, Model};
 use serde::{Deserialize, Serialize};
-use steamdeck_controller_hidraw::SteamDeckGamepadButton;
 
 use std::path::PathBuf;
 
@@ -33,9 +32,7 @@ use crate::{
             session_handler::DesktopSessionHandler,
             ActionId,
         },
-        data::{
-            BtnChord, PipelineActionId, PipelineDefinitionId, PipelineTarget, PressType, TopLevelId,
-        },
+        data::{PipelineActionId, PipelineDefinitionId, PipelineTarget, TopLevelId},
     },
     secondary_app::{FlatpakApp, SecondaryApp, SecondaryAppPresetId},
     settings::{AppId, ProfileId},
@@ -92,46 +89,45 @@ pub struct DbPipelineDefinition {
     #[primary_key]
     pub id: PipelineDefinitionId,
     pub name: String,
-    pub should_register_exit_hooks: bool,
-    pub exit_hooks_override: Option<DbBtnChord>,
+    // pub should_register_exit_hooks: bool,
     pub primary_target_override: Option<PipelineTarget>,
     pub platform: DbTopLevelDefinition,
     pub toplevel: Vec<DbTopLevelDefinition>,
     pub desktop_controller_layout_hack: DbDesktopControllerLayoutHack,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-pub struct DbBtnChord(u32, DbPressType);
+// #[derive(Clone, Serialize, Deserialize)]
+// pub struct DbBtnChord(u32, DbPressType);
 
-#[derive(Clone, Copy, Serialize, Deserialize)]
-enum DbPressType {
-    Regular,
-    Long,
-}
+// #[derive(Clone, Copy, Serialize, Deserialize)]
+// enum DbPressType {
+//     Short,
+//     Long,
+// }
 
-impl From<BtnChord> for DbBtnChord {
-    fn from(value: BtnChord) -> Self {
-        Self(
-            value.btns.bits(),
-            match value.press {
-                PressType::Long => DbPressType::Long,
-                PressType::Regular => DbPressType::Regular,
-            },
-        )
-    }
-}
+// impl From<BtnChord> for DbBtnChord {
+//     fn from(value: BtnChord) -> Self {
+//         Self(
+//             value.btns.bits(),
+//             match value.press {
+//                 PressType::Long => DbPressType::Long,
+//                 PressType::Short => DbPressType::Short,
+//             },
+//         )
+//     }
+// }
 
-impl From<DbBtnChord> for BtnChord {
-    fn from(value: DbBtnChord) -> Self {
-        Self::new(
-            SteamDeckGamepadButton::from_bits_retain(value.0),
-            match value.1 {
-                DbPressType::Regular => PressType::Regular,
-                DbPressType::Long => PressType::Long,
-            },
-        )
-    }
-}
+// impl From<DbBtnChord> for BtnChord {
+//     fn from(value: DbBtnChord) -> Self {
+//         Self::new(
+//             SteamDeckGamepadButton::from_bits_retain(value.0),
+//             match value.1 {
+//                 DbPressType::Short => PressType::Short,
+//                 DbPressType::Long => PressType::Long,
+//             },
+//         )
+//     }
+// }
 
 #[derive(Serialize, Deserialize)]
 pub struct DbTopLevelDefinition {

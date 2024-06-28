@@ -30,7 +30,7 @@ use crate::pipeline::action::session_handler::DesktopSessionHandler;
 use crate::pipeline::action::source_file::SourceFile;
 use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::action::{ActionImpl, ActionType};
-use crate::pipeline::data::{PressType, RuntimeSelection};
+use crate::pipeline::data::RuntimeSelection;
 use crate::secondary_app::SecondaryAppManager;
 use crate::settings::{AppId, GameId, GlobalConfig, SteamLaunchInfo};
 use crate::sys::app_process::AppProcess;
@@ -39,7 +39,7 @@ use crate::sys::x_display::XDisplay;
 
 use super::action::session_handler::UiEvent;
 use super::action::{Action, ErasedPipelineAction};
-use super::data::{BtnChord, Pipeline, PipelineTarget};
+use super::data::{BtnChord, Pipeline, PipelineTarget, PressType};
 
 pub struct PipelineExecutor {
     game_id: Either<AppId, GameId>,
@@ -93,12 +93,12 @@ impl PipelineContext {
             have_run: vec![],
             secondary_app: SecondaryAppManager::new(decky_env.asset_manager()),
             exit_hooks: Some(BtnChord::new(
-                SteamDeckGamepadButton::STEAM | SteamDeckGamepadButton::EAST, //tmp
+                SteamDeckGamepadButton::STEAM | SteamDeckGamepadButton::EAST,
                 PressType::Long,
             )),
             next_window_hooks: Some(BtnChord::new(
-                SteamDeckGamepadButton::STEAM | SteamDeckGamepadButton::QAM, // tmp
-                PressType::Regular,
+                SteamDeckGamepadButton::STEAM | SteamDeckGamepadButton::EAST,
+                PressType::Short,
             )),
             on_launch_callbacks: vec![],
             launch_info,
@@ -442,7 +442,7 @@ impl PipelineExecutor {
         Ok(s)
     }
 
-    pub fn exec(mut self, global_config: &GlobalConfig) -> Result<()> {
+    pub fn exec(mut self) -> Result<()> {
         // Set up pipeline
 
         let pipeline = {
@@ -451,16 +451,12 @@ impl PipelineExecutor {
                 .take()
                 .with_context(|| "cannot execute pipeline; pipeline has already been executed")?;
 
-            self.ctx.exit_hooks =
-                if self.target == PipelineTarget::Desktop && p.should_register_exit_hooks {
-                    Some(
-                        p.exit_hooks_override
-                            .clone()
-                            .unwrap_or(global_config.exit_hooks.clone()),
-                    )
-                } else {
-                    None
-                };
+            // self.ctx.exit_hooks =
+            //     if self.target == PipelineTarget::Desktop && p.should_register_exit_hooks {
+            //         Some(p.exit_hooks_override.unwrap_or(global_config.exit_hooks))
+            //     } else {
+            //         None
+            //     };
 
             p.build_actions(self.target)
         };
@@ -554,7 +550,8 @@ impl PipelineExecutor {
             self.ctx.kwin.reconfigure()?;
         }
 
-        let mut device = SteamDeckDevice::best()?;
+        let mut device = SteamDeckDevice::best()
+            .context("Failed to load steam deck controller device via hidraw")?;
         let mut state = HashMap::<SteamDeckGamepadButton, Instant>::new();
 
         self.ctx.send_ui_event(UiEvent::ClearStatus);
@@ -586,10 +583,11 @@ impl PipelineExecutor {
                 }
             }
 
-            log::debug!("Gamepad State: {state:?}"); // TODO::trace
+            log::trace!("Gamepad State: {state:?}");
 
             if let Some(hooks) = self.ctx.exit_hooks {
                 if hooks.matches(&state) {
+                    log::debug!("killing app process...");
                     return app_process.kill();
                 }
             }
@@ -597,6 +595,7 @@ impl PipelineExecutor {
             if let Some(hooks) = self.ctx.next_window_hooks {
                 if hooks.matches(&state) {
                     if !ignore_next_window_input {
+                        log::debug!("switching active window...");
                         ignore_next_window_input = true;
 
                         if let Err(err) = next_active_window() {

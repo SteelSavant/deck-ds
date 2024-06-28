@@ -211,7 +211,7 @@ fn main() -> Result<()> {
 
                     let exec_result = executor.and_then(|e| {
                         log::debug!("Pipeline executor initialized; executing");
-                        e.exec(&global_config)
+                        e.exec()
                     });
 
                     // return to gamemode

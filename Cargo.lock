@@ -3602,7 +3602,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 [[package]]
 name = "steamdeck-controller-hidraw"
 version = "0.1.0"
-source = "git+https://github.com/SteelSavant/steamdeck-controller-hidraw#0af05f0971e97cfb8f43d9a3f32a6cfe3b8f8f5d"
+source = "git+https://github.com/SteelSavant/steamdeck-controller-hidraw#eb5f5e8a25531ff6f96a26503b49e3fd0617cbbb"
 dependencies = [
  "bitflags 2.6.0",
  "bytemuck",

@@ -6,10 +6,7 @@ use anyhow::Result;
 use native_db::transaction::{RTransaction, RwTransaction};
 
 use crate::{
-    db::model::{
-        DbAppOverride, DbCategoryProfile, DbExitHooks, DbPipelineActionSettings,
-        DbPipelineDefinition,
-    },
+    db::model::{DbAppOverride, DbCategoryProfile, DbPipelineActionSettings, DbPipelineDefinition},
     pipeline::data::{
         PipelineActionId, PipelineActionLookup, PipelineDefinition, PipelineDefinitionId,
         TopLevelDefinition, TopLevelId,
@@ -64,8 +61,8 @@ impl AppProfile {
                 // override the visibility with the profile visibility, since the QAM can't actually set it;
                 // same with name && platform.root && exit hooks
 
-                o.should_register_exit_hooks = profile.pipeline.should_register_exit_hooks;
-                o.exit_hooks_override = profile.pipeline.exit_hooks_override;
+                // o.should_register_exit_hooks = profile.pipeline.should_register_exit_hooks;
+                // o.exit_hooks_override = profile.pipeline.exit_hooks_override;
                 o.name = profile.pipeline.name;
                 o.platform.root = profile.pipeline.platform.root.clone();
 
@@ -179,8 +176,8 @@ impl PipelineDefinition {
         let db_pipeline = DbPipelineDefinition {
             id,
             name: self.name.clone(),
-            should_register_exit_hooks: self.should_register_exit_hooks,
-            exit_hooks_override: self.exit_hooks_override.map(DbExitHooks::from),
+            // should_register_exit_hooks: self.should_register_exit_hooks,
+            // exit_hooks_override: self.exit_hooks_override.map(DbExitHooks::from),
             primary_target_override: self.primary_target_override,
             platform,
             toplevel,
