@@ -3,7 +3,6 @@ import {
     Dropdown,
     Field,
     Focusable,
-    Toggle,
     showModal,
 } from 'decky-frontend-lib';
 import { Fragment, ReactElement } from 'react';
@@ -13,7 +12,6 @@ import {
     PipelineContainer,
     isCategoryProfile,
 } from '../../../backend';
-import { EditHooks } from '../../../components/EditHooks';
 import HandleLoading from '../../../components/HandleLoading';
 import { useModifiablePipelineContainer } from '../../../context/modifiablePipelineContext';
 import useGlobalSettings from '../../../hooks/useGlobalSettings';
@@ -277,7 +275,7 @@ export default function ProfileInfo(
                             }}
                         />
                     </Field>
-                    <Field
+                    {/* <Field
                         focusable={false}
                         label="Register Exit Hooks"
                         description="In desktop mode, register a button chord that exits the app when held. Disable if your controller config in Steam Input already has an exit mapping."
@@ -302,8 +300,8 @@ export default function ProfileInfo(
                                 }
                             }}
                         />
-                    </Field>
-                    {profile.pipeline.should_register_exit_hooks ? (
+                    </Field> */}
+                    {/* {profile.pipeline.should_register_exit_hooks ? (
                         <>
                             <Field
                                 focusable={false}
@@ -370,7 +368,7 @@ export default function ProfileInfo(
                                 />
                             ) : null}
                         </>
-                    ) : null}
+                    ) : null} */}
                     <Field
                         label="Force App Controller Layout"
                         description="Forces Steam to use the controller layout for the given app, if defined. 

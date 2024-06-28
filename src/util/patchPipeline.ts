@@ -7,7 +7,6 @@ import {
     patchPipelineAction,
 } from '../backend';
 import {
-    BtnChord,
     DesktopControllerLayoutHack,
     PipelineActionUpdate,
 } from '../types/backend_api';
@@ -70,9 +69,9 @@ export type PipelineUpdate =
 export interface PipelineInfo {
     description?: string;
     name?: string;
-    exit_hooks_override?: BtnChord | null;
-    next_window_hooks_override?: BtnChord | null;
-    register_exit_hooks?: boolean;
+    // exit_hooks_override?: BtnChord | null;
+    // next_window_hooks_override?: BtnChord | null;
+    // register_exit_hooks?: boolean;
     primary_target_override?: PipelineTarget | null;
     steam_desktop_layout_config_hack_override?: boolean | null;
     nonsteam_desktop_layout_config_hack_override?: boolean | null;
@@ -102,12 +101,12 @@ export async function patchPipeline(
         return Ok({
             ...pipeline,
             name: info.name ?? pipeline.name,
-            register_exit_hooks:
-                info.register_exit_hooks ?? pipeline.should_register_exit_hooks,
-            exit_hooks_override:
-                info.exit_hooks_override === undefined
-                    ? pipeline.exit_hooks_override
-                    : info.exit_hooks_override,
+            // register_exit_hooks:
+            //     info.register_exit_hooks ?? pipeline.should_register_exit_hooks,
+            // exit_hooks_override:
+            //     info.exit_hooks_override === undefined
+            //         ? pipeline.exit_hooks_override
+            //         : info.exit_hooks_override,
             primary_target_override:
                 info.primary_target_override === undefined
                     ? pipeline.primary_target_override

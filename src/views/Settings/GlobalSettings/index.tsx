@@ -3,7 +3,6 @@ import { Fragment, VFC, useEffect, useState } from 'react';
 import { testBackendError } from '../../../backend';
 import { ActionChild } from '../../../components/ActionChild';
 import { EditAction } from '../../../components/EditAction';
-import { EditHooks } from '../../../components/EditHooks';
 import HandleLoading from '../../../components/HandleLoading';
 import useGlobalSettings from '../../../hooks/useGlobalSettings';
 import { LogLevel, logger } from '../../../util/log';
@@ -48,7 +47,7 @@ export const GlobalSettingsPage: VFC = () => {
                             }
                             focusable={true}
                         />
-                        <Builder
+                        {/* <Builder
                             label="Exit Hooks"
                             description="The button chord to hold to exit the app in desktop mode, if enabled. These are the buttons mapped in Steam Input, not guaranteed to match the physical buttons."
                             indentLevel={1}
@@ -65,7 +64,7 @@ export const GlobalSettingsPage: VFC = () => {
 
                                 return res.mapErr((e) => e.err);
                             }}
-                        />
+                        /> */}
                         <Builder
                             label="Force App Controller Layout"
                             indentLevel={1}

@@ -214,17 +214,17 @@ impl ActionImpl for DesktopSessionHandler {
             )
         }
 
-        let exit_text = match &ctx.exit_hooks {
-            Some(hooks) => format_action(hooks, "to exit game after launch"),
-            None =>"exit hooks not registered;\nuse steam input mapping or press (Alt+F4) on a physical keyboard to exit\ngame after launch".to_string()
-        };
-
         let next_window_text = match &ctx.next_window_hooks {
             Some(hooks) => format_action(hooks, "to move focus to a new window"),
             None => "".to_string(),
         };
 
-        let secondary_text = format!("{exit_text}\n\n{next_window_text}");
+        let exit_text = match &ctx.exit_hooks {
+            Some(hooks) => format_action(hooks, "to exit game after launch"),
+            None =>"exit hooks not registered;\nuse steam input mapping or press (Alt+F4) on a physical keyboard to exit\ngame after launch".to_string()
+        };
+
+        let secondary_text = format!("{next_window_text}\n\n{exit_text}");
 
         let update = display.calc_ui_viewport_event(embedded.as_ref(), preferred.as_ref());
 

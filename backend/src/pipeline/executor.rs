@@ -92,14 +92,8 @@ impl PipelineContext {
             state: TypeMap::new(),
             have_run: vec![],
             secondary_app: SecondaryAppManager::new(decky_env.asset_manager()),
-            exit_hooks: Some(BtnChord::new(
-                SteamDeckGamepadButton::STEAM | SteamDeckGamepadButton::EAST,
-                PressType::Long,
-            )),
-            next_window_hooks: Some(BtnChord::new(
-                SteamDeckGamepadButton::STEAM | SteamDeckGamepadButton::EAST,
-                PressType::Short,
-            )),
+            exit_hooks: None,
+            next_window_hooks: None,
             on_launch_callbacks: vec![],
             launch_info,
             decky_env,
@@ -443,20 +437,24 @@ impl PipelineExecutor {
     }
 
     pub fn exec(mut self) -> Result<()> {
-        // Set up pipeline
+        // Register hooks in desktop mode
+        if self.target == PipelineTarget::Desktop {
+            self.ctx.exit_hooks = Some(BtnChord::new(
+                SteamDeckGamepadButton::STEAM | SteamDeckGamepadButton::EAST,
+                PressType::Long,
+            ));
+            self.ctx.next_window_hooks = Some(BtnChord::new(
+                SteamDeckGamepadButton::STEAM | SteamDeckGamepadButton::EAST,
+                PressType::Short,
+            ))
+        }
 
+        // Set up pipeline
         let pipeline = {
             let p = self
                 .pipeline
                 .take()
                 .with_context(|| "cannot execute pipeline; pipeline has already been executed")?;
-
-            // self.ctx.exit_hooks =
-            //     if self.target == PipelineTarget::Desktop && p.should_register_exit_hooks {
-            //         Some(p.exit_hooks_override.unwrap_or(global_config.exit_hooks))
-            //     } else {
-            //         None
-            //     };
 
             p.build_actions(self.target)
         };
