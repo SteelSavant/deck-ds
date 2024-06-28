@@ -83,6 +83,8 @@ export default definePlugin((serverApi: ServerAPI) => {
     logger.toaster = serverApi.toaster;
 
     console.log('Steam Client:', SteamClient);
+    console.log('collection store:', collectionStore);
+    console.log('collections:', collectionStore.userCollections);
 
     function isSteamGame(overview: any): boolean {
         const hasOwnerAccountId = overview.owner_account_id !== undefined;

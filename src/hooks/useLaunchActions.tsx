@@ -33,7 +33,7 @@ const useLaunchActions = (
         const includedProfiles = new Set<string>();
         const validProfiles = collectionStore.userCollections.flatMap((uc) => {
             sleep(1000);
-            const containsApp = uc.apps.get(appDetails.appId);
+            const containsApp = uc.apps.has(appDetails.appId);
 
             if (containsApp) {
                 const matchedProfiles = loadedProfiles
