@@ -46,7 +46,7 @@ type Collection = {
     AsEditableCollection: () => null;
     GetAppCountWithToolsFilter: (t) => any;
     allApps: SteamAppOverview[];
-    apps: Map<number, SteamAppOverview>;
+    apps: Set<number>;
     bAllowsDragAndDrop: boolean;
     bIsDeletable: boolean;
     bIsDynamic: boolean;

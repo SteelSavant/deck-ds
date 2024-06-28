@@ -7,9 +7,12 @@ use std::{
 use anyhow::{Context, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use steamdeck_controller_hidraw::SteamDeckGamepadButton;
 use xrandr::XId;
 
-use crate::pipeline::{action::ActionType, dependency::Dependency, executor::PipelineContext};
+use crate::pipeline::{
+    action::ActionType, data::BtnChord, dependency::Dependency, executor::PipelineContext,
+};
 
 use self::ui::DeckDsUi;
 
@@ -194,11 +197,34 @@ impl ActionImpl for DesktopSessionHandler {
         let (ui_tx, ui_rx): (Sender<UiEvent>, Receiver<UiEvent>) = mpsc::channel();
         let (main_tx, main_rx): (Sender<egui::Context>, Receiver<egui::Context>) = mpsc::channel();
 
-        let secondary_text = match &ctx.exit_hooks {
-            Some(hooks) =>
-                    format!("hold WHATEVER STEAM INPUT HAS BOUND for \n\"{}\"\nto exit game after launch", hooks.iter().map(|v| format!("{v}")).collect::<Vec<_>>().join("\" + \"")),
-                    None =>"exit hooks not registered;\nuse Steam Input mapping or press (Alt+F4) to exit\ngame after launch".to_string()
+        fn format_action(hooks: &BtnChord, action: &str) -> String {
+            let mut map = SteamDeckGamepadButton::value_to_display_name();
+
+            format!(
+                "{} press \"{}\"\n{action}",
+                hooks.press.to_string().to_lowercase(),
+                hooks
+                    .btns
+                    .iter()
+                    .map(|v| map
+                        .remove(&v)
+                        .expect("SteamDeckGamepadButton should exist in value map"))
+                    .collect::<Vec<_>>()
+                    .join("\" + \"")
+            )
+        }
+
+        let next_window_text = match &ctx.next_window_hooks {
+            Some(hooks) => format_action(hooks, "to move focus to a new window"),
+            None => "".to_string(),
         };
+
+        let exit_text = match &ctx.exit_hooks {
+            Some(hooks) => format_action(hooks, "to exit game after launch"),
+            None =>"exit hooks not registered;\nuse steam input mapping or press (Alt+F4) on a physical keyboard to exit\ngame after launch".to_string()
+        };
+
+        let secondary_text = format!("{next_window_text}\n\n{exit_text}");
 
         let update = display.calc_ui_viewport_event(embedded.as_ref(), preferred.as_ref());
 

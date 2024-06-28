@@ -90,7 +90,7 @@ function DeckDSProfilesForApp({
                 that collection:{' '}
             </p>
             {collectionStore.userCollections
-                .filter((uc) => uc.apps.get(appDetails.appId))
+                .filter((uc) => uc.apps.has(appDetails.appId))
                 .map((c) => {
                     const createNewProfile = async () => {
                         const templates = await getTemplates();

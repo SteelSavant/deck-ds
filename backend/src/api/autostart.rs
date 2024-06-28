@@ -131,10 +131,8 @@ pub fn autostart(
                                 )
                                 .build_executor(global_config, decky_env.clone());
 
-                                let global_config = lock.get_global_cfg();
-
                                 match executor {
-                                    Ok(executor) => match executor.exec(&global_config) {
+                                    Ok(executor) => match executor.exec() {
                                         Ok(_) => ResponseOk.to_response(),
                                         Err(err) => {
                                             ResponseErr(StatusCode::ServerError, err).to_response()

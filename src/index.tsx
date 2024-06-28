@@ -25,6 +25,7 @@ import {
 } from './context/appContext';
 import { ServerApiProvider } from './context/serverApiContext';
 import patchLibraryApp from './patch/patchLibraryApp';
+import { teardownClientPipeline } from './pipeline/client_pipeline';
 import { logger, LogLevel } from './util/log';
 import QAM from './views/QAM';
 import ProfileRoute from './views/Settings/Profiles/ProfileRoute';
@@ -33,6 +34,7 @@ import SettingsRouter from './views/Settings/SettingsRouter';
 declare global {
     let collectionStore: CollectionStore;
     let appStore: AppStore;
+    let appDetailsStore: AppDetailsStore;
     let App: App;
 }
 
@@ -42,6 +44,7 @@ var usdplReady = false;
 
 (async function () {
     await backend.initBackend();
+    await teardownClientPipeline();
 
     usdplReady = true;
 })();
@@ -79,6 +82,10 @@ const History = findModuleChild((m) => {
 export default definePlugin((serverApi: ServerAPI) => {
     logger.toaster = serverApi.toaster;
 
+    console.log('Steam Client:', SteamClient);
+    console.log('collection store:', collectionStore);
+    console.log('collections:', collectionStore.userCollections);
+
     function isSteamGame(overview: any): boolean {
         const hasOwnerAccountId = overview.owner_account_id !== undefined;
         const wasPurchased = !!overview.rt_purchased_time;
@@ -94,6 +101,12 @@ export default definePlugin((serverApi: ServerAPI) => {
             const appIdStr = re.exec(currentRoute)![1]!;
             const appId = Number.parseInt(appIdStr);
             const overview = appStore.GetAppOverviewByAppID(appId);
+
+            console.log('steam client app overview:', overview);
+            console.log(
+                'steam client app details',
+                appDetailsStore.GetAppDetails(appId),
+            );
 
             appDetailsState.setOnAppPage({
                 appId,
@@ -156,6 +169,21 @@ export default definePlugin((serverApi: ServerAPI) => {
         Router.Navigate('/deck-ds/settings/profiles');
     };
 
+    let appStateRegistrar: any;
+    try {
+        appStateRegistrar =
+            SteamClient.GameSessions.RegisterForAppLifetimeNotifications(
+                async (update: any) => {
+                    console.log('app lifecycle update:', update);
+                    if (!update.bRunning) {
+                        await teardownClientPipeline(update.unAppID);
+                    }
+                },
+            );
+    } catch (ex) {
+        logger.error('failed to register for app lifetime notifications:', ex);
+    }
+
     return {
         titleView: (
             <Focusable
@@ -212,6 +240,8 @@ export default definePlugin((serverApi: ServerAPI) => {
                 '/deck-ds/settings/templates/:templateid',
             );
             serverApi.routerHook.removeRoute('/deck-ds/settings/:setting');
+
+            appStateRegistrar?.unregister();
         },
     };
 });

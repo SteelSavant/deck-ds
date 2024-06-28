@@ -1,9 +1,14 @@
 pub mod autostart;
+pub mod client_pipeline;
 pub mod general;
 pub mod profile;
 pub mod request_handler;
 pub mod secondary_app;
 
+use client_pipeline::{
+    AddClientTeardownActionRequest, GetClientTeardownActionsResponse,
+    RemoveClientTeardownActionsRequest,
+};
 use schemars::{schema::RootSchema, JsonSchema};
 use usdpl_back::core::serdes::Primitive;
 
@@ -103,6 +108,11 @@ pub struct Api {
     pub reify_pipeline_response: ReifyPipelineResponse,
     pub get_toplevel_response: GetTopLevelResponse,
     pub get_templates_response: GetTemplatesResponse,
+
+    // client pipeline
+    pub add_client_teardown_action_request: AddClientTeardownActionRequest,
+    pub remove_client_teardown_actions_request: RemoveClientTeardownActionsRequest,
+    pub get_client_teardown_actions_response: GetClientTeardownActionsResponse,
 
     // secondary app
     pub get_secondary_app_info: GetSecondaryAppInfoResponse,

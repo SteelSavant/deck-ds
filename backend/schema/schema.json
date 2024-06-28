@@ -4,6 +4,7 @@
   "description": "Marker type for generating API json schema types for ts",
   "type": "object",
   "required": [
+    "add_client_teardown_action_request",
     "autostart_request",
     "create_profile_request",
     "create_profile_response",
@@ -11,6 +12,7 @@
     "get_app_profile_request",
     "get_app_profile_response",
     "get_audio_device_info",
+    "get_client_teardown_actions_response",
     "get_default_app_override_for_profile_request",
     "get_default_app_override_for_profile_response",
     "get_display_info",
@@ -25,12 +27,16 @@
     "patch_pipeline_action_response",
     "reify_pipeline_request",
     "reify_pipeline_response",
+    "remove_client_teardown_actions_request",
     "set_app_profile_override_request",
     "set_app_profile_settings_request",
     "set_profile_request",
     "set_settings_request"
   ],
   "properties": {
+    "add_client_teardown_action_request": {
+      "$ref": "#/definitions/AddClientTeardownActionRequest"
+    },
     "autostart_request": {
       "$ref": "#/definitions/AutoStartRequest"
     },
@@ -51,6 +57,9 @@
     },
     "get_audio_device_info": {
       "$ref": "#/definitions/GetAudioDeviceInfoResponse"
+    },
+    "get_client_teardown_actions_response": {
+      "$ref": "#/definitions/GetClientTeardownActionsResponse"
     },
     "get_default_app_override_for_profile_request": {
       "$ref": "#/definitions/GetDefaultAppOverrideForProfileRequest"
@@ -93,6 +102,9 @@
     },
     "reify_pipeline_response": {
       "$ref": "#/definitions/ReifyPipelineResponse"
+    },
+    "remove_client_teardown_actions_request": {
+      "$ref": "#/definitions/RemoveClientTeardownActionsRequest"
     },
     "set_app_profile_override_request": {
       "$ref": "#/definitions/SetAppProfileOverrideRequest"
@@ -364,6 +376,17 @@
         }
       ]
     },
+    "AddClientTeardownActionRequest": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "properties": {
+        "action": {
+          "$ref": "#/definitions/ClientTeardownAction"
+        }
+      }
+    },
     "AppImageSource": {
       "type": "string",
       "enum": [
@@ -504,6 +527,29 @@
         },
         "user_id_64": {
           "type": "string"
+        }
+      }
+    },
+    "BtnChord": {
+      "description": "A button chord. At least 2 buttons are required.",
+      "type": "object",
+      "required": [
+        "btns",
+        "phantom",
+        "press"
+      ],
+      "properties": {
+        "btns": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0.0
+        },
+        "phantom": {
+          "description": "Phantom exists to prevent struct instantiation without passing through the `new` function for validation",
+          "type": "null"
+        },
+        "press": {
+          "$ref": "#/definitions/PressType"
         }
       }
     },
@@ -801,6 +847,38 @@
           "$ref": "#/definitions/LimitedMultiWindowLayout"
         }
       }
+    },
+    "ClientTeardownAction": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "action_id",
+            "app_id",
+            "previous_launch_options",
+            "type"
+          ],
+          "properties": {
+            "action_id": {
+              "type": "string"
+            },
+            "app_id": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "previous_launch_options": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "MainAppAutomaticWindowing"
+              ]
+            }
+          }
+        }
+      ]
     },
     "ConfigSelection": {
       "description": "Configured selection for an specific pipeline. Only user values are saved; everything else is pulled at runtime to ensure it's up to date.",
@@ -1271,26 +1349,6 @@
         "CemuProton"
       ]
     },
-    "ExitHooks": {
-      "description": "The required button chord to hold to exit. At least 2 buttons are required.",
-      "type": "array",
-      "items": [
-        {
-          "$ref": "#/definitions/GamepadButton"
-        },
-        {
-          "$ref": "#/definitions/GamepadButton"
-        },
-        {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/GamepadButton"
-          }
-        }
-      ],
-      "maxItems": 3,
-      "minItems": 3
-    },
     "ExternalDisplaySettings": {
       "oneOf": [
         {
@@ -1462,25 +1520,83 @@
         "Lime3ds"
       ]
     },
-    "GamepadButton": {
+    "GamescopeFilter": {
       "type": "string",
       "enum": [
-        "Start",
-        "Select",
-        "North",
-        "East",
-        "South",
-        "West",
-        "RightThumb",
-        "LeftThumb",
-        "DPadUp",
-        "DPadLeft",
-        "DPadRight",
-        "DPadDown",
-        "L1",
-        "L2",
-        "R1",
-        "R2"
+        "Linear",
+        "FSR",
+        "NIS",
+        "Pixel"
+      ]
+    },
+    "GamescopeFullscreenOption": {
+      "type": "string",
+      "enum": [
+        "Borderless",
+        "Fullscreen"
+      ]
+    },
+    "GamescopeOptions": {
+      "type": "object",
+      "required": [
+        "filter",
+        "fsr_sharpness",
+        "fullscreen_option",
+        "nis_sharpness",
+        "scaler",
+        "use_gamescope"
+      ],
+      "properties": {
+        "filter": {
+          "$ref": "#/definitions/GamescopeFilter"
+        },
+        "fsr_sharpness": {
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        "fullscreen_option": {
+          "$ref": "#/definitions/GamescopeFullscreenOption"
+        },
+        "game_refresh": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint16",
+          "minimum": 0.0
+        },
+        "game_resolution": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Resolution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "nis_sharpness": {
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        "scaler": {
+          "$ref": "#/definitions/GamescopeScaler"
+        },
+        "use_gamescope": {
+          "type": "boolean"
+        }
+      }
+    },
+    "GamescopeScaler": {
+      "type": "string",
+      "enum": [
+        "Auto",
+        "Integer",
+        "Fit",
+        "Fill",
+        "Stretch"
       ]
     },
     "GeneralOptions": {
@@ -1538,6 +1654,20 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/AudioDeviceInfo"
+          }
+        }
+      }
+    },
+    "GetClientTeardownActionsResponse": {
+      "type": "object",
+      "required": [
+        "actions"
+      ],
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ClientTeardownAction"
           }
         }
       }
@@ -1690,8 +1820,8 @@
       "required": [
         "display_restoration",
         "enable_ui_inject",
-        "exit_hooks",
         "log_level",
+        "next_window_hooks",
         "primary_ui_target",
         "restore_displays_if_not_executing_pipeline",
         "use_nonsteam_desktop_controller_layout_hack",
@@ -1705,19 +1835,19 @@
           "description": "If true, inject buttons onto app action bar",
           "type": "boolean"
         },
-        "exit_hooks": {
-          "description": "Button chord to be used to exit profiles that register for exit hooks.",
-          "allOf": [
-            {
-              "$ref": "#/definitions/ExitHooks"
-            }
-          ]
-        },
         "log_level": {
           "description": "Overwrite the desktop layout with the game layout",
           "type": "integer",
           "format": "uint8",
           "minimum": 0.0
+        },
+        "next_window_hooks": {
+          "description": "Button chord to be used to exit profiles that register for exit hooks. Button chord to be used to exit profiles that register for exit hooks.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/BtnChord"
+            }
+          ]
         },
         "primary_ui_target": {
           "description": "If `enable_ui_inject` is true, set the \"Play\" button to this target",
@@ -1800,10 +1930,14 @@
     "MainAppAutomaticWindowing": {
       "type": "object",
       "required": [
+        "gamescope",
         "general",
         "id"
       ],
       "properties": {
+        "gamescope": {
+          "$ref": "#/definitions/GamescopeOptions"
+        },
         "general": {
           "$ref": "#/definitions/GeneralOptions"
         },
@@ -2113,7 +2247,6 @@
         "description",
         "desktop_controller_layout_hack",
         "name",
-        "should_register_exit_hooks",
         "targets"
       ],
       "properties": {
@@ -2122,16 +2255,6 @@
         },
         "desktop_controller_layout_hack": {
           "$ref": "#/definitions/DesktopControllerLayoutHack"
-        },
-        "exit_hooks_override": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ExitHooks"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "name": {
           "type": "string"
@@ -2145,9 +2268,6 @@
               "type": "null"
             }
           ]
-        },
-        "should_register_exit_hooks": {
-          "type": "boolean"
         },
         "targets": {
           "type": "object",
@@ -2404,22 +2524,11 @@
         "id",
         "name",
         "platform",
-        "should_register_exit_hooks",
         "toplevel"
       ],
       "properties": {
         "desktop_controller_layout_hack": {
           "$ref": "#/definitions/DesktopControllerLayoutHack"
-        },
-        "exit_hooks_override": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ExitHooks"
-            },
-            {
-              "type": "null"
-            }
-          ]
         },
         "id": {
           "type": "string",
@@ -2441,9 +2550,6 @@
             }
           ]
         },
-        "should_register_exit_hooks": {
-          "type": "boolean"
-        },
         "toplevel": {
           "type": "array",
           "items": {
@@ -2457,6 +2563,13 @@
       "enum": [
         "Desktop",
         "Gamemode"
+      ]
+    },
+    "PressType": {
+      "type": "string",
+      "enum": [
+        "Short",
+        "Long"
       ]
     },
     "ReifyPipelineRequest": {
@@ -2500,6 +2613,21 @@
         "RightOf",
         "SameAs"
       ]
+    },
+    "RemoveClientTeardownActionsRequest": {
+      "type": "object",
+      "required": [
+        "ids"
+      ],
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
     },
     "Resolution": {
       "type": "object",

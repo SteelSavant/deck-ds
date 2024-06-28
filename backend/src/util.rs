@@ -36,6 +36,19 @@ pub fn read_version_file(decky_env: &DeckyEnv) -> String {
     }
 }
 
+pub fn get_maybe_window_names_classes_from_title(title: &str) -> Vec<String> {
+    use unicode_segmentation::UnicodeSegmentation;
+
+    let title = title.to_string();
+    let initials = title
+        .split_whitespace()
+        .filter_map(|v| v.graphemes(true).next())
+        .collect::<Vec<_>>()
+        .join("");
+
+    vec![title, initials]
+}
+
 pub fn create_dir_all<A: AsRef<Path> + std::fmt::Debug>(path: A) -> Result<()> {
     if !path.as_ref().is_dir() {
         log::debug!("creating path {path:?}");

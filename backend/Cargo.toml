@@ -34,7 +34,6 @@ derive_more = "0.99.17"
 indexmap = { version = "^2.1.0", features = ["serde"] }
 schemars = { version = "0.8.15", features = ["indexmap2", "uuid1", "either"] }
 anyhow = { version = "1.0.75", features = ["backtrace"] }
-gilrs = "0.10.2"
 rand = "0.8.5"
 nix = { version = "0.27.1", features = ["process", "zerocopy", "signal"] }
 float-cmp = "0.9.0"
@@ -66,6 +65,10 @@ edid-rs = "0.1.0"
 typemap-ors = "1.0.0"
 str-distance = "0.1.0"
 serde_with = "3.8.1"
+dbus = "0.9.7"
+tempfile = "3.10.1"
+unicode-segmentation = "1.11.0"
+steamdeck-controller-hidraw = { git = "https://github.com/SteelSavant/steamdeck-controller-hidraw" }
 
 [features]
 default = ["online", "decky"]

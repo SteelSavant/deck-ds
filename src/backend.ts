@@ -1,14 +1,15 @@
 import {
+    AddClientTeardownActionRequest,
     AutoStartRequest,
     CategoryProfile,
     CitraLayoutOption,
     CreateProfileRequest,
     CreateProfileResponse,
     DeleteProfileRequest,
-    GamepadButton,
     GetAppProfileRequest,
     GetAppProfileResponse,
     GetAudioDeviceInfoResponse,
+    GetClientTeardownActionsResponse,
     GetDefaultAppOverrideForProfileRequest,
     GetDefaultAppOverrideForProfileResponse,
     GetDisplayInfoResponse,
@@ -28,6 +29,7 @@ import {
     PipelineDefinition,
     ReifyPipelineRequest,
     ReifyPipelineResponse,
+    RemoveClientTeardownActionsRequest,
     SecondaryAppScreenPreference,
     SecondaryAppWindowingBehavior,
     SetAppProfileOverrideRequest,
@@ -48,17 +50,25 @@ import { Err, Ok, Result } from './util/result';
 export {
     Action,
     AppProfile,
+    AudioDeviceInfo,
     AutoStartRequest,
     CategoryProfile,
+    CemuAudio,
+    CemuAudioChannels,
+    CemuAudioSetting,
     CemuWindowOptions,
     CitraWindowOptions,
     ConfigSelection,
     CreateProfileRequest,
     CreateProfileResponse,
+    CustomWindowOptions,
     DeleteProfileRequest,
     DependencyError,
     DolphinWindowOptions,
     ExternalDisplaySettings,
+    GamescopeFilter,
+    GamescopeFullscreenOption,
+    GamescopeScaler,
     GetProfileRequest,
     GetProfileResponse,
     GetProfilesResponse,
@@ -67,7 +77,9 @@ export {
     LaunchSecondaryAppPreset,
     LaunchSecondaryFlatpakApp,
     LimitedMultiWindowLayout,
+    ModePreference,
     MultiWindowLayout,
+    Pipeline,
     PipelineAction,
     PipelineDefinition,
     PipelineTarget,
@@ -101,24 +113,39 @@ export type DefinitionOneOf = { selection: string; actions: string[] };
 export type PipelineActionSettings = PipelineActionSettingsFor_ConfigSelection;
 
 export type GamepadButtonSelection = GamepadButton;
-export const gamepadButtonSelectionOptions: GamepadButtonSelection[] = [
-    'Start',
-    'Select',
-    'South',
-    'East',
-    'West',
-    'North',
-    'DPadUp',
-    'DPadDown',
-    'DPadLeft',
-    'DPadRight',
-    'L1',
-    'L2',
-    'R1',
-    'R2',
-    'LeftThumb',
-    'RightThumb',
-];
+// TODO::don't hardcode this; get it from the display map rust-side
+export const gamepadButtonSelectionOptions = new Map<number, string>(
+    [
+        'R1',
+        'R2',
+        'L1',
+        'L2',
+        'NORTH',
+        'EAST',
+        'WEST',
+        'SOUTH',
+        'DPAD_UP',
+        'DPAD_RIGHT',
+        'DPAD_LEFT',
+        'DPAD_DOWN',
+        'START',
+        'SELECT',
+        'RSTICK',
+        'LSTICK',
+        'STEAM',
+        'QAM',
+        'R4',
+        'R5',
+        'L4',
+        'L5',
+        'RSTICK_TOUCH',
+        'LSTICK_TOUCH',
+        'LPAD',
+        'RPAD',
+        'LPAD_TOUCH',
+        'RPAD_TOUCH',
+    ].map((v, i) => [1 << (i + 1), v]),
+);
 
 export interface AppProfileOveride {
     profileId: string;
@@ -401,6 +428,24 @@ export async function reifyPipeline(
 
 export async function getToplevel(): Response<GetTopLevelResponse> {
     return await call_backend_typed('get_toplevel');
+}
+
+// Client Pipeline
+
+export async function addClientTeardownAction(
+    request: AddClientTeardownActionRequest,
+): Response<void> {
+    return await call_backend_typed('add_client_teardown_action', request);
+}
+
+export async function removeClientTeardownActions(
+    request: RemoveClientTeardownActionsRequest,
+): Response<void> {
+    return await call_backend_typed('remove_client_teardown_actions', request);
+}
+
+export async function getClientTeardownActions(): Response<GetClientTeardownActionsResponse> {
+    return await call_backend_typed('get_client_teardown_actions');
 }
 
 // Templates

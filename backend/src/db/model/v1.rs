@@ -16,7 +16,10 @@ use crate::{
             lime_3ds_layout::Lime3dsLayout,
             melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
             multi_window::{
-                main_app_automatic_windowing::MainAppAutomaticWindowing,
+                main_app_automatic_windowing::{
+                    GamescopeFilter, GamescopeFullscreenOption, GamescopeOptions, GamescopeScaler,
+                    MainAppAutomaticWindowing,
+                },
                 primary_windowing::{
                     CemuWindowOptions, CitraWindowOptions, CustomWindowOptions,
                     DolphinWindowOptions, GeneralOptions,
@@ -29,10 +32,7 @@ use crate::{
             session_handler::DesktopSessionHandler,
             ActionId,
         },
-        data::{
-            ExitHooks, GamepadButton, PipelineActionId, PipelineDefinitionId, PipelineTarget,
-            TopLevelId,
-        },
+        data::{PipelineActionId, PipelineDefinitionId, PipelineTarget, TopLevelId},
     },
     secondary_app::{FlatpakApp, SecondaryApp, SecondaryAppPresetId},
     settings::{AppId, ProfileId},
@@ -89,28 +89,45 @@ pub struct DbPipelineDefinition {
     #[primary_key]
     pub id: PipelineDefinitionId,
     pub name: String,
-    pub should_register_exit_hooks: bool,
-    pub exit_hooks_override: Option<DbExitHooks>,
+    // pub should_register_exit_hooks: bool,
     pub primary_target_override: Option<PipelineTarget>,
     pub platform: DbTopLevelDefinition,
     pub toplevel: Vec<DbTopLevelDefinition>,
     pub desktop_controller_layout_hack: DbDesktopControllerLayoutHack,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-pub struct DbExitHooks(pub GamepadButton, pub GamepadButton, pub Vec<GamepadButton>);
+// #[derive(Clone, Serialize, Deserialize)]
+// pub struct DbBtnChord(u32, DbPressType);
 
-impl From<ExitHooks> for DbExitHooks {
-    fn from(value: ExitHooks) -> Self {
-        Self(value.0, value.1, value.2)
-    }
-}
+// #[derive(Clone, Copy, Serialize, Deserialize)]
+// enum DbPressType {
+//     Short,
+//     Long,
+// }
 
-impl From<DbExitHooks> for ExitHooks {
-    fn from(value: DbExitHooks) -> Self {
-        Self(value.0, value.1, value.2)
-    }
-}
+// impl From<BtnChord> for DbBtnChord {
+//     fn from(value: BtnChord) -> Self {
+//         Self(
+//             value.btns.bits(),
+//             match value.press {
+//                 PressType::Long => DbPressType::Long,
+//                 PressType::Short => DbPressType::Short,
+//             },
+//         )
+//     }
+// }
+
+// impl From<DbBtnChord> for BtnChord {
+//     fn from(value: DbBtnChord) -> Self {
+//         Self::new(
+//             SteamDeckGamepadButton::from_bits_retain(value.0),
+//             match value.1 {
+//                 DbPressType::Short => PressType::Short,
+//                 DbPressType::Long => PressType::Long,
+//             },
+//         )
+//     }
+// }
 
 #[derive(Serialize, Deserialize)]
 pub struct DbTopLevelDefinition {
@@ -1068,6 +1085,7 @@ pub struct DbMainAppAutomaticWindowing {
     #[primary_key]
     id: ActionId,
     general: DbMultiWindowGeneralOptions,
+    gamescope: DbGamescopeOptions,
 }
 
 impl From<MainAppAutomaticWindowing> for DbMainAppAutomaticWindowing {
@@ -1075,6 +1093,7 @@ impl From<MainAppAutomaticWindowing> for DbMainAppAutomaticWindowing {
         Self {
             id: value.id,
             general: value.general.into(),
+            gamescope: value.gamescope.into(),
         }
     }
 }
@@ -1084,8 +1103,103 @@ impl From<DbMainAppAutomaticWindowing> for MainAppAutomaticWindowing {
         Self {
             id: value.id,
             general: value.general.into(),
+            gamescope: value.gamescope.into(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DbGamescopeOptions {
+    pub use_gamescope: bool,
+    pub game_resolution: Option<Resolution>,
+    pub game_refresh: Option<u16>,
+    pub fullscreen_option: DbGamescopeFullscreenOption,
+    pub scaler: DbGamescopeScaler,
+    pub filter: DbGamescopeFilter,
+    pub fsr_sharpness: u8,
+    pub nis_sharpness: u8,
+}
+
+impl From<GamescopeOptions> for DbGamescopeOptions {
+    fn from(value: GamescopeOptions) -> Self {
+        Self {
+            use_gamescope: value.use_gamescope,
+            game_resolution: value.game_resolution,
+            game_refresh: value.game_refresh,
+            nis_sharpness: value.nis_sharpness,
+            fsr_sharpness: value.fsr_sharpness,
+            fullscreen_option: match value.fullscreen_option {
+                GamescopeFullscreenOption::Borderless => DbGamescopeFullscreenOption::Borderless,
+                GamescopeFullscreenOption::Fullscreen => DbGamescopeFullscreenOption::Fullscreen,
+            },
+            scaler: match value.scaler {
+                GamescopeScaler::Auto => DbGamescopeScaler::Auto,
+                GamescopeScaler::Integer => DbGamescopeScaler::Integer,
+                GamescopeScaler::Fit => DbGamescopeScaler::Fit,
+                GamescopeScaler::Fill => DbGamescopeScaler::Fill,
+                GamescopeScaler::Stretch => DbGamescopeScaler::Stretch,
+            },
+            filter: match value.filter {
+                GamescopeFilter::Linear => DbGamescopeFilter::Linear,
+                GamescopeFilter::FSR => DbGamescopeFilter::FSR,
+                GamescopeFilter::NIS => DbGamescopeFilter::NIS,
+                GamescopeFilter::Pixel => DbGamescopeFilter::Pixel,
+            },
+        }
+    }
+}
+
+impl From<DbGamescopeOptions> for GamescopeOptions {
+    fn from(value: DbGamescopeOptions) -> Self {
+        Self {
+            use_gamescope: value.use_gamescope,
+            game_resolution: value.game_resolution,
+            game_refresh: value.game_refresh,
+            nis_sharpness: value.nis_sharpness,
+            fsr_sharpness: value.fsr_sharpness,
+            fullscreen_option: match value.fullscreen_option {
+                DbGamescopeFullscreenOption::Borderless => GamescopeFullscreenOption::Borderless,
+                DbGamescopeFullscreenOption::Fullscreen => GamescopeFullscreenOption::Fullscreen,
+            },
+            scaler: match value.scaler {
+                DbGamescopeScaler::Auto => GamescopeScaler::Auto,
+                DbGamescopeScaler::Integer => GamescopeScaler::Integer,
+                DbGamescopeScaler::Fit => GamescopeScaler::Fit,
+                DbGamescopeScaler::Fill => GamescopeScaler::Fill,
+                DbGamescopeScaler::Stretch => GamescopeScaler::Stretch,
+            },
+            filter: match value.filter {
+                DbGamescopeFilter::Linear => GamescopeFilter::Linear,
+                DbGamescopeFilter::FSR => GamescopeFilter::FSR,
+                DbGamescopeFilter::NIS => GamescopeFilter::NIS,
+                DbGamescopeFilter::Pixel => GamescopeFilter::Pixel,
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+
+pub enum DbGamescopeFullscreenOption {
+    Borderless,
+    Fullscreen,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum DbGamescopeScaler {
+    Auto,
+    Integer,
+    Fit,
+    Fill,
+    Stretch,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum DbGamescopeFilter {
+    Linear,
+    FSR,
+    NIS,
+    Pixel,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

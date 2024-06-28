@@ -13,10 +13,8 @@ use crate::{
         executor::PipelineContext,
     },
     secondary_app::FlatpakApp,
-    sys::{
-        flatpak::check_running_flatpaks, windowing::get_window_info_from_pid_default_active_after,
-    },
-    util::escape_string_for_regex,
+    sys::{flatpak::list_installed_flatpaks, kwin::KWinClientMatcher},
+    util::{escape_string_for_regex, get_maybe_window_names_classes_from_title},
 };
 
 use super::{
@@ -46,6 +44,8 @@ impl ActionImpl for LaunchSecondaryFlatpakApp {
             .get_state_index::<Self>()
             .expect("state slot should exist");
 
+        let window_ctx = ctx.kwin.start_tracking_new_windows()?;
+
         let pid = self
             .app
             .setup()?
@@ -58,12 +58,18 @@ impl ActionImpl for LaunchSecondaryFlatpakApp {
             options,
         });
 
-        let window_info =
-            get_window_info_from_pid_default_active_after(pid, Duration::from_secs(2))?; // TODO::find a better way to link a flatpak pid to its actual window (sandboxing means x11 sees the pid as either 0 or 2, instead of the one reported)
+        let best_window = window_ctx
+            .get_best_window_client(KWinClientMatcher {
+                min_delay: Duration::from_secs(2),
+                max_delay: Duration::from_secs(30),
+                preferred_ord_if_no_match: std::cmp::Ordering::Less,
+                maybe_strings: self.app.get_maybe_window_names_classes(),
+            })?
+            .context("automatic windowing expected to find a window")?;
 
         SecondaryAppWindowOptions {
-            window_matcher: escape_string_for_regex(window_info.name),
-            classes: window_info.classes,
+            window_matcher: escape_string_for_regex(best_window.caption),
+            classes: best_window.window_classes,
             windowing_behavior: self.windowing_behavior,
             screen_preference: self.screen_preference,
         }
@@ -72,19 +78,15 @@ impl ActionImpl for LaunchSecondaryFlatpakApp {
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {
-        if let Some(pid) = ctx.get_state::<Self>().and_then(|state| {
+        if let Some(state) = ctx.get_state::<Self>() {
             let index = ctx
                 .get_state_index::<Self>()
                 .expect("state slot should exist");
 
             let _ = state.options.write(&ctx.kwin, index); // ignore result for now
+        };
 
-            state.pid
-        }) {
-            self.app.teardown(pid)
-        } else {
-            Ok(())
-        }
+        Ok(())
     }
 
     fn get_dependencies(&self, _ctx: &PipelineContext) -> Vec<Dependency> {
@@ -116,6 +118,7 @@ impl FlatpakApp {
         match child.try_wait() {
             Ok(Some(v)) => {
                 if v.success() {
+                    log::warn!("flatpak process for {} exited immediately...", self.app_id);
                     Ok(None)
                 } else {
                     Err(anyhow::anyhow!(
@@ -129,34 +132,32 @@ impl FlatpakApp {
         }
     }
 
-    fn teardown(&self, pid: Pid) -> Result<()> {
-        let running = check_running_flatpaks()?;
-
-        if running
-            .iter()
-            .any(|v| v.pid == pid && v.app_id == self.app_id)
-        {
-            let status = Command::new("flatpak")
-                .args(["kill", &self.app_id])
-                .status()?;
-
-            if status.success() {
-                log::debug!("Closed flatpak with pid {pid}");
-
-                Ok(())
-            } else {
-                Err(anyhow::anyhow!("failed to kill flatpak {}", self.app_id))
-            }
-        } else {
-            log::debug!("Failed to find running flatpak with pid {pid} in {running:?}");
-            Ok(())
-        }
-    }
-
     fn get_dependencies(&self) -> Vec<Dependency> {
         vec![
             Dependency::Flatpak(self.app_id.clone()),
             Dependency::System("xdotool".to_string()),
         ]
+    }
+
+    fn get_maybe_window_names_classes(&self) -> Vec<String> {
+        let title = list_installed_flatpaks()
+            .unwrap_or_default()
+            .into_iter()
+            .find(|v| v.app_id == self.app_id)
+            .map(|v| v.name);
+        let id = self.app_id.to_string();
+        let mut parts = self
+            .app_id
+            .split(".")
+            .map(|v| v.to_string())
+            .collect::<Vec<_>>();
+
+        parts.push(id);
+
+        if let Some(title) = title {
+            parts.append(&mut get_maybe_window_names_classes_from_title(&title));
+        }
+
+        parts
     }
 }

@@ -1,5 +1,10 @@
 use derive_more::Display;
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    marker::PhantomData,
+    time::{Duration, Instant},
+};
+use steamdeck_controller_hidraw::SteamDeckGamepadButton;
 use strum::{EnumIter, IntoEnumIterator};
 
 use crate::{
@@ -9,7 +14,7 @@ use crate::{
 use anyhow::{Context, Result};
 
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use super::{
     action::{desktop_controller_layout_hack::DesktopControllerLayoutHack, Action},
@@ -76,8 +81,9 @@ pub struct Template {
 pub struct PipelineDefinition {
     pub id: PipelineDefinitionId,
     pub name: String,
-    pub should_register_exit_hooks: bool,
-    pub exit_hooks_override: Option<ExitHooks>,
+    // pub should_register_exit_hooks: bool,
+    // pub exit_hooks_override: Option<BtnChord>,
+    // pub next_window_hooks_override: Option<BtnChord>,
     pub primary_target_override: Option<PipelineTarget>,
     pub platform: TopLevelDefinition,
     // Additional top-level actions besides the main platform.
@@ -85,68 +91,80 @@ pub struct PipelineDefinition {
     pub desktop_controller_layout_hack: DesktopControllerLayoutHack,
 }
 
-/// The required button chord to hold to exit. At least 2 buttons are required.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-pub struct ExitHooks(pub GamepadButton, pub GamepadButton, pub Vec<GamepadButton>);
+#[derive(Debug, Display, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub enum PressType {
+    Short,
+    Long,
+}
 
-impl ExitHooks {
-    pub fn iter(&self) -> impl Iterator<Item = &GamepadButton> {
-        [&self.0, &self.1].into_iter().chain(self.2.iter())
+impl PressType {
+    fn matches_duration(&self, duration: Duration) -> bool {
+        let millis = duration.as_millis();
+        match self {
+            PressType::Short => millis >= 20,
+            PressType::Long => millis >= 5000,
+        }
     }
 }
 
-impl Default for ExitHooks {
-    fn default() -> Self {
-        // Start + Select would be ideal defaults, but if desktop layouts break (again),
-        // it becomes impossible to use because holding Start swaps the action set.
-        Self(GamepadButton::L1, GamepadButton::East, vec![])
+/// A button chord. At least 2 buttons are required.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct BtnChord {
+    #[serde(
+        serialize_with = "serialize_steamdeck_gamepad_button",
+        deserialize_with = "deserialize_steamdeck_gamepad_button"
+    )]
+    #[schemars(with = "u32")]
+    pub btns: SteamDeckGamepadButton,
+    pub press: PressType,
+    /// Phantom exists to prevent struct instantiation without passing through the `new` function for validation
+    phantom: PhantomData<()>,
+}
+
+fn serialize_steamdeck_gamepad_button<S>(
+    x: &SteamDeckGamepadButton,
+    s: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    s.serialize_u32(x.bits())
+}
+
+fn deserialize_steamdeck_gamepad_button<'de, D>(d: D) -> Result<SteamDeckGamepadButton, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    u32::deserialize(d).map(|v| SteamDeckGamepadButton::from_bits_retain(v))
+}
+
+impl BtnChord {
+    pub fn new(btns: SteamDeckGamepadButton, press: PressType) -> Self {
+        assert!(btns.into_iter().count() >= 2);
+        Self {
+            btns,
+            press,
+            phantom: Default::default(),
+        }
     }
-}
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-pub enum GamepadButton {
-    Start,
-    Select,
-    North,
-    East,
-    South,
-    West,
-    RightThumb,
-    LeftThumb,
-    DPadUp,
-    DPadLeft,
-    DPadRight,
-    DPadDown,
-    L1,
-    L2,
-    R1,
-    R2,
-}
+    pub fn matches(&self, presses: &HashMap<SteamDeckGamepadButton, Instant>) -> bool {
+        let pressed = presses
+            .iter()
+            .filter(|(k, v)| {
+                let elapsed = v.elapsed();
 
-impl std::fmt::Display for GamepadButton {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                GamepadButton::Start => "Start",
-                GamepadButton::Select => "Select",
-                GamepadButton::North => "Y (North)",
-                GamepadButton::East => "B (East)",
-                GamepadButton::South => "A (South)",
-                GamepadButton::West => "X (West)",
-                GamepadButton::RightThumb => "Right Thumb",
-                GamepadButton::LeftThumb => "Left Thumb",
-                GamepadButton::DPadUp => "DPad Up",
-                GamepadButton::DPadLeft => "DPad Left",
-                GamepadButton::DPadRight => "DPad Right",
-                GamepadButton::DPadDown => "DPad Down",
-                GamepadButton::L1 => "L1 (Left Bumper)",
-                GamepadButton::L2 => "L2 (Left Trigger)",
-                GamepadButton::R1 => "R1 (Right Bumper)",
-                GamepadButton::R2 => "R2 (Right Trigger)",
-            }
-        )
+                self.btns.contains(**k) && self.press.matches_duration(elapsed)
+            })
+            .fold(SteamDeckGamepadButton::empty(), |acc, v| {
+                if self.press.matches_duration(v.1.elapsed()) {
+                    acc | *v.0
+                } else {
+                    acc
+                }
+            });
+
+        self.btns.intersection(pressed) == self.btns
     }
 }
 
@@ -164,8 +182,9 @@ pub struct TopLevelDefinition {
 pub struct Pipeline {
     pub name: String,
     pub description: String,
-    pub should_register_exit_hooks: bool,
-    pub exit_hooks_override: Option<ExitHooks>,
+    // pub should_register_exit_hooks: bool,
+    // pub exit_hooks_override: Option<BtnChord>,
+    // pub next_window_hooks_override: Option<BtnChord>,
     pub primary_target_override: Option<PipelineTarget>,
     pub targets: HashMap<PipelineTarget, RuntimeSelection>,
     pub desktop_controller_layout_hack: DesktopControllerLayoutHack,
@@ -295,8 +314,9 @@ impl PipelineDefinition {
     ) -> Result<Pipeline> {
         let targets = PipelineTarget::iter()
             .map(|t: PipelineTarget| {
+                // put platform after toplevel actions for now, to simplify automatic windowing, since the main app
                 let platform_ref = &self.platform;
-                let toplevel = [vec![platform_ref], self.toplevel.iter().collect()].concat();
+                let toplevel = [self.toplevel.iter().collect(), vec![platform_ref]].concat();
 
                 let reified: Vec<_> = toplevel
                     .iter()
@@ -324,8 +344,9 @@ impl PipelineDefinition {
         Ok(Pipeline {
             name: self.name.clone(),
             description,
-            should_register_exit_hooks: self.should_register_exit_hooks,
-            exit_hooks_override: self.exit_hooks_override.clone(),
+            // should_register_exit_hooks: self.should_register_exit_hooks,
+            // exit_hooks_override: self.exit_hooks_override,
+            // next_window_hooks_override: self.next_window_hooks_override,
             primary_target_override: self.primary_target_override,
             targets,
             desktop_controller_layout_hack: self.desktop_controller_layout_hack,

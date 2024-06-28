@@ -1,6 +1,7 @@
 #![feature(exit_status_error)]
 
 use anyhow::Result;
+use client_pipeline::ClientPipelineHandler;
 
 use std::{
     env,
@@ -41,6 +42,7 @@ pub mod sys;
 pub mod util;
 
 pub mod autostart;
+pub mod client_pipeline;
 pub mod settings;
 
 mod ui_test;
@@ -157,6 +159,8 @@ fn main() -> Result<()> {
 
     let request_handler = Arc::new(Mutex::new(RequestHandler::new()));
     let secondary_app_manager = SecondaryAppManager::new(decky_env.asset_manager());
+    let client_pipeline_handler =
+        Arc::new(Mutex::new(ClientPipelineHandler::new(decky_env.clone())));
 
     // teardown persisted state
     match PipelineContext::load(global_config, decky_env.clone()) {
@@ -207,7 +211,7 @@ fn main() -> Result<()> {
 
                     let exec_result = executor.and_then(|e| {
                         log::debug!("Pipeline executor initialized; executing");
-                        e.exec(&global_config)
+                        e.exec()
                     });
 
                     // return to gamemode
@@ -325,6 +329,27 @@ fn main() -> Result<()> {
                 .register(
                     "get_templates",
                     crate::api::profile::get_templates(profiles_db),
+                )
+                // client pipeline
+                .register(
+                    "add_client_teardown_action",
+                    crate::api::client_pipeline::add_client_teardown_action(
+                        request_handler.clone(),
+                        client_pipeline_handler.clone(),
+                    ),
+                )
+                .register(
+                    "remove_client_teardown_actions",
+                    crate::api::client_pipeline::remove_client_teardown_actions(
+                        request_handler.clone(),
+                        client_pipeline_handler.clone(),
+                    ),
+                )
+                .register(
+                    "get_client_teardown_actions",
+                    crate::api::client_pipeline::get_client_teardown_actions(
+                        client_pipeline_handler.clone(),
+                    ),
                 )
                 // secondary app
                 .register(

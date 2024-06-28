@@ -5,31 +5,13 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
+export type ClientTeardownAction = {
+  action_id: string;
+  app_id: number;
+  previous_launch_options: string;
+  type: "MainAppAutomaticWindowing";
+};
 export type PipelineTarget = "Desktop" | "Gamemode";
-/**
- * The required button chord to hold to exit. At least 2 buttons are required.
- *
- * @minItems 3
- * @maxItems 3
- */
-export type ExitHooks = [GamepadButton, GamepadButton, GamepadButton[]];
-export type GamepadButton =
-  | "Start"
-  | "Select"
-  | "North"
-  | "East"
-  | "South"
-  | "West"
-  | "RightThumb"
-  | "LeftThumb"
-  | "DPadUp"
-  | "DPadLeft"
-  | "DPadRight"
-  | "DPadDown"
-  | "L1"
-  | "L2"
-  | "R1"
-  | "R2";
 /**
  * Configured selection for an specific pipeline. Only user values are saved; everything else is pulled at runtime to ensure it's up to date.
  */
@@ -206,11 +188,15 @@ export type AppImageSource = "Cemu";
 export type EmuDeckSource = "CemuProton";
 export type SecondaryAppScreenPreference = "PreferSecondary" | "PreferPrimary";
 export type SecondaryAppWindowingBehavior = "Fullscreen" | "Maximized" | "Minimized" | "Unmanaged";
+export type GamescopeFilter = "Linear" | "FSR" | "NIS" | "Pixel";
+export type GamescopeFullscreenOption = "Borderless" | "Fullscreen";
+export type GamescopeScaler = "Auto" | "Integer" | "Fit" | "Fill" | "Stretch";
 export type SecondaryApp = {
   app_id: string;
   args: string[];
   type: "Flatpak";
 };
+export type PressType = "Short" | "Long";
 export type PipelineActionUpdate =
   | {
       type: "UpdateEnabled";
@@ -300,6 +286,7 @@ export type RuntimeSelection =
  * Marker type for generating API json schema types for ts
  */
 export interface Api {
+  add_client_teardown_action_request: AddClientTeardownActionRequest;
   autostart_request: AutoStartRequest;
   create_profile_request: CreateProfileRequest;
   create_profile_response: CreateProfileResponse;
@@ -307,6 +294,7 @@ export interface Api {
   get_app_profile_request: GetAppProfileRequest;
   get_app_profile_response: GetAppProfileResponse;
   get_audio_device_info: GetAudioDeviceInfoResponse;
+  get_client_teardown_actions_response: GetClientTeardownActionsResponse;
   get_default_app_override_for_profile_request: GetDefaultAppOverrideForProfileRequest;
   get_default_app_override_for_profile_response: GetDefaultAppOverrideForProfileResponse;
   get_display_info: GetDisplayInfoResponse;
@@ -321,10 +309,14 @@ export interface Api {
   patch_pipeline_action_response: PatchPipelineActionResponse;
   reify_pipeline_request: ReifyPipelineRequest;
   reify_pipeline_response: ReifyPipelineResponse;
+  remove_client_teardown_actions_request: RemoveClientTeardownActionsRequest;
   set_app_profile_override_request: SetAppProfileOverrideRequest;
   set_app_profile_settings_request: SetAppProfileSettingsRequest;
   set_profile_request: SetProfileRequest;
   set_settings_request: SetSettingsRequest;
+}
+export interface AddClientTeardownActionRequest {
+  action: ClientTeardownAction;
 }
 export interface AutoStartRequest {
   app_id: string;
@@ -340,12 +332,10 @@ export interface CreateProfileRequest {
 }
 export interface PipelineDefinition {
   desktop_controller_layout_hack: DesktopControllerLayoutHack;
-  exit_hooks_override?: ExitHooks | null;
   id: string;
   name: string;
   platform: TopLevelDefinition;
   primary_target_override?: PipelineTarget | null;
-  should_register_exit_hooks: boolean;
   toplevel: TopLevelDefinition[];
 }
 export interface DesktopControllerLayoutHack {
@@ -521,8 +511,19 @@ export interface LaunchSecondaryAppPreset {
   windowing_behavior: SecondaryAppWindowingBehavior;
 }
 export interface MainAppAutomaticWindowing {
+  gamescope: GamescopeOptions;
   general: GeneralOptions;
   id: string;
+}
+export interface GamescopeOptions {
+  filter: GamescopeFilter;
+  fsr_sharpness: number;
+  fullscreen_option: GamescopeFullscreenOption;
+  game_refresh?: number | null;
+  game_resolution?: Resolution | null;
+  nis_sharpness: number;
+  scaler: GamescopeScaler;
+  use_gamescope: boolean;
 }
 export interface CreateProfileResponse {
   profile_id: string;
@@ -554,6 +555,9 @@ export interface AudioDeviceInfo {
   channels?: number | null;
   description: string;
   name: string;
+}
+export interface GetClientTeardownActionsResponse {
+  actions: ClientTeardownAction[];
 }
 export interface GetDefaultAppOverrideForProfileRequest {
   profile_id: string;
@@ -610,13 +614,13 @@ export interface GlobalConfig {
    */
   enable_ui_inject: boolean;
   /**
-   * Button chord to be used to exit profiles that register for exit hooks.
-   */
-  exit_hooks: ExitHooks;
-  /**
    * Overwrite the desktop layout with the game layout
    */
   log_level: number;
+  /**
+   * Button chord to be used to exit profiles that register for exit hooks. Button chord to be used to exit profiles that register for exit hooks.
+   */
+  next_window_hooks: BtnChord;
   /**
    * If `enable_ui_inject` is true, set the "Play" button to this target
    */
@@ -627,6 +631,17 @@ export interface GlobalConfig {
    */
   use_nonsteam_desktop_controller_layout_hack: boolean;
   use_steam_desktop_controller_layout_hack: boolean;
+}
+/**
+ * A button chord. At least 2 buttons are required.
+ */
+export interface BtnChord {
+  btns: number;
+  /**
+   * Phantom exists to prevent struct instantiation without passing through the `new` function for validation
+   */
+  phantom: null;
+  press: PressType;
 }
 export interface GetTemplatesResponse {
   templates: Template[];
@@ -666,10 +681,8 @@ export interface ReifyPipelineResponse {
 export interface Pipeline {
   description: string;
   desktop_controller_layout_hack: DesktopControllerLayoutHack;
-  exit_hooks_override?: ExitHooks | null;
   name: string;
   primary_target_override?: PipelineTarget | null;
-  should_register_exit_hooks: boolean;
   targets: {
     [k: string]: RuntimeSelection;
   };
@@ -695,6 +708,9 @@ export interface PipelineAction {
    */
   selection: RuntimeSelection;
   toplevel_id: string;
+}
+export interface RemoveClientTeardownActionsRequest {
+  ids: string[];
 }
 export interface SetAppProfileOverrideRequest {
   app_id: string;
