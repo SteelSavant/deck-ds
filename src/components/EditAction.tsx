@@ -5,7 +5,6 @@ import {
     FileSelectionType,
     Focusable,
     SliderField,
-    SliderFieldProps,
     TextField,
     Toggle,
 } from 'decky-frontend-lib';
@@ -62,9 +61,7 @@ export function EditAction(props: EditActionProps): ReactElement | null {
     const internalProps = {
         ...props,
         actionChildBuilder: ActionChild,
-        actionChildSliderBuilder: (props: SliderFieldProps) => (
-            <SliderField {...props} />
-        ),
+        actionChildSliderBuilder: SliderField,
     };
     return InternalEditAction(internalProps);
 }
@@ -1478,6 +1475,7 @@ function CemuAudioSelector({
                                                     }}
                                                 >
                                                     <SliderBuilder
+                                                        key={'cemu-volume'}
                                                         indentLevel={
                                                             indentLevel + 1
                                                         }

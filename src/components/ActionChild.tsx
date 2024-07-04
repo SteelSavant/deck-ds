@@ -13,7 +13,7 @@ export interface ActionChildProps {
 export type ActionChildBuilder = (props: ActionChildProps) => ReactElement;
 export type ActionChildSliderBuilder = (
     props: SliderFieldProps,
-) => ReactElement;
+) => ReactElement | null;
 
 export function ActionChild({
     children,
