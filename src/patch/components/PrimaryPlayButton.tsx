@@ -1,5 +1,5 @@
-import { DialogButton, Focusable } from 'decky-frontend-lib';
-import { ReactElement, useEffect, useRef, useState } from 'react';
+import { Button } from 'decky-frontend-lib';
+import { ReactElement, useEffect, useRef } from 'react';
 import { IconForTarget } from '../../components/IconForTarget';
 import { useAppState } from '../../context/appContext';
 import useAppTarget from '../../hooks/useAppTarget';
@@ -8,17 +8,14 @@ import { logger } from '../../util/log';
 
 interface PrimaryPlayButtonProps {
     deckDSGameModeSentinel: 'sentinel';
-    hasStream: boolean;
     playButton: any;
 }
 
 export default function PrimaryPlayButton({
     playButton,
-    hasStream,
 }: PrimaryPlayButtonProps): ReactElement {
     const { appDetails, appProfile } = useAppState();
     const launchActions = useLaunchActions(appDetails);
-    const [isFocused, setIsFocused] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
     const action = appProfile?.isOk
@@ -63,52 +60,30 @@ export default function PrimaryPlayButton({
         onLaunch,
     );
 
-    const width = '100%';
-    const height = '100%';
-
-    const okColor = '#70d61d';
+    const playText = (playButton.props.children as any[])[2] ?? <div>Play</div>;
 
     return target && onLaunch ? (
-        <Focusable
-            onFocus={() => {
-                setIsFocused(true);
-            }}
-            onBlur={() => {
-                setIsFocused(false);
-            }}
-            style={{
-                width: width,
-                height: height,
-            }}
+        <Button
+            // I would be thrilled if this matched the actual play button (including CSS loader styling), but with a custom icon + action, but alas...
+            // I genuinely don't know how to style things properly.
+            ref={ref}
+            onClick={onLaunch}
+            onOKButton={onLaunch}
+            onOKActionDescription={`Launch ${target}`}
+            className={playButton.props.className}
         >
-            <DialogButton
-                // I would be thrilled if this matched the actual play button (including CSS loader styling), but with a custom icon + action, but alas...
-                // I genuinely don't know how to style things properly.
-                ref={ref}
-                onClick={onLaunch}
-                onOKButton={onLaunch}
-                onOKActionDescription={`Launch ${target}`}
+            <div
                 style={{
-                    borderTopRightRadius: hasStream ? 0 : undefined,
-                    borderBottomRightRadius: hasStream ? 0 : undefined,
-                    color: isFocused ? 'white' : undefined,
-                    backgroundColor: isFocused ? okColor : 'transparent',
                     alignContent: 'center',
                     justifyContent: 'left',
-                    minWidth: '210px',
-                    maxWidth: width,
-                    width: width,
-                    height: height,
                     display: 'flex',
                     flexDirection: 'row',
-                    paddingTop: '12px',
                 }}
             >
                 <IconForTarget target={target} />
-                <div style={{ width: 15 }} />
-                Play
-            </DialogButton>
-        </Focusable>
+                {playText}
+            </div>
+        </Button>
     ) : (
         playButton
     );

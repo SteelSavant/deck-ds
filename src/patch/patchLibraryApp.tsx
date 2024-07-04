@@ -14,17 +14,11 @@ import {
 import PrimaryPlayButton from './components/PrimaryPlayButton';
 import SecondaryPlayButton from './components/SecondaryPlayButton';
 
-// TODO::don't patch if appid doesn't have pipeline
-// TODO::patch in real button
-
 function patchLibraryApp(
     serverAPI: ServerAPI,
     appDetailsState: ShortAppDetailsState,
 ) {
-    // console.log('style ActionButtonAndStatusPanel', basicAppDetailsSectionStylerClasses.ActionButtonAndStatusPanel);
-    // console.log('style ActionRow', basicAppDetailsSectionStylerClasses.ActionRow);
-    // console.log('style AppActionButton', basicAppDetailsSectionStylerClasses.AppActionButton);
-    // console.log('style PlaySection', basicAppDetailsSectionStylerClasses.PlaySection);
+    // debugPrintStyles();
 
     return serverAPI.routerHook.addPatch(
         '/library/app/:appid',
@@ -168,10 +162,6 @@ function patchLibraryApp(
                                                     <PrimaryPlayButton
                                                         playButton={
                                                             actualPlayButton
-                                                        }
-                                                        hasStream={
-                                                            typeof children[2] ===
-                                                            'object'
                                                         }
                                                         deckDSGameModeSentinel="sentinel"
                                                     />

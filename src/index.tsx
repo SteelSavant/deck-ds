@@ -10,9 +10,9 @@ import {
     findModuleChild,
     Focusable,
     PanelSection,
+    quickAccessMenuClasses,
     Router,
     ServerAPI,
-    staticClasses,
 } from 'decky-frontend-lib';
 import { VFC } from 'react';
 
@@ -82,9 +82,9 @@ const History = findModuleChild((m) => {
 export default definePlugin((serverApi: ServerAPI) => {
     logger.toaster = serverApi.toaster;
 
-    console.log('Steam Client:', SteamClient);
-    console.log('collection store:', collectionStore);
-    console.log('collections:', collectionStore.userCollections);
+    // console.log('Steam Client:', SteamClient);
+    // console.log('collection store:', collectionStore);
+    // console.log('collections:', collectionStore.userCollections);
 
     function isSteamGame(overview: any): boolean {
         const hasOwnerAccountId = overview.owner_account_id !== undefined;
@@ -102,11 +102,11 @@ export default definePlugin((serverApi: ServerAPI) => {
             const appId = Number.parseInt(appIdStr);
             const overview = appStore.GetAppOverviewByAppID(appId);
 
-            console.log('steam client app overview:', overview);
-            console.log(
-                'steam client app details',
-                appDetailsStore.GetAppDetails(appId),
-            );
+            // console.log('steam client app overview:', overview);
+            // console.log(
+            //     'steam client app details',
+            //     appDetailsStore.GetAppDetails(appId),
+            // );
 
             appDetailsState.setOnAppPage({
                 appId,
@@ -195,7 +195,7 @@ export default definePlugin((serverApi: ServerAPI) => {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                 }}
-                className={staticClasses.Title}
+                className={quickAccessMenuClasses.Title}
             >
                 <p>DeckDS</p>
                 <DialogButton
