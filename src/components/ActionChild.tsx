@@ -1,4 +1,4 @@
-import { Field } from 'decky-frontend-lib';
+import { Field, SliderFieldProps } from 'decky-frontend-lib';
 import { ReactElement } from 'react';
 
 export interface ActionChildProps {
@@ -11,6 +11,9 @@ export interface ActionChildProps {
 }
 
 export type ActionChildBuilder = (props: ActionChildProps) => ReactElement;
+export type ActionChildSliderBuilder = (
+    props: SliderFieldProps,
+) => ReactElement;
 
 export function ActionChild({
     children,

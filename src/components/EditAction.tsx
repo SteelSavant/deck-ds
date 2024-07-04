@@ -5,6 +5,7 @@ import {
     FileSelectionType,
     Focusable,
     SliderField,
+    SliderFieldProps,
     TextField,
     Toggle,
 } from 'decky-frontend-lib';
@@ -44,7 +45,11 @@ import useDisplayInfo from '../hooks/useDisplayInfo';
 import useSecondaryAppInfo from '../hooks/useSecondaryAppPresetInfo';
 
 import { labelForCamelCase, labelForKebabCase } from '../util/display';
-import { ActionChild, ActionChildBuilder } from './ActionChild';
+import {
+    ActionChild,
+    ActionChildBuilder,
+    ActionChildSliderBuilder,
+} from './ActionChild';
 import HandleLoading from './HandleLoading';
 
 interface EditActionProps {
@@ -57,12 +62,16 @@ export function EditAction(props: EditActionProps): ReactElement | null {
     const internalProps = {
         ...props,
         actionChildBuilder: ActionChild,
+        actionChildSliderBuilder: (props: SliderFieldProps) => (
+            <SliderField {...props} />
+        ),
     };
     return InternalEditAction(internalProps);
 }
 
 type InternalEditActionProps = {
     actionChildBuilder: ActionChildBuilder;
+    actionChildSliderBuilder: ActionChildSliderBuilder;
 } & EditActionProps;
 
 export function InternalEditAction({
@@ -70,8 +79,10 @@ export function InternalEditAction({
     indentLevel,
     onChange,
     actionChildBuilder,
+    actionChildSliderBuilder,
 }: InternalEditActionProps): ReactElement | null {
     const Builder = actionChildBuilder;
+    const SliderBuilder = actionChildSliderBuilder;
     const cloned = _.cloneDeep(action);
     const type = cloned.type;
 
@@ -235,6 +246,7 @@ export function InternalEditAction({
                         onChange(cloned);
                     }}
                     Builder={Builder}
+                    SliderBuilder={SliderBuilder}
                 />
             );
         case 'CitraLayout':
@@ -287,6 +299,7 @@ export function InternalEditAction({
                 },
                 indentLevel,
                 actionChildBuilder,
+                actionChildSliderBuilder,
                 onChange,
             });
         case 'MelonDSLayout':
@@ -812,7 +825,7 @@ export function InternalEditAction({
                                 />
                             </Builder>
                             {gamescope.filter === 'FSR' ? (
-                                <SliderField
+                                <SliderBuilder
                                     label="FSR Sharpness"
                                     value={gamescope.fsr_sharpness}
                                     indentLevel={indentLevel + 1}
@@ -827,7 +840,7 @@ export function InternalEditAction({
                                     }}
                                 />
                             ) : gamescope.filter === 'NIS' ? (
-                                <SliderField
+                                <SliderBuilder
                                     label="NIS Sharpness"
                                     value={gamescope.nis_sharpness}
                                     indentLevel={indentLevel + 1}
@@ -1303,6 +1316,7 @@ interface CemuAudioProps {
     settings: CemuAudio;
     onChange: (settings: CemuAudio) => void;
     Builder: ActionChildBuilder;
+    SliderBuilder: ActionChildSliderBuilder;
 }
 
 function CemuAudioSelector({
@@ -1310,6 +1324,7 @@ function CemuAudioSelector({
     settings,
     onChange,
     Builder,
+    SliderBuilder,
 }: CemuAudioProps): ReactElement {
     const deviceInfo = useAudioDeviceInfo();
 
@@ -1462,7 +1477,7 @@ function CemuAudioSelector({
                                                         paddingRight: '15px',
                                                     }}
                                                 >
-                                                    <SliderField
+                                                    <SliderBuilder
                                                         indentLevel={
                                                             indentLevel + 1
                                                         }

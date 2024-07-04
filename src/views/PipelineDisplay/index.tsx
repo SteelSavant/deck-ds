@@ -26,10 +26,10 @@ export default function PipelineDisplay({
     const { state } = useModifiablePipelineContainer();
     const result = useReifiedPipeline(state.container.pipeline);
 
-    let container = useRef<HTMLDivElement>(null);
+    let containerRef = useRef<HTMLDivElement>(null);
     let [headerHeight, setHeaderHeight] = useState<number | null>(null);
 
-    useEffect(() => setHeaderHeight(container?.current?.offsetHeight ?? 0));
+    useEffect(() => setHeaderHeight(containerRef?.current?.offsetHeight ?? 0));
 
     return (
         <HandleLoading
@@ -97,7 +97,7 @@ export default function PipelineDisplay({
                             }}
                         >
                             <PipelineHeader
-                                containerRef={container}
+                                containerRef={containerRef}
                                 children={header(state.container)}
                             />
 
