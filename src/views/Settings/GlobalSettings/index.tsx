@@ -1,4 +1,4 @@
-import { DialogButton, Dropdown, Field, Toggle } from 'decky-frontend-lib';
+import { DialogButton, Dropdown, Field, Toggle } from '@decky/ui';
 import { Fragment, VFC, useEffect, useState } from 'react';
 import { testBackendError } from '../../../backend';
 import { ActionChild } from '../../../components/ActionChild';

@@ -1,4 +1,4 @@
-import { Focusable, Tabs } from 'decky-frontend-lib';
+import { Focusable, Tabs } from '@decky/ui';
 import { ReactElement, useEffect, useRef, useState } from 'react';
 import { PipelineContainer, RuntimeSelection } from '../../backend';
 import HandleLoading from '../../components/HandleLoading';

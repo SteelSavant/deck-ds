@@ -1,4 +1,4 @@
-import { ConfirmModal, Dropdown, Focusable } from 'decky-frontend-lib';
+import { ConfirmModal, Dropdown, Focusable } from '@decky/ui';
 import { ReactElement, useState } from 'react';
 import { logger } from '../../../../util/log';
 import { Result } from '../../../../util/result';

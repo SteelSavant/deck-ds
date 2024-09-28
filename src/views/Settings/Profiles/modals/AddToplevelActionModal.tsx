@@ -1,4 +1,4 @@
-import { ConfirmModal, Dropdown } from 'decky-frontend-lib';
+import { ConfirmModal, Dropdown } from '@decky/ui';
 import { ReactElement, useState } from 'react';
 import HandleLoading from '../../../../components/HandleLoading';
 import useToplevel from '../../../../hooks/useToplevel';

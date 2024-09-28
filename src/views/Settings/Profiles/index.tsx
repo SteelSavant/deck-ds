@@ -3,7 +3,7 @@ import {
     DialogButton,
     DialogControlsSection,
     showModal,
-} from 'decky-frontend-lib';
+} from '@decky/ui';
 import { VFC } from 'react';
 import { FaPlus } from 'react-icons/fa6';
 import { getTemplates } from '../../../backend';

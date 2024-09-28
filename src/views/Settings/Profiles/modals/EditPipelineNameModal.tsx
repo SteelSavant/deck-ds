@@ -1,4 +1,4 @@
-import { ConfirmModal, TextField } from 'decky-frontend-lib';
+import { ConfirmModal, TextField } from '@decky/ui';
 import { ReactElement, useState } from 'react';
 import { PipelineDefinition } from '../../../../backend';
 import { logger } from '../../../../util/log';

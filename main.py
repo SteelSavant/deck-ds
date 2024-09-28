@@ -2,12 +2,12 @@ import pathlib
 import subprocess
 import asyncio
 import os
-import decky_plugin # type: ignore
+import decky # type: ignore
 
 HOME_DIR = str(pathlib.Path(os.getcwd()).parent.parent.resolve())
 PARENT_DIR = str(pathlib.Path(__file__).parent.resolve())
 
-logger = decky_plugin.logger
+logger = decky.logger
 
 class Plugin:
     backend_proc = None
@@ -17,13 +17,13 @@ class Plugin:
 
         # Call plugin_info only once preferably
         logger.debug('[backend] PluginInfo:\n\tPluginName: {}\n\tPluginVersion: {}\n\tDeckyVersion: {}'.format(
-            decky_plugin.DECKY_PLUGIN_NAME,
-            decky_plugin.DECKY_PLUGIN_VERSION,
-            decky_plugin.DECKY_VERSION
+            decky.DECKY_PLUGIN_NAME,
+            decky.DECKY_PLUGIN_VERSION,
+            decky.DECKY_VERSION
         ))
         pluginInfo = {
-            "name": decky_plugin.DECKY_PLUGIN_NAME,
-            "version": decky_plugin.DECKY_PLUGIN_VERSION
+            "name": decky.DECKY_PLUGIN_NAME,
+            "version": decky.DECKY_PLUGIN_VERSION
         }
         return pluginInfo
     

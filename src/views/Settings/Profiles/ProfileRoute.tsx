@@ -1,4 +1,4 @@
-import { DialogButton, Field, showModal, useParams } from 'decky-frontend-lib';
+import { DialogButton, Field, showModal, useParams } from '@decky/ui';
 import { ReactElement } from 'react';
 import { FaEdit } from 'react-icons/fa';
 import {

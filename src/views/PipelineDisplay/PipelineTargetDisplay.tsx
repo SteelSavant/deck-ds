@@ -6,7 +6,7 @@ import {
     Field,
     Focusable,
     Toggle,
-} from 'decky-frontend-lib';
+} from '@decky/ui';
 import { Fragment, ReactElement, createContext, useContext } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import {

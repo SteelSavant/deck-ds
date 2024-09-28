@@ -1,4 +1,4 @@
-import { Focusable } from 'decky-frontend-lib';
+import { Focusable } from '@decky/ui';
 import { ReactElement } from 'react';
 
 export default function FocusableRow({

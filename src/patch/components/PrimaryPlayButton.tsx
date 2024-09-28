@@ -1,4 +1,4 @@
-import { Button } from 'decky-frontend-lib';
+import { Button } from '@decky/ui';
 import { ReactElement, useEffect, useRef } from 'react';
 import { IconForTarget } from '../../components/IconForTarget';
 import { useAppState } from '../../context/appContext';

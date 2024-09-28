@@ -1,8 +1,4 @@
-import {
-    DropdownItem,
-    PanelSection,
-    PanelSectionRow,
-} from 'decky-frontend-lib';
+import { DropdownItem, PanelSection, PanelSectionRow } from '@decky/ui';
 import { ReactElement } from 'react';
 import { AppProfile } from '../../backend';
 import { ShortAppDetails, useAppState } from '../../context/appContext';

@@ -5,7 +5,7 @@ import {
     PanelSection,
     Router,
     showModal,
-} from 'decky-frontend-lib';
+} from '@decky/ui';
 import { Fragment, ReactElement } from 'react';
 import { FaGear, FaPlus } from 'react-icons/fa6';
 import { RiArrowDownSFill, RiArrowRightSFill } from 'react-icons/ri';

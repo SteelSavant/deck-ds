@@ -4,7 +4,7 @@ import {
     PanelSectionRow,
     SliderField,
     SliderFieldProps,
-} from 'decky-frontend-lib';
+} from '@decky/ui';
 import { ReactElement } from 'react';
 import { Action } from '../../backend';
 import { ActionChildProps } from '../../components/ActionChild';

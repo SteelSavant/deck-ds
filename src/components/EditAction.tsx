@@ -1,13 +1,13 @@
+import { FileSelectionType, openFilePicker } from '@decky/api';
 import {
     DialogButton,
     Dropdown,
     DropdownOption,
-    FileSelectionType,
     Focusable,
     SliderField,
     TextField,
     Toggle,
-} from 'decky-frontend-lib';
+} from '@decky/ui';
 import _ from 'lodash';
 import React, { Fragment, ReactElement, useState } from 'react';
 import { FaFile } from 'react-icons/fa';
@@ -38,7 +38,6 @@ import {
     secondaryAppScreenPreferences,
     secondaryAppWindowingOptions,
 } from '../backend';
-import { useServerApi } from '../context/serverApiContext';
 import useAudioDeviceInfo from '../hooks/useAudioDeviceInfo';
 import useDisplayInfo from '../hooks/useDisplayInfo';
 import useSecondaryAppInfo from '../hooks/useSecondaryAppPresetInfo';
@@ -83,7 +82,6 @@ export function InternalEditAction({
     const cloned = _.cloneDeep(action);
     const type = cloned.type;
 
-    const serverApi = useServerApi();
     const notConfigurable = null;
 
     switch (type) {
@@ -364,7 +362,7 @@ export function InternalEditAction({
                     const file = sourceValue.source.value.path;
                     const extensions = sourceValue.source.value.valid_ext;
                     async function onSelectFile() {
-                        const pickedFile = await serverApi.openFilePickerV2(
+                        const pickedFile = await openFilePicker(
                             FileSelectionType.FILE,
                             file ?? '/home/deck',
                             true,

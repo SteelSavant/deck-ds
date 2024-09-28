@@ -1,4 +1,4 @@
-import { ConfirmModal, Dropdown, Navigation } from 'decky-frontend-lib';
+import { ConfirmModal, Dropdown, Navigation } from '@decky/ui';
 import { ReactElement, useState } from 'react';
 import { Template, createProfile, getProfile, setProfile } from '../backend';
 import { logger } from '../util/log';
