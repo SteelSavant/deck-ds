@@ -1,10 +1,4 @@
-import {
-    DialogButton,
-    Dropdown,
-    Field,
-    Focusable,
-    showModal,
-} from 'decky-frontend-lib';
+import { DialogButton, Dropdown, Field, Focusable, showModal } from '@decky/ui';
 import { Fragment, ReactElement } from 'react';
 import { FaPlus, FaTrash, FaX } from 'react-icons/fa6';
 import {

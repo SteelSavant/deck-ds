@@ -1,4 +1,4 @@
-import { DialogButton, Focusable } from 'decky-frontend-lib';
+import { DialogButton, Focusable } from '@decky/ui';
 import { ReactElement, useState } from 'react';
 import { IconForTarget } from '../../components/IconForTarget';
 import { useAppState } from '../../context/appContext';

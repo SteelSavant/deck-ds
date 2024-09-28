@@ -2,7 +2,7 @@ import {
     appDetailsClasses,
     basicAppDetailsSectionStylerClasses,
     playSectionClasses,
-} from 'decky-frontend-lib';
+} from '@decky/ui';
 
 export function debugPrintStyles() {
     const playSectionClassesOptions = [

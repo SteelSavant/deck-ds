@@ -1,4 +1,4 @@
-import { showModal, sleep } from 'decky-frontend-lib';
+import { showModal, sleep } from '@decky/ui';
 import {
     CategoryProfile,
     DependencyError,

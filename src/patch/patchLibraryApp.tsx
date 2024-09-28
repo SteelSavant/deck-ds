@@ -1,11 +1,11 @@
+import { routerHook } from '@decky/api';
 import {
-    ServerAPI,
     afterPatch,
     appDetailsClasses,
     basicAppDetailsSectionStylerClasses,
     findInReactTree,
     wrapReactType,
-} from 'decky-frontend-lib';
+} from '@decky/ui';
 import { ReactElement } from 'react';
 import {
     ShortAppDetailsState,
@@ -14,13 +14,10 @@ import {
 import PrimaryPlayButton from './components/PrimaryPlayButton';
 import SecondaryPlayButton from './components/SecondaryPlayButton';
 
-function patchLibraryApp(
-    serverAPI: ServerAPI,
-    appDetailsState: ShortAppDetailsState,
-) {
+function patchLibraryApp(appDetailsState: ShortAppDetailsState) {
     // debugPrintStyles();
 
-    return serverAPI.routerHook.addPatch(
+    return routerHook.addPatch(
         '/library/app/:appid',
         (props?: { path?: string; children?: ReactElement }) => {
             if (!props?.children?.props?.renderFunc) {

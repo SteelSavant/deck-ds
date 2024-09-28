@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { v4 } from 'uuid';
 import {
     Action,
     ApiError,
@@ -126,7 +126,7 @@ export async function patchPipeline(
             ...pipeline,
             toplevel: pipeline.toplevel.concat([
                 {
-                    id: randomUUID(),
+                    id: v4(),
                     root: update.action_id,
                     actions: { actions: {} },
                 },

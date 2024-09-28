@@ -1,13 +1,11 @@
 // Adapted from https://github.com/jurassicplayer/decky-autosuspend/blob/main/main.py, BSD-3 Clause License
 
-import { DialogBody, DialogControlsSection, Field } from 'decky-frontend-lib';
+import { DialogBody, DialogControlsSection, Field } from '@decky/ui';
 import { VFC } from 'react';
-import { useServerApi } from '../../context/serverApiContext';
 import usePluginInfo from '../../hooks/usePluginInfo';
 
 const About: VFC = () => {
-    const serverApi = useServerApi();
-    const pluginInfo = usePluginInfo(serverApi);
+    const pluginInfo = usePluginInfo();
 
     const fields = [
         pluginInfo

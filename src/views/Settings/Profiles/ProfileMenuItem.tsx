@@ -4,7 +4,7 @@ import {
     Field,
     Navigation,
     showModal,
-} from 'decky-frontend-lib';
+} from '@decky/ui';
 import { ReactElement } from 'react';
 import { FaGear, FaTrash } from 'react-icons/fa6';
 import {

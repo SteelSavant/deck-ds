@@ -1,4 +1,4 @@
-import { Field, SliderFieldProps } from 'decky-frontend-lib';
+import { Field, SliderFieldProps } from '@decky/ui';
 import { ReactElement } from 'react';
 
 export interface ActionChildProps {

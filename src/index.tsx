@@ -5,17 +5,16 @@ Useful Resources:
 */
 
 import {
-    definePlugin,
     DialogButton,
     findModuleChild,
     Focusable,
     PanelSection,
     quickAccessMenuClasses,
     Router,
-    ServerAPI,
-} from 'decky-frontend-lib';
+} from '@decky/ui';
 import { VFC } from 'react';
 
+import { definePlugin, routerHook } from '@decky/api';
 import { FaGears, FaWaveSquare } from 'react-icons/fa6';
 import * as backend from './backend';
 import { IconForTarget } from './components/IconForTarget';
@@ -23,7 +22,6 @@ import {
     ShortAppDetailsState,
     ShortAppDetailsStateContextProvider,
 } from './context/appContext';
-import { ServerApiProvider } from './context/serverApiContext';
 import patchLibraryApp from './patch/patchLibraryApp';
 import { teardownClientPipeline } from './pipeline/client_pipeline';
 import { logger, LogLevel } from './util/log';
@@ -49,9 +47,7 @@ var usdplReady = false;
     usdplReady = true;
 })();
 
-const Content: VFC<{ serverApi: ServerAPI }> = ({ serverApi }) => {
-    logger.toaster = serverApi.toaster;
-
+const Content: VFC = () => {
     if (!usdplReady) {
         // Not translated on purpose (to avoid USDPL issues)
         return (
@@ -62,13 +58,11 @@ const Content: VFC<{ serverApi: ServerAPI }> = ({ serverApi }) => {
     }
 
     return (
-        <ServerApiProvider serverApi={serverApi}>
-            <ShortAppDetailsStateContextProvider
-                ShortAppDetailsStateClass={appDetailsState}
-            >
-                <QAM />
-            </ShortAppDetailsStateContextProvider>
-        </ServerApiProvider>
+        <ShortAppDetailsStateContextProvider
+            ShortAppDetailsStateClass={appDetailsState}
+        >
+            <QAM />
+        </ShortAppDetailsStateContextProvider>
     );
 };
 
@@ -79,9 +73,7 @@ const History = findModuleChild((m) => {
     }
 });
 
-export default definePlugin((serverApi: ServerAPI) => {
-    logger.toaster = serverApi.toaster;
-
+export default definePlugin(() => {
     // console.log('Steam Client:', SteamClient);
     // console.log('collection store:', collectionStore);
     // console.log('collections:', collectionStore.userCollections);
@@ -128,18 +120,16 @@ export default definePlugin((serverApi: ServerAPI) => {
         updateAppDetails(info.pathname);
     });
 
-    const libraryPatch = patchLibraryApp(serverApi, appDetailsState);
+    const libraryPatch = patchLibraryApp(appDetailsState);
 
     // Profiles route
-    serverApi.routerHook.addRoute(
+    routerHook.addRoute(
         '/deck-ds/settings/profiles/:profileid',
         () => (
             <ShortAppDetailsStateContextProvider
                 ShortAppDetailsStateClass={appDetailsState}
             >
-                <ServerApiProvider serverApi={serverApi}>
-                    <ProfileRoute />
-                </ServerApiProvider>
+                <ProfileRoute />
             </ShortAppDetailsStateContextProvider>
         ),
         {
@@ -148,15 +138,13 @@ export default definePlugin((serverApi: ServerAPI) => {
     );
 
     // Settings Route
-    serverApi.routerHook.addRoute(
+    routerHook.addRoute(
         '/deck-ds/settings/:setting',
         () => (
             <ShortAppDetailsStateContextProvider
                 ShortAppDetailsStateClass={appDetailsState}
             >
-                <ServerApiProvider serverApi={serverApi}>
-                    <SettingsRouter />
-                </ServerApiProvider>
+                <SettingsRouter />
             </ShortAppDetailsStateContextProvider>
         ),
         {
@@ -185,6 +173,8 @@ export default definePlugin((serverApi: ServerAPI) => {
     }
 
     return {
+        name: 'DeckDS',
+        alwaysRender: true,
         titleView: (
             <Focusable
                 style={{
@@ -216,9 +206,6 @@ export default definePlugin((serverApi: ServerAPI) => {
                 </DialogButton>
             </Focusable>
         ),
-        title: <p>DeckDS</p>,
-        alwaysRender: true,
-        content: <Content serverApi={serverApi} />,
         icon: (
             <div>
                 <IconForTarget target="Desktop" />
@@ -226,20 +213,17 @@ export default definePlugin((serverApi: ServerAPI) => {
                 <IconForTarget target="Gamemode" />
             </div>
         ),
+        content: <Content />,
+
         onDismount: () => {
             backend.log(LogLevel.Debug, 'DeckDS shutting down');
 
             unlistenHistory();
             appDetailsState.setOnAppPage(null);
 
-            serverApi.routerHook.removePatch(
-                '/library/app/:appid',
-                libraryPatch,
-            );
-            serverApi.routerHook.removeRoute(
-                '/deck-ds/settings/templates/:templateid',
-            );
-            serverApi.routerHook.removeRoute('/deck-ds/settings/:setting');
+            routerHook.removePatch('/library/app/:appid', libraryPatch);
+            routerHook.removeRoute('/deck-ds/settings/templates/:templateid');
+            routerHook.removeRoute('/deck-ds/settings/:setting');
 
             appStateRegistrar?.unregister();
         },

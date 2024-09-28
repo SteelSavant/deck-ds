@@ -1,4 +1,4 @@
-import { Toaster } from 'decky-frontend-lib';
+import { toaster } from '@decky/api';
 
 export enum LogLevel {
     Trace = 1,
@@ -11,8 +11,6 @@ export enum LogLevel {
 class Logger {
     /// please don't set this outside of the init function (in the backend)
     public minLevel: LogLevel;
-
-    public toaster: Toaster | null = null;
 
     public constructor() {
         this.minLevel = LogLevel.Info;
@@ -47,7 +45,6 @@ class Logger {
 
     public toastWarn(...args: any[]) {
         this.warn(...args);
-        const toaster = this.toaster;
         if (toaster) {
             toaster.toast({
                 title: 'Error', // don't differentiate between warning and error to the user, since either way, something broke.
@@ -58,7 +55,6 @@ class Logger {
 
     public toastError(...args: any[]) {
         this.error(...args);
-        const toaster = this.toaster;
         if (toaster) {
             toaster.toast({
                 title: 'Error',

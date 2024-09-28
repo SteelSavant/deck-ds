@@ -1,4 +1,4 @@
-import { SidebarNavigation } from 'decky-frontend-lib';
+import { SidebarNavigation } from '@decky/ui';
 import { VFC } from 'react';
 import { FaGears, FaPuzzlePiece } from 'react-icons/fa6';
 import { HiFolder } from 'react-icons/hi';

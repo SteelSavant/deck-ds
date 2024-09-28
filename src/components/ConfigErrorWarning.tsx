@@ -1,4 +1,4 @@
-import { DialogButton, Focusable, showModal } from 'decky-frontend-lib';
+import { DialogButton, Focusable, showModal } from '@decky/ui';
 import { ReactElement } from 'react';
 import { FaExclamationTriangle } from 'react-icons/fa';
 import { DependencyError } from '../backend';

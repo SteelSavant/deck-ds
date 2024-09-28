@@ -1,4 +1,4 @@
-import { ConfirmModal } from 'decky-frontend-lib';
+import { ConfirmModal } from '@decky/ui';
 import { Fragment, ReactElement } from 'react';
 import { DependencyError } from '../backend';
 
