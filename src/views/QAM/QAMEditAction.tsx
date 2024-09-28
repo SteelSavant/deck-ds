@@ -1,4 +1,10 @@
-import { Field, Focusable } from 'decky-frontend-lib';
+import {
+    Field,
+    Focusable,
+    PanelSectionRow,
+    SliderField,
+    SliderFieldProps,
+} from 'decky-frontend-lib';
 import { ReactElement } from 'react';
 import { Action } from '../../backend';
 import { ActionChildProps } from '../../components/ActionChild';
@@ -20,6 +26,7 @@ export default function QAMEditAction({
         onChange,
         indentLevel: 0,
         actionChildBuilder: QAMActionChild,
+        actionChildSliderBuilder: QAMActionChildSliderBuilder,
     };
     return InternalEditAction(internalProps);
 }
@@ -34,5 +41,13 @@ function QAMActionChild({ children, label }: ActionChildProps): ReactElement {
         >
             <Focusable style={{ paddingRight: '10px' }}>{children}</Focusable>
         </Field>
+    );
+}
+
+function QAMActionChildSliderBuilder(props: SliderFieldProps): ReactElement {
+    return (
+        <PanelSectionRow>
+            <SliderField {...props} />
+        </PanelSectionRow>
     );
 }

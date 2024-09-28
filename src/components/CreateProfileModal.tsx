@@ -3,16 +3,16 @@ import { ReactElement, useState } from 'react';
 import { Template, createProfile, getProfile, setProfile } from '../backend';
 import { logger } from '../util/log';
 
-export function CreateProfileFromCollectionModal({
+export function CreateProfileModal({
     templates,
     collection,
     closeModal,
 }: {
-    collection: SteamCollection;
+    collection: SteamCollection | null;
     templates: Template[];
     closeModal?: () => void;
 }): ReactElement {
-    const normalized = normalize(collection.displayName);
+    const normalized = collection ? normalize(collection.displayName) : '';
 
     // TODO::better comparison
     const matchingTemplate = templates.find((t) =>
@@ -49,7 +49,9 @@ export function CreateProfileFromCollectionModal({
                     const profile = await createProfile({
                         pipeline: {
                             ...template.pipeline,
-                            name: collection.displayName,
+                            name:
+                                collection?.displayName ??
+                                template.pipeline.name,
                         },
                     });
 
@@ -64,7 +66,9 @@ export function CreateProfileFromCollectionModal({
                             await setProfile({
                                 profile: {
                                     ...savedProfile.data.profile!,
-                                    tags: [collection.id],
+                                    tags: [collection?.id]
+                                        .filter((v) => v)
+                                        .map((v) => v!),
                                 },
                             });
                             Navigation.CloseSideMenus();

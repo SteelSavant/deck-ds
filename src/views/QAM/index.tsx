@@ -14,7 +14,7 @@ import {
     ReifyPipelineResponse,
     getTemplates,
 } from '../../backend';
-import { CreateProfileFromCollectionModal } from '../../components/CreateProfileFromCollectionModal';
+import { CreateProfileModal } from '../../components/CreateProfileModal';
 import FocusableRow from '../../components/FocusableRow';
 import HandleLoading from '../../components/HandleLoading';
 import { IconForTarget } from '../../components/IconForTarget';
@@ -22,6 +22,7 @@ import { ShortAppDetails, useAppState } from '../../context/appContext';
 import { ConfigErrorContext } from '../../context/configErrorContext';
 import useEnsureAppOverridePipeline from '../../hooks/useEnsureAppOverridePipeline';
 import useLaunchActions, { LaunchActions } from '../../hooks/useLaunchActions';
+import { logger } from '../../util/log';
 import AppDefaultProfileDropdown from './AppDefaultProfileDropdown';
 import QAMPipelineTargetDisplay, {
     ProfileContext,
@@ -96,10 +97,15 @@ function DeckDSProfilesForApp({
                         const templates = await getTemplates();
                         if (templates.isOk) {
                             showModal(
-                                <CreateProfileFromCollectionModal
+                                <CreateProfileModal
                                     templates={templates.data.templates}
                                     collection={c}
                                 />,
+                            );
+                        } else {
+                            logger.toastError(
+                                'Failed to load profile templates:',
+                                templates.err,
                             );
                         }
                     };
