@@ -14,6 +14,8 @@ import {
 import PrimaryPlayButton from './components/PrimaryPlayButton';
 import SecondaryPlayButton from './components/SecondaryPlayButton';
 
+let cachedPlayButton: ReactElement | null = null;
+
 function patchLibraryApp(appDetailsState: ShortAppDetailsState) {
     // debugPrintStyles();
 
@@ -49,9 +51,19 @@ function patchLibraryApp(appDetailsState: ShortAppDetailsState) {
                                     ),
                             );
 
-                            if (typeof container !== 'object') {
+                            const overview =
+                                ret.props?.children?.props?.overview;
+
+                            if (typeof container !== 'object' || !overview) {
                                 return ret2;
                             }
+
+                            const status = overview.per_client_data.find(
+                                (d: any) => d.clientid == '0',
+                            );
+                            const installed =
+                                status.status_percentage == 100 &&
+                                status.installed;
 
                             const children = container.props.children;
                             const child = children.find(
@@ -111,6 +123,7 @@ function patchLibraryApp(appDetailsState: ShortAppDetailsState) {
                                             appButtons?.props?.children;
 
                                         if (
+                                            installed &&
                                             !children.find(
                                                 (c: any) =>
                                                     c?.props?.children?.props
@@ -129,6 +142,16 @@ function patchLibraryApp(appDetailsState: ShortAppDetailsState) {
                                                     <SecondaryPlayButton deckDSDesktopSentinel="sentinel" />
                                                 </ShortAppDetailsStateContextProvider>,
                                             );
+                                        } else {
+                                            const sentinel = children.findIndex(
+                                                (c: any) =>
+                                                    c?.props?.children?.props
+                                                        ?.deckDSDesktopSentinel ===
+                                                    'sentinel',
+                                            );
+                                            if (sentinel >= 0) {
+                                                children.splice(sentinel, 1);
+                                            }
                                         }
                                     }
 
@@ -137,6 +160,7 @@ function patchLibraryApp(appDetailsState: ShortAppDetailsState) {
                                             playButton?.props?.children;
 
                                         if (
+                                            installed &&
                                             children &&
                                             !children.find(
                                                 (c: any) =>
@@ -147,6 +171,16 @@ function patchLibraryApp(appDetailsState: ShortAppDetailsState) {
                                         ) {
                                             const actualPlayButton =
                                                 children[0];
+                                            cachedPlayButton = actualPlayButton;
+
+                                            console.log(
+                                                'playButton',
+                                                playButton,
+                                            );
+                                            console.log(
+                                                'actualPlayButton',
+                                                actualPlayButton,
+                                            );
 
                                             children?.splice(
                                                 0,
@@ -164,6 +198,23 @@ function patchLibraryApp(appDetailsState: ShortAppDetailsState) {
                                                     />
                                                 </ShortAppDetailsStateContextProvider>,
                                             );
+                                        } else {
+                                            const sentinel = children.findIndex(
+                                                (c: any) =>
+                                                    c?.props?.children?.props
+                                                        ?.deckDSGameModeSentinel ===
+                                                    'sentinel',
+                                            );
+                                            if (
+                                                sentinel >= 0 &&
+                                                cachedPlayButton
+                                            ) {
+                                                children.splice(
+                                                    sentinel,
+                                                    1,
+                                                    cachedPlayButton,
+                                                );
+                                            }
                                         }
                                     }
 
