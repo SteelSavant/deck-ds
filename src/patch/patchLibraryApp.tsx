@@ -149,7 +149,7 @@ function patchLibraryApp(appDetailsState: ShortAppDetailsState) {
                                                         ?.deckDSDesktopSentinel ===
                                                     'sentinel',
                                             );
-                                            if (sentinel >= 0) {
+                                            if (!installed && sentinel >= 0) {
                                                 children.splice(sentinel, 1);
                                             }
                                         }
@@ -206,6 +206,7 @@ function patchLibraryApp(appDetailsState: ShortAppDetailsState) {
                                                     'sentinel',
                                             );
                                             if (
+                                                !installed &&
                                                 sentinel >= 0 &&
                                                 cachedPlayButton
                                             ) {
