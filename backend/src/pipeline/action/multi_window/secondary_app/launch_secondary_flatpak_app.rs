@@ -13,7 +13,10 @@ use crate::{
         executor::PipelineContext,
     },
     secondary_app::FlatpakApp,
-    sys::{flatpak::list_installed_flatpaks, kwin::KWinClientMatcher},
+    sys::{
+        flatpak::list_installed_flatpaks,
+        kwin::{window_tracking::KWinNewWindowTrackingScope, KWinClientMatcher},
+    },
     util::{escape_string_for_regex, get_maybe_window_names_classes_from_title},
 };
 
@@ -44,7 +47,7 @@ impl ActionImpl for LaunchSecondaryFlatpakApp {
             .get_state_index::<Self>()
             .expect("state slot should exist");
 
-        let window_ctx = ctx.kwin.start_tracking_new_windows()?;
+        let window_ctx = KWinNewWindowTrackingScope::new()?;
 
         let pid = self
             .app

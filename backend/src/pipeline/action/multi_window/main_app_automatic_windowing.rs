@@ -8,7 +8,10 @@ use smart_default::SmartDefault;
 use crate::{
     pipeline::action::{Action, ActionId, ActionImpl, ActionType, ErasedPipelineAction},
     settings::SteamLaunchInfo,
-    sys::{kwin::KWinClientMatcher, x_display::Resolution},
+    sys::{
+        kwin::{window_tracking::KWinNewWindowTrackingScope, KWinClientMatcher},
+        x_display::Resolution,
+    },
     util::{escape_string_for_regex, get_maybe_window_names_classes_from_title},
 };
 
@@ -76,7 +79,7 @@ impl ActionImpl for MainAppAutomaticWindowing {
         let id = self.id;
         let general = self.general.clone();
 
-        let window_ctx = ctx.kwin.start_tracking_new_windows()?;
+        let window_ctx = KWinNewWindowTrackingScope::new()?;
 
         let launch_info = ctx
             .launch_info

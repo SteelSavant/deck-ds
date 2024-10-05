@@ -220,16 +220,10 @@ impl KWin {
             Err(anyhow::anyhow!("KWin failed to reconfigure"))
         }
     }
-
-    pub fn start_tracking_new_windows(
-        &self,
-    ) -> Result<window_tracking::KWinNewWindowTrackingScope> {
-        window_tracking::KWinNewWindowTrackingScope::new()
-    }
 }
 
 // Window tracking adapted from https://github.com/jinliu/kdotool
-mod window_tracking {
+pub mod window_tracking {
     use std::{
         cmp::Ordering,
         ops::Deref,
@@ -590,7 +584,7 @@ workspace.clientRemoved.connect((client) => {{
     }
 }
 
-mod screen_tracking {
+pub mod screen_tracking {
     use crate::pipeline::action::session_handler::{Pos, Size};
     use std::{sync::mpsc::Sender, thread::JoinHandle, time::Duration};
 
@@ -613,7 +607,7 @@ mod screen_tracking {
     }
 
     impl KWinScreenTrackingScope {
-        pub fn new(update_tx: Sender<Vec<KWinScreenInfo>>) -> Result<Self> {
+        pub fn new(update: fn(Vec<KWinScreenInfo>) -> ()) -> Result<Self> {
             let script_name = uuid::Uuid::new_v4();
             let kwin_conn = Connection::new_session()?;
 
@@ -641,7 +635,6 @@ mod screen_tracking {
 
             let (kill_tx, kill_rx) = std::sync::mpsc::channel::<()>();
             // setup message receiver
-            let kill_tx_clone = kill_tx.clone();
             let msg_thread = std::thread::spawn(move || {
                 let receiver = self_conn.start_receive(
                     MatchRule::new_method_call(),
@@ -668,9 +661,7 @@ mod screen_tracking {
                                 .expect("json from dbus should parse");
 
                             log::trace!("updated screens for {} to {:?}", script_name, info);
-                            if let Err(_) = update_tx.send(info) {
-                                let _ = kill_tx_clone.send(());
-                            }
+                            update(info);
                         }
                         true
                     }),
