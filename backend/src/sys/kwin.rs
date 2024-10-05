@@ -508,11 +508,19 @@ function updateClients() {{
         }}, {{
             caption: 'Steam',
             windowClass: 'steam'
+        }}, {{
+            caption: 'Steam',
+            windowClass: ''
         }}];
 
         const filteredClients = clients.filter((c) => !badWindows.find((bw) => {{
-            const windowClass = c.resourceClass.toString().toLowerCase();
-            return bw.caption === c.caption && windowClass.includes(bw.windowClass);
+            try {{
+                const windowClass = c.resourceClass.toString().toLowerCase();
+                return bw.caption === c.caption && windowClass.includes(bw.windowClass);
+            }} catch(ex) {{
+                return false;
+            }}
+            
         }})).map((client) => {{
             return {{
                 id: client.windowId,
