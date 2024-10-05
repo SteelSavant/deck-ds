@@ -7,6 +7,7 @@ use egui::{
     Color32, Frame, Label, Pos2, RichText, Style, Ui, Vec2, ViewportBuilder, ViewportCommand,
     WindowLevel,
 };
+use serde::Deserialize;
 use winit::platform::x11::EventLoopBuilderExtX11;
 
 pub enum UiEvent {
@@ -35,28 +36,43 @@ pub struct DeckDsUi {
     window_level: WindowLevel,
 }
 
-#[derive(Debug, Copy, Clone)]
-pub struct Pos(pub u32, pub u32);
+#[derive(Debug, Copy, Clone, Deserialize)]
+pub struct Pos {
+    pub x: u32,
+    pub y: u32,
+}
+
+impl Pos {
+    pub fn new(x: u32, y: u32) -> Self {
+        Self { x, y }
+    }
+}
 
 impl From<Pos> for Pos2 {
     fn from(value: Pos) -> Self {
-        Pos2::new(value.0 as f32, value.1 as f32)
+        Pos2::new(value.x as f32, value.y as f32)
     }
 }
 
 impl From<Size> for Vec2 {
     fn from(value: Size) -> Self {
-        [value.0 as f32, value.1 as f32].into()
+        [value.w as f32, value.h as f32].into()
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-pub struct Size(pub u32, pub u32);
+#[derive(Debug, Copy, Clone, Deserialize)]
+pub struct Size {
+    pub w: u32,
+    pub h: u32,
+}
 
 impl Size {
+    pub fn new(w: u32, h: u32) -> Self {
+        Self { w, h }
+    }
     pub fn normalized(self) -> Self {
-        if self.0 < self.1 {
-            Size(self.1, self.0)
+        if self.w < self.h {
+            Size::new(self.h, self.w)
         } else {
             self
         }

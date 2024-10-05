@@ -149,22 +149,22 @@ impl XDisplay {
 
         match (deck_mode, external_mode) {
             (None, None) => UiEvent::UpdateViewports {
-                primary_size: Size(0, 0),
+                primary_size: Size::new(0, 0),
                 secondary_size: None,
-                primary_position: Pos(0, 0),
+                primary_position: Pos::new(0, 0),
                 secondary_position: None,
             },
             (None, Some(mode)) | (Some(mode), None) => UiEvent::UpdateViewports {
-                primary_size: Size(mode.width, mode.height).normalized(),
+                primary_size: Size::new(mode.width, mode.height).normalized(),
                 secondary_size: None,
-                primary_position: Pos(0, 0),
+                primary_position: Pos::new(0, 0),
                 secondary_position: None,
             },
             (Some(deck), Some(external)) => UiEvent::UpdateViewports {
-                primary_size: Size(external.width, external.height).normalized(),
-                secondary_size: Some(Size(deck.width, deck.height).normalized()),
-                primary_position: Pos(0, 0),
-                secondary_position: Some(Pos(0, external.height)),
+                primary_size: Size::new(external.width, external.height).normalized(),
+                secondary_size: Some(Size::new(deck.width, deck.height).normalized()),
+                primary_position: Pos::new(0, 0),
+                secondary_position: Some(Pos::new(0, external.height)),
             },
         }
     }
