@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use regex::Regex;
+use screen_tracking::KWinScreenTrackingScope;
 
 use std::{
     ffi::OsStr, path::PathBuf, process::Command, str::FromStr, thread::sleep, time::Duration,
@@ -9,10 +10,10 @@ use crate::asset::{Asset, AssetManager};
 
 pub use window_tracking::KWinClientMatcher;
 
-#[derive(Debug)]
 pub struct KWin {
     assets_manager: AssetManager<'static>,
     bundles_dir: PathBuf,
+    screen_state_ctx: KWinScreenTrackingScope,
 }
 
 impl KWin {
@@ -20,6 +21,7 @@ impl KWin {
         Self {
             assets_manager,
             bundles_dir: PathBuf::from_str("kwin").expect("kwin path should be valid"),
+            screen_state_ctx: KWinScreenTrackingScope::new().unwrap(), // TODO::this
         }
     }
 
@@ -220,10 +222,16 @@ impl KWin {
             Err(anyhow::anyhow!("KWin failed to reconfigure"))
         }
     }
+
+    pub fn start_tracking_new_windows(
+        &self,
+    ) -> Result<window_tracking::KWinNewWindowTrackingScope> {
+        window_tracking::KWinNewWindowTrackingScope::new()
+    }
 }
 
 // Window tracking adapted from https://github.com/jinliu/kdotool
-pub mod window_tracking {
+mod window_tracking {
     use std::{
         cmp::Ordering,
         ops::Deref,
@@ -584,9 +592,16 @@ workspace.clientRemoved.connect((client) => {{
     }
 }
 
-pub mod screen_tracking {
+mod screen_tracking {
     use crate::pipeline::action::session_handler::{Pos, Size};
-    use std::{sync::mpsc::Sender, thread::JoinHandle, time::Duration};
+    use std::{
+        sync::{
+            mpsc::{Receiver, Sender},
+            Arc, Mutex,
+        },
+        thread::JoinHandle,
+        time::Duration,
+    };
 
     use super::*;
     use dbus::{
@@ -604,10 +619,11 @@ pub mod screen_tracking {
         kwin_conn: Connection,
         msg_thread: Option<JoinHandle<()>>,
         kill_tx: Sender<()>,
+        screen_info: Arc<Mutex<Vec<KWinScreenInfo>>>,
     }
 
     impl KWinScreenTrackingScope {
-        pub fn new(update: fn(Vec<KWinScreenInfo>) -> ()) -> Result<Self> {
+        pub fn new() -> Result<Self> {
             let script_name = uuid::Uuid::new_v4();
             let kwin_conn = Connection::new_session()?;
 
@@ -635,6 +651,10 @@ pub mod screen_tracking {
 
             let (kill_tx, kill_rx) = std::sync::mpsc::channel::<()>();
             // setup message receiver
+            let value: Arc<Mutex<Vec<KWinScreenInfo>>> = Arc::default();
+
+            let value_cloned = value.clone();
+
             let msg_thread = std::thread::spawn(move || {
                 let receiver = self_conn.start_receive(
                     MatchRule::new_method_call(),
@@ -657,11 +677,14 @@ pub mod screen_tracking {
 
                             let arg = arg.expect("dbus arg should be valid");
 
-                            let info = serde_json::from_str::<Vec<KWinScreenInfo>>(&arg)
+                            let mut info = serde_json::from_str::<Vec<KWinScreenInfo>>(&arg)
                                 .expect("json from dbus should parse");
 
                             log::trace!("updated screens for {} to {:?}", script_name, info);
-                            update(info);
+                            if let Ok(mut lock) = value_cloned.lock() {
+                                lock.clear();
+                                lock.append(&mut info);
+                            }
                         }
                         true
                     }),
@@ -685,6 +708,7 @@ pub mod screen_tracking {
                 kwin_conn,
                 msg_thread: Some(msg_thread),
                 kill_tx,
+                screen_info: value,
             };
 
             let script_proxy = res.get_script_proxy();
@@ -793,6 +817,15 @@ updateScreenInfo();
 "#
             )
         }
+
+        fn wait_screen_state(
+            &self,
+            matchers: Vec<KWinScreenStateMatcher>,
+            timeout: Option<Duration>,
+        ) -> Result<&[KWinScreenInfo]> {
+            assert!(matchers.len() > 0);
+            todo!()
+        }
     }
 
     impl Drop for KWinScreenTrackingScope {
@@ -809,11 +842,18 @@ updateScreenInfo();
 
     #[derive(Debug, Clone, Deserialize)]
     pub struct KWinScreenInfo {
-        id: u32,
-        name: String,
-        enabled: bool,
-        pos: Pos,
-        size: Size,
+        pub id: u32,
+        pub name: String,
+        pub enabled: bool,
+        pub pos: Pos,
+        pub size: Size,
+    }
+
+    pub struct KWinScreenStateMatcher {
+        pub name: String,
+        pub enabled: Option<bool>,
+        pub pos: Option<Pos>,
+        pub size: Option<Size>,
     }
 }
 
