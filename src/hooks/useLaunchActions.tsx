@@ -1,4 +1,4 @@
-import { showModal, sleep } from '@decky/ui';
+import { showModal } from '@decky/ui';
 import {
     CategoryProfile,
     DependencyError,
@@ -32,7 +32,6 @@ const useLaunchActions = (
         const loadedProfiles = profiles.data;
         const includedProfiles = new Set<string>();
         const validProfiles = collectionStore.userCollections.flatMap((uc) => {
-            sleep(1000);
             const containsApp = uc.apps.has(appDetails.appId);
 
             if (containsApp) {

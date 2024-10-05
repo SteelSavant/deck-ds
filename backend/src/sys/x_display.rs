@@ -80,7 +80,7 @@ impl XDisplay {
             let mut maybe_external = self.get_preferred_external_output_maybe_disconnected()?;
 
             let mut fail_count = 0;
-            const MAX_FAIL_COUNT: u8 = 15;
+            const MAX_FAIL_COUNT: u16 = 150;
             while fail_count <= MAX_FAIL_COUNT {
                 if let Some(external) = maybe_external {
                     if external.connected {
@@ -94,7 +94,7 @@ impl XDisplay {
                     }
 
                     fail_count += 1;
-                    thread::sleep(Duration::from_secs(1));
+                    thread::sleep(Duration::from_millis(100));
                     maybe_external = self.get_preferred_external_output_maybe_disconnected()?;
                 }
             }
@@ -201,8 +201,6 @@ impl XDisplay {
                 .with_context(|| "reset position failed")?;
         }
 
-        sleep(Duration::from_millis(500));
-
         Ok(())
     }
 
@@ -266,8 +264,6 @@ impl XDisplay {
                 .disable(output)
                 .with_context(|| "disable output failed")?;
         }
-
-        thread::sleep(Duration::from_millis(200));
 
         self.reconfigure_output(output)
     }
