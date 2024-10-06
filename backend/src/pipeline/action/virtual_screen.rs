@@ -8,10 +8,7 @@ use crate::{
     sys::x_display::{AspectRatioOption, ModeOption, ModePreference, Resolution},
 };
 
-use super::{
-    session_handler::{Pos, Size},
-    ActionId, ActionImpl, ActionType,
-};
+use super::{ActionId, ActionImpl, ActionType};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct VirtualScreen {
@@ -68,13 +65,6 @@ impl ActionImpl for VirtualScreen {
         )?;
 
         display.reconfigure_embedded(&mut deck, &Relation::Below, Some(&external), true)?;
-
-        ctx.send_ui_event(super::session_handler::UiEvent::UpdateViewports {
-            primary_size: Size::new(resolution.w, resolution.h),
-            secondary_size: Some(Size::new(resolution.w, resolution.h)),
-            primary_position: Pos::new(0, 0),
-            secondary_position: Some(Pos::new(0, resolution.h)),
-        });
 
         Ok(())
     }

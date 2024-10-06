@@ -1,6 +1,5 @@
 use anyhow::{Context, Result};
 use regex::Regex;
-use screen_tracking::KWinScreenTrackingScope;
 
 use std::{
     ffi::OsStr, path::PathBuf, process::Command, str::FromStr, thread::sleep, time::Duration,
@@ -229,7 +228,7 @@ impl KWin {
 }
 
 // Window tracking adapted from https://github.com/jinliu/kdotool
-mod window_tracking {
+pub mod window_tracking {
     use std::{
         cmp::Ordering,
         ops::Deref,
@@ -592,11 +591,7 @@ workspace.clientRemoved.connect((client) => {{
 
 pub mod screen_tracking {
     use crate::pipeline::action::session_handler::{Pos, Size};
-    use std::{
-        sync::{mpsc::Sender, Arc, Mutex},
-        thread::JoinHandle,
-        time::Duration,
-    };
+    use std::{sync::mpsc::Sender, time::Duration};
 
     use super::*;
     use dbus::{
@@ -613,11 +608,10 @@ pub mod screen_tracking {
         script_id: i32,
         kwin_conn: Connection,
         kill_tx: Sender<()>,
-        screen_info: Arc<Mutex<Vec<KWinScreenInfo>>>,
     }
 
     impl KWinScreenTrackingScope {
-        pub fn new() -> Result<Self> {
+        pub fn new(update: Box<dyn Fn(Vec<KWinScreenInfo>) + Send + Sync>) -> Result<Self> {
             let script_name = uuid::Uuid::new_v4();
             let kwin_conn = Connection::new_session()?;
 
@@ -644,16 +638,13 @@ pub mod screen_tracking {
             log::debug!("started screen tracking scipt id: {script_id} @ {script_file_path:?}");
 
             let (kill_tx, kill_rx) = std::sync::mpsc::channel::<()>();
+
             // setup message receiver
-            let value: Arc<Mutex<Vec<KWinScreenInfo>>> = Arc::default();
-
-            let value_cloned = value.clone();
-
             std::thread::spawn(move || {
                 let receiver = self_conn.start_receive(
                     MatchRule::new_method_call(),
                     Box::new(move |message, _connection| -> bool {
-                        log::trace!("got dbus message: {:?}", message);
+                        log::trace!("got screen state dbus message: {:?}", message);
 
                         if let Some(_member) = message.member() {
                             let (token, arg) = message.get2::<String, String>();
@@ -671,14 +662,13 @@ pub mod screen_tracking {
 
                             let arg = arg.expect("dbus arg should be valid");
 
-                            let mut info = serde_json::from_str::<Vec<KWinScreenInfo>>(&arg)
+                            let info = serde_json::from_str::<Vec<KWinScreenInfo>>(&arg)
                                 .expect("json from dbus should parse");
 
                             log::trace!("updated screens for {} to {:?}", script_name, info);
-                            if let Ok(mut lock) = value_cloned.lock() {
-                                lock.clear();
-                                lock.append(&mut info);
-                            }
+                            update(info);
+                        } else {
+                            log::warn!("no dbus member");
                         }
                         true
                     }),
@@ -691,7 +681,7 @@ pub mod screen_tracking {
                     signal = kill_rx.try_recv();
                 }
 
-                log::trace!("Got end signal value: {}", signal.is_ok());
+                log::trace!("Got screen state end signal value: {}", signal.is_ok());
 
                 self_conn.stop_receive(receiver);
             });
@@ -701,7 +691,6 @@ pub mod screen_tracking {
                 script_name,
                 kwin_conn,
                 kill_tx,
-                screen_info: value,
             };
 
             let script_proxy = res.get_script_proxy();
@@ -748,7 +737,7 @@ function parseScreens(screensSection) {{
     let match;
     const screens = [];  
 
-    while ((match = regex.exec(text)) !== null) {{
+    while ((match = rxp.exec(screensSection)) !== null) {{
         const screenNumber = match[1];
         const screenDetails = match[2];
 
@@ -799,6 +788,9 @@ function getScreenInfo() {{
 function updateScreenInfo() {{
     const screenInfo = getScreenInfo();
     const stringified = JSON.stringify(screenInfo);
+    console.log('updating info for', screenInfo.length, 'screens');
+    console.log('sending msg over dbus:', stringified);
+
     callDBus("{dbus_addr}", "/", "", "updateScreens", "{script_name}", stringified);
 }}
 
@@ -809,15 +801,6 @@ workspace.virtualScreenSizeChanged.connect(updateScreenInfo);
 updateScreenInfo();
 "#
             )
-        }
-
-        fn wait_screen_state(
-            &self,
-            matchers: Vec<KWinScreenStateMatcher>,
-            timeout: Option<Duration>,
-        ) -> Result<&[KWinScreenInfo]> {
-            assert!(matchers.len() > 0);
-            todo!()
         }
     }
 
@@ -835,7 +818,7 @@ updateScreenInfo();
 
     #[derive(Debug, Clone, Deserialize)]
     pub struct KWinScreenInfo {
-        pub id: u32,
+        pub id: String,
         pub name: String,
         pub enabled: bool,
         pub pos: Pos,

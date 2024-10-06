@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, process::Command, str::FromStr, thread::sleep, time::Duration};
+use std::{cmp::Ordering, process::Command, str::FromStr, time::Duration};
 
 use float_cmp::approx_eq;
 use regex::Regex;
@@ -130,14 +130,14 @@ impl XDisplay {
             .next())
     }
 
-    pub fn calc_ui_viewport_event(
+    pub fn calc_initial_ui_viewport_event(
         &mut self,
         embedded: Option<&Output>,
         external: Option<&Output>,
     ) -> UiEvent {
-        // TODO::this is technically wrong, since it ignores the screen relation (above, below, etc.),
-        // but I'm not going to worry until someone complains, since 99% of the time,
-        // the embedded display will be below or disabled, and it doesn't affect usability.
+        // This is technically wrong, since it ignores the screen relation (above, below, etc.),
+        // but since the UI thread will reconfigure it anyway, I'm content to use this for initial sizes
+        // and allow it to update.
 
         let external_mode = external
             .and_then(|external| self.get_current_mode(external).ok())
