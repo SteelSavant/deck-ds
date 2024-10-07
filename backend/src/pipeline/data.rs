@@ -237,6 +237,13 @@ impl From<PipelineActionSettings<DefinitionSelection>> for PipelineActionSetting
     }
 }
 
+impl PipelineActionSettings<ConfigSelection> {
+    /// Copies values QAM cannot otherwise access from `other` into `self`
+    pub fn copy_qam_values(&mut self, other: &Self) {
+        self.is_visible_on_qam = other.is_visible_on_qam
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct PipelineActionLookup {
     pub actions: HashMap<PipelineActionId, PipelineActionSettings<ConfigSelection>>,
