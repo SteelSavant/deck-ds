@@ -22,7 +22,7 @@ import {
     ShortAppDetailsState,
     ShortAppDetailsStateContextProvider,
 } from './context/appContext';
-import { PatchEmitter } from './patch/patchHandler';
+import { PatchHandler } from './patch/patchHandler';
 import { teardownClientPipeline } from './pipeline/client_pipeline';
 import { logger, LogLevel } from './util/log';
 import QAM from './views/QAM';
@@ -37,21 +37,22 @@ declare global {
 }
 
 const appDetailsState = new ShortAppDetailsState();
+PatchHandler.init(appDetailsState);
 
 let usdplReady = false;
 
 (async function () {
+    // Init backend
     await backend.initBackend();
-
+    // Run cleanup for any previous run
+    await teardownClientPipeline();
+    // Setup patch handler
     const globalSettings = await backend.getSettings();
     if (globalSettings.isOk) {
-        PatchEmitter.init(
+        PatchHandler.getInstance().setPatchEnabled(
             globalSettings.data.global_settings.enable_ui_inject,
-            appDetailsState,
         );
     }
-
-    await teardownClientPipeline();
 
     usdplReady = true;
 })();
@@ -86,6 +87,16 @@ export default definePlugin(() => {
     // console.log('Steam Client:', SteamClient);
     // console.log('collection store:', collectionStore);
     // console.log('collections:', collectionStore.userCollections);
+
+    // Setup patch handler
+    (async () => {
+        const globalSettings = await backend.getSettings();
+        if (globalSettings.isOk) {
+            PatchHandler.getInstance().setPatchEnabled(
+                globalSettings.data.global_settings.enable_ui_inject,
+            );
+        }
+    })();
 
     function isSteamGame(overview: any): boolean {
         const hasOwnerAccountId = overview.owner_account_id !== undefined;
@@ -228,7 +239,7 @@ export default definePlugin(() => {
             unlistenHistory();
             appDetailsState.setOnAppPage(null);
 
-            PatchEmitter.dispose();
+            PatchHandler.dispose();
             routerHook.removeRoute('/deck-ds/settings/templates/:templateid');
             routerHook.removeRoute('/deck-ds/settings/:setting');
 

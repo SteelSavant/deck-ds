@@ -1,11 +1,11 @@
 import { routerHook } from '@decky/api';
-import { EventEmitter } from 'events';
 import { ShortAppDetailsState } from '../context/appContext';
 import patchLibraryApp from './patchLibraryApp';
 
-export class PatchEmitter extends EventEmitter {
-    private static instance: PatchEmitter | null;
+export class PatchHandler {
+    private static instance: PatchHandler | null;
 
+    private isEnabled = false;
     private patches: Array<{
         route: string;
         patch: any;
@@ -15,28 +15,27 @@ export class PatchEmitter extends EventEmitter {
         fn: Function;
     }>;
 
-    private constructor(
-        patchEnabled: boolean,
-        appDetailsState: ShortAppDetailsState,
-    ) {
-        super();
+    private constructor(appDetailsState: ShortAppDetailsState) {
         this.patchFns = [
             {
                 route: '/library/app/:appid',
                 fn: (route: string) => patchLibraryApp(route, appDetailsState),
             },
         ];
-        this.setPatchEnabled(patchEnabled);
-        this.on('statusChange', (isEnabled) => {
-            this.setPatchEnabled(isEnabled);
-        });
     }
 
-    private setPatchEnabled(patchEnabled: boolean) {
+    public setPatchEnabled(patchEnabled: boolean) {
+        if (patchEnabled === this.isEnabled) {
+            return;
+        }
+
+        this.isEnabled = patchEnabled;
+
         if (!patchEnabled) {
             for (const patch of this.patches) {
                 routerHook.removePatch(patch.route, patch.patch);
             }
+            this.patches.length = 0;
         } else {
             for (const patch of this.patchFns) {
                 this.patches.push({
@@ -47,26 +46,22 @@ export class PatchEmitter extends EventEmitter {
         }
     }
 
-    public static init(
-        patchEnabled: boolean,
-        appDetailsState: ShortAppDetailsState,
-    ) {
+    public static init(appDetailsState: ShortAppDetailsState) {
         if (this.instance) {
             return;
         }
 
-        PatchEmitter.instance = new PatchEmitter(patchEnabled, appDetailsState);
+        PatchHandler.instance = new PatchHandler(appDetailsState);
     }
 
     public static dispose() {
         this.instance?.setPatchEnabled(false);
-        PatchEmitter.instance = null;
     }
 
-    public static getInstance(): PatchEmitter {
-        if (!PatchEmitter.instance) {
-            throw Error('PatchEmitter Not Set');
+    public static getInstance(): PatchHandler {
+        if (!PatchHandler.instance) {
+            throw Error('PatchHandler Not Set');
         }
-        return PatchEmitter.instance;
+        return PatchHandler.instance;
     }
 }

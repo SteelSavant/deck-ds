@@ -331,9 +331,8 @@ impl PipelineDefinition {
 
                 let reified: Vec<_> = toplevel
                     .iter()
-                    .enumerate()
-                    .filter(|(_, v)| actions_have_target(&v.root, t, registrar))
-                    .map(|(i, v)| v.reify(i, t, profiles, registrar))
+                    .filter(|v| actions_have_target(&v.root, t, registrar))
+                    .map(|v| v.reify(t, profiles, registrar))
                     .filter_map(|v| v.transpose())
                     .collect::<Result<_>>()?;
 
@@ -368,13 +367,11 @@ impl PipelineDefinition {
 impl TopLevelDefinition {
     fn reify(
         &self,
-        toplevel_index: usize,
         target: PipelineTarget,
         profiles: &[CategoryProfile],
         registrar: &PipelineActionRegistrar,
     ) -> Result<Option<PipelineAction>> {
         self.root.reify(&ReificationCtx {
-            toplevel_index,
             toplevel_id: self.id,
             target,
             actions: &self.actions,
@@ -386,8 +383,6 @@ impl TopLevelDefinition {
 
 #[derive(Debug, Clone, Copy)]
 struct ReificationCtx<'a> {
-    /// 0 for platform, otherwise (index - 1) into the toplevel array
-    toplevel_index: usize,
     toplevel_id: TopLevelId,
     target: PipelineTarget,
     actions: &'a PipelineActionLookup,
@@ -587,11 +582,7 @@ mod tests {
 
     use crate::{
         db::ProfileDb,
-        pipeline::{
-            action::{desktop_controller_layout_hack, ActionId},
-            action_registar::PipelineActionRegistrar,
-            data::actions_have_target,
-        },
+        pipeline::{action_registar::PipelineActionRegistrar, data::actions_have_target},
     };
 
     use super::*;
