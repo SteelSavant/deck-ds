@@ -452,7 +452,7 @@ impl PipelineActionId {
                     })
                     .unwrap_or((None, config));
 
-                log::debug!("reify pipeline action id {self:?} got config {settings:?}");
+                log::debug!("reify pipeline action id {self:?} got config {settings:?}@{id:?}");
 
                 let resolved_action = settings.reify(id, definition, ctx)?;
 
@@ -469,7 +469,18 @@ fn resolve_action_from_profile_override<'a>(
     ctx: &ReificationCtx,
 ) -> Option<&'a PipelineActionSettings<ConfigSelection>> {
     let toplevel = profile.pipeline.all_toplevel();
-    toplevel[ctx.toplevel_index].actions.get(id, ctx.target)
+    toplevel
+        .iter()
+        .find(|v| v.id == ctx.toplevel_id)
+        .with_context(|| {
+            format!(
+                "unable to find toplevel id {:?} in profile {:?}",
+                ctx.toplevel_id, profile.id
+            )
+        })
+        .unwrap()
+        .actions
+        .get(id, ctx.target)
 }
 
 impl PipelineActionSettings<ConfigSelection> {

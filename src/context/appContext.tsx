@@ -17,7 +17,7 @@ import {
     setAppProfileSettings,
     setProfile,
 } from '../backend';
-import { PipelineActionLookup } from '../types/backend_api';
+import { PipelineActionLookup, TopLevelDefinition } from '../types/backend_api';
 import { MaybeString } from '../types/short';
 import { Loading } from '../util/loading';
 import { logger } from '../util/log';
@@ -479,7 +479,11 @@ function patchProfileOverridesForMissing(
 ): ReifyPipelineResponse {
     const pipeline = response.pipeline;
 
-    const toplevel = [overrides.platform].concat(overrides.toplevel);
+    const toplevel: { [k: string]: TopLevelDefinition } = {};
+    toplevel[overrides.platform.id] = overrides.platform;
+    for (const tl of overrides.toplevel) {
+        toplevel[tl.id] = tl;
+    }
 
     function patch(selection: RuntimeSelection, actions: PipelineActionLookup) {
         const type = selection.type;
@@ -513,15 +517,11 @@ function patchProfileOverridesForMissing(
         let selection = pipeline.targets[target];
         if (selection.type === 'AllOf') {
             const actions = selection.value;
-            let skip = 0;
-            for (const v in actions) {
-                const i = parseInt(v);
-
-                const current_action = actions[i];
-                const toplevel_actions = toplevel[i + skip].actions;
-                patch(current_action.selection, toplevel_actions);
-                if (!toplevel_actions.actions[current_action.id]) {
-                    current_action.profile_override = externalProfileId;
+            for (const a of actions) {
+                const toplevel_actions = toplevel[a.toplevel_id].actions;
+                patch(a.selection, toplevel_actions);
+                if (!toplevel_actions.actions[a.id]) {
+                    a.profile_override = externalProfileId;
                 }
             }
         } else {
