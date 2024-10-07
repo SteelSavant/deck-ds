@@ -39,8 +39,8 @@ pub struct GamescopeOptions {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 
 pub enum GamescopeFullscreenOption {
-    #[default]
     Borderless,
+    #[default]
     Fullscreen,
 }
 
