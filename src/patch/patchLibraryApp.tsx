@@ -34,6 +34,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                         return ret;
                     }
 
+                    console.log('ret', ret);
+
                     wrapReactType(ret.props.children);
                     afterPatch(
                         ret.props.children.type,
@@ -58,17 +60,14 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                 return ret2;
                             }
 
-                            const status = overview.per_client_data.find(
-                                (d: any) => d.clientid == '0',
-                            );
-                            const installed =
-                                status.status_percentage == 100 &&
-                                status.installed;
+                            const appId = overview.appid;
 
                             const children = container.props.children;
                             const child = children.find(
                                 (c: any) => c?.type?.render,
                             );
+
+                            console.log('ret2', ret2);
 
                             // wrapReactType(child.type);
                             afterPatch(
@@ -82,6 +81,24 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                         return ret3;
                                     }
 
+                                    console.log('ret3', ret3);
+
+                                    const overview =
+                                        appStore.GetAppOverviewByAppID(appId);
+
+                                    const status =
+                                        overview.per_client_data.find(
+                                            (d: any) =>
+                                                d.clientid ===
+                                                overview.selected_clientid,
+                                        );
+
+                                    const streaming = status.clientid !== '0';
+                                    const installed =
+                                        !streaming &&
+                                        status.status_percentage == 100 &&
+                                        status.installed;
+
                                     const appButtons = findInReactTree(
                                         ret3,
                                         (x: ReactElement) =>
@@ -90,6 +107,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                 basicAppDetailsSectionStylerClasses.AppButtons,
                                             ),
                                     );
+
+                                    console.log('appButtons', appButtons);
 
                                     // const playButtonStatusPanel = findInReactTree(
                                     //     ret3,
@@ -131,6 +150,11 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                     'sentinel',
                                             )
                                         ) {
+                                            console.log(
+                                                'appbutton children',
+                                                children,
+                                            );
+
                                             children?.splice(
                                                 0,
                                                 0,
@@ -169,6 +193,11 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                     'sentinel',
                                             )
                                         ) {
+                                            console.log(
+                                                'playbutton children',
+                                                children,
+                                            );
+
                                             const actualPlayButton =
                                                 children[0];
                                             cachedPlayButton = actualPlayButton;
