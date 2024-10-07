@@ -105,7 +105,7 @@ export default definePlugin(() => {
         } else if (!globalSettings.isOk) {
             logger.error('Not setting patch setting: ', globalSettings.err);
         }
-    }, 1000);
+    }, 1000); // We defer until after the backend should be initialized to avoid potential issues.
 
     function isSteamGame(overview: any): boolean {
         const hasOwnerAccountId = overview.owner_account_id !== undefined;
