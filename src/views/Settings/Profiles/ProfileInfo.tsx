@@ -400,7 +400,7 @@ export default function ProfileInfo(
 
                                 if (!res.isOk) {
                                     logger.toastWarn(
-                                        'Failed to update update controller override:',
+                                        'Failed to update controller override:',
                                         res.err.err,
                                     );
                                 }
@@ -438,7 +438,7 @@ export default function ProfileInfo(
 
                                 if (!res.isOk) {
                                     logger.toastWarn(
-                                        'Failed to update update controller override:',
+                                        'Failed to update controller override:',
                                         res.err.err,
                                     );
                                 }
