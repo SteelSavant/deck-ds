@@ -22,7 +22,7 @@ import {
     ShortAppDetailsState,
     ShortAppDetailsStateContextProvider,
 } from './context/appContext';
-import patchLibraryApp from './patch/patchLibraryApp';
+import { PatchEmitter } from './patch/patchHandler';
 import { teardownClientPipeline } from './pipeline/client_pipeline';
 import { logger, LogLevel } from './util/log';
 import QAM from './views/QAM';
@@ -38,10 +38,19 @@ declare global {
 
 const appDetailsState = new ShortAppDetailsState();
 
-var usdplReady = false;
+let usdplReady = false;
 
 (async function () {
     await backend.initBackend();
+
+    const globalSettings = await backend.getSettings();
+    if (globalSettings.isOk) {
+        PatchEmitter.init(
+            globalSettings.data.global_settings.enable_ui_inject,
+            appDetailsState,
+        );
+    }
+
     await teardownClientPipeline();
 
     usdplReady = true;
@@ -119,8 +128,6 @@ export default definePlugin(() => {
     const unlistenHistory = History.listen(async (info: any) => {
         updateAppDetails(info.pathname);
     });
-
-    const libraryPatch = patchLibraryApp(appDetailsState);
 
     // Profiles route
     routerHook.addRoute(
@@ -221,7 +228,7 @@ export default definePlugin(() => {
             unlistenHistory();
             appDetailsState.setOnAppPage(null);
 
-            routerHook.removePatch('/library/app/:appid', libraryPatch);
+            PatchEmitter.dispose();
             routerHook.removeRoute('/deck-ds/settings/templates/:templateid');
             routerHook.removeRoute('/deck-ds/settings/:setting');
 

@@ -16,11 +16,11 @@ import SecondaryPlayButton from './components/SecondaryPlayButton';
 
 let cachedPlayButton: ReactElement | null = null;
 
-function patchLibraryApp(appDetailsState: ShortAppDetailsState) {
+function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
     // debugPrintStyles();
 
     return routerHook.addPatch(
-        '/library/app/:appid',
+        route,
         (props?: { path?: string; children?: ReactElement }) => {
             if (!props?.children?.props?.renderFunc) {
                 return props;
