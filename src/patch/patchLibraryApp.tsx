@@ -81,8 +81,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                         return ret3;
                                     }
 
-                                    console.log('ret3', ret3);
-
                                     const overview =
                                         appStore.GetAppOverviewByAppID(appId);
 
@@ -94,7 +92,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                         );
 
                                     const streaming = status.clientid !== '0';
-                                    const installed =
+                                    const installed: boolean =
                                         !streaming &&
                                         status.status_percentage == 100 &&
                                         status.installed;
@@ -107,8 +105,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                 basicAppDetailsSectionStylerClasses.AppButtons,
                                             ),
                                     );
-
-                                    console.log('appButtons', appButtons);
 
                                     // const playButtonStatusPanel = findInReactTree(
                                     //     ret3,
@@ -137,12 +133,22 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                     const missingPlayButton =
                                         typeof playButton !== 'object';
 
+                                    if (
+                                        !missingAppButtons ||
+                                        !missingPlayButton
+                                    ) {
+                                        console.log('ret3', ret3);
+                                    }
+
                                     if (!missingAppButtons) {
+                                        console.log('appButtons', appButtons);
+
                                         const children =
                                             appButtons?.props?.children;
 
                                         if (
                                             installed &&
+                                            children &&
                                             !children.find(
                                                 (c: any) =>
                                                     c?.props?.children?.props
@@ -155,7 +161,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                 children,
                                             );
 
-                                            children?.splice(
+                                            children.splice(
                                                 0,
                                                 0,
                                                 <ShortAppDetailsStateContextProvider
@@ -173,7 +179,33 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                         ?.deckDSDesktopSentinel ===
                                                     'sentinel',
                                             );
+                                            console.log(
+                                                'appbutton sentinel index: ',
+                                                sentinel,
+                                                'in',
+                                                children,
+                                            );
+                                            console.log(
+                                                'appbutton overview',
+                                                overview.selected_clientid,
+                                                'status:',
+                                                status,
+                                                'installed:',
+                                                installed,
+                                            );
+
+                                            console.log(
+                                                'appbutton alt overview',
+                                                children.slice(-1)[0]?.props
+                                                    ?.overview
+                                                    ?.selected_clientid,
+                                            );
+
                                             if (!installed && sentinel >= 0) {
+                                                console.log(
+                                                    'splicing out appbutton',
+                                                );
+
                                                 children.splice(sentinel, 1);
                                             }
                                         }
@@ -211,7 +243,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                 actualPlayButton,
                                             );
 
-                                            children?.splice(
+                                            children.splice(
                                                 0,
                                                 1,
                                                 <ShortAppDetailsStateContextProvider
@@ -234,9 +266,25 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                         ?.deckDSGameModeSentinel ===
                                                     'sentinel',
                                             );
+                                            console.log(
+                                                'playbutton sentinel index: ',
+                                                sentinel,
+                                                'in',
+                                                children,
+                                            );
+
+                                            console.log(
+                                                'playbutton overview',
+                                                overview.selected_clientid,
+                                                'status:',
+                                                status,
+                                                'installed:',
+                                                installed,
+                                            );
+
                                             if (
-                                                !installed &&
                                                 sentinel >= 0 &&
+                                                !installed &&
                                                 cachedPlayButton
                                             ) {
                                                 children.splice(
