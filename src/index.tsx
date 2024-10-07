@@ -88,15 +88,24 @@ export default definePlugin(() => {
     // console.log('collection store:', collectionStore);
     // console.log('collections:', collectionStore.userCollections);
 
-    // Setup patch handler
-    (async () => {
+    // Ensure patch handler settings loaded
+    let loaded = true;
+    setTimeout(async () => {
+        if (!loaded || !usdplReady) {
+            logger.warn('Not setting patch setting; not ready.');
+            return;
+        }
+
         const globalSettings = await backend.getSettings();
-        if (globalSettings.isOk) {
+
+        if (globalSettings.isOk && loaded) {
             PatchHandler.getInstance().setPatchEnabled(
                 globalSettings.data.global_settings.enable_ui_inject,
             );
+        } else if (!globalSettings.isOk) {
+            logger.error('Not setting patch setting: ', globalSettings.err);
         }
-    })();
+    }, 1000);
 
     function isSteamGame(overview: any): boolean {
         const hasOwnerAccountId = overview.owner_account_id !== undefined;
@@ -234,6 +243,8 @@ export default definePlugin(() => {
         content: <Content />,
 
         onDismount: () => {
+            loaded = false;
+
             backend.log(LogLevel.Debug, 'DeckDS shutting down');
 
             unlistenHistory();
