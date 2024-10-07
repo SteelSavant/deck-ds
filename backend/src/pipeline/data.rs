@@ -307,6 +307,11 @@ impl PipelineActionLookup {
 }
 
 impl PipelineDefinition {
+    pub fn all_toplevel(&self) -> Vec<&TopLevelDefinition> {
+        let platform_ref = &self.platform;
+        [self.toplevel.iter().collect(), vec![platform_ref]].concat()
+    }
+
     pub fn reify<'a>(
         &'a self,
         profiles: &[CategoryProfile],
@@ -315,8 +320,7 @@ impl PipelineDefinition {
         let targets = PipelineTarget::iter()
             .map(|t: PipelineTarget| {
                 // put platform after toplevel actions for now, to simplify automatic windowing, since the main app
-                let platform_ref = &self.platform;
-                let toplevel = [self.toplevel.iter().collect(), vec![platform_ref]].concat();
+                let toplevel = self.all_toplevel();
 
                 let reified: Vec<_> = toplevel
                     .iter()
@@ -423,7 +427,7 @@ impl PipelineActionId {
                     )
                 })?;
 
-                let settings = config
+                let (id, settings) = config
                     .profile_override
                     .and_then(|profile| {
                         ctx.profiles
@@ -450,7 +454,7 @@ impl PipelineActionId {
 
                 log::debug!("reify pipeline action id {self:?} got config {settings:?}");
 
-                let resolved_action = settings.1.reify(settings.0, definition, ctx)?;
+                let resolved_action = settings.reify(id, definition, ctx)?;
 
                 Ok(Some(resolved_action))
             }
@@ -464,13 +468,8 @@ fn resolve_action_from_profile_override<'a>(
     id: &PipelineActionId,
     ctx: &ReificationCtx,
 ) -> Option<&'a PipelineActionSettings<ConfigSelection>> {
-    if ctx.toplevel_index == 0 {
-        profile.pipeline.platform.actions.get(id, ctx.target)
-    } else {
-        profile.pipeline.toplevel[ctx.toplevel_index - 1]
-            .actions
-            .get(id, ctx.target)
-    }
+    let toplevel = profile.pipeline.all_toplevel();
+    toplevel[ctx.toplevel_index].actions.get(id, ctx.target)
 }
 
 impl PipelineActionSettings<ConfigSelection> {
@@ -570,7 +569,11 @@ mod tests {
 
     use crate::{
         db::ProfileDb,
-        pipeline::{action_registar::PipelineActionRegistrar, data::actions_have_target},
+        pipeline::{
+            action::{desktop_controller_layout_hack, ActionId},
+            action_registar::PipelineActionRegistrar,
+            data::actions_have_target,
+        },
     };
 
     use super::*;
@@ -650,10 +653,16 @@ mod tests {
     //     let platform_root = PipelineActionId("core:app:platform".to_string());
     //     let toplevel_root = PipelineActionId("core:toplevel:secondary".to_string());
 
+    //     let desktop_controller_layout_hack = DesktopControllerLayoutHack {
+    //         id: ActionId::new(),
+    //         steam_override: None,
+    //         nonsteam_override: None,
+    //     };
+
     //     let profile_pipeline = PipelineDefinition {
     //         id: PipelineDefinitionId::new(),
     //         name: "ToplevelProfile".to_string(),
-    //         register_exit_hooks: false,
+    //         desktop_controller_layout_hack,
     //         primary_target_override: None,
     //         platform: TopLevelDefinition {
     //             id: TopLevelId::new(),
@@ -680,7 +689,7 @@ mod tests {
     //     let override_pipeline = PipelineDefinition {
     //         id: PipelineDefinitionId::new(),
     //         name: "ToplevelTest".to_string(),
-    //         register_exit_hooks: false,
+    //         desktop_controller_layout_hack,
     //         primary_target_override: None,
     //         platform: TopLevelDefinition {
     //             id: TopLevelId::new(),
@@ -698,11 +707,7 @@ mod tests {
 
     //     let desktop_target = reified.targets.remove(&PipelineTarget::Desktop).unwrap();
 
-    //     match desktop_target {
-
-    //         RuntimeSelection::AllOf(actions) => actions.iter().skip(1).,
-    //         _ => panic!("expected toplevel selection to be AllOf")
-    //     }
+    //     // TODO::this
 
     //     Ok(())
     // }
