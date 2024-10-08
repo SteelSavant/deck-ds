@@ -226,17 +226,6 @@ function FromProfileComponent({ action }: { action: PipelineAction }) {
 
     const { dispatchUpdate } = useAppState();
 
-    console.log(
-        'fromprofilecomponent',
-        action.name,
-        'using profile: ',
-        action.profile_override,
-        '--',
-        !action.profile_override,
-        '(',
-        action,
-        ')',
-    );
     return (
         <Field focusable={false} label="Use per-game profile">
             <Focusable>

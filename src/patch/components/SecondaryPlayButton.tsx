@@ -18,7 +18,6 @@ export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): React
 
     // Hack to ensure we have the correct selected_clientid
     useEffect(() => {
-        console.log('setting forceupdate timeouts');
         for (const timeout of [100, 200, 500, 1000, 2000, 5000, 10000]) {
             setTimeout(() => ensureSelectedClientUpdated(), timeout);
         }

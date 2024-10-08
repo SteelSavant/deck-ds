@@ -34,8 +34,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                         return ret;
                     }
 
-                    console.log('ret', ret);
-
                     wrapReactType(ret.props.children);
                     afterPatch(
                         ret.props.children.type,
@@ -66,8 +64,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                             const child = children.find(
                                 (c: any) => c?.type?.render,
                             );
-
-                            console.log('ret2', ret2);
 
                             // wrapReactType(child.type);
                             afterPatch(
@@ -133,16 +129,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                     const missingPlayButton =
                                         typeof playButton !== 'object';
 
-                                    if (
-                                        !missingAppButtons ||
-                                        !missingPlayButton
-                                    ) {
-                                        console.log('ret3', ret3);
-                                    }
-
                                     if (!missingAppButtons) {
-                                        console.log('appButtons', appButtons);
-
                                         const children =
                                             appButtons?.props?.children;
 
@@ -156,11 +143,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                     'sentinel',
                                             )
                                         ) {
-                                            console.log(
-                                                'appbutton children',
-                                                children,
-                                            );
-
                                             children.splice(
                                                 0,
                                                 0,
@@ -179,33 +161,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                         ?.deckDSDesktopSentinel ===
                                                     'sentinel',
                                             );
-                                            console.log(
-                                                'appbutton sentinel index: ',
-                                                sentinel,
-                                                'in',
-                                                children,
-                                            );
-                                            console.log(
-                                                'appbutton overview',
-                                                overview.selected_clientid,
-                                                'status:',
-                                                status,
-                                                'installed:',
-                                                installed,
-                                            );
-
-                                            console.log(
-                                                'appbutton alt overview',
-                                                children.slice(-1)[0]?.props
-                                                    ?.overview
-                                                    ?.selected_clientid,
-                                            );
 
                                             if (!installed && sentinel >= 0) {
-                                                console.log(
-                                                    'splicing out appbutton',
-                                                );
-
                                                 children.splice(sentinel, 1);
                                             }
                                         }
@@ -225,23 +182,9 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                     'sentinel',
                                             )
                                         ) {
-                                            console.log(
-                                                'playbutton children',
-                                                children,
-                                            );
-
                                             const actualPlayButton =
                                                 children[0];
                                             cachedPlayButton = actualPlayButton;
-
-                                            console.log(
-                                                'playButton',
-                                                playButton,
-                                            );
-                                            console.log(
-                                                'actualPlayButton',
-                                                actualPlayButton,
-                                            );
 
                                             children.splice(
                                                 0,
@@ -265,21 +208,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                     c?.props?.children?.props
                                                         ?.deckDSGameModeSentinel ===
                                                     'sentinel',
-                                            );
-                                            console.log(
-                                                'playbutton sentinel index: ',
-                                                sentinel,
-                                                'in',
-                                                children,
-                                            );
-
-                                            console.log(
-                                                'playbutton overview',
-                                                overview.selected_clientid,
-                                                'status:',
-                                                status,
-                                                'installed:',
-                                                installed,
                                             );
 
                                             if (

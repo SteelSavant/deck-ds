@@ -411,11 +411,6 @@ export class ShortAppDetailsState {
             )?.selected_clientid;
         }
 
-        console.log(
-            'updating with selected client id',
-            this.appDetails?.selected_clientid,
-        );
-
         this.eventBus.dispatchEvent(new Event('stateUpdate'));
     }
 }
