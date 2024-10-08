@@ -1,25 +1,39 @@
 import { routerHook } from '@decky/api';
 import { ShortAppDetailsState } from '../context/appContext';
+import patchContextMenu, { LibraryContextMenu } from './patchContextMenu';
 import patchLibraryApp from './patchLibraryApp';
+
+interface Patch {
+    route: any;
+    unpatch: any;
+}
 
 export class PatchHandler {
     private static instance: PatchHandler | null;
 
     private isEnabled = false;
-    private patches: Array<{
-        route: string;
-        patch: any;
+    private readonly patches: Array<{
+        unpatch: () => void;
     }> = [];
-    private patchFns: Array<{
-        route: string;
-        fn: Function;
+    private readonly patchFns: Array<{
+        route: any;
+        patch: (route: any) => any;
+        unpatch: (patch: Patch) => () => void;
     }>;
 
     private constructor(appDetailsState: ShortAppDetailsState) {
         this.patchFns = [
             {
                 route: '/library/app/:appid',
-                fn: (route: string) => patchLibraryApp(route, appDetailsState),
+                patch: (route: string) =>
+                    patchLibraryApp(route, appDetailsState),
+                unpatch: (patch: Patch) => () =>
+                    routerHook.removePatch(patch.route, patch.unpatch),
+            },
+            {
+                route: LibraryContextMenu,
+                patch: (menu: any) => patchContextMenu(menu, appDetailsState),
+                unpatch: (patch: Patch) => patch.unpatch.unpatch,
             },
         ];
     }
@@ -33,14 +47,16 @@ export class PatchHandler {
 
         if (!patchEnabled) {
             for (const patch of this.patches) {
-                routerHook.removePatch(patch.route, patch.patch);
+                patch.unpatch();
             }
             this.patches.length = 0;
         } else {
             for (const patch of this.patchFns) {
                 this.patches.push({
-                    route: patch.route,
-                    patch: patch.fn(patch.route),
+                    unpatch: patch.unpatch({
+                        route: patch.route,
+                        unpatch: patch.patch(patch.route),
+                    }),
                 });
             }
         }

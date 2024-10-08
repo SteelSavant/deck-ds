@@ -423,15 +423,14 @@ export class ShortAppDetailsState {
 const AppContext = createContext<PublicAppStateContext>(null as any);
 export const useAppState = () => useContext(AppContext);
 
-interface ProviderProps {
+export interface ShortAppDetailsStateProviderProps {
     ShortAppDetailsStateClass: ShortAppDetailsState;
 }
 
 // This is a React Component that you can wrap multiple separate things in, as long as they both have used the same instance of the CssLoaderState class, they will have synced state
-export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
-    children,
-    ShortAppDetailsStateClass,
-}) => {
+export const ShortAppDetailsStateContextProvider: FC<
+    ShortAppDetailsStateProviderProps
+> = ({ children, ShortAppDetailsStateClass }) => {
     const [publicState, setPublicState] = useState<PublicAppState>({
         ...ShortAppDetailsStateClass.getPublicState(),
     });

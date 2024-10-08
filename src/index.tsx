@@ -25,6 +25,7 @@ import {
 import { PatchHandler } from './patch/patchHandler';
 import { teardownClientPipeline } from './pipeline/client_pipeline';
 import { logger, LogLevel } from './util/log';
+import { isSteamGame } from './util/util';
 import QAM from './views/QAM';
 import ProfileRoute from './views/Settings/Profiles/ProfileRoute';
 import SettingsRouter from './views/Settings/SettingsRouter';
@@ -106,14 +107,6 @@ export default definePlugin(() => {
             logger.error('Not setting patch setting: ', globalSettings.err);
         }
     }, 1000); // We defer until after the backend should be initialized to avoid potential issues.
-
-    function isSteamGame(overview: any): boolean {
-        const hasOwnerAccountId = overview.owner_account_id !== undefined;
-        const wasPurchased = !!overview.rt_purchased_time;
-        const hasSize = overview.size_on_disk !== '0';
-
-        return hasOwnerAccountId || wasPurchased || hasSize;
-    }
 
     function updateAppDetails(this: any, currentRoute: string): void {
         const re = /^\/library\/app\/(\d+)(\/?.*)/;
