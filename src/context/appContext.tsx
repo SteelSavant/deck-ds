@@ -35,6 +35,7 @@ export type ShortAppDetails = {
     userId64: string;
     sortAs: string;
     isSteamGame: boolean;
+    selected_clientid: string;
 };
 
 interface PublicAppState {
@@ -59,6 +60,7 @@ interface PublicAppStateContext extends PublicAppState {
     ): void;
     dispatchUpdate(profileId: string, action: StateAction): Promise<void>;
     loadProfileOverride(appId: number, profileId: string): Promise<void>;
+    ensureSelectedClientUpdated(): Promise<void>;
 }
 
 // This class creates the getter and setter functions for all of the global state data.
@@ -222,6 +224,19 @@ export class ShortAppDetailsState {
 
         if (shouldUpdate) {
             this.forceUpdate();
+        }
+    }
+
+    ensureSelectedClientUpdated() {
+        if (this.appDetails) {
+            const id = appStore.GetAppOverviewByAppID(
+                this.appDetails.appId,
+            )?.selected_clientid;
+
+            if (id !== this.appDetails.selected_clientid) {
+                this.appDetails.selected_clientid = id;
+                this.forceUpdate();
+            }
         }
     }
 
@@ -389,7 +404,18 @@ export class ShortAppDetailsState {
         }
     }
 
-    private forceUpdate() {
+    private forceUpdate(updateSelectedClient = true) {
+        if (this.appDetails && updateSelectedClient) {
+            this.appDetails.selected_clientid = appStore.GetAppOverviewByAppID(
+                this.appDetails.appId,
+            )?.selected_clientid;
+        }
+
+        console.log(
+            'updating with selected client id',
+            this.appDetails?.selected_clientid,
+        );
+
         this.eventBus.dispatchEvent(new Event('stateUpdate'));
     }
 }
@@ -456,6 +482,10 @@ export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
         ShortAppDetailsStateClass.loadProfileOverride(appId, profileId);
     };
 
+    const ensureSelectedClientUpdated = async () => {
+        ShortAppDetailsStateClass.ensureSelectedClientUpdated();
+    };
+
     return (
         <AppContext.Provider
             value={{
@@ -465,6 +495,7 @@ export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
                 setAppViewOpen,
                 dispatchUpdate,
                 loadProfileOverride,
+                ensureSelectedClientUpdated,
             }}
         >
             {children}

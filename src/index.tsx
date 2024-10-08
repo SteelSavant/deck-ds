@@ -135,6 +135,7 @@ export default definePlugin(() => {
                 sortAs: overview.sort_as,
                 userId64: App.m_CurrentUser.strSteamID,
                 isSteamGame: isSteamGame(overview),
+                selected_clientid: overview.selected_clientid,
             });
         } else {
             appDetailsState.setOnAppPage(null);
