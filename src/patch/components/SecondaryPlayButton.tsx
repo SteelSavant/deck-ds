@@ -10,6 +10,10 @@ interface SecondaryPlayButtonProps {
     deckDSDesktopSentinel: 'sentinel';
 }
 
+// TODO::ideally, if
+// - the secondary action is gamemode, and
+// - gamemode is not a target
+// then this would display the icon from the normal play button, and run its on clicked/pressed function when pressed
 export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): ReactElement | null {
     const { appDetails, appProfile, ensureSelectedClientUpdated } =
         useAppState();
