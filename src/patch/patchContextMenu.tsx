@@ -4,9 +4,10 @@ import {
     afterPatch,
     fakeRenderComponent,
     findModuleChild,
+    Focusable,
     Patch,
 } from '@decky/ui';
-import { ReactElement } from 'react';
+import { ReactElement, useEffect, useRef } from 'react';
 import { IconForTarget } from '../components/IconForTarget';
 import {
     ShortAppDetailsState,
@@ -17,13 +18,43 @@ import useAppTarget from '../hooks/useAppTarget';
 import useLaunchActions from '../hooks/useLaunchActions';
 import { isSteamGame } from '../util/util';
 
+const appDetailsState = new ShortAppDetailsState();
+
 function PlayBtnMenuItem({
+    appId,
     playButton,
 }: {
+    appId: number;
     playButton: ReactElement;
 }): ReactElement {
     const { appDetails, appProfile } = useAppState();
     const launchActions = useLaunchActions(appDetails);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        for (const timeout of [100, 200, 500, 1000, 2000, 5000]) {
+            setTimeout(() => {
+                console.log('playbutton ref:', ref);
+                (ref?.current as any)?.focus();
+            }, timeout);
+        }
+    }, []);
+
+    useEffect(() => {
+        // Ensure we're set to the right page
+        if (appDetails?.appId !== appId) {
+            const overview = appStore.GetAppOverviewByAppID(appId);
+
+            appDetailsState.setOnAppPage({
+                appId: appId,
+                gameId: overview.m_gameid,
+                sortAs: overview.sort_as,
+                userId64: App.m_CurrentUser.strSteamID,
+                isSteamGame: isSteamGame(overview),
+                selected_clientid: overview.selected_clientid,
+            });
+        }
+    }, [appDetails?.appId, appId]);
 
     const action = appProfile?.isOk
         ? launchActions.find(
@@ -38,11 +69,27 @@ function PlayBtnMenuItem({
 
     const onLaunch = action?.targets?.find((t) => t.target === target)?.action;
 
-    const shouldCustomize = target && onLaunch;
+    const shouldCustomize = !!target && !!onLaunch;
 
-    console.log('playbutton', playButton);
+    console.log(
+        'playbutton',
+        playButton,
+        'shouldCustomize',
+        shouldCustomize,
+        'target',
+        target,
+        'onLaunch',
+        onLaunch,
+        'action',
+        action,
+        'appDetails',
+        appDetails,
+        'appProfile',
+        appProfile,
+    );
 
     if (!shouldCustomize) {
+        console.log('returning playbutton');
         return playButton;
     }
 
@@ -60,14 +107,10 @@ function PlayBtnMenuItem({
 
     console.log('modified playbutton', modifiedPlayButton);
 
-    return modifiedPlayButton;
+    return <Focusable ref={ref}> {modifiedPlayButton}</Focusable>;
 }
 
-const splicePlayButton = (
-    children: any[],
-    appid: number,
-    appDetailsState: ShortAppDetailsState,
-) => {
+const splicePlayButton = (children: any[], appid: number) => {
     console.log('ctx children', children);
     const overview = appStore.GetAppOverviewByAppID(appid);
 
@@ -99,7 +142,7 @@ const splicePlayButton = (
             <ShortAppDetailsStateContextProvider
                 ShortAppDetailsStateClass={appDetailsState}
             >
-                <PlayBtnMenuItem playButton={children[0]} />
+                <PlayBtnMenuItem appId={appid} playButton={children[0]} />
             </ShortAppDetailsStateContextProvider>,
         );
     }
@@ -110,10 +153,7 @@ const splicePlayButton = (
  * @param LibraryContextMenu The game context menu.
  * @returns A patch to remove when the plugin dismounts.
  */
-const contextMenuPatch = (
-    LibraryContextMenu: any,
-    appDetailsState: ShortAppDetailsState,
-) => {
+const contextMenuPatch = (LibraryContextMenu: any) => {
     const patches: {
         outer?: Patch;
         inner?: Patch;
@@ -128,16 +168,6 @@ const contextMenuPatch = (
         'render',
         (_: Record<string, unknown>[], component: any) => {
             const appid: number = component._owner.pendingProps.overview.appid;
-            const overview = appStore.GetAppOverviewByAppID(appid);
-
-            appDetailsState.setOnAppPage({
-                appId: appid,
-                gameId: overview.m_gameid,
-                sortAs: overview.sort_as,
-                userId64: App.m_CurrentUser.strSteamID,
-                isSteamGame: isSteamGame(overview),
-                selected_clientid: overview.selected_clientid,
-            });
 
             if (!patches.inner) {
                 patches.inner = afterPatch(
@@ -173,33 +203,14 @@ const contextMenuPatch = (
                                         .appid;
                             }
 
-                            const overview =
-                                appStore.GetAppOverviewByAppID(appid);
-                            appDetailsState.setOnAppPage({
-                                appId: updatedAppid,
-                                gameId: overview.m_gameid,
-                                sortAs: overview.sort_as,
-                                userId64: App.m_CurrentUser.strSteamID,
-                                isSteamGame: isSteamGame(overview),
-                                selected_clientid: overview.selected_clientid,
-                            });
-
-                            splicePlayButton(
-                                nextProps.children,
-                                updatedAppid,
-                                appDetailsState,
-                            );
+                            splicePlayButton(nextProps.children, updatedAppid);
                         }
 
                         return shouldUpdate;
                     },
                 );
             } else {
-                splicePlayButton(
-                    component.props.children,
-                    appid,
-                    appDetailsState,
-                );
+                splicePlayButton(component.props.children, appid);
             }
 
             return component;

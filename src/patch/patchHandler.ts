@@ -32,7 +32,7 @@ export class PatchHandler {
             },
             {
                 route: LibraryContextMenu,
-                patch: (menu: any) => patchContextMenu(menu, appDetailsState),
+                patch: patchContextMenu,
                 unpatch: (patch: Patch) => patch.unpatch.unpatch,
             },
         ];

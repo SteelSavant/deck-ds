@@ -132,7 +132,6 @@ export default definePlugin(() => {
             });
         } else {
             appDetailsState.setOnAppPage(null);
-            appDetailsState.setOnAppPage(null);
         }
     }
 
