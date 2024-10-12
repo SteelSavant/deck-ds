@@ -69,8 +69,10 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                             const appId = overview.appid;
 
                             const children = container.props.children;
-                            const child = children.find(
-                                (c: any) => c?.type?.render,
+                            const child = children.find((c: any) =>
+                                c?.props?.className?.includes(
+                                    appDetailsClasses.AppDetailsOverviewPanel,
+                                ),
                             );
 
                             console.log('ret2 child', child);
@@ -137,6 +139,47 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 ret6,
                                                             );
                                                             ret6.key = 'ret6';
+
+                                                            const ret6Child =
+                                                                findInReactTree(
+                                                                    ret6,
+                                                                    (x) =>
+                                                                        x?.props
+                                                                            ?.overview &&
+                                                                        x?.type
+                                                                            ?.render,
+                                                                );
+
+                                                            console.log(
+                                                                'ret6 child',
+                                                                ret6Child,
+                                                            );
+
+                                                            if (!ret6Child) {
+                                                                return ret6;
+                                                            }
+
+                                                            ret6Child.key =
+                                                                'ret6child';
+                                                            wrapReactType(
+                                                                ret6Child,
+                                                            );
+
+                                                            afterPatch(
+                                                                ret6Child.type,
+                                                                'render',
+                                                                (_7, ret7) => {
+                                                                    console.log(
+                                                                        'ret7',
+                                                                        ret7,
+                                                                    );
+                                                                    ret7.key =
+                                                                        'ret7';
+                                                                    return ret7;
+                                                                },
+                                                            );
+
+                                                            return ret6;
 
                                                             wrapReactType(ret6);
                                                             afterPatch(
