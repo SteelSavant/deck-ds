@@ -4,7 +4,6 @@ import {
     appDetailsClasses,
     basicAppDetailsSectionStylerClasses,
     findInReactTree,
-    findModuleExport,
     wrapReactType,
 } from '@decky/ui';
 import { ReactElement } from 'react';
@@ -40,21 +39,21 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                     console.log('ret', ret);
 
-                    findModuleExport((e) => {
-                        if (!e || typeof e === 'string') {
-                            return false;
-                        }
-                        if (!e.toString) {
-                            console.log('module export:', typeof e, e);
-                        } else {
-                            console.log(
-                                'module export str:',
-                                typeof e,
-                                e.toString(),
-                            );
-                        }
-                        return false;
-                    });
+                    // findModuleExport((e) => {
+                    //     if (!e || typeof e === 'string') {
+                    //         return false;
+                    //     }
+                    //     if (!e.toString) {
+                    //         console.log('module export:', typeof e, e);
+                    //     } else {
+                    //         console.log(
+                    //             'module export str:',
+                    //             typeof e,
+                    //             e.toString(),
+                    //         );
+                    //     }
+                    //     return false;
+                    // });
                     debugPrintStyles();
 
                     wrapReactType(ret.props.children);
@@ -91,7 +90,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                             console.log('ret2 child', child);
 
-                            // wrapReactType(child.type);
+                            // wrapReactType(child);
                             afterPatch(
                                 child.type,
                                 'render',
@@ -102,6 +101,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                     if (!ret3) {
                                         return ret3;
                                     }
+
+                                    console.log('ret3', ret3);
 
                                     const overview =
                                         appStore.GetAppOverviewByAppID(appId);
@@ -132,7 +133,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                     //     ret3,
                                     //     (x: ReactElement) => Array.isArray(x?.props?.children) &&
                                     //         x?.props?.className?.includes(
-                                    //             basicAppDetailsSectionStylerClasses.ActionButtonAndStatusPanel
+                                    //             basicAppDetailsSectionStylerClasses.ActionButtonAndStatusPanel // _1fHBRg7vFnKszK6EiOdIEY
                                     //         )
 
                                     // )
@@ -156,7 +157,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                         typeof playButton !== 'object';
 
                                     if (appButtons || playButton) {
-                                        console.log('ret3', ret3);
+                                        console.log('ret3 actual', ret3);
 
                                         console.log(
                                             'ret3 appbuttons',
