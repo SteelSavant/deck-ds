@@ -4,6 +4,7 @@ import {
     appDetailsClasses,
     basicAppDetailsSectionStylerClasses,
     findInReactTree,
+    findModuleExport,
     wrapReactType,
 } from '@decky/ui';
 import { ReactElement } from 'react';
@@ -11,6 +12,7 @@ import {
     ShortAppDetailsState,
     ShortAppDetailsStateContextProvider,
 } from '../context/appContext';
+import { debugPrintStyles } from '../util/debugPrint';
 import PrimaryPlayButton from './components/PrimaryPlayButton';
 import SecondaryPlayButton from './components/SecondaryPlayButton';
 
@@ -26,6 +28,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                 return props;
             }
 
+            console.log('props', props);
+
             afterPatch(
                 props.children.props,
                 'renderFunc',
@@ -33,6 +37,25 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                     if (!ret?.props?.children?.type?.type) {
                         return ret;
                     }
+
+                    console.log('ret', ret);
+
+                    findModuleExport((e) => {
+                        if (!e || typeof e === 'string') {
+                            return false;
+                        }
+                        if (!e.toString) {
+                            console.log('module export:', typeof e, e);
+                        } else {
+                            console.log(
+                                'module export str:',
+                                typeof e,
+                                e.toString(),
+                            );
+                        }
+                        return false;
+                    });
+                    debugPrintStyles();
 
                     wrapReactType(ret.props.children);
                     afterPatch(
@@ -42,6 +65,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                             _2: Record<string, unknown>[],
                             ret2?: ReactElement,
                         ) => {
+                            console.log('ret2', ret2);
                             const container = findInReactTree(
                                 ret2,
                                 (x: ReactElement) =>
@@ -64,6 +88,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                             const child = children.find(
                                 (c: any) => c?.type?.render,
                             );
+
+                            console.log('ret2 child', child);
 
                             // wrapReactType(child.type);
                             afterPatch(
@@ -128,6 +154,19 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                         typeof appButtons !== 'object';
                                     const missingPlayButton =
                                         typeof playButton !== 'object';
+
+                                    if (appButtons || playButton) {
+                                        console.log('ret3', ret3);
+
+                                        console.log(
+                                            'ret3 appbuttons',
+                                            appButtons,
+                                        );
+                                        console.log(
+                                            'ret3 playbutton',
+                                            playButton,
+                                        );
+                                    }
 
                                     if (!missingAppButtons) {
                                         const children =
