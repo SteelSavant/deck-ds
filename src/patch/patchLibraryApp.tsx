@@ -17,6 +17,77 @@ import PrimaryPlayButton from './components/PrimaryPlayButton';
 import SecondaryPlayButton from './components/SecondaryPlayButton';
 
 let cachedPlayButton: ReactElement | null = null;
+let argCache: any = {};
+
+function deepCompareKeys(obj1: any, obj2: any, cache: Set<any>) {
+    if (cache.has(obj1) || cache.has(obj2)) {
+        const ret = cache.has(obj1) && cache.has(obj2);
+        if (!ret) {
+            console.log(
+                'cache mismatch?:',
+                cache.has(obj1),
+                'vs',
+                cache.has(obj2),
+            );
+        }
+
+        return ret;
+    }
+
+    cache.add(obj1);
+    cache.add(obj2);
+
+    if (typeof obj1 !== 'object' || typeof obj2 !== 'object') {
+        const ret = obj1 === obj2;
+        if (!ret) {
+            console.log('primitive mismatch:', obj1, 'vs', obj2);
+        }
+
+        return ret;
+    }
+
+    if (obj1 === null || obj2 === null) {
+        const ret = obj1 === obj2;
+        if (!ret) {
+            console.log('null mismatch:', obj1, 'vs', obj2);
+        }
+
+        return ret;
+    }
+
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+
+    if (keys1.length !== keys2.length) {
+        console.log('key length mismatch:', obj1, 'vs', obj2);
+        return false;
+    }
+
+    for (const key of keys1) {
+        if (!keys2.includes(key)) {
+            console.log('missing key', key, ':', obj1, 'vs', obj2);
+
+            return false;
+        }
+        if (!deepCompareKeys(obj1[key], obj2[key], cache)) {
+            console.log('value mismatch:', obj1, 'vs', obj2);
+
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function checkCachedArg(name: string, args: any) {
+    if (argCache[name] !== args) {
+        console.log(name, argCache[name], 'vs', args);
+        if (deepCompareKeys(argCache[name], args, new Set())) {
+            console.log(name, 'are actually the same though...');
+        }
+    }
+    argCache[name] = args;
+}
 
 function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
     return routerHook.addPatch(
@@ -28,25 +99,28 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
             console.log('props', props);
 
-            afterPatch(
+            const p1 = afterPatch(
                 props.children.props,
                 'renderFunc',
-                (_: Record<string, unknown>[], ret?: ReactElement) => {
+                (_1: Record<string, unknown>[], ret?: ReactElement) => {
                     if (!ret?.props?.children?.type?.type) {
                         return ret;
                     }
                     debugPrintStyles();
 
                     console.log('ret', ret);
+                    checkCachedArg('_1', _1);
 
                     wrapReactType(ret.props.children);
-                    afterPatch(
+                    const p2 = afterPatch(
                         ret.props.children.type,
                         'type',
                         (
                             _2: Record<string, unknown>[],
                             ret2?: ReactElement,
                         ) => {
+                            checkCachedArg('_2', _2);
+
                             const container = findInReactTree(
                                 ret2,
                                 (x: ReactElement) =>
@@ -78,7 +152,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                             console.log('ret2 child', child);
 
                             wrapReactType(child);
-                            afterPatch(
+                            const p3 = afterPatch(
                                 child.type,
                                 'render',
                                 (
@@ -91,6 +165,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                     console.log('ret3', ret3);
                                     ret3.key = 'ret3';
+                                    checkCachedArg('_3', _3);
 
                                     const child = findInReactTree(
                                         ret3,
@@ -101,7 +176,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                     child.key = 'ret3_child';
 
                                     wrapReactClass(child);
-                                    afterPatch(
+                                    const p4 = afterPatch(
                                         child.type.prototype,
                                         'render',
                                         (
@@ -113,6 +188,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                             }
 
                                             console.log('ret4', ret4);
+                                            checkCachedArg('_4', _4);
+
                                             ret4.key = 'ret4';
 
                                             const child = findInReactTree(
@@ -123,14 +200,16 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                             console.log('ret4 child', child);
                                             child.key = 'ret4_child';
-                                            afterPatch(
+                                            const p5 = afterPatch(
                                                 child,
                                                 'type',
                                                 (_5, ret5) => {
                                                     console.log('ret5', ret5);
+                                                    checkCachedArg('_5', _5);
+
                                                     ret5.key = 'ret5';
 
-                                                    afterPatch(
+                                                    const p6 = afterPatch(
                                                         ret5,
                                                         'type',
                                                         (_6, ret6) => {
@@ -138,6 +217,11 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 'ret6',
                                                                 ret6,
                                                             );
+                                                            checkCachedArg(
+                                                                '_6',
+                                                                _6,
+                                                            );
+
                                                             ret6.key = 'ret6';
 
                                                             const ret6Child =
@@ -165,18 +249,32 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 ret6Child,
                                                             );
 
-                                                            afterPatch(
-                                                                ret6Child.type,
-                                                                'render',
-                                                                (_7, ret7) => {
-                                                                    console.log(
-                                                                        'ret7',
+                                                            const p7 =
+                                                                afterPatch(
+                                                                    ret6Child.type,
+                                                                    'render',
+                                                                    (
+                                                                        _7,
                                                                         ret7,
-                                                                    );
-                                                                    ret7.key =
-                                                                        'ret7';
-                                                                    return ret7;
-                                                                },
+                                                                    ) => {
+                                                                        console.log(
+                                                                            'ret7',
+                                                                            ret7,
+                                                                        );
+                                                                        checkCachedArg(
+                                                                            '_7',
+                                                                            _7,
+                                                                        );
+
+                                                                        ret7.key =
+                                                                            'ret7';
+                                                                        return ret7;
+                                                                    },
+                                                                );
+
+                                                            console.log(
+                                                                'p7',
+                                                                p7,
                                                             );
 
                                                             return ret6;
@@ -261,26 +359,33 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                             return ret6;
                                                         },
                                                     );
+                                                    console.log('p6', p6);
 
                                                     return ret5;
                                                 },
                                             );
+                                            console.log('p5', p5);
 
                                             return ret4;
                                         },
                                     );
 
+                                    console.log('p4', p4);
+
                                     return ret3;
                                 },
                             );
+                            console.log('p3', p3);
 
                             return ret2;
                         },
                     );
+                    console.log('p2', p2);
 
                     return ret;
                 },
             );
+            console.log('p1', p1);
 
             return props;
         },
@@ -409,3 +514,90 @@ function patchFinalElement(
 }
 
 export default patchLibraryApp;
+
+// function pe(e) {
+//     const t = (0, C.iE)(),
+//         [r, n] = (0, ae.SP)('AppDetailsTabsActive', !1),
+//         i = A.useRef(),
+//         a = A.useRef(),
+//         s = A.useRef(!0),
+//         o = (0, u.q3)(
+//             () =>
+//                 B.TS.ON_DECK &&
+//                 0 == oe.rV.storePreferences.provide_deck_feedback,
+//         ),
+//         l = (0, u.q3)(() =>
+//             me.yX.BShouldPromptForDeckCompatibilityFeedback(e.overview.appid),
+//         ),
+//         c = A.useCallback(() => {
+//             n(!1), t?.ScrollToTop();
+//         }, [t, n]),
+//         m = A.useCallback(() => {
+//             a.current.FocusActionButton();
+//         }, []),
+//         d = A.useCallback(
+//             (e) => {
+//                 e && n(e);
+//             },
+//             [n],
+//         );
+//     return (
+//         A.useEffect(() => {
+//             const e = s.current;
+//             s.current = !1;
+//             let n = i.current;
+//             if (!r || !t || !n) return;
+//             const a = function (e) {
+//                 let r =
+//                     n.getBoundingClientRect().top +
+//                     t.scrollTop -
+//                     parseInt(O().headerPadding);
+//                 t.ScrollTo(r, e);
+//             };
+//             e ? window.setTimeout(() => a('auto'), 1) : a('smooth');
+//         }, [t, i, r]),
+//         A.createElement(
+//             _.Z,
+//             {
+//                 className: O().AppDetailsRoot,
+//             },
+//             A.createElement(be, {
+//                 ...e,
+//                 onNav: c,
+//                 ref: a,
+//             }),
+//             A.createElement(Q.sD, {
+//                 ...e,
+//                 onFocus: c,
+//             }),
+//             A.createElement(
+//                 _.Z,
+//                 {
+//                     onFocusWithin: c,
+//                 },
+//                 o && A.createElement(ge, null),
+//                 !o &&
+//                     l &&
+//                     A.createElement(he, {
+//                         ...e,
+//                     }),
+//             ),
+//             A.createElement(
+//                 _.Z,
+//                 {
+//                     ref: i,
+//                     className: O().AppDetailsContainer,
+//                     onFocusWithin: d,
+//                 },
+//                 A.createElement(_e, {
+//                     fnOnCancelFromTabHeader: m,
+//                     details: e.details,
+//                     overview: e.overview,
+//                     setSections: e.setSections,
+//                     bSuppressTransition: e.bSuppressTransition,
+//                     parentComponent: e.parentComponent,
+//                 }),
+//             ),
+//         )
+//     );
+// }
