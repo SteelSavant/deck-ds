@@ -3,7 +3,6 @@ import {
     afterPatch,
     appDetailsClasses,
     basicAppDetailsSectionStylerClasses,
-    beforePatch,
     findInReactTree,
     wrapReactClass,
     wrapReactType,
@@ -115,7 +114,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                     debugPrintStyles();
 
                     console.log('ret', ret);
-                    checkCachedArg('_1', _1);
+                    // checkCachedArg('_1', _1);
 
                     wrapReactType(ret.props.children);
                     const p2 = afterPatch(
@@ -125,7 +124,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                             _2: Record<string, unknown>[],
                             ret2?: ReactElement,
                         ) => {
-                            checkCachedArg('_2', _2);
+                            // checkCachedArg('_2', _2);
 
                             const container = findInReactTree(
                                 ret2,
@@ -171,7 +170,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                     console.log('ret3', ret3);
                                     ret3.key = 'ret3';
-                                    checkCachedArg('_3', _3);
+                                    // checkCachedArg('_3', _3);
 
                                     const child = findInReactTree(
                                         ret3,
@@ -194,7 +193,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                             }
 
                                             console.log('ret4', ret4);
-                                            checkCachedArg('_4', _4);
+                                            // checkCachedArg('_4', _4);
 
                                             ret4.key = 'ret4';
 
@@ -211,32 +210,9 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                 'type',
                                                 (_5, ret5) => {
                                                     console.log('ret5', ret5);
-                                                    checkCachedArg('_5', _5);
+                                                    // checkCachedArg('_5', _5);
 
                                                     ret5.key = 'ret5';
-
-                                                    beforePatch(
-                                                        ret5,
-                                                        'type',
-                                                        (args) => {
-                                                            for (
-                                                                let i = 0;
-                                                                i < args.length;
-                                                                i++
-                                                            ) {
-                                                                console.log(
-                                                                    '_5 beforepatch @',
-                                                                    i,
-                                                                );
-                                                                args[i] =
-                                                                    checkCachedArg(
-                                                                        `_5.${i}`,
-                                                                        args[i],
-                                                                    );
-                                                            }
-                                                            return ret5;
-                                                        },
-                                                    );
 
                                                     const p6 = afterPatch(
                                                         ret5,
@@ -246,10 +222,10 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 'ret6',
                                                                 ret6,
                                                             );
-                                                            checkCachedArg(
-                                                                '_6',
-                                                                _6,
-                                                            );
+                                                            // checkCachedArg(
+                                                            //     '_6',
+                                                            //     _6,
+                                                            // );
 
                                                             ret6.key = 'ret6';
 
@@ -274,9 +250,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                                             ret6Child.key =
                                                                 'ret6child';
-                                                            wrapReactType(
-                                                                ret6Child,
-                                                            );
 
                                                             const p7 =
                                                                 afterPatch(
@@ -290,13 +263,51 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                             'ret7',
                                                                             ret7,
                                                                         );
-                                                                        checkCachedArg(
-                                                                            '_7',
-                                                                            _7,
-                                                                        );
-
                                                                         ret7.key =
                                                                             'ret7';
+
+                                                                        const ret7Child =
+                                                                            findInReactTree(
+                                                                                ret7,
+                                                                                (
+                                                                                    v,
+                                                                                ) =>
+                                                                                    v !==
+                                                                                        ret7 &&
+                                                                                    v
+                                                                                        ?.type
+                                                                                        ?.render,
+                                                                            );
+                                                                        ret7Child.key =
+                                                                            'ret7Child';
+
+                                                                        console.log(
+                                                                            'ret7Child',
+                                                                            ret7Child,
+                                                                        );
+
+                                                                        afterPatch(
+                                                                            ret7Child.type,
+                                                                            'render',
+                                                                            (
+                                                                                _8,
+                                                                                ret8,
+                                                                            ) => {
+                                                                                console.log(
+                                                                                    'ret8',
+                                                                                    ret8,
+                                                                                );
+                                                                                ret8.key =
+                                                                                    'ret8';
+                                                                                patchFinalElement(
+                                                                                    ret8,
+                                                                                    overview,
+                                                                                    appDetailsState,
+                                                                                );
+                                                                                return ret8;
+                                                                            },
+                                                                        );
+
                                                                         return ret7;
                                                                     },
                                                                 );
@@ -306,86 +317,97 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 p7,
                                                             );
 
+                                                            return ret6;
+
                                                             wrapReactType(ret6);
-                                                            afterPatch(
-                                                                ret6.type,
-                                                                'render',
-                                                                (_7, ret7) => {
-                                                                    console.log(
-                                                                        'ret7',
+                                                            const p8 =
+                                                                afterPatch(
+                                                                    ret6.type,
+                                                                    'render',
+                                                                    (
+                                                                        _7,
                                                                         ret7,
-                                                                    );
-                                                                    ret7.key =
-                                                                        'ret7';
-
-                                                                    const child =
-                                                                        findInReactTree(
+                                                                    ) => {
+                                                                        console.log(
+                                                                            'ret7',
                                                                             ret7,
-                                                                            (
-                                                                                x,
-                                                                            ) =>
-                                                                                x
-                                                                                    ?.type
-                                                                                    ?.render &&
-                                                                                x
-                                                                                    ?.props
-                                                                                    ?.overview,
                                                                         );
-                                                                    console.log(
-                                                                        'ret7 child',
-                                                                        child,
-                                                                    );
+                                                                        ret7.key =
+                                                                            'ret7';
 
-                                                                    return ret7;
-
-                                                                    if (
-                                                                        !child
-                                                                    ) {
-                                                                        return ret7;
-                                                                    }
-
-                                                                    child.key =
-                                                                        'ret7 child';
-
-                                                                    wrapReactType(
-                                                                        child,
-                                                                    );
-                                                                    afterPatch(
-                                                                        child.type,
-                                                                        'render',
-                                                                        (
-                                                                            _8,
-                                                                            ret8,
-                                                                        ) => {
-                                                                            console.log(
-                                                                                'ret8',
-                                                                                ret8,
+                                                                        const child =
+                                                                            findInReactTree(
+                                                                                ret7,
+                                                                                (
+                                                                                    x,
+                                                                                ) =>
+                                                                                    x
+                                                                                        ?.type
+                                                                                        ?.render &&
+                                                                                    x
+                                                                                        ?.props
+                                                                                        ?.overview,
                                                                             );
-                                                                            ret8.key =
-                                                                                'ret8';
+                                                                        console.log(
+                                                                            'ret7 child',
+                                                                            child,
+                                                                        );
 
-                                                                            const overview =
-                                                                                appStore.GetAppOverviewByAppID(
-                                                                                    appId,
+                                                                        return ret7;
+
+                                                                        if (
+                                                                            !child
+                                                                        ) {
+                                                                            return ret7;
+                                                                        }
+
+                                                                        child.key =
+                                                                            'ret7 child';
+
+                                                                        wrapReactType(
+                                                                            child,
+                                                                        );
+                                                                        afterPatch(
+                                                                            child.type,
+                                                                            'render',
+                                                                            (
+                                                                                _8,
+                                                                                ret8,
+                                                                            ) => {
+                                                                                console.log(
+                                                                                    'ret8',
+                                                                                    ret8,
+                                                                                );
+                                                                                ret8.key =
+                                                                                    'ret8';
+
+                                                                                const overview =
+                                                                                    appStore.GetAppOverviewByAppID(
+                                                                                        appId,
+                                                                                    );
+
+                                                                                patchFinalElement(
+                                                                                    ret8,
+                                                                                    overview,
+                                                                                    appDetailsState,
                                                                                 );
 
-                                                                            patchFinalElement(
-                                                                                ret8,
-                                                                                overview,
-                                                                                appDetailsState,
-                                                                            );
+                                                                                return ret8;
+                                                                            },
+                                                                        );
 
-                                                                            return ret8;
-                                                                        },
-                                                                    );
-
-                                                                    return ret7;
-                                                                },
+                                                                        return ret7;
+                                                                    },
+                                                                );
+                                                            console.log(
+                                                                'p8',
+                                                                p8,
                                                             );
 
                                                             return ret6;
                                                         },
                                                     );
+
                                                     console.log('p6', p6);
 
                                                     return ret5;
@@ -451,11 +473,8 @@ function patchFinalElement(
     // )
 
     const playButton = findInReactTree(ret, (x: ReactElement) => {
-        return (
-            Array.isArray(x?.props?.children) &&
-            x?.props?.className?.includes(
-                basicAppDetailsSectionStylerClasses.AppActionButton, // QsZdWtHTlIK9KIKbscNTt
-            )
+        return x?.props?.className?.includes(
+            basicAppDetailsSectionStylerClasses.AppActionButton, // QsZdWtHTlIK9KIKbscNTt
         );
     });
     const missingAppButtons = typeof appButtons !== 'object';
@@ -468,163 +487,98 @@ function patchFinalElement(
     if (!missingAppButtons) {
         const children = appButtons?.props?.children;
 
-        if (
-            installed &&
-            children &&
-            !children.find(
-                (c: any) =>
-                    c?.props?.children?.props?.deckDSDesktopSentinel ===
-                    'sentinel',
-            )
-        ) {
-            children.splice(
-                0,
-                0,
-                <ShortAppDetailsStateContextProvider
-                    ShortAppDetailsStateClass={appDetailsState}
-                >
-                    <SecondaryPlayButton deckDSDesktopSentinel="sentinel" />
-                </ShortAppDetailsStateContextProvider>,
-            );
-        } else {
-            const sentinel = children.findIndex(
-                (c: any) =>
-                    c?.props?.children?.props?.deckDSDesktopSentinel ===
-                    'sentinel',
-            );
+        if (children) {
+            if (
+                installed &&
+                !children.find(
+                    (c: any) =>
+                        c?.props?.children?.props?.deckDSDesktopSentinel ===
+                        'sentinel',
+                )
+            ) {
+                children.splice(
+                    0,
+                    0,
+                    <ShortAppDetailsStateContextProvider
+                        ShortAppDetailsStateClass={appDetailsState}
+                    >
+                        <SecondaryPlayButton deckDSDesktopSentinel="sentinel" />
+                    </ShortAppDetailsStateContextProvider>,
+                );
+            } else {
+                const sentinel = children.findIndex(
+                    (c: any) =>
+                        c?.props?.children?.props?.deckDSDesktopSentinel ===
+                        'sentinel',
+                );
 
-            if (!installed && sentinel >= 0) {
-                children.splice(sentinel, 1);
+                if (!installed && sentinel >= 0) {
+                    children.splice(sentinel, 1);
+                }
             }
         }
     }
 
     if (!missingPlayButton) {
-        const children = playButton?.props?.children;
+        wrapReactType(playButton);
+        afterPatch(playButton.type, 'render', (_play, retPlayButton) => {
+            console.log('retPlayButton', retPlayButton);
+            wrapReactClass(retPlayButton);
+            afterPatch(
+                retPlayButton.type.prototype,
+                'render',
+                (_playClass, classPlayButton) => {
+                    console.log('classPlayButton', classPlayButton);
 
-        if (
-            installed &&
-            children &&
-            !children.find(
-                (c: any) =>
-                    c?.props?.children?.props?.deckDSGameModeSentinel ===
-                    'sentinel',
-            )
-        ) {
-            const actualPlayButton = children[0];
-            cachedPlayButton = actualPlayButton;
+                    const children = classPlayButton?.props?.children;
 
-            children.splice(
-                0,
-                1,
-                <ShortAppDetailsStateContextProvider
-                    ShortAppDetailsStateClass={appDetailsState}
-                >
-                    <PrimaryPlayButton
-                        playButton={actualPlayButton}
-                        deckDSGameModeSentinel="sentinel"
-                    />
-                </ShortAppDetailsStateContextProvider>,
+                    if (children) {
+                        if (
+                            installed &&
+                            !children.find(
+                                (c: any) =>
+                                    c?.props?.children?.props
+                                        ?.deckDSGameModeSentinel === 'sentinel',
+                            )
+                        ) {
+                            const actualPlayButton = children[0];
+                            cachedPlayButton = actualPlayButton;
+
+                            children.splice(
+                                0,
+                                1,
+                                <ShortAppDetailsStateContextProvider
+                                    ShortAppDetailsStateClass={appDetailsState}
+                                >
+                                    <PrimaryPlayButton
+                                        playButton={actualPlayButton}
+                                        deckDSGameModeSentinel="sentinel"
+                                    />
+                                </ShortAppDetailsStateContextProvider>,
+                            );
+                        } else {
+                            const sentinel = children.findIndex(
+                                (c: any) =>
+                                    c?.props?.children?.props
+                                        ?.deckDSGameModeSentinel === 'sentinel',
+                            );
+
+                            if (
+                                sentinel >= 0 &&
+                                !installed &&
+                                cachedPlayButton
+                            ) {
+                                children.splice(sentinel, 1, cachedPlayButton);
+                            }
+                        }
+                    }
+
+                    return classPlayButton;
+                },
             );
-        } else {
-            const sentinel = children.findIndex(
-                (c: any) =>
-                    c?.props?.children?.props?.deckDSGameModeSentinel ===
-                    'sentinel',
-            );
-
-            if (sentinel >= 0 && !installed && cachedPlayButton) {
-                children.splice(sentinel, 1, cachedPlayButton);
-            }
-        }
+            return retPlayButton;
+        });
     }
 }
 
 export default patchLibraryApp;
-
-// function pe(e) {
-//     const t = (0, C.iE)(),
-//         [r, n] = (0, ae.SP)('AppDetailsTabsActive', !1),
-//         i = A.useRef(),
-//         a = A.useRef(),
-//         s = A.useRef(!0),
-//         o = (0, u.q3)(
-//             () =>
-//                 B.TS.ON_DECK &&
-//                 0 == oe.rV.storePreferences.provide_deck_feedback,
-//         ),
-//         l = (0, u.q3)(() =>
-//             me.yX.BShouldPromptForDeckCompatibilityFeedback(e.overview.appid),
-//         ),
-//         c = A.useCallback(() => {
-//             n(!1), t?.ScrollToTop();
-//         }, [t, n]),
-//         m = A.useCallback(() => {
-//             a.current.FocusActionButton();
-//         }, []),
-//         d = A.useCallback(
-//             (e) => {
-//                 e && n(e);
-//             },
-//             [n],
-//         );
-//     return (
-//         A.useEffect(() => {
-//             const e = s.current;
-//             s.current = !1;
-//             let n = i.current;
-//             if (!r || !t || !n) return;
-//             const a = function (e) {
-//                 let r =
-//                     n.getBoundingClientRect().top +
-//                     t.scrollTop -
-//                     parseInt(O().headerPadding);
-//                 t.ScrollTo(r, e);
-//             };
-//             e ? window.setTimeout(() => a('auto'), 1) : a('smooth');
-//         }, [t, i, r]),
-//         A.createElement(
-//             _.Z,
-//             {
-//                 className: O().AppDetailsRoot,
-//             },
-//             A.createElement(be, {
-//                 ...e,
-//                 onNav: c,
-//                 ref: a,
-//             }),
-//             A.createElement(Q.sD, {
-//                 ...e,
-//                 onFocus: c,
-//             }),
-//             A.createElement(
-//                 _.Z,
-//                 {
-//                     onFocusWithin: c,
-//                 },
-//                 o && A.createElement(ge, null),
-//                 !o &&
-//                     l &&
-//                     A.createElement(he, {
-//                         ...e,
-//                     }),
-//             ),
-//             A.createElement(
-//                 _.Z,
-//                 {
-//                     ref: i,
-//                     className: O().AppDetailsContainer,
-//                     onFocusWithin: d,
-//                 },
-//                 A.createElement(_e, {
-//                     fnOnCancelFromTabHeader: m,
-//                     details: e.details,
-//                     overview: e.overview,
-//                     setSections: e.setSections,
-//                     bSuppressTransition: e.bSuppressTransition,
-//                     parentComponent: e.parentComponent,
-//                 }),
-//             ),
-//         )
-//     );
-// }
