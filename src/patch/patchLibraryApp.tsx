@@ -3,6 +3,7 @@ import {
     afterPatch,
     appDetailsClasses,
     basicAppDetailsSectionStylerClasses,
+    beforePatch,
     findInReactTree,
     wrapReactClass,
     wrapReactType,
@@ -82,11 +83,16 @@ function deepCompareKeys(obj1: any, obj2: any, cache: Set<any>) {
 function checkCachedArg(name: string, args: any) {
     if (argCache[name] !== args) {
         console.log(name, argCache[name], 'vs', args);
+        if (Array.isArray(args)) {
+            console.log('array is different array');
+        }
         if (deepCompareKeys(argCache[name], args, new Set())) {
             console.log(name, 'are actually the same though...');
+            return argCache[name];
         }
     }
     argCache[name] = args;
+    return args;
 }
 
 function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
@@ -209,6 +215,29 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                                     ret5.key = 'ret5';
 
+                                                    beforePatch(
+                                                        ret5,
+                                                        'type',
+                                                        (args) => {
+                                                            for (
+                                                                let i = 0;
+                                                                i < args.length;
+                                                                i++
+                                                            ) {
+                                                                console.log(
+                                                                    '_5 beforepatch @',
+                                                                    i,
+                                                                );
+                                                                args[i] =
+                                                                    checkCachedArg(
+                                                                        `_5.${i}`,
+                                                                        args[i],
+                                                                    );
+                                                            }
+                                                            return ret5;
+                                                        },
+                                                    );
+
                                                     const p6 = afterPatch(
                                                         ret5,
                                                         'type',
@@ -276,8 +305,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 'p7',
                                                                 p7,
                                                             );
-
-                                                            return ret6;
 
                                                             wrapReactType(ret6);
                                                             afterPatch(
