@@ -145,8 +145,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                             console.log('ret2', ret2);
                             console.log('ret2 container', container);
 
-                            const appId = overview.appid;
-
                             const children = container.props.children;
                             const child = children.find((c: any) =>
                                 c?.props?.className?.includes(
@@ -193,7 +191,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                             }
 
                                             console.log('ret4', ret4);
-                                            // checkCachedArg('_4', _4);
 
                                             ret4.key = 'ret4';
 
@@ -210,7 +207,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                 'type',
                                                 (_5, ret5) => {
                                                     console.log('ret5', ret5);
-                                                    // checkCachedArg('_5', _5);
 
                                                     ret5.key = 'ret5';
 
@@ -222,10 +218,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 'ret6',
                                                                 ret6,
                                                             );
-                                                            // checkCachedArg(
-                                                            //     '_6',
-                                                            //     _6,
-                                                            // );
 
                                                             ret6.key = 'ret6';
 
@@ -251,6 +243,9 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                             ret6Child.key =
                                                                 'ret6child';
 
+                                                            wrapReactType(
+                                                                ret6Child,
+                                                            );
                                                             const p7 =
                                                                 afterPatch(
                                                                     ret6Child.type,
@@ -286,26 +281,36 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                             ret7Child,
                                                                         );
 
-                                                                        afterPatch(
-                                                                            ret7Child.type,
-                                                                            'render',
-                                                                            (
-                                                                                _8,
-                                                                                ret8,
-                                                                            ) => {
-                                                                                console.log(
-                                                                                    'ret8',
+                                                                        wrapReactType(
+                                                                            ret7Child,
+                                                                        );
+
+                                                                        const p8 =
+                                                                            afterPatch(
+                                                                                ret7Child.type,
+                                                                                'render',
+                                                                                (
+                                                                                    _8,
                                                                                     ret8,
-                                                                                );
-                                                                                ret8.key =
-                                                                                    'ret8';
-                                                                                patchFinalElement(
-                                                                                    ret8,
-                                                                                    overview,
-                                                                                    appDetailsState,
-                                                                                );
-                                                                                return ret8;
-                                                                            },
+                                                                                ) => {
+                                                                                    console.log(
+                                                                                        'ret8',
+                                                                                        ret8,
+                                                                                    );
+                                                                                    ret8.key =
+                                                                                        'ret8';
+                                                                                    patchFinalElement(
+                                                                                        ret8,
+                                                                                        overview,
+                                                                                        appDetailsState,
+                                                                                    );
+                                                                                    return ret8;
+                                                                                },
+                                                                            );
+
+                                                                        console.log(
+                                                                            'p8',
+                                                                            p8,
                                                                         );
 
                                                                         return ret7;
@@ -315,93 +320,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                             console.log(
                                                                 'p7',
                                                                 p7,
-                                                            );
-
-                                                            return ret6;
-
-                                                            wrapReactType(ret6);
-                                                            const p8 =
-                                                                afterPatch(
-                                                                    ret6.type,
-                                                                    'render',
-                                                                    (
-                                                                        _7,
-                                                                        ret7,
-                                                                    ) => {
-                                                                        console.log(
-                                                                            'ret7',
-                                                                            ret7,
-                                                                        );
-                                                                        ret7.key =
-                                                                            'ret7';
-
-                                                                        const child =
-                                                                            findInReactTree(
-                                                                                ret7,
-                                                                                (
-                                                                                    x,
-                                                                                ) =>
-                                                                                    x
-                                                                                        ?.type
-                                                                                        ?.render &&
-                                                                                    x
-                                                                                        ?.props
-                                                                                        ?.overview,
-                                                                            );
-                                                                        console.log(
-                                                                            'ret7 child',
-                                                                            child,
-                                                                        );
-
-                                                                        return ret7;
-
-                                                                        if (
-                                                                            !child
-                                                                        ) {
-                                                                            return ret7;
-                                                                        }
-
-                                                                        child.key =
-                                                                            'ret7 child';
-
-                                                                        wrapReactType(
-                                                                            child,
-                                                                        );
-                                                                        afterPatch(
-                                                                            child.type,
-                                                                            'render',
-                                                                            (
-                                                                                _8,
-                                                                                ret8,
-                                                                            ) => {
-                                                                                console.log(
-                                                                                    'ret8',
-                                                                                    ret8,
-                                                                                );
-                                                                                ret8.key =
-                                                                                    'ret8';
-
-                                                                                const overview =
-                                                                                    appStore.GetAppOverviewByAppID(
-                                                                                        appId,
-                                                                                    );
-
-                                                                                patchFinalElement(
-                                                                                    ret8,
-                                                                                    overview,
-                                                                                    appDetailsState,
-                                                                                );
-
-                                                                                return ret8;
-                                                                            },
-                                                                        );
-
-                                                                        return ret7;
-                                                                    },
-                                                                );
-                                                            console.log(
-                                                                'p8',
-                                                                p8,
                                                             );
 
                                                             return ret6;
@@ -582,3 +500,71 @@ function patchFinalElement(
 }
 
 export default patchLibraryApp;
+
+/*
+
+      function pe(e) {
+            const t = (0,
+            C.iE)()
+              , [r,n] = (0,
+            ae.SP)("AppDetailsTabsActive", !1)
+              , i = A.useRef()
+              , a = A.useRef()
+              , s = A.useRef(!0)
+              , o = (0,
+            u.q3)(( () => B.TS.ON_DECK && 0 == oe.rV.storePreferences.provide_deck_feedback))
+              , l = (0,
+            u.q3)(( () => me.yX.BShouldPromptForDeckCompatibilityFeedback(e.overview.appid)))
+              , c = A.useCallback(( () => {
+                n(!1),
+                t?.ScrollToTop()
+            }
+            ), [t, n])
+              , m = A.useCallback(( () => {
+                a.current.FocusActionButton()
+            }
+            ), [])
+              , d = A.useCallback((e => {
+                e && n(e)
+            }
+            ), [n]);
+            return A.useEffect(( () => {
+                const e = s.current;
+                s.current = !1;
+                let n = i.current;
+                if (!r || !t || !n)
+                    return;
+                const a = function(e) {
+                    let r = n.getBoundingClientRect().top + t.scrollTop - parseInt(O().headerPadding);
+                    t.ScrollTo(r, e)
+                };
+                e ? window.setTimeout(( () => a("auto")), 1) : a("smooth")
+            }
+            ), [t, i, r]),
+            A.createElement(_.Z, {
+                className: O().AppDetailsRoot
+            }, A.createElement(be, {
+                ...e,
+                onNav: c,
+                ref: a
+            }), A.createElement(Q.sD, {
+                ...e,
+                onFocus: c
+            }), A.createElement(_.Z, {
+                onFocusWithin: c
+            }, o && A.createElement(ge, null), !o && l && A.createElement(he, {
+                ...e
+            })), A.createElement(_.Z, {
+                ref: i,
+                className: O().AppDetailsContainer,
+                onFocusWithin: d
+            }, A.createElement(_e, {
+                fnOnCancelFromTabHeader: m,
+                details: e.details,
+                overview: e.overview,
+                setSections: e.setSections,
+                bSuppressTransition: e.bSuppressTransition,
+                parentComponent: e.parentComponent
+            })))
+        }
+*/
