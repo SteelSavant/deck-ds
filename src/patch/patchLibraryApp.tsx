@@ -226,7 +226,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                             ) {
                                                                 _6[i] =
                                                                     checkCachedArg(
-                                                                        `_6.{i}`,
+                                                                        `_6.${i}`,
                                                                         _6[i],
                                                                     );
                                                             }
@@ -252,9 +252,20 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 return ret6;
                                                             }
 
+                                                            console.log(
+                                                                'ret6 child ref',
+                                                                ret6Child.ref,
+                                                            );
                                                             checkCachedArg(
                                                                 'ret6 child ref',
                                                                 ret6Child.ref,
+                                                            );
+
+                                                            console.log(
+                                                                'ret6 other ref',
+                                                                ret6.props
+                                                                    .children[3]
+                                                                    .ref,
                                                             );
 
                                                             ret6Child.key =

@@ -1,5 +1,17 @@
 import React from 'react';
 
+const be = React.forwardRef((function(e, t) {
+            const {onNav: onNav, ...n} = e;
+            return A.createElement(_.Z, {
+                className: O().PlaySection,
+                onFocusWithin: e => e && onNav()
+            }, A.createElement(ye, {
+                ...n,
+                ref: t
+            }), A.createElement(Q.BA, {
+                ...n
+            }))
+
 function pe(props: any) {
     const maybeScrollController = (0, C.iE)(),
         [appDetailsTabIsActive, setAppDetailsTabIsActive] = (0, ae.SP)(
@@ -12,7 +24,7 @@ function pe(props: any) {
         o = (0, u.q3)(
             () =>
                 B.TS.ON_DECK &&
-                0 == oe.rV.storePreferences.provide_deck_feedback,
+                false == oe.rV.storePreferences.provide_deck_feedback,
         ),
         l = (0, u.q3)(() =>
             me.yX.BShouldPromptForDeckCompatibilityFeedback(
@@ -23,10 +35,10 @@ function pe(props: any) {
             setAppDetailsTabIsActive(false),
                 maybeScrollController?.ScrollToTop();
         }, [maybeScrollController, setAppDetailsTabIsActive]),
-        foucusCallback = React.useCallback(() => {
+        focusCallback = React.useCallback(() => {
             componentRef2.current!.FocusActionButton();
         }, []),
-        checkCallback = React.useCallback(
+        setAppDetailsActiveCallback = React.useCallback(
             (e) => {
                 e && setAppDetailsTabIsActive(e);
             },
@@ -53,6 +65,7 @@ function pe(props: any) {
                 className: O().AppDetailsRoot,
             },
             React.createElement(be, {
+                // This is the elenent we're trying to traverse
                 ...props,
                 onNav: scrollCallback,
                 ref: componentRef2,
@@ -78,10 +91,10 @@ function pe(props: any) {
                 {
                     ref: componentRef1,
                     className: O().AppDetailsContainer,
-                    onFocusWithin: checkCallback,
+                    onFocusWithin: setAppDetailsActiveCallback,
                 },
                 React.createElement(_e, {
-                    fnOnCancelFromTabHeader: foucusCallback,
+                    fnOnCancelFromTabHeader: focusCallback,
                     details: props.details,
                     overview: props.overview,
                     setSections: props.setSections,
