@@ -3,6 +3,7 @@ import {
     afterPatch,
     appDetailsClasses,
     basicAppDetailsSectionStylerClasses,
+    beforePatch,
     findInReactTree,
     wrapReactClass,
     wrapReactType,
@@ -273,6 +274,21 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                                             wrapReactType(
                                                                 ret6Child,
+                                                            );
+
+                                                            beforePatch(
+                                                                ret6Child.type,
+                                                                'render',
+                                                                (args) => {
+                                                                    console.log(
+                                                                        'ret6child args',
+                                                                        args,
+                                                                    );
+
+                                                                    // This helps, but isn't enough
+                                                                    args[0].onNav =
+                                                                        () => {};
+                                                                },
                                                             );
                                                             const p7 =
                                                                 afterPatch(
