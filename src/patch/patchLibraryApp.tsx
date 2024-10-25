@@ -19,6 +19,8 @@ import SecondaryPlayButton from './components/SecondaryPlayButton';
 
 let cachedPlayButton: ReactElement | null = null;
 let argCache: any = {};
+let lastOnNavTime = 0;
+const onNavDebounceTime = 1000;
 
 function deepCompareKeys(obj1: any, obj2: any, cache: Set<any>) {
     if (cache.has(obj1) || cache.has(obj2)) {
@@ -234,6 +236,22 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                                             ret6.key = 'ret6';
 
+                                                            const status =
+                                                                overview.per_client_data.find(
+                                                                    (d: any) =>
+                                                                        d.clientid ===
+                                                                        overview.selected_clientid,
+                                                                );
+
+                                                            const streaming =
+                                                                status.clientid !==
+                                                                '0';
+                                                            const installed: boolean =
+                                                                !streaming &&
+                                                                status.status_percentage ==
+                                                                    100 &&
+                                                                status.installed;
+
                                                             const ret6Child =
                                                                 findInReactTree(
                                                                     ret6,
@@ -249,7 +267,10 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 ret6Child,
                                                             );
 
-                                                            if (!ret6Child) {
+                                                            if (
+                                                                !ret6Child ||
+                                                                !installed
+                                                            ) {
                                                                 return ret6;
                                                             }
 
@@ -285,9 +306,32 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                         args,
                                                                     );
 
-                                                                    // This helps, but isn't enough
+                                                                    const onNav =
+                                                                        args[0]
+                                                                            .onNav;
                                                                     args[0].onNav =
-                                                                        () => {};
+                                                                        (
+                                                                            ...args: any
+                                                                        ) => {
+                                                                            if (
+                                                                                Date.now() -
+                                                                                    lastOnNavTime >
+                                                                                onNavDebounceTime
+                                                                            ) {
+                                                                                console.log(
+                                                                                    'calling onNav',
+                                                                                );
+                                                                                lastOnNavTime =
+                                                                                    Date.now();
+                                                                                onNav(
+                                                                                    ...args,
+                                                                                );
+                                                                            } else {
+                                                                                console.log(
+                                                                                    'calling onNav placeholder',
+                                                                                );
+                                                                            }
+                                                                        };
                                                                 },
                                                             );
                                                             const p7 =
@@ -348,6 +392,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                                         overview,
                                                                                         appDetailsState,
                                                                                     );
+
                                                                                     return ret8;
                                                                                 },
                                                                             );
