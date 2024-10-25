@@ -219,6 +219,18 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 ret6,
                                                             );
 
+                                                            for (
+                                                                let i = 0;
+                                                                i < _6.length;
+                                                                i++
+                                                            ) {
+                                                                _6[i] =
+                                                                    checkCachedArg(
+                                                                        `_6.{i}`,
+                                                                        _6[i],
+                                                                    );
+                                                            }
+
                                                             ret6.key = 'ret6';
 
                                                             const ret6Child =
@@ -239,6 +251,11 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                             if (!ret6Child) {
                                                                 return ret6;
                                                             }
+
+                                                            checkCachedArg(
+                                                                'ret6 child ref',
+                                                                ret6Child.ref,
+                                                            );
 
                                                             ret6Child.key =
                                                                 'ret6child';
@@ -500,71 +517,3 @@ function patchFinalElement(
 }
 
 export default patchLibraryApp;
-
-/*
-
-      function pe(e) {
-            const t = (0,
-            C.iE)()
-              , [r,n] = (0,
-            ae.SP)("AppDetailsTabsActive", !1)
-              , i = A.useRef()
-              , a = A.useRef()
-              , s = A.useRef(!0)
-              , o = (0,
-            u.q3)(( () => B.TS.ON_DECK && 0 == oe.rV.storePreferences.provide_deck_feedback))
-              , l = (0,
-            u.q3)(( () => me.yX.BShouldPromptForDeckCompatibilityFeedback(e.overview.appid)))
-              , c = A.useCallback(( () => {
-                n(!1),
-                t?.ScrollToTop()
-            }
-            ), [t, n])
-              , m = A.useCallback(( () => {
-                a.current.FocusActionButton()
-            }
-            ), [])
-              , d = A.useCallback((e => {
-                e && n(e)
-            }
-            ), [n]);
-            return A.useEffect(( () => {
-                const e = s.current;
-                s.current = !1;
-                let n = i.current;
-                if (!r || !t || !n)
-                    return;
-                const a = function(e) {
-                    let r = n.getBoundingClientRect().top + t.scrollTop - parseInt(O().headerPadding);
-                    t.ScrollTo(r, e)
-                };
-                e ? window.setTimeout(( () => a("auto")), 1) : a("smooth")
-            }
-            ), [t, i, r]),
-            A.createElement(_.Z, {
-                className: O().AppDetailsRoot
-            }, A.createElement(be, {
-                ...e,
-                onNav: c,
-                ref: a
-            }), A.createElement(Q.sD, {
-                ...e,
-                onFocus: c
-            }), A.createElement(_.Z, {
-                onFocusWithin: c
-            }, o && A.createElement(ge, null), !o && l && A.createElement(he, {
-                ...e
-            })), A.createElement(_.Z, {
-                ref: i,
-                className: O().AppDetailsContainer,
-                onFocusWithin: d
-            }, A.createElement(_e, {
-                fnOnCancelFromTabHeader: m,
-                details: e.details,
-                overview: e.overview,
-                setSections: e.setSections,
-                bSuppressTransition: e.bSuppressTransition,
-                parentComponent: e.parentComponent
-            })))
-        }
-*/
