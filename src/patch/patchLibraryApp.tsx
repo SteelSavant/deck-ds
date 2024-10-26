@@ -4,7 +4,9 @@ import {
     appDetailsClasses,
     basicAppDetailsSectionStylerClasses,
     beforePatch,
+    callOriginal,
     findInReactTree,
+    replacePatch,
     wrapReactClass,
     wrapReactType,
 } from '@decky/ui';
@@ -119,7 +121,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                             _2: Record<string, unknown>[],
                             ret2?: ReactElement,
                         ) => {
-                            let hasWrappedRet6Child = false;
                             const container = findInReactTree(
                                 ret2,
                                 (x: ReactElement) =>
@@ -221,7 +222,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                     100 &&
                                                                 status.installed;
 
-                                                            const ret6Child =
+                                                            const playSection =
                                                                 findInReactTree(
                                                                     ret6,
                                                                     (x) =>
@@ -231,30 +232,80 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                             ?.render,
                                                                 );
 
+                                                            const appDetailsSection =
+                                                                findInReactTree(
+                                                                    ret6,
+                                                                    (x) =>
+                                                                        x?.props?.className?.includes(
+                                                                            basicAppDetailsSectionStylerClasses.AppDetailsContainer,
+                                                                        ) &&
+                                                                        x?.type
+                                                                            ?.render,
+                                                                );
+
                                                             console.log(
                                                                 'ret6 child',
-                                                                ret6Child,
+                                                                playSection,
                                                             );
 
                                                             if (
-                                                                !ret6Child ||
+                                                                !playSection ||
                                                                 !installed
                                                             ) {
                                                                 return ret6;
                                                             }
 
-                                                            hasWrappedRet6Child =
-                                                                true;
-
-                                                            ret6Child.key =
+                                                            playSection.key =
                                                                 'ret6child';
-
                                                             wrapReactType(
-                                                                ret6Child,
+                                                                appDetailsSection,
+                                                            );
+                                                            replacePatch(
+                                                                appDetailsSection.type,
+                                                                'render',
+                                                                (args) => {
+                                                                    console.log(
+                                                                        'ret6 last child args',
+                                                                        args,
+                                                                    );
+                                                                    const arg =
+                                                                        args.find(
+                                                                            (
+                                                                                a,
+                                                                            ) =>
+                                                                                a?.onFocusWithin,
+                                                                        );
+                                                                    if (arg) {
+                                                                        const onFocusWithin =
+                                                                            arg.onFocusWithin;
+                                                                        arg.onFocusWithin =
+                                                                            (
+                                                                                ...args: any
+                                                                            ) => {
+                                                                                for (const duration of [
+                                                                                    2000,
+                                                                                ])
+                                                                                    setTimeout(
+                                                                                        () => {
+                                                                                            lastOnNavTime =
+                                                                                                Date.now();
+                                                                                            onFocusWithin(
+                                                                                                ...args,
+                                                                                            );
+                                                                                        },
+                                                                                        duration,
+                                                                                    );
+                                                                            };
+                                                                    }
+                                                                    return callOriginal;
+                                                                },
                                                             );
 
+                                                            wrapReactType(
+                                                                playSection,
+                                                            );
                                                             beforePatch(
-                                                                ret6Child.type,
+                                                                playSection.type,
                                                                 'render',
                                                                 (args) => {
                                                                     console.log(
@@ -269,10 +320,15 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                         (
                                                                             ...args: any
                                                                         ) => {
+                                                                            const elapsed =
+                                                                                Date.now() -
+                                                                                lastOnNavTime;
                                                                             if (
-                                                                                !installed ||
-                                                                                ret6incr ===
-                                                                                    0
+                                                                                (!installed ||
+                                                                                    ret6incr ===
+                                                                                        0) &&
+                                                                                elapsed >
+                                                                                    onNavDebounceTime
                                                                             ) {
                                                                                 console.log(
                                                                                     'calling onNav',
@@ -295,7 +351,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                             );
 
                                                             afterPatch(
-                                                                ret6Child.type,
+                                                                playSection.type,
                                                                 'render',
                                                                 (_7, ret7) => {
                                                                     console.log(
