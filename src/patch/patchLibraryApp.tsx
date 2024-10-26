@@ -19,7 +19,7 @@ import SecondaryPlayButton from './components/SecondaryPlayButton';
 let cachedPlayButton: ReactElement | null = null;
 let argCache: any = {};
 let lastOnNavTime = 0;
-const onNavDebounceTime = 2000;
+const onNavDebounceTime = 5000;
 
 function deepCompareKeys(obj1: any, obj2: any, cache: Set<any>) {
     if (cache.has(obj1) || cache.has(obj2)) {
@@ -119,6 +119,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                             _2: Record<string, unknown>[],
                             ret2?: ReactElement,
                         ) => {
+                            let hasWrappedRet6Child = false;
                             const container = findInReactTree(
                                 ret2,
                                 (x: ReactElement) =>
@@ -191,6 +192,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                     console.log('ret5', ret5);
 
                                                     ret5.key = 'ret5';
+                                                    let ret6incr = 0;
 
                                                     afterPatch(
                                                         ret5,
@@ -228,11 +230,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                         x?.type
                                                                             ?.render,
                                                                 );
-                                                            const isSameArgs =
-                                                                checkCachedArg(
-                                                                    'ret6',
-                                                                    _6,
-                                                                );
 
                                                             console.log(
                                                                 'ret6 child',
@@ -245,6 +242,9 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                             ) {
                                                                 return ret6;
                                                             }
+
+                                                            hasWrappedRet6Child =
+                                                                true;
 
                                                             ret6Child.key =
                                                                 'ret6child';
@@ -270,22 +270,25 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                             ...args: any
                                                                         ) => {
                                                                             if (
-                                                                                !installed ||
-                                                                                !isSameArgs
+                                                                                ret6incr ===
+                                                                                0
                                                                             ) {
                                                                                 console.log(
                                                                                     'calling onNav',
+                                                                                    ret6incr,
                                                                                 );
-                                                                                lastOnNavTime =
-                                                                                    Date.now();
                                                                                 onNav(
                                                                                     ...args,
                                                                                 );
                                                                             } else {
                                                                                 console.log(
-                                                                                    'calling onNav placeholder',
+                                                                                    'calling onNav debounce',
+                                                                                    ret6incr,
                                                                                 );
                                                                             }
+
+                                                                            ret6incr += 1;
+                                                                            ret6incr %= 3;
                                                                         };
                                                                 },
                                                             );
@@ -332,8 +335,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                             _8,
                                                                             ret8,
                                                                         ) => {
-                                                                            return ret8;
-
                                                                             console.log(
                                                                                 'ret8',
                                                                                 ret8,
