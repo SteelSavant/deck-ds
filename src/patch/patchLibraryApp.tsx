@@ -192,12 +192,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                                     ret5.key = 'ret5';
 
-                                                    beforePatch(
-                                                        ret5,
-                                                        'type',
-                                                        (args) => {},
-                                                    );
-
                                                     afterPatch(
                                                         ret5,
                                                         'type',
