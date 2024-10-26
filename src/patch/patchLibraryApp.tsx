@@ -4,9 +4,7 @@ import {
     appDetailsClasses,
     basicAppDetailsSectionStylerClasses,
     beforePatch,
-    callOriginal,
     findInReactTree,
-    replacePatch,
     wrapReactClass,
     wrapReactType,
 } from '@decky/ui';
@@ -130,10 +128,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                     ),
                             );
 
-                            const overview =
-                                ret.props?.children?.props?.overview;
-
-                            if (typeof container !== 'object' || !overview) {
+                            if (typeof container !== 'object') {
                                 return ret2;
                             }
 
@@ -206,22 +201,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                                             ret6.key = 'ret6';
 
-                                                            const status =
-                                                                overview.per_client_data.find(
-                                                                    (d: any) =>
-                                                                        d.clientid ===
-                                                                        overview.selected_clientid,
-                                                                );
-
-                                                            const streaming =
-                                                                status.clientid !==
-                                                                '0';
-                                                            const installed: boolean =
-                                                                !streaming &&
-                                                                status.status_percentage ==
-                                                                    100 &&
-                                                                status.installed;
-
                                                             const playSection =
                                                                 findInReactTree(
                                                                     ret6,
@@ -246,7 +225,29 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                             console.log(
                                                                 'ret6 child',
                                                                 playSection,
+                                                                appDetailsSection,
                                                             );
+
+                                                            const overview =
+                                                                playSection
+                                                                    ?.props
+                                                                    ?.overview;
+
+                                                            const status =
+                                                                overview.per_client_data.find(
+                                                                    (d: any) =>
+                                                                        d.clientid ===
+                                                                        overview.selected_clientid,
+                                                                );
+
+                                                            const streaming =
+                                                                status.clientid !==
+                                                                '0';
+                                                            const installed: boolean =
+                                                                !streaming &&
+                                                                status.status_percentage ==
+                                                                    100 &&
+                                                                status.installed;
 
                                                             if (
                                                                 !playSection ||
@@ -255,100 +256,130 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 return ret6;
                                                             }
 
+                                                            console.log(
+                                                                'have play section, and installed',
+                                                                overview,
+                                                                status,
+                                                                installed,
+                                                            );
+
                                                             playSection.key =
                                                                 'ret6child';
                                                             wrapReactType(
                                                                 appDetailsSection,
                                                             );
-                                                            replacePatch(
-                                                                appDetailsSection.type,
-                                                                'render',
-                                                                (args) => {
+                                                            afterPatch(
+                                                                appDetailsSection.props,
+                                                                'onFocusWithin',
+                                                                (
+                                                                    _focusArgs,
+                                                                    onFocusWithin,
+                                                                ) => {
                                                                     console.log(
-                                                                        'ret6 last child args',
-                                                                        args,
+                                                                        'ret6 last child focuswithin',
+                                                                        _focusArgs,
+                                                                        onFocusWithin,
                                                                     );
-                                                                    const arg =
-                                                                        args.find(
-                                                                            (
-                                                                                a,
-                                                                            ) =>
-                                                                                a?.onFocusWithin,
+
+                                                                    return () => {
+                                                                        lastOnNavTime =
+                                                                            Date.now();
+                                                                        console.log(
+                                                                            'delaying focus within...',
                                                                         );
-                                                                    if (arg) {
-                                                                        const onFocusWithin =
-                                                                            arg.onFocusWithin;
-                                                                        arg.onFocusWithin =
-                                                                            (
-                                                                                ...args: any
-                                                                            ) => {
-                                                                                for (const duration of [
-                                                                                    2000,
-                                                                                ])
-                                                                                    setTimeout(
-                                                                                        () => {
-                                                                                            lastOnNavTime =
-                                                                                                Date.now();
-                                                                                            onFocusWithin(
-                                                                                                ...args,
-                                                                                            );
-                                                                                        },
-                                                                                        duration,
+                                                                        for (const duration of [
+                                                                            2000,
+                                                                        ])
+                                                                            setTimeout(
+                                                                                () => {
+                                                                                    console.log(
+                                                                                        'handling focus within...',
                                                                                     );
-                                                                            };
-                                                                    }
-                                                                    return callOriginal;
+                                                                                    lastOnNavTime =
+                                                                                        Date.now();
+                                                                                    onFocusWithin(
+                                                                                        ..._focusArgs,
+                                                                                    );
+                                                                                },
+                                                                                duration,
+                                                                            );
+                                                                    };
                                                                 },
                                                             );
 
                                                             wrapReactType(
                                                                 playSection,
                                                             );
-                                                            beforePatch(
-                                                                playSection.type,
-                                                                'render',
-                                                                (args) => {
-                                                                    console.log(
-                                                                        'ret6child args',
-                                                                        args,
-                                                                    );
+                                                            const onNavPatch =
+                                                                beforePatch(
+                                                                    playSection.type,
+                                                                    'render',
+                                                                    (args) => {
+                                                                        console.log(
+                                                                            'ret6child args',
+                                                                            args,
+                                                                        );
+                                                                        const arg =
+                                                                            args.find(
+                                                                                (
+                                                                                    a,
+                                                                                ) =>
+                                                                                    a?.onNav,
+                                                                            );
+                                                                        if (
+                                                                            arg
+                                                                        ) {
+                                                                            const onNav =
+                                                                                arg.onNav;
+                                                                            arg.onNav =
+                                                                                (
+                                                                                    ...args: any
+                                                                                ) => {
+                                                                                    const elapsed =
+                                                                                        Date.now() -
+                                                                                        lastOnNavTime;
+                                                                                    if (
+                                                                                        (!installed ||
+                                                                                            ret6incr ===
+                                                                                                0) &&
+                                                                                        elapsed >
+                                                                                            onNavDebounceTime
+                                                                                    ) {
+                                                                                        console.log(
+                                                                                            'calling onNav',
+                                                                                            ret6incr,
+                                                                                        );
+                                                                                        onNav(
+                                                                                            ...args,
+                                                                                        );
+                                                                                    } else {
+                                                                                        console.log(
+                                                                                            'calling onNav debounce',
+                                                                                            ret6incr,
+                                                                                        );
+                                                                                    }
 
-                                                                    const onNav =
-                                                                        args[0]
-                                                                            .onNav;
-                                                                    args[0].onNav =
-                                                                        (
-                                                                            ...args: any
-                                                                        ) => {
-                                                                            const elapsed =
-                                                                                Date.now() -
-                                                                                lastOnNavTime;
-                                                                            if (
-                                                                                (!installed ||
-                                                                                    ret6incr ===
-                                                                                        0) &&
-                                                                                elapsed >
-                                                                                    onNavDebounceTime
-                                                                            ) {
-                                                                                console.log(
-                                                                                    'calling onNav',
-                                                                                    ret6incr,
-                                                                                );
-                                                                                onNav(
-                                                                                    ...args,
-                                                                                );
-                                                                            } else {
-                                                                                console.log(
-                                                                                    'calling onNav debounce',
-                                                                                    ret6incr,
-                                                                                );
-                                                                            }
-
-                                                                            ret6incr += 1;
-                                                                            ret6incr %= 3;
-                                                                        };
-                                                                },
-                                                            );
+                                                                                    ret6incr += 1;
+                                                                                    ret6incr %= 3;
+                                                                                };
+                                                                            const unpatch =
+                                                                                onNavPatch.unpatch;
+                                                                            onNavPatch.unpatch =
+                                                                                () => {
+                                                                                    console.log(
+                                                                                        'undoing onNavPatch assignment',
+                                                                                    );
+                                                                                    arg.onNav =
+                                                                                        onNav;
+                                                                                    unpatch();
+                                                                                };
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        singleShot:
+                                                                            true,
+                                                                    },
+                                                                );
 
                                                             afterPatch(
                                                                 playSection.type,
