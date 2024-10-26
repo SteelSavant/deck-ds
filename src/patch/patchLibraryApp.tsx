@@ -286,105 +286,105 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                             playSection.key =
                                                                 'ret6child';
 
-                                                            // for (const v of [
-                                                            //     [0, 'onNav'],
-                                                            //     [1, 'onFocus'],
-                                                            //     [
-                                                            //         2,
-                                                            //         'onFocusWithin',
-                                                            //     ],
-                                                            //     [
-                                                            //         3,
-                                                            //         'onFocusWithin',
-                                                            //     ],
-                                                            // ]) {
-                                                            //     const child =
-                                                            //         ret6.props
-                                                            //             .children[
-                                                            //             v[0]
-                                                            //         ];
+                                                            for (const v of [
+                                                                [0, 'onNav'],
+                                                                [1, 'onFocus'],
+                                                                [
+                                                                    2,
+                                                                    'onFocusWithin',
+                                                                ],
+                                                                [
+                                                                    3,
+                                                                    'onFocusWithin',
+                                                                ],
+                                                            ]) {
+                                                                const child =
+                                                                    ret6.props
+                                                                        .children[
+                                                                        v[0]
+                                                                    ];
 
-                                                            //     const onFocusWithin =
-                                                            //         child.props[
-                                                            //             v[1]
-                                                            //         ];
-                                                            //     // wrapReactType(
-                                                            //     //     child,
-                                                            //     // );
-                                                            //     replacePatch(
-                                                            //         child.props,
-                                                            //         v[1] as string,
-                                                            //         (
-                                                            //             _focusArgs,
-                                                            //         ) => {
-                                                            //             console.log(
-                                                            //                 'ret6 focuswithin',
-                                                            //                 v[0],
-                                                            //                 v[1],
-                                                            //                 _focusArgs,
-                                                            //                 onFocusWithin,
-                                                            //             );
+                                                                const onFocusWithin =
+                                                                    child.props[
+                                                                        v[1]
+                                                                    ];
+                                                                // wrapReactType(
+                                                                //     child,
+                                                                // );
+                                                                replacePatch(
+                                                                    child.props,
+                                                                    v[1] as string,
+                                                                    (
+                                                                        _focusArgs,
+                                                                    ) => {
+                                                                        console.log(
+                                                                            'ret6 focuswithin',
+                                                                            v[0],
+                                                                            v[1],
+                                                                            _focusArgs,
+                                                                            onFocusWithin,
+                                                                        );
 
-                                                            //             return;
+                                                                        return;
 
-                                                            //             lastOnNavTime =
-                                                            //                 Date.now();
+                                                                        lastOnNavTime =
+                                                                            Date.now();
 
-                                                            //             console.log(
-                                                            //                 'handling focus within...',
-                                                            //             );
+                                                                        console.log(
+                                                                            'handling focus within...',
+                                                                        );
 
-                                                            //             onFocusWithin(
-                                                            //                 ..._focusArgs,
-                                                            //             );
-                                                            //         },
-                                                            //     );
-                                                            // }
+                                                                        onFocusWithin(
+                                                                            ..._focusArgs,
+                                                                        );
+                                                                    },
+                                                                );
+                                                            }
 
                                                             wrapReactType(
                                                                 playSection,
                                                             );
-                                                            const onNav =
-                                                                playSection
-                                                                    .props
-                                                                    .onNav;
-                                                            replacePatch(
-                                                                playSection.props,
-                                                                'onNav',
-                                                                (args) => {
-                                                                    console.log(
-                                                                        'ret6child onnav',
-                                                                        args,
-                                                                    );
+                                                            // const onNav =
+                                                            //     playSection
+                                                            //         .props
+                                                            //         .onNav;
+                                                            // replacePatch(
+                                                            //     playSection.props,
+                                                            //     'onNav',
+                                                            //     (args) => {
+                                                            //         console.log(
+                                                            //             'ret6child onnav',
+                                                            //             args,
+                                                            //         );
 
-                                                                    const elapsed =
-                                                                        Date.now() -
-                                                                        lastOnNavTime;
-                                                                    if (
-                                                                        (!installed ||
-                                                                            ret6incr ===
-                                                                                0) &&
-                                                                        elapsed >
-                                                                            onNavDebounceTime
-                                                                    ) {
-                                                                        console.log(
-                                                                            'calling onNav',
-                                                                            ret6incr,
-                                                                        );
-                                                                        onNav(
-                                                                            ...args,
-                                                                        );
-                                                                    } else {
-                                                                        console.log(
-                                                                            'calling onNav debounce',
-                                                                            ret6incr,
-                                                                        );
-                                                                    }
+                                                            //         const elapsed =
+                                                            //             Date.now() -
+                                                            //             lastOnNavTime;
+                                                            //         if (
+                                                            //             (!installed ||
+                                                            //                 ret6incr ===
+                                                            //                     0) &&
+                                                            //             elapsed >
+                                                            //                 onNavDebounceTime
+                                                            //         ) {
+                                                            //             console.log(
+                                                            //                 'calling onNav',
+                                                            //                 ret6incr,
+                                                            //             );
+                                                            //             onNav(
+                                                            //                 ...args,
+                                                            //             );
+                                                            //         } else {
+                                                            //             console.log(
+                                                            //                 'calling onNav debounce',
+                                                            //                 ret6incr,
+                                                            //             );
+                                                            //         }
 
-                                                                    ret6incr += 1;
-                                                                    ret6incr %= 3;
-                                                                },
-                                                            );
+                                                            //         ret6incr += 1;
+                                                            //         ret6incr %= 3;
+                                                            //     },
+                                                            // );
 
                                                             afterPatch(
                                                                 playSection.type,
@@ -559,6 +559,14 @@ function patchFinalElement(
         wrapReactType(playButton);
         afterPatch(playButton.type, 'render', (_play, retPlayButton) => {
             console.log('retPlayButton', retPlayButton);
+            const ref = retPlayButton.ref;
+            if (ref) {
+                ref.current = null;
+
+                setTimeout(() => {
+                    ref.current = null;
+                }, 100);
+            }
 
             wrapReactClass(retPlayButton);
             afterPatch(
