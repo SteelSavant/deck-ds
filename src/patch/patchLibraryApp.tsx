@@ -13,14 +13,13 @@ import {
     ShortAppDetailsState,
     ShortAppDetailsStateContextProvider,
 } from '../context/appContext';
-import { debugPrintStyles } from '../util/debugPrint';
 import PrimaryPlayButton from './components/PrimaryPlayButton';
 import SecondaryPlayButton from './components/SecondaryPlayButton';
 
 let cachedPlayButton: ReactElement | null = null;
 let argCache: any = {};
 let lastOnNavTime = 0;
-const onNavDebounceTime = 1000;
+const onNavDebounceTime = 2000;
 
 function deepCompareKeys(obj1: any, obj2: any, cache: Set<any>) {
     if (cache.has(obj1) || cache.has(obj2)) {
@@ -83,18 +82,17 @@ function deepCompareKeys(obj1: any, obj2: any, cache: Set<any>) {
 }
 
 function checkCachedArg(name: string, args: any) {
+    let ret = true;
     if (argCache[name] !== args) {
         console.log(name, argCache[name], 'vs', args);
-        if (Array.isArray(args)) {
-            console.log('array is different array');
-        }
         if (deepCompareKeys(argCache[name], args, new Set())) {
             console.log(name, 'are actually the same though...');
-            return argCache[name];
+        } else {
+            ret = false;
         }
     }
     argCache[name] = args;
-    return args;
+    return ret;
 }
 
 function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
@@ -105,30 +103,22 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                 return props;
             }
 
-            console.log('props', props);
-
-            const p1 = afterPatch(
+            afterPatch(
                 props.children.props,
                 'renderFunc',
                 (_1: Record<string, unknown>[], ret?: ReactElement) => {
                     if (!ret?.props?.children?.type?.type) {
                         return ret;
                     }
-                    debugPrintStyles();
-
-                    console.log('ret', ret);
-                    // checkCachedArg('_1', _1);
 
                     wrapReactType(ret.props.children);
-                    const p2 = afterPatch(
+                    afterPatch(
                         ret.props.children.type,
                         'type',
                         (
                             _2: Record<string, unknown>[],
                             ret2?: ReactElement,
                         ) => {
-                            // checkCachedArg('_2', _2);
-
                             const container = findInReactTree(
                                 ret2,
                                 (x: ReactElement) =>
@@ -145,9 +135,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                 return ret2;
                             }
 
-                            console.log('ret2', ret2);
-                            console.log('ret2 container', container);
-
                             const children = container.props.children;
                             const child = children.find((c: any) =>
                                 c?.props?.className?.includes(
@@ -155,10 +142,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                 ),
                             );
 
-                            console.log('ret2 child', child);
-
                             wrapReactType(child);
-                            const p3 = afterPatch(
+                            afterPatch(
                                 child.type,
                                 'render',
                                 (
@@ -169,20 +154,17 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                         return ret3;
                                     }
 
-                                    console.log('ret3', ret3);
                                     ret3.key = 'ret3';
-                                    // checkCachedArg('_3', _3);
 
                                     const child = findInReactTree(
                                         ret3,
                                         (x: ReactElement) => x?.props?.overview,
                                     );
 
-                                    console.log('ret3 child', child);
                                     child.key = 'ret3_child';
 
                                     wrapReactClass(child);
-                                    const p4 = afterPatch(
+                                    afterPatch(
                                         child.type.prototype,
                                         'render',
                                         (
@@ -193,8 +175,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                 return ret4;
                                             }
 
-                                            console.log('ret4', ret4);
-
                                             ret4.key = 'ret4';
 
                                             const child = findInReactTree(
@@ -203,9 +183,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                     x?.props?.overview,
                                             );
 
-                                            console.log('ret4 child', child);
                                             child.key = 'ret4_child';
-                                            const p5 = afterPatch(
+                                            afterPatch(
                                                 child,
                                                 'type',
                                                 (_5, ret5) => {
@@ -213,7 +192,13 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                                     ret5.key = 'ret5';
 
-                                                    const p6 = afterPatch(
+                                                    beforePatch(
+                                                        ret5,
+                                                        'type',
+                                                        (args) => {},
+                                                    );
+
+                                                    afterPatch(
                                                         ret5,
                                                         'type',
                                                         (_6, ret6) => {
@@ -221,18 +206,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 'ret6',
                                                                 ret6,
                                                             );
-
-                                                            for (
-                                                                let i = 0;
-                                                                i < _6.length;
-                                                                i++
-                                                            ) {
-                                                                _6[i] =
-                                                                    checkCachedArg(
-                                                                        `_6.${i}`,
-                                                                        _6[i],
-                                                                    );
-                                                            }
 
                                                             ret6.key = 'ret6';
 
@@ -261,6 +234,11 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                         x?.type
                                                                             ?.render,
                                                                 );
+                                                            const isSameArgs =
+                                                                checkCachedArg(
+                                                                    'ret6',
+                                                                    _6,
+                                                                );
 
                                                             console.log(
                                                                 'ret6 child',
@@ -273,22 +251,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                             ) {
                                                                 return ret6;
                                                             }
-
-                                                            console.log(
-                                                                'ret6 child ref',
-                                                                ret6Child.ref,
-                                                            );
-                                                            checkCachedArg(
-                                                                'ret6 child ref',
-                                                                ret6Child.ref,
-                                                            );
-
-                                                            console.log(
-                                                                'ret6 other ref',
-                                                                ret6.props
-                                                                    .children[3]
-                                                                    .ref,
-                                                            );
 
                                                             ret6Child.key =
                                                                 'ret6child';
@@ -314,9 +276,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                             ...args: any
                                                                         ) => {
                                                                             if (
-                                                                                Date.now() -
-                                                                                    lastOnNavTime >
-                                                                                onNavDebounceTime
+                                                                                !installed ||
+                                                                                !isSameArgs
                                                                             ) {
                                                                                 console.log(
                                                                                     'calling onNav',
@@ -334,114 +295,94 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                         };
                                                                 },
                                                             );
-                                                            const p7 =
-                                                                afterPatch(
-                                                                    ret6Child.type,
-                                                                    'render',
-                                                                    (
-                                                                        _7,
+
+                                                            afterPatch(
+                                                                ret6Child.type,
+                                                                'render',
+                                                                (_7, ret7) => {
+                                                                    console.log(
+                                                                        'ret7',
                                                                         ret7,
-                                                                    ) => {
-                                                                        console.log(
-                                                                            'ret7',
+                                                                    );
+                                                                    ret7.key =
+                                                                        'ret7';
+
+                                                                    const ret7Child =
+                                                                        findInReactTree(
                                                                             ret7,
+                                                                            (
+                                                                                v,
+                                                                            ) =>
+                                                                                v !==
+                                                                                    ret7 &&
+                                                                                v
+                                                                                    ?.type
+                                                                                    ?.render,
                                                                         );
-                                                                        ret7.key =
-                                                                            'ret7';
+                                                                    ret7Child.key =
+                                                                        'ret7Child';
 
-                                                                        const ret7Child =
-                                                                            findInReactTree(
-                                                                                ret7,
-                                                                                (
-                                                                                    v,
-                                                                                ) =>
-                                                                                    v !==
-                                                                                        ret7 &&
-                                                                                    v
-                                                                                        ?.type
-                                                                                        ?.render,
+                                                                    console.log(
+                                                                        'ret7Child',
+                                                                        ret7Child,
+                                                                    );
+
+                                                                    wrapReactType(
+                                                                        ret7Child,
+                                                                    );
+
+                                                                    afterPatch(
+                                                                        ret7Child.type,
+                                                                        'render',
+                                                                        (
+                                                                            _8,
+                                                                            ret8,
+                                                                        ) => {
+                                                                            return ret8;
+
+                                                                            console.log(
+                                                                                'ret8',
+                                                                                ret8,
                                                                             );
-                                                                        ret7Child.key =
-                                                                            'ret7Child';
-
-                                                                        console.log(
-                                                                            'ret7Child',
-                                                                            ret7Child,
-                                                                        );
-
-                                                                        wrapReactType(
-                                                                            ret7Child,
-                                                                        );
-
-                                                                        const p8 =
-                                                                            afterPatch(
-                                                                                ret7Child.type,
-                                                                                'render',
-                                                                                (
-                                                                                    _8,
-                                                                                    ret8,
-                                                                                ) => {
-                                                                                    console.log(
-                                                                                        'ret8',
-                                                                                        ret8,
-                                                                                    );
-                                                                                    ret8.key =
-                                                                                        'ret8';
-                                                                                    patchFinalElement(
-                                                                                        ret8,
-                                                                                        overview,
-                                                                                        appDetailsState,
-                                                                                    );
-
-                                                                                    return ret8;
-                                                                                },
+                                                                            ret8.key =
+                                                                                'ret8';
+                                                                            patchFinalElement(
+                                                                                ret8,
+                                                                                overview,
+                                                                                appDetailsState,
                                                                             );
 
-                                                                        console.log(
-                                                                            'p8',
-                                                                            p8,
-                                                                        );
+                                                                            return ret8;
+                                                                        },
+                                                                    );
 
-                                                                        return ret7;
-                                                                    },
-                                                                );
-
-                                                            console.log(
-                                                                'p7',
-                                                                p7,
+                                                                    return ret7;
+                                                                },
                                                             );
 
                                                             return ret6;
                                                         },
                                                     );
 
-                                                    console.log('p6', p6);
-
                                                     return ret5;
                                                 },
                                             );
-                                            console.log('p5', p5);
 
                                             return ret4;
                                         },
                                     );
 
-                                    console.log('p4', p4);
-
                                     return ret3;
                                 },
                             );
-                            console.log('p3', p3);
 
                             return ret2;
                         },
                     );
-                    console.log('p2', p2);
 
                     return ret;
                 },
             );
-            console.log('p1', p1);
 
             return props;
         },
