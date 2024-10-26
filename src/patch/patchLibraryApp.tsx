@@ -270,8 +270,9 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                             ...args: any
                                                                         ) => {
                                                                             if (
+                                                                                !installed ||
                                                                                 ret6incr ===
-                                                                                0
+                                                                                    0
                                                                             ) {
                                                                                 console.log(
                                                                                     'calling onNav',
