@@ -269,10 +269,10 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                     100 &&
                                                                 status.installed;
 
-                                                            if (
-                                                                !playSection ||
-                                                                !installed
-                                                            ) {
+                                                            if (!installed) {
+                                                                console.log(
+                                                                    'not installed',
+                                                                );
                                                                 return ret6;
                                                             }
 
@@ -559,12 +559,8 @@ function patchFinalElement(
         wrapReactType(playButton);
         afterPatch(playButton.type, 'render', (_play, retPlayButton) => {
             console.log('retPlayButton', retPlayButton);
-            wrapReactClass(retPlayButton);
-            replacePatch(retPlayButton.type.prototype, 'render', () => {
-                return <p>Hello!</p>;
-            });
-            return retPlayButton;
 
+            wrapReactClass(retPlayButton);
             afterPatch(
                 retPlayButton.type.prototype,
                 'render',
