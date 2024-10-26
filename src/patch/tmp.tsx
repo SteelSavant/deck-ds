@@ -65,7 +65,7 @@ function pe(props: any) {
                 className: O().AppDetailsRoot,
             },
             React.createElement(be, {
-                // This is the elenent we're trying to traverse
+                // This is the element we're trying to traverse
                 ...props,
                 onNav: scrollCallback,
                 ref: componentRef2,

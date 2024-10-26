@@ -139,7 +139,10 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                 ),
                             );
 
+                            console.log('ret2 child', child);
+
                             wrapReactType(child);
+
                             afterPatch(
                                 child.type,
                                 'render',
@@ -151,7 +154,21 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                         return ret3;
                                     }
 
+                                    console.log('ret3', ret3);
+
                                     ret3.key = 'ret3';
+
+                                    // replacePatch(
+                                    //     ret3.props.value,
+                                    //     'm_bAutoFocusChild',
+                                    //     (args) => {
+                                    //         console.log(
+                                    //             'ret2 child args',
+                                    //             args,
+                                    //         );
+                                    //         return false;
+                                    //     },
+                                    // );
 
                                     const child = findInReactTree(
                                         ret3,
@@ -161,6 +178,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                     child.key = 'ret3_child';
 
                                     wrapReactClass(child);
+
                                     afterPatch(
                                         child.type.prototype,
                                         'render',
@@ -171,6 +189,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                             if (!ret4) {
                                                 return ret4;
                                             }
+
+                                            console.log('ret4', ret4);
 
                                             ret4.key = 'ret4';
 
@@ -265,52 +285,61 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                                             playSection.key =
                                                                 'ret6child';
-                                                            wrapReactType(
-                                                                appDetailsSection,
-                                                            );
 
-                                                            // TODO::this afterpatch should be a beforepatch and edit the args, like the other beforepatch
-                                                            const onFocusWithin =
-                                                                appDetailsSection
-                                                                    .props
-                                                                    .onFocusWithin;
-                                                            replacePatch(
-                                                                appDetailsSection.props,
-                                                                'onFocusWithin',
-                                                                (
-                                                                    _focusArgs,
-                                                                ) => {
-                                                                    console.log(
-                                                                        'ret6 last child focuswithin',
-                                                                        _focusArgs,
-                                                                        onFocusWithin,
-                                                                    );
+                                                            // for (const v of [
+                                                            //     [0, 'onNav'],
+                                                            //     [1, 'onFocus'],
+                                                            //     [
+                                                            //         2,
+                                                            //         'onFocusWithin',
+                                                            //     ],
+                                                            //     [
+                                                            //         3,
+                                                            //         'onFocusWithin',
+                                                            //     ],
+                                                            // ]) {
+                                                            //     const child =
+                                                            //         ret6.props
+                                                            //             .children[
+                                                            //             v[0]
+                                                            //         ];
 
-                                                                    return () => {
-                                                                        lastOnNavTime =
-                                                                            Date.now();
-                                                                        console.log(
-                                                                            'delaying focus within...',
-                                                                        );
-                                                                        for (const duration of [
-                                                                            2000,
-                                                                        ])
-                                                                            setTimeout(
-                                                                                () => {
-                                                                                    console.log(
-                                                                                        'handling focus within...',
-                                                                                    );
-                                                                                    lastOnNavTime =
-                                                                                        Date.now();
-                                                                                    onFocusWithin(
-                                                                                        ..._focusArgs,
-                                                                                    );
-                                                                                },
-                                                                                duration,
-                                                                            );
-                                                                    };
-                                                                },
-                                                            );
+                                                            //     const onFocusWithin =
+                                                            //         child.props[
+                                                            //             v[1]
+                                                            //         ];
+                                                            //     // wrapReactType(
+                                                            //     //     child,
+                                                            //     // );
+                                                            //     replacePatch(
+                                                            //         child.props,
+                                                            //         v[1] as string,
+                                                            //         (
+                                                            //             _focusArgs,
+                                                            //         ) => {
+                                                            //             console.log(
+                                                            //                 'ret6 focuswithin',
+                                                            //                 v[0],
+                                                            //                 v[1],
+                                                            //                 _focusArgs,
+                                                            //                 onFocusWithin,
+                                                            //             );
+
+                                                            //             return;
+
+                                                            //             lastOnNavTime =
+                                                            //                 Date.now();
+
+                                                            //             console.log(
+                                                            //                 'handling focus within...',
+                                                            //             );
+
+                                                            //             onFocusWithin(
+                                                            //                 ..._focusArgs,
+                                                            //             );
+                                                            //         },
+                                                            //     );
+                                                            // }
 
                                                             wrapReactType(
                                                                 playSection,
@@ -324,40 +353,36 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 'onNav',
                                                                 (args) => {
                                                                     console.log(
-                                                                        'ret6child focus within',
+                                                                        'ret6child onnav',
                                                                         args,
                                                                     );
 
-                                                                    return (
-                                                                        ...args: any
-                                                                    ) => {
-                                                                        const elapsed =
-                                                                            Date.now() -
-                                                                            lastOnNavTime;
-                                                                        if (
-                                                                            (!installed ||
-                                                                                ret6incr ===
-                                                                                    0) &&
-                                                                            elapsed >
-                                                                                onNavDebounceTime
-                                                                        ) {
-                                                                            console.log(
-                                                                                'calling onNav',
-                                                                                ret6incr,
-                                                                            );
-                                                                            onNav(
-                                                                                ...args,
-                                                                            );
-                                                                        } else {
-                                                                            console.log(
-                                                                                'calling onNav debounce',
-                                                                                ret6incr,
-                                                                            );
-                                                                        }
+                                                                    const elapsed =
+                                                                        Date.now() -
+                                                                        lastOnNavTime;
+                                                                    if (
+                                                                        (!installed ||
+                                                                            ret6incr ===
+                                                                                0) &&
+                                                                        elapsed >
+                                                                            onNavDebounceTime
+                                                                    ) {
+                                                                        console.log(
+                                                                            'calling onNav',
+                                                                            ret6incr,
+                                                                        );
+                                                                        onNav(
+                                                                            ...args,
+                                                                        );
+                                                                    } else {
+                                                                        console.log(
+                                                                            'calling onNav debounce',
+                                                                            ret6incr,
+                                                                        );
+                                                                    }
 
-                                                                        ret6incr += 1;
-                                                                        ret6incr %= 3;
-                                                                    };
+                                                                    ret6incr += 1;
+                                                                    ret6incr %= 3;
                                                                 },
                                                             );
 
@@ -535,6 +560,11 @@ function patchFinalElement(
         afterPatch(playButton.type, 'render', (_play, retPlayButton) => {
             console.log('retPlayButton', retPlayButton);
             wrapReactClass(retPlayButton);
+            replacePatch(retPlayButton.type.prototype, 'render', () => {
+                return <p>Hello!</p>;
+            });
+            return retPlayButton;
+
             afterPatch(
                 retPlayButton.type.prototype,
                 'render',
