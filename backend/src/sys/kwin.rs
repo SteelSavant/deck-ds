@@ -9,7 +9,6 @@ use crate::asset::{Asset, AssetManager};
 
 pub use window_tracking::KWinClientMatcher;
 
-#[derive(Debug)]
 pub struct KWin {
     assets_manager: AssetManager<'static>,
     bundles_dir: PathBuf,
@@ -229,7 +228,7 @@ impl KWin {
 }
 
 // Window tracking adapted from https://github.com/jinliu/kdotool
-mod window_tracking {
+pub mod window_tracking {
     use std::{
         cmp::Ordering,
         ops::Deref,
@@ -269,7 +268,7 @@ mod window_tracking {
             let script_text =
                 Self::get_script_text(&self_conn.unique_name().to_string(), script_name);
 
-            let mut script_file = tempfile::NamedTempFile::with_prefix("DeckDS-")?;
+            let mut script_file = tempfile::NamedTempFile::with_prefix("DeckDS-windowtracking-")?;
 
             script_file.write_all(script_text.as_bytes())?;
 
@@ -422,7 +421,7 @@ mod window_tracking {
                             found_instant = None;
                         }
 
-                        self_conn.process(Duration::from_millis(5000)).unwrap();
+                        self_conn.process(Duration::from_millis(100)).unwrap();
                     }
 
                     self_conn.stop_receive(receiver);
@@ -508,11 +507,19 @@ function updateClients() {{
         }}, {{
             caption: 'Steam',
             windowClass: 'steam'
+        }}, {{
+            caption: 'Steam',
+            windowClass: ''
         }}];
 
         const filteredClients = clients.filter((c) => !badWindows.find((bw) => {{
-            const windowClass = c.resourceClass.toString().toLowerCase();
-            return bw.caption === c.caption && windowClass.includes(bw.windowClass);
+            try {{
+                const windowClass = c.resourceClass.toString().toLowerCase();
+                return bw.caption === c.caption && windowClass.includes(bw.windowClass);
+            }} catch(ex) {{
+                return false;
+            }}
+            
         }})).map((client) => {{
             return {{
                 id: client.windowId,
@@ -579,6 +586,250 @@ workspace.clientRemoved.connect((client) => {{
         pub preferred_ord_if_no_match: Ordering,
         /// Possible strings for either the window title or class. We're guessing here.
         pub maybe_strings: Vec<String>,
+    }
+}
+
+pub mod screen_tracking {
+    use crate::pipeline::action::session_handler::{Pos, Size};
+    use std::{sync::mpsc::Sender, time::Duration};
+
+    use super::*;
+    use dbus::{
+        blocking::{Connection, Proxy, SyncConnection},
+        channel::MatchingReceiver,
+        message::MatchRule,
+    };
+    use serde::Deserialize;
+
+    use std::io::Write;
+
+    pub struct KWinScreenTrackingScope {
+        script_name: uuid::Uuid,
+        script_id: i32,
+        kwin_conn: Connection,
+        kill_tx: Sender<()>,
+    }
+
+    impl KWinScreenTrackingScope {
+        pub fn new(update: Box<dyn Fn(Vec<KWinScreenInfo>) + Send + Sync>) -> Result<Self> {
+            let script_name = uuid::Uuid::new_v4();
+            let kwin_conn = Connection::new_session()?;
+
+            let kwin_proxy = Self::get_kwin_proxy(&kwin_conn);
+
+            let self_conn = SyncConnection::new_session()?;
+
+            let script_text =
+                Self::get_script_text(&self_conn.unique_name().to_string(), script_name);
+
+            let mut script_file = tempfile::NamedTempFile::with_prefix("DeckDS-screentracking-")?;
+
+            script_file.write_all(script_text.as_bytes())?;
+
+            let script_file_path = script_file.into_temp_path();
+
+            let script_id: i32;
+            (script_id,) = kwin_proxy.method_call(
+                "org.kde.kwin.Scripting",
+                "loadScript",
+                (script_file_path.to_str().unwrap(), &script_name.to_string()),
+            )?;
+
+            log::debug!("started screen tracking scipt id: {script_id} @ {script_file_path:?}");
+
+            let (kill_tx, kill_rx) = std::sync::mpsc::channel::<()>();
+
+            // setup message receiver
+            std::thread::spawn(move || {
+                let receiver = self_conn.start_receive(
+                    MatchRule::new_method_call(),
+                    Box::new(move |message, _connection| -> bool {
+                        log::trace!("got screen state dbus message: {:?}", message);
+
+                        if let Some(_member) = message.member() {
+                            let (token, arg) = message.get2::<String, String>();
+
+                            let token =
+                                uuid::Uuid::parse_str(&token.expect("expected token from dbus"))
+                                    .expect("dbus token should be valid uuid");
+
+                            if token != script_name {
+                                log::trace!(
+                                    "tokens don't match; {token} != {script_name} ; returning"
+                                );
+                                return false;
+                            }
+
+                            let arg = arg.expect("dbus arg should be valid");
+
+                            let info = serde_json::from_str::<Vec<KWinScreenInfo>>(&arg)
+                                .expect("json from dbus should parse");
+
+                            log::trace!("updated screens for {} to {:?}", script_name, info);
+                            update(info);
+                        } else {
+                            log::warn!("no dbus member");
+                        }
+                        true
+                    }),
+                );
+
+                let mut signal = kill_rx.try_recv();
+
+                while matches!(signal, Err(std::sync::mpsc::TryRecvError::Empty)) {
+                    self_conn.process(Duration::from_millis(1000)).unwrap();
+                    signal = kill_rx.try_recv();
+                }
+
+                log::trace!("Got screen state end signal value: {}", signal.is_ok());
+
+                self_conn.stop_receive(receiver);
+            });
+
+            let res = Self {
+                script_id,
+                script_name,
+                kwin_conn,
+                kill_tx,
+            };
+
+            let script_proxy = res.get_script_proxy();
+
+            script_proxy.method_call("org.kde.kwin.Script", "run", ())?;
+
+            Ok(res)
+        }
+
+        fn get_kwin_proxy(kwin_conn: &Connection) -> Proxy<&Connection> {
+            kwin_conn.with_proxy("org.kde.KWin", "/Scripting", Duration::from_secs(10))
+        }
+
+        fn get_script_proxy(&self) -> Proxy<&Connection> {
+            let is_kde5 = matches!(std::env::var("KDE_SESSION_VERSION").as_deref(), Ok("5"));
+
+            self.kwin_conn.with_proxy(
+                "org.kde.KWin",
+                if is_kde5 {
+                    format!("/{}", self.script_id)
+                } else {
+                    format!("/Scripting/Script{}", self.script_id)
+                },
+                Duration::from_millis(5000),
+            )
+        }
+
+        fn get_script_text(dbus_addr: &str, script_name: uuid::Uuid) -> String {
+            format!(
+                r#"
+console.log("!!!!!! Matching screens for {dbus_addr} !!!!!!");
+
+function parseScreensSection(info) {{
+    const rxp = /Screens\n\s*=+\n((\n|.)*)\s*[A-Z][a-z]+\n\s*=+/gm;
+    const m = rxp.exec(info);
+    if (m) {{
+        return m[1];
+    }}
+    return null;
+}}
+
+function parseScreens(screensSection) {{
+    const rxp = /Screen\s+(\d+):\n\s*-+\n((?:\s*[A-Za-z\s]+:\s*.+\n)+)/gm;
+    let match;
+    const screens = [];  
+
+    while ((match = rxp.exec(screensSection)) !== null) {{
+        const screenNumber = match[1];
+        const screenDetails = match[2];
+
+        const screenFields = {{}};
+
+        const fields = screenDetails.trim().split('\n');
+        fields.forEach(field => {{
+            const [key, value] = field.split(':').map(s => s.trim());
+            let parsed = value;
+            switch(key) {{
+                case 'Enabled':
+                    parsed = value === '1';
+                    break;
+                case 'Geometry':
+                    geometry_rxp = /(\d+),(\d+),(\d+)x(\d+)/gm
+                    m = geometry_rxp.exec(value);
+                    screenFields['pos'] = {{
+                            x: parseInt(m[1]),
+                            y: parseInt(m[2]),
+                    }};
+                    screenFields['size'] = {{
+                            w: parseInt(m[3]),
+                            h: parseInt(m[4]),
+                    }};
+                    // exit early since we're using different keys
+                    return;
+            }}
+            screenFields[key.toLowerCase()] = parsed;
+        }});
+
+        screenFields['id'] = screenNumber;
+
+        // Assign this screen's field object to the screens object with the screen number as the key
+        screens.push(screenFields);
+    }}
+
+    return screens;
+}}
+
+function getScreenInfo() {{
+    const info = workspace.supportInformation();
+    const screensSection = parseScreensSection(info);
+    const screens = parseScreens(screensSection);
+
+    return screens;
+}}
+
+function updateScreenInfo() {{
+    const screenInfo = getScreenInfo();
+    const stringified = JSON.stringify(screenInfo);
+    console.log('updating info for', screenInfo.length, 'screens');
+    console.log('sending msg over dbus:', stringified);
+
+    callDBus("{dbus_addr}", "/", "", "updateScreens", "{script_name}", stringified);
+}}
+
+workspace.numberScreensChanged.connect(updateScreenInfo);
+workspace.virtualScreenGeometryChanged.connect(updateScreenInfo);
+workspace.virtualScreenSizeChanged.connect(updateScreenInfo);
+
+updateScreenInfo();
+"#
+            )
+        }
+    }
+
+    impl Drop for KWinScreenTrackingScope {
+        fn drop(&mut self) {
+            let _: Result<(), _> = Self::get_kwin_proxy(&self.kwin_conn).method_call(
+                "org.kde.kwin.Scripting",
+                "unloadScript",
+                (&self.script_name.to_string(),),
+            );
+
+            let _ = self.kill_tx.send(());
+        }
+    }
+
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct KWinScreenInfo {
+        pub id: String,
+        pub name: String,
+        pub enabled: bool,
+        pub pos: Pos,
+        pub size: Size,
+    }
+
+    pub struct KWinScreenStateMatcher {
+        pub name: String,
+        pub enabled: Option<bool>,
+        pub pos: Option<Pos>,
+        pub size: Option<Size>,
     }
 }
 

@@ -176,8 +176,6 @@ fn main() -> Result<()> {
 
     match mode {
         AppModes::Autostart { .. } => {
-            sleep(Duration::from_millis(500));
-
             let global_config = settings.lock().unwrap().get_global_cfg();
 
             // build the executor

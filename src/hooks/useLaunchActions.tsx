@@ -1,4 +1,4 @@
-import { showModal, sleep } from '@decky/ui';
+import { showModal } from '@decky/ui';
 import {
     CategoryProfile,
     DependencyError,
@@ -8,7 +8,7 @@ import {
     reifyPipeline,
 } from '../backend';
 import ConfigErrorModal from '../components/ConfigErrorModal';
-import { ShortAppDetails } from '../context/appContext';
+import { ShortAppDetails, useAppState } from '../context/appContext';
 import { setupClientPipeline } from '../pipeline/client_pipeline';
 import { logger } from '../util/log';
 import useProfiles from './useProfiles';
@@ -27,12 +27,12 @@ const useLaunchActions = (
     appDetails: ShortAppDetails | null,
 ): LaunchActions[] => {
     let { profiles } = useProfiles();
+    let { reifiedPipelines, loadProfileOverride } = useAppState();
 
     if (appDetails && profiles?.isOk) {
         const loadedProfiles = profiles.data;
         const includedProfiles = new Set<string>();
         const validProfiles = collectionStore.userCollections.flatMap((uc) => {
-            sleep(1000);
             const containsApp = uc.apps.has(appDetails.appId);
 
             if (containsApp) {
@@ -49,105 +49,128 @@ const useLaunchActions = (
             }
         });
 
-        return validProfiles.map((p) => {
-            const defaultTargets: LaunchTarget[] = [];
-            const pipelineTargets: PipelineTarget[] = ['Desktop', 'Gamemode'];
+        return validProfiles
+            .map((p) => {
+                const reified = reifiedPipelines[p.id];
 
-            for (const target of pipelineTargets) {
-                const action = async () => {
-                    // HACK: QAM does weird caching that means the profile can be outdated,
-                    // so we reload the profile in the action to ensure it is current
-                    const currentPipeline = await getProfile({
-                        profile_id: p.id,
-                    });
+                if (!reified || !reified.isOk) {
+                    loadProfileOverride(appDetails?.appId, p.id);
+                    logger.warn(
+                        `unable to map actions for ${p.id}; pipeline not reified:`,
+                        reified?.err,
+                    );
+                    return {
+                        profile: p,
+                        targets: [],
+                    };
+                }
 
-                    p =
-                        (currentPipeline?.isOk
-                            ? currentPipeline.data.profile
-                            : null) ?? p;
+                const defaultTargets: LaunchTarget[] = [];
+                const pipelineTargets: PipelineTarget[] = Object.keys(
+                    reified.data.pipeline.targets,
+                ) as PipelineTarget[];
 
-                    // Reify pipeline and run autostart procedure for target
+                for (const target of pipelineTargets) {
+                    const action = async () => {
+                        // HACK: QAM does weird caching that means the profile can be outdated,
+                        // so we reload the profile in the action to ensure it is current
+                        const currentPipeline = await getProfile({
+                            profile_id: p.id,
+                        });
 
-                    const reified = await reifyPipeline({
-                        pipeline: p.pipeline,
-                    });
+                        p =
+                            (currentPipeline?.isOk
+                                ? currentPipeline.data.profile
+                                : null) ?? p;
 
-                    if (reified.isOk) {
-                        const configErrors = reified.data.config_errors;
-                        const errors: DependencyError[] = [];
-                        const otherTag =
-                            target === 'Desktop' ? ':gamemode' : ':desktop';
-                        for (const key in configErrors) {
-                            // only match config errors for this target
-                            if (!key.endsWith(otherTag)) {
-                                errors.push(...configErrors[key]);
+                        // Reify pipeline and run autostart procedure for target
+
+                        const reified = await reifyPipeline({
+                            pipeline: p.pipeline,
+                        });
+
+                        if (reified.isOk) {
+                            const configErrors = reified.data.config_errors;
+                            const errors: DependencyError[] = [];
+                            const otherTag =
+                                target === 'Desktop' ? ':gamemode' : ':desktop';
+                            for (const key in configErrors) {
+                                // only match config errors for this target
+                                if (!key.endsWith(otherTag)) {
+                                    errors.push(...configErrors[key]);
+                                }
                             }
-                        }
 
-                        if (errors.length > 0) {
-                            showModal(<ConfigErrorModal errors={errors} />);
+                            if (errors.length > 0) {
+                                showModal(<ConfigErrorModal errors={errors} />);
+                            } else {
+                                // TODO::teardown pipeline on
+                                // - plugin startup
+                                // - app close (only possible when launch fails, or for game-mode)
+                                const res = await (
+                                    await setupClientPipeline(
+                                        appDetails.appId,
+                                        reified.data.pipeline,
+                                        target,
+                                    )
+                                ).andThenAsync(async () =>
+                                    (
+                                        await autoStart({
+                                            user_id_64: appDetails.userId64,
+                                            game_id: appDetails.gameId,
+                                            app_id: appDetails.appId.toString(),
+                                            profile_id: p.id,
+                                            game_title: appDetails.sortAs,
+                                            is_steam_game:
+                                                appDetails.isSteamGame,
+                                            target: target,
+                                        })
+                                    ).mapErr((v) => v.err),
+                                );
+
+                                if (!res.isOk) {
+                                    logger.toastError(
+                                        'Failed to launch app:',
+                                        res.err,
+                                    );
+                                }
+                            }
                         } else {
-                            // TODO::teardown pipeline on
-                            // - plugin startup
-                            // - app close (only possible when launch fails, or for game-mode)
-                            const res = await (
-                                await setupClientPipeline(
-                                    appDetails.appId,
-                                    reified.data.pipeline,
-                                    target,
-                                )
-                            ).andThenAsync(async () =>
-                                (
-                                    await autoStart({
-                                        user_id_64: appDetails.userId64,
-                                        game_id: appDetails.gameId,
-                                        app_id: appDetails.appId.toString(),
-                                        profile_id: p.id,
-                                        game_title: appDetails.sortAs,
-                                        is_steam_game: appDetails.isSteamGame,
-                                        target: target,
-                                    })
-                                ).mapErr((v) => v.err),
-                            );
-
-                            if (!res.isOk) {
+                            if (!reified.isOk) {
                                 logger.toastError(
-                                    'Failed to launch app:',
-                                    res.err,
+                                    'Failed to load profile to launch app:',
+                                    reified.err.err,
                                 );
                             }
                         }
+                    };
+
+                    const value = {
+                        action,
+                        target: target as PipelineTarget,
+                    };
+
+                    if (target === 'Gamemode') {
+                        defaultTargets.push(value);
+                    } else if (target === 'Desktop') {
+                        defaultTargets.splice(0, 0, value);
                     } else {
-                        if (!reified.isOk) {
-                            logger.toastError(
-                                'Failed to load profile to launch app:',
-                                reified.err.err,
-                            );
-                        }
+                        // extra targets not planned or handled
+                        logger.warn(
+                            'unsupported target in launch action:',
+                            target,
+                        );
                     }
-                };
-
-                const value = {
-                    action,
-                    target: target as PipelineTarget,
-                };
-
-                if (target === 'Gamemode') {
-                    defaultTargets.push(value);
-                } else if (target === 'Desktop') {
-                    defaultTargets.splice(0, 0, value);
-                } else {
-                    // extra targets not planned or handled
                 }
-            }
 
-            const res = {
-                profile: p,
-                targets: defaultTargets,
-            };
+                const res = {
+                    profile: p,
+                    targets: defaultTargets,
+                };
 
-            return res;
-        });
+                return res;
+            })
+            .filter((v) => v);
     }
 
     return [];

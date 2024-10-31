@@ -17,6 +17,8 @@ export default function useAppTarget({
     const { settings } = useGlobalSettings();
     const profile = useProfile(profileId ?? null);
 
+    // TODO::instead of just not allowing a target here when ui inject is disabled,
+    // Actually remove UI patching/existing patches when it is disabled.
     if (profile?.isOk && settings?.isOk && settings.data.enable_ui_inject) {
         // TODO::may need to consider logic where only one target exists
         const primaryTarget =

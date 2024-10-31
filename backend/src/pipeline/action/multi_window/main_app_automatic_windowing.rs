@@ -39,8 +39,8 @@ pub struct GamescopeOptions {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 
 pub enum GamescopeFullscreenOption {
-    #[default]
     Borderless,
+    #[default]
     Fullscreen,
 }
 
@@ -90,7 +90,7 @@ impl ActionImpl for MainAppAutomaticWindowing {
 
             let best_window = window_ctx
                 .get_best_window_client(KWinClientMatcher {
-                    min_delay: Duration::from_secs(5),
+                    min_delay: Duration::from_secs(2),
                     max_delay: Duration::from_secs(30),
                     preferred_ord_if_no_match: std::cmp::Ordering::Greater,
                     maybe_strings, // match_fn: Box::new(move |clients| {

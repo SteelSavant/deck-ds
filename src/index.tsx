@@ -22,9 +22,10 @@ import {
     ShortAppDetailsState,
     ShortAppDetailsStateContextProvider,
 } from './context/appContext';
-import patchLibraryApp from './patch/patchLibraryApp';
+import { PatchHandler } from './patch/patchHandler';
 import { teardownClientPipeline } from './pipeline/client_pipeline';
 import { logger, LogLevel } from './util/log';
+import { isSteamGame } from './util/util';
 import QAM from './views/QAM';
 import ProfileRoute from './views/Settings/Profiles/ProfileRoute';
 import SettingsRouter from './views/Settings/SettingsRouter';
@@ -37,12 +38,22 @@ declare global {
 }
 
 const appDetailsState = new ShortAppDetailsState();
+PatchHandler.init(appDetailsState);
 
-var usdplReady = false;
+let usdplReady = false;
 
 (async function () {
+    // Init backend
     await backend.initBackend();
+    // Run cleanup for any previous run
     await teardownClientPipeline();
+    // Setup patch handler
+    const globalSettings = await backend.getSettings();
+    if (globalSettings.isOk) {
+        PatchHandler.getInstance().setPatchEnabled(
+            globalSettings.data.global_settings.enable_ui_inject,
+        );
+    }
 
     usdplReady = true;
 })();
@@ -78,13 +89,24 @@ export default definePlugin(() => {
     // console.log('collection store:', collectionStore);
     // console.log('collections:', collectionStore.userCollections);
 
-    function isSteamGame(overview: any): boolean {
-        const hasOwnerAccountId = overview.owner_account_id !== undefined;
-        const wasPurchased = !!overview.rt_purchased_time;
-        const hasSize = overview.size_on_disk !== '0';
+    // Ensure patch handler settings loaded
+    let loaded = true;
+    setTimeout(async () => {
+        if (!loaded || !usdplReady) {
+            logger.warn('Not setting patch setting; not ready.');
+            return;
+        }
 
-        return hasOwnerAccountId || wasPurchased || hasSize;
-    }
+        const globalSettings = await backend.getSettings();
+
+        if (globalSettings.isOk && loaded) {
+            PatchHandler.getInstance().setPatchEnabled(
+                globalSettings.data.global_settings.enable_ui_inject,
+            );
+        } else if (!globalSettings.isOk) {
+            logger.error('Not setting patch setting: ', globalSettings.err);
+        }
+    }, 1000); // We defer until after the backend should be initialized to avoid potential issues.
 
     function updateAppDetails(this: any, currentRoute: string): void {
         const re = /^\/library\/app\/(\d+)(\/?.*)/;
@@ -106,9 +128,9 @@ export default definePlugin(() => {
                 sortAs: overview.sort_as,
                 userId64: App.m_CurrentUser.strSteamID,
                 isSteamGame: isSteamGame(overview),
+                selected_clientid: overview.selected_clientid,
             });
         } else {
-            appDetailsState.setOnAppPage(null);
             appDetailsState.setOnAppPage(null);
         }
     }
@@ -119,8 +141,6 @@ export default definePlugin(() => {
     const unlistenHistory = History.listen(async (info: any) => {
         updateAppDetails(info.pathname);
     });
-
-    const libraryPatch = patchLibraryApp(appDetailsState);
 
     // Profiles route
     routerHook.addRoute(
@@ -216,12 +236,14 @@ export default definePlugin(() => {
         content: <Content />,
 
         onDismount: () => {
+            loaded = false;
+
             backend.log(LogLevel.Debug, 'DeckDS shutting down');
 
             unlistenHistory();
             appDetailsState.setOnAppPage(null);
 
-            routerHook.removePatch('/library/app/:appid', libraryPatch);
+            PatchHandler.dispose();
             routerHook.removeRoute('/deck-ds/settings/templates/:templateid');
             routerHook.removeRoute('/deck-ds/settings/:setting');
 

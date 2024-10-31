@@ -92,7 +92,7 @@ export async function patchPipeline(
                     ? pipeline.desktop_controller_layout_hack.steam_override
                     : info.steam_desktop_layout_config_hack_override,
             nonsteam_override:
-                update.info.steam_desktop_layout_config_hack_override ===
+                update.info.nonsteam_desktop_layout_config_hack_override ===
                 undefined
                     ? pipeline.desktop_controller_layout_hack.nonsteam_override
                     : info.nonsteam_desktop_layout_config_hack_override,

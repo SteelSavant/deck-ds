@@ -1,6 +1,5 @@
 use std::{
     sync::mpsc::{self, Receiver, Sender},
-    thread::sleep,
     time::Duration,
 };
 
@@ -226,7 +225,7 @@ impl ActionImpl for DesktopSessionHandler {
 
         let secondary_text = format!("{next_window_text}\n\n{exit_text}");
 
-        let update = display.calc_ui_viewport_event(embedded.as_ref(), preferred.as_ref());
+        let update = display.calc_initial_ui_viewport_event(embedded.as_ref(), preferred.as_ref());
 
         if let UiEvent::UpdateViewports {
             primary_size,
@@ -236,6 +235,8 @@ impl ActionImpl for DesktopSessionHandler {
         } = update
         {
             log::debug!("session handler starting UI");
+
+            let ui_tx_clone = ui_tx.clone();
             std::thread::spawn(move || {
                 DeckDsUi::new(
                     primary_size,
@@ -243,6 +244,7 @@ impl ActionImpl for DesktopSessionHandler {
                     primary_position,
                     secondary_position,
                     secondary_text,
+                    ui_tx_clone,
                     ui_rx,
                     main_tx,
                 )
@@ -262,8 +264,6 @@ impl ActionImpl for DesktopSessionHandler {
                 runtime_state: Some(RuntimeDisplayState { ui_ctx, ui_tx }),
             });
         }
-
-        sleep(Duration::from_millis(500));
 
         log::debug!("session handler setup complete");
 
@@ -355,9 +355,6 @@ impl ActionImpl for DesktopSessionHandler {
                 } else {
                     display.set_output_enabled(&mut deck, false)?;
                 }
-
-                let update = display.calc_ui_viewport_event(Some(&deck), Some(&current_output));
-                ctx.send_ui_event(update);
 
                 Ok(())
             }

@@ -17,7 +17,7 @@ import {
     setAppProfileSettings,
     setProfile,
 } from '../backend';
-import { PipelineActionLookup } from '../types/backend_api';
+import { PipelineActionLookup, TopLevelDefinition } from '../types/backend_api';
 import { MaybeString } from '../types/short';
 import { Loading } from '../util/loading';
 import { logger } from '../util/log';
@@ -35,6 +35,7 @@ export type ShortAppDetails = {
     userId64: string;
     sortAs: string;
     isSteamGame: boolean;
+    selected_clientid: string;
 };
 
 interface PublicAppState {
@@ -59,6 +60,7 @@ interface PublicAppStateContext extends PublicAppState {
     ): void;
     dispatchUpdate(profileId: string, action: StateAction): Promise<void>;
     loadProfileOverride(appId: number, profileId: string): Promise<void>;
+    ensureSelectedClientUpdated(): Promise<void>;
 }
 
 // This class creates the getter and setter functions for all of the global state data.
@@ -222,6 +224,19 @@ export class ShortAppDetailsState {
 
         if (shouldUpdate) {
             this.forceUpdate();
+        }
+    }
+
+    ensureSelectedClientUpdated() {
+        if (this.appDetails) {
+            const id = appStore.GetAppOverviewByAppID(
+                this.appDetails.appId,
+            )?.selected_clientid;
+
+            if (id !== this.appDetails.selected_clientid) {
+                this.appDetails.selected_clientid = id;
+                this.forceUpdate();
+            }
         }
     }
 
@@ -389,7 +404,13 @@ export class ShortAppDetailsState {
         }
     }
 
-    private forceUpdate() {
+    private forceUpdate(updateSelectedClient = true) {
+        if (this.appDetails && updateSelectedClient) {
+            this.appDetails.selected_clientid = appStore.GetAppOverviewByAppID(
+                this.appDetails.appId,
+            )?.selected_clientid;
+        }
+
         this.eventBus.dispatchEvent(new Event('stateUpdate'));
     }
 }
@@ -397,15 +418,14 @@ export class ShortAppDetailsState {
 const AppContext = createContext<PublicAppStateContext>(null as any);
 export const useAppState = () => useContext(AppContext);
 
-interface ProviderProps {
+export interface ShortAppDetailsStateProviderProps {
     ShortAppDetailsStateClass: ShortAppDetailsState;
 }
 
 // This is a React Component that you can wrap multiple separate things in, as long as they both have used the same instance of the CssLoaderState class, they will have synced state
-export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
-    children,
-    ShortAppDetailsStateClass,
-}) => {
+export const ShortAppDetailsStateContextProvider: FC<
+    ShortAppDetailsStateProviderProps
+> = ({ children, ShortAppDetailsStateClass }) => {
     const [publicState, setPublicState] = useState<PublicAppState>({
         ...ShortAppDetailsStateClass.getPublicState(),
     });
@@ -456,6 +476,10 @@ export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
         ShortAppDetailsStateClass.loadProfileOverride(appId, profileId);
     };
 
+    const ensureSelectedClientUpdated = async () => {
+        ShortAppDetailsStateClass.ensureSelectedClientUpdated();
+    };
+
     return (
         <AppContext.Provider
             value={{
@@ -465,6 +489,7 @@ export const ShortAppDetailsStateContextProvider: FC<ProviderProps> = ({
                 setAppViewOpen,
                 dispatchUpdate,
                 loadProfileOverride,
+                ensureSelectedClientUpdated,
             }}
         >
             {children}
@@ -479,7 +504,11 @@ function patchProfileOverridesForMissing(
 ): ReifyPipelineResponse {
     const pipeline = response.pipeline;
 
-    const toplevel = [overrides.platform].concat(overrides.toplevel);
+    const toplevel: { [k: string]: TopLevelDefinition } = {};
+    toplevel[overrides.platform.id] = overrides.platform;
+    for (const tl of overrides.toplevel) {
+        toplevel[tl.id] = tl;
+    }
 
     function patch(selection: RuntimeSelection, actions: PipelineActionLookup) {
         const type = selection.type;
@@ -513,15 +542,11 @@ function patchProfileOverridesForMissing(
         let selection = pipeline.targets[target];
         if (selection.type === 'AllOf') {
             const actions = selection.value;
-            let skip = 0;
-            for (const v in actions) {
-                const i = parseInt(v);
-
-                const current_action = actions[i];
-                const toplevel_actions = toplevel[i + skip].actions;
-                patch(current_action.selection, toplevel_actions);
-                if (!toplevel_actions.actions[current_action.id]) {
-                    current_action.profile_override = externalProfileId;
+            for (const a of actions) {
+                const toplevel_actions = toplevel[a.toplevel_id].actions;
+                patch(a.selection, toplevel_actions);
+                if (!toplevel_actions.actions[a.id]) {
+                    a.profile_override = externalProfileId;
                 }
             }
         } else {

@@ -1,5 +1,5 @@
 import { DialogButton, Focusable } from '@decky/ui';
-import { ReactElement, useState } from 'react';
+import { ReactElement, useEffect, useState } from 'react';
 import { IconForTarget } from '../../components/IconForTarget';
 import { useAppState } from '../../context/appContext';
 import useAppTarget from '../../hooks/useAppTarget';
@@ -10,10 +10,22 @@ interface SecondaryPlayButtonProps {
     deckDSDesktopSentinel: 'sentinel';
 }
 
+// TODO::ideally, if
+// - the secondary action is gamemode, and
+// - gamemode is not a target
+// then this would display the icon from the normal play button, and run its on clicked/pressed function when pressed
 export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): ReactElement | null {
-    const { appDetails, appProfile } = useAppState();
+    const { appDetails, appProfile, ensureSelectedClientUpdated } =
+        useAppState();
     const launchActions = useLaunchActions(appDetails);
     const [isFocused, setIsFocused] = useState(false);
+
+    // Hack to ensure we have the correct selected_clientid
+    useEffect(() => {
+        for (const timeout of [100, 200, 500, 1000, 2000, 5000, 10000]) {
+            setTimeout(() => ensureSelectedClientUpdated(), timeout);
+        }
+    }, [appDetails?.selected_clientid]);
 
     const action = appProfile?.isOk
         ? launchActions.find(
@@ -49,9 +61,13 @@ export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): React
         action,
         'onLaunch:',
         onLaunch,
+        'clientid:',
+        appDetails?.selected_clientid,
     );
 
-    return target && onLaunch ? (
+    return appDetails?.selected_clientid === '0' && // hack to ensure we're not using streaming
+        target &&
+        onLaunch ? (
         <Focusable
             onFocus={() => {
                 setIsFocused(true);

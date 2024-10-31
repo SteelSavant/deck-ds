@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { GlobalConfig, getSettings, setSettings } from '../backend';
+import { PatchHandler } from '../patch/patchHandler';
 import { Loading } from '../util/loading';
 import { Ok } from '../util/result';
 
@@ -17,7 +18,14 @@ const useGlobalSettings = () => {
                     return;
                 }
 
-                setState(res.map((v) => v.global_settings));
+                setState(
+                    res.map((v) => {
+                        PatchHandler.getInstance().setPatchEnabled(
+                            v.global_settings.enable_ui_inject,
+                        );
+                        return v.global_settings;
+                    }),
+                );
             })();
         }
 
@@ -33,6 +41,9 @@ const useGlobalSettings = () => {
 
         if (res.isOk) {
             setState(Ok(settings));
+            PatchHandler.getInstance().setPatchEnabled(
+                settings.enable_ui_inject,
+            );
         }
 
         return res;

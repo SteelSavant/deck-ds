@@ -237,6 +237,13 @@ impl From<PipelineActionSettings<DefinitionSelection>> for PipelineActionSetting
     }
 }
 
+impl PipelineActionSettings<ConfigSelection> {
+    /// Copies values QAM cannot otherwise access from `other` into `self`
+    pub fn copy_qam_values(&mut self, other: &Self) {
+        self.is_visible_on_qam = other.is_visible_on_qam
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct PipelineActionLookup {
     pub actions: HashMap<PipelineActionId, PipelineActionSettings<ConfigSelection>>,
@@ -307,6 +314,11 @@ impl PipelineActionLookup {
 }
 
 impl PipelineDefinition {
+    pub fn all_toplevel(&self) -> Vec<&TopLevelDefinition> {
+        let platform_ref = &self.platform;
+        [self.toplevel.iter().collect(), vec![platform_ref]].concat()
+    }
+
     pub fn reify<'a>(
         &'a self,
         profiles: &[CategoryProfile],
@@ -315,14 +327,12 @@ impl PipelineDefinition {
         let targets = PipelineTarget::iter()
             .map(|t: PipelineTarget| {
                 // put platform after toplevel actions for now, to simplify automatic windowing, since the main app
-                let platform_ref = &self.platform;
-                let toplevel = [self.toplevel.iter().collect(), vec![platform_ref]].concat();
+                let toplevel = self.all_toplevel();
 
                 let reified: Vec<_> = toplevel
                     .iter()
-                    .enumerate()
-                    .filter(|(_, v)| actions_have_target(&v.root, t, registrar))
-                    .map(|(i, v)| v.reify(i, t, profiles, registrar))
+                    .filter(|v| actions_have_target(&v.root, t, registrar))
+                    .map(|v| v.reify(t, profiles, registrar))
                     .filter_map(|v| v.transpose())
                     .collect::<Result<_>>()?;
 
@@ -357,13 +367,11 @@ impl PipelineDefinition {
 impl TopLevelDefinition {
     fn reify(
         &self,
-        toplevel_index: usize,
         target: PipelineTarget,
         profiles: &[CategoryProfile],
         registrar: &PipelineActionRegistrar,
     ) -> Result<Option<PipelineAction>> {
         self.root.reify(&ReificationCtx {
-            toplevel_index,
             toplevel_id: self.id,
             target,
             actions: &self.actions,
@@ -375,8 +383,6 @@ impl TopLevelDefinition {
 
 #[derive(Debug, Clone, Copy)]
 struct ReificationCtx<'a> {
-    /// 0 for platform, otherwise (index - 1) into the toplevel array
-    toplevel_index: usize,
     toplevel_id: TopLevelId,
     target: PipelineTarget,
     actions: &'a PipelineActionLookup,
@@ -423,7 +429,7 @@ impl PipelineActionId {
                     )
                 })?;
 
-                let settings = config
+                let (id, settings) = config
                     .profile_override
                     .and_then(|profile| {
                         ctx.profiles
@@ -448,9 +454,9 @@ impl PipelineActionId {
                     })
                     .unwrap_or((None, config));
 
-                log::debug!("reify pipeline action id {self:?} got config {settings:?}");
+                log::debug!("reify pipeline action id {self:?} got config {settings:?}@{id:?}");
 
-                let resolved_action = settings.1.reify(settings.0, definition, ctx)?;
+                let resolved_action = settings.reify(id, definition, ctx)?;
 
                 Ok(Some(resolved_action))
             }
@@ -464,13 +470,19 @@ fn resolve_action_from_profile_override<'a>(
     id: &PipelineActionId,
     ctx: &ReificationCtx,
 ) -> Option<&'a PipelineActionSettings<ConfigSelection>> {
-    if ctx.toplevel_index == 0 {
-        profile.pipeline.platform.actions.get(id, ctx.target)
-    } else {
-        profile.pipeline.toplevel[ctx.toplevel_index - 1]
-            .actions
-            .get(id, ctx.target)
-    }
+    let toplevel = profile.pipeline.all_toplevel();
+    toplevel
+        .iter()
+        .find(|v| v.id == ctx.toplevel_id)
+        .with_context(|| {
+            format!(
+                "unable to find toplevel id {:?} in profile {:?}",
+                ctx.toplevel_id, profile.id
+            )
+        })
+        .unwrap()
+        .actions
+        .get(id, ctx.target)
 }
 
 impl PipelineActionSettings<ConfigSelection> {
@@ -650,10 +662,16 @@ mod tests {
     //     let platform_root = PipelineActionId("core:app:platform".to_string());
     //     let toplevel_root = PipelineActionId("core:toplevel:secondary".to_string());
 
+    //     let desktop_controller_layout_hack = DesktopControllerLayoutHack {
+    //         id: ActionId::new(),
+    //         steam_override: None,
+    //         nonsteam_override: None,
+    //     };
+
     //     let profile_pipeline = PipelineDefinition {
     //         id: PipelineDefinitionId::new(),
     //         name: "ToplevelProfile".to_string(),
-    //         register_exit_hooks: false,
+    //         desktop_controller_layout_hack,
     //         primary_target_override: None,
     //         platform: TopLevelDefinition {
     //             id: TopLevelId::new(),
@@ -680,7 +698,7 @@ mod tests {
     //     let override_pipeline = PipelineDefinition {
     //         id: PipelineDefinitionId::new(),
     //         name: "ToplevelTest".to_string(),
-    //         register_exit_hooks: false,
+    //         desktop_controller_layout_hack,
     //         primary_target_override: None,
     //         platform: TopLevelDefinition {
     //             id: TopLevelId::new(),
@@ -698,11 +716,7 @@ mod tests {
 
     //     let desktop_target = reified.targets.remove(&PipelineTarget::Desktop).unwrap();
 
-    //     match desktop_target {
-
-    //         RuntimeSelection::AllOf(actions) => actions.iter().skip(1).,
-    //         _ => panic!("expected toplevel selection to be AllOf")
-    //     }
+    //     // TODO::this
 
     //     Ok(())
     // }

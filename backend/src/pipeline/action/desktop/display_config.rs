@@ -70,9 +70,6 @@ impl ActionImpl for DisplayConfig {
             }
         }
 
-        let update = display.calc_ui_viewport_event(embedded.as_ref(), preferred.as_ref());
-        ctx.send_ui_event(update);
-
         Ok(())
     }
 

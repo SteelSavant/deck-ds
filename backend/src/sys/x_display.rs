@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, process::Command, str::FromStr, thread::sleep, time::Duration};
+use std::{cmp::Ordering, process::Command, str::FromStr, time::Duration};
 
 use float_cmp::approx_eq;
 use regex::Regex;
@@ -80,7 +80,7 @@ impl XDisplay {
             let mut maybe_external = self.get_preferred_external_output_maybe_disconnected()?;
 
             let mut fail_count = 0;
-            const MAX_FAIL_COUNT: u8 = 15;
+            const MAX_FAIL_COUNT: u16 = 150;
             while fail_count <= MAX_FAIL_COUNT {
                 if let Some(external) = maybe_external {
                     if external.connected {
@@ -94,7 +94,7 @@ impl XDisplay {
                     }
 
                     fail_count += 1;
-                    thread::sleep(Duration::from_secs(1));
+                    thread::sleep(Duration::from_millis(100));
                     maybe_external = self.get_preferred_external_output_maybe_disconnected()?;
                 }
             }
@@ -130,14 +130,14 @@ impl XDisplay {
             .next())
     }
 
-    pub fn calc_ui_viewport_event(
+    pub fn calc_initial_ui_viewport_event(
         &mut self,
         embedded: Option<&Output>,
         external: Option<&Output>,
     ) -> UiEvent {
-        // TODO::this is technically wrong, since it ignores the screen relation (above, below, etc.),
-        // but I'm not going to worry until someone complains, since 99% of the time,
-        // the embedded display will be below or disabled, and it doesn't affect usability.
+        // This is technically wrong, since it ignores the screen relation (above, below, etc.),
+        // but since the UI thread will reconfigure it anyway, I'm content to use this for initial sizes
+        // and allow it to update.
 
         let external_mode = external
             .and_then(|external| self.get_current_mode(external).ok())
@@ -149,22 +149,22 @@ impl XDisplay {
 
         match (deck_mode, external_mode) {
             (None, None) => UiEvent::UpdateViewports {
-                primary_size: Size(0, 0),
+                primary_size: Size::new(0, 0),
                 secondary_size: None,
-                primary_position: Pos(0, 0),
+                primary_position: Pos::new(0, 0),
                 secondary_position: None,
             },
             (None, Some(mode)) | (Some(mode), None) => UiEvent::UpdateViewports {
-                primary_size: Size(mode.width, mode.height).normalized(),
+                primary_size: Size::new(mode.width, mode.height).normalized(),
                 secondary_size: None,
-                primary_position: Pos(0, 0),
+                primary_position: Pos::new(0, 0),
                 secondary_position: None,
             },
             (Some(deck), Some(external)) => UiEvent::UpdateViewports {
-                primary_size: Size(external.width, external.height).normalized(),
-                secondary_size: Some(Size(deck.width, deck.height).normalized()),
-                primary_position: Pos(0, 0),
-                secondary_position: Some(Pos(0, external.height)),
+                primary_size: Size::new(external.width, external.height).normalized(),
+                secondary_size: Some(Size::new(deck.width, deck.height).normalized()),
+                primary_position: Pos::new(0, 0),
+                secondary_position: Some(Pos::new(0, external.height)),
             },
         }
     }
@@ -200,8 +200,6 @@ impl XDisplay {
             self.set_output_position(embedded, relative, to_output)
                 .with_context(|| "reset position failed")?;
         }
-
-        sleep(Duration::from_millis(500));
 
         Ok(())
     }
@@ -266,8 +264,6 @@ impl XDisplay {
                 .disable(output)
                 .with_context(|| "disable output failed")?;
         }
-
-        thread::sleep(Duration::from_millis(200));
 
         self.reconfigure_output(output)
     }

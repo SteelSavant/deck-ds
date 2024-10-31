@@ -83,7 +83,7 @@ impl AppProfile {
                         for (action_id, action) in tl.actions.actions.iter_mut() {
                             if let Some(profile_action) = profile_tl.actions.actions.get(action_id)
                             {
-                                action.is_visible_on_qam = profile_action.is_visible_on_qam
+                                action.copy_qam_values(&profile_action);
                             }
                         }
                     }
