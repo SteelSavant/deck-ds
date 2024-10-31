@@ -1,5 +1,5 @@
 import { Button } from '@decky/ui';
-import { ReactElement, useEffect, useRef } from 'react';
+import { ReactElement, useRef } from 'react';
 import { IconForTarget } from '../../components/IconForTarget';
 import { useAppState } from '../../context/appContext';
 import useAppTarget from '../../hooks/useAppTarget';
@@ -45,11 +45,11 @@ export default function PrimaryPlayButton({
 
     const onLaunch = action?.targets?.find((t) => t.target === target)?.action;
 
-    useEffect(() => {
-        setTimeout(() => {
-            ref?.current?.focus();
-        }, 750);
-    }, []);
+    // useEffect(() => {
+    //     setTimeout(() => {
+    //         ref?.current?.focus();
+    //     }, 750);
+    // }, []);
 
     logger.debug(
         'patching play button with target: ',
@@ -64,8 +64,6 @@ export default function PrimaryPlayButton({
 
     return target && onLaunch ? (
         <Button
-            // I would be thrilled if this matched the actual play button (including CSS loader styling), but with a custom icon + action, but alas...
-            // I genuinely don't know how to style things properly.
             ref={ref}
             onClick={onLaunch}
             onOKButton={onLaunch}
