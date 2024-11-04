@@ -1,5 +1,5 @@
 import { Button } from '@decky/ui';
-import { ReactElement } from 'react';
+import { ReactElement, useRef } from 'react';
 import { IconForTarget } from '../../components/IconForTarget';
 import { useAppState } from '../../context/appContext';
 import useLaunchActions from '../../hooks/useLaunchActions';
@@ -15,8 +15,7 @@ export default function PrimaryPlayButton({
 }: PrimaryPlayButtonProps): ReactElement {
     const { appDetails, appProfile, useAppTarget } = useAppState();
     const launchActions = useLaunchActions(appDetails);
-    // const ref = useRef<HTMLDivElement>(null);
-    playButton.props.autoFocus = false;
+    const ref = useRef<HTMLDivElement>(null);
 
     const action = appProfile?.isOk
         ? launchActions.find(
@@ -61,12 +60,14 @@ export default function PrimaryPlayButton({
     );
 
     const playText = (playButton.props.children as any[])[2] ?? <div>Play</div>;
-
-    const ref = playButton.ref;
-    if (ref) {
-        ref.current = null;
+    playButton.props.autoFocus = false; // prevents snapping back to play button after every rebuild
+    const playRef = playButton.ref;
+    if (playRef) {
+        playRef.current = null;
     }
-    playButton.ref = null;
+    // if (!onLaunch) {
+    //     playButton.ref = ref;
+    // }
 
     return target && onLaunch ? (
         <Button

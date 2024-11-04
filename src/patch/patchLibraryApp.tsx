@@ -13,89 +13,15 @@ import {
     ShortAppDetailsState,
     ShortAppDetailsStateContextProvider,
 } from '../context/appContext';
-import { debugPrintStyles } from '../util/debugPrint';
 import { isSteamGame } from '../util/util';
 import PrimaryPlayButton from './components/PrimaryPlayButton';
 import SecondaryPlayButton from './components/SecondaryPlayButton';
 
-let cachedPlayButton: ReactElement | null = null;
-let argCache: any = {};
-let lastOnNavTime = 0;
 const onNavDebounceTime = 5000;
 
-function deepCompareKeys(obj1: any, obj2: any, cache: Set<any>) {
-    if (cache.has(obj1) || cache.has(obj2)) {
-        const ret = cache.has(obj1) && cache.has(obj2);
-        if (!ret) {
-            console.log(
-                'cache mismatch?:',
-                cache.has(obj1),
-                'vs',
-                cache.has(obj2),
-            );
-        }
-
-        return ret;
-    }
-
-    cache.add(obj1);
-    cache.add(obj2);
-
-    if (typeof obj1 !== 'object' || typeof obj2 !== 'object') {
-        const ret = obj1 === obj2;
-        if (!ret) {
-            console.log('primitive mismatch:', obj1, 'vs', obj2);
-        }
-
-        return ret;
-    }
-
-    if (obj1 === null || obj2 === null) {
-        const ret = obj1 === obj2;
-        if (!ret) {
-            console.log('null mismatch:', obj1, 'vs', obj2);
-        }
-
-        return ret;
-    }
-
-    const keys1 = Object.keys(obj1);
-    const keys2 = Object.keys(obj2);
-
-    if (keys1.length !== keys2.length) {
-        console.log('key length mismatch:', obj1, 'vs', obj2);
-        return false;
-    }
-
-    for (const key of keys1) {
-        if (!keys2.includes(key)) {
-            console.log('missing key', key, ':', obj1, 'vs', obj2);
-
-            return false;
-        }
-        if (!deepCompareKeys(obj1[key], obj2[key], cache)) {
-            console.log('value mismatch:', obj1, 'vs', obj2);
-
-            return false;
-        }
-    }
-
-    return true;
-}
-
-function checkCachedArg(name: string, args: any) {
-    let ret = true;
-    if (argCache[name] !== args) {
-        console.log(name, argCache[name], 'vs', args);
-        if (deepCompareKeys(argCache[name], args, new Set())) {
-            console.log(name, 'are actually the same though...');
-        } else {
-            ret = false;
-        }
-    }
-    argCache[name] = args;
-    return ret;
-}
+let cachedPlayButton: ReactElement | null = null;
+let lastOnNavTime = 0;
+let ret6incr = 0;
 
 function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
     return routerHook.addPatch(
@@ -132,7 +58,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                     //     }
                     //     return false;
                     // });
-                    debugPrintStyles();
+                    // debugPrintStyles();
 
                     wrapReactType(ret.props.children);
                     afterPatch(
@@ -179,40 +105,14 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                     }
 
                                     console.log('ret3', ret3);
-
                                     ret3.key = 'ret3';
-                                    replacePatch(
-                                        ret3.props.value,
-                                        'm_bAutoFocusChild',
-                                        () => false,
-                                    );
-
-                                    // replacePatch(
-                                    //     ret3.props.value,
-                                    //     'm_bAutoFocusChild',
-                                    //     (args) => {
-                                    //         console.log(
-                                    //             'ret2 child args',
-                                    //             args,
-                                    //         );
-                                    //         return false;
-                                    //     },
-                                    // );
 
                                     const child = findInReactTree(
                                         ret3,
                                         (x: ReactElement) => x?.props?.overview,
                                     );
 
-                                    // const playButtonStatusPanel = findInReactTree(
-                                    //     ret3,
-                                    //     (x: ReactElement) => Array.isArray(x?.props?.children) &&
-                                    //         x?.props?.className?.includes(
-                                    //             basicAppDetailsSectionStylerClasses.ActionButtonAndStatusPanel // _1fHBRg7vFnKszK6EiOdIEY
-                                    //         )
-
                                     wrapReactClass(child);
-
                                     afterPatch(
                                         child.type.prototype,
                                         'render',
@@ -240,9 +140,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                 'type',
                                                 (_5, ret5) => {
                                                     console.log('ret5', ret5);
-
                                                     ret5.key = 'ret5';
-                                                    let ret6incr = 0;
 
                                                     afterPatch(
                                                         ret5,
@@ -339,113 +237,111 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                             playSection.key =
                                                                 'ret6child';
 
-                                                            for (const v of [
-                                                                [0, 'onNav'],
-                                                                [1, 'onFocus'],
-                                                                [
-                                                                    2,
-                                                                    'onFocusWithin',
-                                                                ],
-                                                                [
-                                                                    3,
-                                                                    'onFocusWithin',
-                                                                ],
-                                                            ]) {
-                                                                const child =
-                                                                    ret6.props
-                                                                        .children[
-                                                                        v[0]
-                                                                    ];
+                                                            // for (const v of [
+                                                            //     [0, 'onNav'],
+                                                            //     // [1, 'onFocus'],
+                                                            //     // [
+                                                            //     //     2,
+                                                            //     //     'onFocusWithin',
+                                                            //     // ],
+                                                            //     // [
+                                                            //     //     3,
+                                                            //     //     'onFocusWithin',
+                                                            //     // ],
+                                                            // ]) {
+                                                            //     const child =
+                                                            //         ret6.props
+                                                            //             .children[
+                                                            //             v[0]
+                                                            //         ];
 
-                                                                const onFocusWithin =
-                                                                    child.props[
-                                                                        v[1]
-                                                                    ];
-                                                                // wrapReactType(
-                                                                //     child,
-                                                                // );
-                                                                replacePatch(
-                                                                    child.props,
-                                                                    v[1] as string,
-                                                                    (
-                                                                        _focusArgs,
-                                                                    ) => {
-                                                                        console.log(
-                                                                            'ret6 focuswithin',
-                                                                            v[0],
-                                                                            v[1],
-                                                                            _focusArgs,
-                                                                            onFocusWithin,
-                                                                        );
+                                                            //     const onFocusWithin =
+                                                            //         child.props[
+                                                            //             v[1]
+                                                            //         ];
+                                                            //     wrapReactType(
+                                                            //         child,
+                                                            //     );
+                                                            //     replacePatch(
+                                                            //         child.props,
+                                                            //         v[1] as string,
+                                                            //         (
+                                                            //             _focusArgs,
+                                                            //         ) => {
+                                                            //             console.log(
+                                                            //                 'ret6 focuswithin',
+                                                            //                 v[0],
+                                                            //                 v[1],
+                                                            //                 _focusArgs,
+                                                            //                 onFocusWithin,
+                                                            //             );
 
-                                                                        return;
+                                                            //             return;
 
-                                                                        lastOnNavTime =
-                                                                            Date.now();
+                                                            //             // lastOnNavTime =
+                                                            //             //     Date.now();
 
-                                                                        console.log(
-                                                                            'handling focus within...',
-                                                                        );
+                                                            //             // console.log(
+                                                            //             //     'handling focus within...',
+                                                            //             // );
 
-                                                                        onFocusWithin(
-                                                                            ..._focusArgs,
-                                                                        );
-                                                                    },
-                                                                );
-                                                            }
+                                                            //             onFocusWithin(
+                                                            //                 ..._focusArgs,
+                                                            //             );
+                                                            //         },
+                                                            //     );
+                                                            // }
 
                                                             wrapReactType(
                                                                 playSection,
                                                             );
 
+                                                            const onNav =
+                                                                playSection
+                                                                    .props
+                                                                    .onNav;
                                                             replacePatch(
-                                                                playSection,
-                                                                'ref',
-                                                                () => {
-                                                                    return null;
+                                                                playSection.props,
+                                                                'onNav',
+                                                                (args) => {
+                                                                    console.log(
+                                                                        'ret6child onnav',
+                                                                        args,
+                                                                    );
+
+                                                                    const elapsed =
+                                                                        Date.now() -
+                                                                        lastOnNavTime;
+                                                                    if (
+                                                                        (!installed ||
+                                                                            ret6incr ===
+                                                                                0) &&
+                                                                        elapsed >
+                                                                            onNavDebounceTime
+                                                                    ) {
+                                                                        console.log(
+                                                                            'calling onNav',
+                                                                            ret6incr,
+                                                                        );
+                                                                        onNav(
+                                                                            ...args,
+                                                                        );
+                                                                    } else {
+                                                                        console.log(
+                                                                            'calling onNav debounce',
+                                                                            ret6incr,
+                                                                        );
+                                                                    }
+
+                                                                    ret6incr += 1;
+                                                                    ret6incr %= 3;
+
+                                                                    console.log(
+                                                                        'set onnav incr to',
+                                                                        ret6incr,
+                                                                    );
                                                                 },
                                                             );
-                                                            // const onNav =
-                                                            //     playSection
-                                                            //         .props
-                                                            //         .onNav;
-                                                            // replacePatch(
-                                                            //     playSection.props,
-                                                            //     'onNav',
-                                                            //     (args) => {
-                                                            //         console.log(
-                                                            //             'ret6child onnav',
-                                                            //             args,
-                                                            //         );
-
-                                                            //         const elapsed =
-                                                            //             Date.now() -
-                                                            //             lastOnNavTime;
-                                                            //         if (
-                                                            //             (!installed ||
-                                                            //                 ret6incr ===
-                                                            //                     0) &&
-                                                            //             elapsed >
-                                                            //                 onNavDebounceTime
-                                                            //         ) {
-                                                            //             console.log(
-                                                            //                 'calling onNav',
-                                                            //                 ret6incr,
-                                                            //             );
-                                                            //             onNav(
-                                                            //                 ...args,
-                                                            //             );
-                                                            //         } else {
-                                                            //             console.log(
-                                                            //                 'calling onNav debounce',
-                                                            //                 ret6incr,
-                                                            //             );
-                                                            //         }
-
-                                                            //         ret6incr += 1;
-                                                            //         ret6incr %= 3;
-                                                            //     },
-                                                            // );
 
                                                             afterPatch(
                                                                 playSection.type,
@@ -560,15 +456,6 @@ function patchFinalElement(
             ),
     );
 
-    // const playButtonStatusPanel = findInReactTree(
-    //     ret,
-    //     (x: ReactElement) => Array.isArray(x?.props?.children) &&
-    //         x?.props?.className?.includes(
-    //             basicAppDetailsSectionStylerClasses.ActionButtonAndStatusPanel
-    //         )
-
-    // )
-
     const playButton = findInReactTree(ret, (x: ReactElement) => {
         return x?.props?.className?.includes(
             basicAppDetailsSectionStylerClasses.AppActionButton, // QsZdWtHTlIK9KIKbscNTt
@@ -648,7 +535,6 @@ function patchFinalElement(
                             )
                         ) {
                             const actualPlayButton = children[0];
-
                             cachedPlayButton = actualPlayButton;
 
                             children.splice(
