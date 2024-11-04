@@ -181,6 +181,11 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                     console.log('ret3', ret3);
 
                                     ret3.key = 'ret3';
+                                    replacePatch(
+                                        ret3.props.value,
+                                        'm_bAutoFocusChild',
+                                        () => false,
+                                    );
 
                                     // replacePatch(
                                     //     ret3.props.value,
@@ -320,6 +325,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 console.log(
                                                                     'not installed',
                                                                 );
+
                                                                 return ret6;
                                                             }
 
@@ -390,6 +396,14 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                                             wrapReactType(
                                                                 playSection,
+                                                            );
+
+                                                            replacePatch(
+                                                                playSection,
+                                                                'ref',
+                                                                () => {
+                                                                    return null;
+                                                                },
                                                             );
                                                             // const onNav =
                                                             //     playSection
@@ -607,13 +621,13 @@ function patchFinalElement(
         afterPatch(playButton.type, 'render', (_play, retPlayButton) => {
             console.log('retPlayButton', retPlayButton);
             const ref = retPlayButton.ref;
-            if (ref) {
-                ref.current = null;
+            // if (ref) {
+            //     ref.current = null;
 
-                setTimeout(() => {
-                    ref.current = null;
-                }, 100);
-            }
+            //     setTimeout(() => {
+            //         ref.current = null;
+            //     }, 100);
+            // }
 
             wrapReactClass(retPlayButton);
             afterPatch(

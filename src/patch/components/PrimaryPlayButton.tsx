@@ -2,7 +2,6 @@ import { Button } from '@decky/ui';
 import { ReactElement, useRef } from 'react';
 import { IconForTarget } from '../../components/IconForTarget';
 import { useAppState } from '../../context/appContext';
-import useAppTarget from '../../hooks/useAppTarget';
 import useLaunchActions from '../../hooks/useLaunchActions';
 import { logger } from '../../util/log';
 
@@ -14,7 +13,7 @@ interface PrimaryPlayButtonProps {
 export default function PrimaryPlayButton({
     playButton,
 }: PrimaryPlayButtonProps): ReactElement {
-    const { appDetails, appProfile } = useAppState();
+    const { appDetails, appProfile, useAppTarget } = useAppState();
     const launchActions = useLaunchActions(appDetails);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -29,7 +28,7 @@ export default function PrimaryPlayButton({
         profileId: action?.profileId ?? null,
     });
 
-    logger.debug(
+    logger.trace(
         'primary play loading:',
         'ad:',
         appDetails,

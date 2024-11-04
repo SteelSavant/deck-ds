@@ -8,6 +8,7 @@ import {
     getDefaultAppOverrideForProfileRequest,
     getProfile,
     getProfiles,
+    getSettings,
     PipelineDefinition,
     PipelineTarget,
     reifyPipeline,
@@ -36,14 +37,19 @@ export interface StateAction {
     update: PipelineUpdate;
 }
 
-export type ShortAppDetails = {
+export interface ShortAppDetails {
     appId: number;
     gameId: string;
     userId64: string;
     sortAs: string;
     isSteamGame: boolean;
     selected_clientid: string;
-};
+}
+
+export interface AppTargetSelection {
+    primaryTarget: PipelineTarget | null;
+    secondaryTarget: PipelineTarget | null;
+}
 
 interface PublicAppState {
     appDetails: ShortAppDetails | null;
@@ -67,6 +73,10 @@ interface PublicAppStateContext extends PublicAppState {
     ): void;
     dispatchUpdate(profileId: string, action: StateAction): Promise<void>;
     ensureSelectedClientUpdated(): Promise<void>;
+    useAppTarget(props: {
+        profileId: string | null;
+        isPrimary: boolean;
+    }): PipelineTarget | null;
 }
 
 // This class creates the getter and setter functions for all of the global state data.
@@ -79,6 +89,7 @@ export class ShortAppDetailsState {
     } = {};
     private openViews: { [k: string]: { [k: string]: boolean } } = {};
     private lastOnAppPageTime: number = 0;
+    private appTargets: { [profileId: string]: AppTargetSelection } = {};
 
     // You can listen to this eventBus' 'stateUpdate' event and use that to trigger a useState or other function that causes a re-render
     public readonly eventBus = new EventTarget();
@@ -90,6 +101,11 @@ export class ShortAppDetailsState {
             reifiedPipelines: { ...this.reifiedPipelines },
             openViews: { ...this.openViews },
         };
+    }
+
+    getAppTarget(profileId: string, isPrimary: boolean) {
+        const target = this.appTargets[profileId];
+        return isPrimary ? target?.primaryTarget : target?.secondaryTarget;
     }
 
     setOnAppPage(appDetails: ShortAppDetails | null) {
@@ -220,6 +236,9 @@ export class ShortAppDetailsState {
                     ),
                 );
                 this.reifiedPipelines[profileId] = res;
+                this.appTargets[profileId] = await computeAppTargetSelection(
+                    overrides[profileId],
+                );
                 logger.debug(
                     'load reified to:',
                     this.reifiedPipelines[profileId],
@@ -361,6 +380,9 @@ export class ShortAppDetailsState {
                         );
 
                         this.reifiedPipelines[k] = reified;
+                        this.appTargets[k] = await computeAppTargetSelection(
+                            overrides[k],
+                        );
                     }
 
                     logger.debug(
@@ -507,6 +529,11 @@ export const ShortAppDetailsStateContextProvider: FC<
         ShortAppDetailsStateClass.ensureSelectedClientUpdated();
     };
 
+    const getAppTarget = (props: { profileId: string; isPrimary: boolean }) =>
+        ShortAppDetailsStateClass.getAppTarget(
+            props.profileId,
+            props.isPrimary,
+        );
     return (
         <AppContext.Provider
             value={{
@@ -516,6 +543,7 @@ export const ShortAppDetailsStateContextProvider: FC<
                 setAppViewOpen,
                 dispatchUpdate,
                 ensureSelectedClientUpdated,
+                useAppTarget: getAppTarget,
             }}
         >
             {children}
@@ -609,4 +637,19 @@ async function getProfileIdsForAppId(appId: number): Promise<string[]> {
     logger.debug('using profiles', profiles, 'for appid', appId);
 
     return profiles;
+}
+
+async function computeAppTargetSelection(
+    pipeline: PipelineDefinition,
+): Promise<AppTargetSelection> {
+    const settings = await getSettings();
+    const defaultTarget = settings.isOk
+        ? settings.data.global_settings.primary_ui_target
+        : 'Gamemode';
+    const primaryTarget = pipeline.primary_target_override ?? defaultTarget;
+
+    return {
+        primaryTarget,
+        secondaryTarget: primaryTarget === 'Gamemode' ? 'Desktop' : 'Gamemode',
+    };
 }

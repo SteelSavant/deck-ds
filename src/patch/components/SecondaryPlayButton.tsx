@@ -2,7 +2,6 @@ import { DialogButton, Focusable } from '@decky/ui';
 import { ReactElement, useState } from 'react';
 import { IconForTarget } from '../../components/IconForTarget';
 import { useAppState } from '../../context/appContext';
-import useAppTarget from '../../hooks/useAppTarget';
 import useLaunchActions from '../../hooks/useLaunchActions';
 import { logger } from '../../util/log';
 
@@ -15,7 +14,7 @@ interface SecondaryPlayButtonProps {
 // - gamemode is not a target
 // then this would display the icon from the normal play button, and run its on clicked/pressed function when pressed
 export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): ReactElement | null {
-    const { appDetails, appProfile } = useAppState();
+    const { appDetails, appProfile, useAppTarget } = useAppState();
     const launchActions = useLaunchActions(appDetails);
     const [isFocused, setIsFocused] = useState(false);
 

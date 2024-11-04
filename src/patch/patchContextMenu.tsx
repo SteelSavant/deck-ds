@@ -14,7 +14,6 @@ import {
     ShortAppDetailsStateContextProvider,
     useAppState,
 } from '../context/appContext';
-import useAppTarget from '../hooks/useAppTarget';
 import useLaunchActions from '../hooks/useLaunchActions';
 import { isSteamGame } from '../util/util';
 
@@ -27,7 +26,7 @@ function PlayBtnMenuItem({
     appId: number;
     playButton: ReactElement;
 }): ReactElement {
-    const { appDetails, appProfile } = useAppState();
+    const { appDetails, appProfile, useAppTarget } = useAppState();
     const launchActions = useLaunchActions(appDetails);
     const ref = useRef<HTMLDivElement>(null);
 
