@@ -1,6 +1,5 @@
 // Adapted from https://github.com/OMGDuke/SDH-GameThemeMusic/blob/main/src/state/ShortAppDetailsState.tsx
 
-import _ from 'lodash';
 import { createContext, FC, useContext, useEffect, useState } from 'react';
 import {
     ApiError,
@@ -8,6 +7,7 @@ import {
     getAppProfile,
     getDefaultAppOverrideForProfileRequest,
     getProfile,
+    getProfiles,
     PipelineDefinition,
     PipelineTarget,
     reifyPipeline,
@@ -23,6 +23,13 @@ import { Loading } from '../util/loading';
 import { logger } from '../util/log';
 import { patchPipeline, PipelineUpdate } from '../util/patchPipeline';
 import { Result } from '../util/result';
+
+// When setting the app
+// - Load all profiles
+// - Find matching profiles for app
+// - Load all overrides (including defaults)
+// - Expose launch actions for profiles
+// - Subscribe to category changes, to allow dynamically updating the overrides
 
 export interface StateAction {
     externalProfile: MaybeString;
@@ -59,7 +66,6 @@ interface PublicAppStateContext extends PublicAppState {
         isOpen: boolean,
     ): void;
     dispatchUpdate(profileId: string, action: StateAction): Promise<void>;
-    loadProfileOverride(appId: number, profileId: string): Promise<void>;
     ensureSelectedClientUpdated(): Promise<void>;
 }
 
@@ -175,8 +181,8 @@ export class ShortAppDetailsState {
         }
     }
 
-    async loadProfileOverride(appId: number, profileId: string) {
-        logger.debug('loading app profile');
+    private async loadProfileOverride(appId: number, profileId: string) {
+        logger.debug('loading app profile', appId, ':', profileId);
         let shouldUpdate = false;
         if (this.appDetails?.appId === appId && this.appProfile?.isOk) {
             const overrides = this.appProfile.data.overrides;
@@ -373,32 +379,58 @@ export class ShortAppDetailsState {
         appDetails: ShortAppDetails | null,
         time: number,
     ) {
-        const areEqual = _.isEqual(appDetails, this.appDetails);
+        const areEqual =
+            (appDetails === null && this.appDetails === null) ||
+            (appDetails?.appId === this.appDetails?.appId &&
+                appDetails?.gameId === this.appDetails?.gameId);
         logger.trace('trying to set app to', appDetails?.sortAs);
 
         if (time < this.lastOnAppPageTime || areEqual) {
+            this.ensureSelectedClientUpdated();
             return;
         }
 
-        logger.trace('setting app to ', appDetails?.sortAs);
+        logger.debug('setting app to ', appDetails?.sortAs);
 
         this.appDetails = appDetails;
         this.appProfile = null;
         this.openViews = {};
         this.reifiedPipelines = {};
         this.lastOnAppPageTime = time;
-        this.fetchProfile();
         this.forceUpdate();
+        this.fetchProfile(appDetails);
     }
 
-    private async fetchProfile() {
-        const appDetails = this.appDetails;
+    private async fetchProfile(appDetails: ShortAppDetails | null) {
+        console.log('starting profile fetch for', appDetails);
         if (appDetails) {
+            console.log('fetching profile for', appDetails);
+
             const profile = (
                 await getAppProfile({ app_id: appDetails.appId.toString() })
             ).map((v) => v.app ?? null);
             if (this.appDetails?.appId == appDetails.appId) {
+                console.log('fetched profile for', appDetails, ':', profile);
+
                 this.appProfile = profile;
+
+                if (profile.isOk) {
+                    console.log(
+                        'handling profile for',
+                        appDetails,
+                        ':',
+                        profile.data,
+                    );
+
+                    const profileIds = await getProfileIdsForAppId(
+                        appDetails.appId,
+                    );
+
+                    const profiles = profileIds.map((profileId) =>
+                        this.loadProfileOverride(appDetails.appId, profileId),
+                    );
+                    await Promise.all(profiles);
+                }
                 this.forceUpdate();
             }
         }
@@ -459,7 +491,6 @@ export const ShortAppDetailsStateContextProvider: FC<
             defaultProfileId,
         );
     };
-
     const setAppViewOpen = (
         profileId: string,
         view: PipelineTarget,
@@ -470,10 +501,6 @@ export const ShortAppDetailsStateContextProvider: FC<
 
     const dispatchUpdate = async (profileId: string, action: StateAction) => {
         ShortAppDetailsStateClass.dispatchUpdate(profileId, action);
-    };
-
-    const loadProfileOverride = async (appId: number, profileId: string) => {
-        ShortAppDetailsStateClass.loadProfileOverride(appId, profileId);
     };
 
     const ensureSelectedClientUpdated = async () => {
@@ -488,7 +515,6 @@ export const ShortAppDetailsStateContextProvider: FC<
                 setAppProfileDefault,
                 setAppViewOpen,
                 dispatchUpdate,
-                loadProfileOverride,
                 ensureSelectedClientUpdated,
             }}
         >
@@ -557,4 +583,30 @@ function patchProfileOverridesForMissing(
     logger.debug('reify response after patch: ', response.pipeline);
 
     return response;
+}
+
+async function getProfileIdsForAppId(appId: number): Promise<string[]> {
+    const loadedProfiles = (await getProfiles()).unwrap().profiles;
+    const includedProfiles = new Set<string>();
+    const profiles = collectionStore.userCollections
+        .flatMap((uc) => {
+            const containsApp = uc.apps.has(appId);
+
+            if (containsApp) {
+                const matchedProfiles = loadedProfiles
+                    .filter((p) => !includedProfiles.has(p.id))
+                    .filter((p) => p.tags.includes(uc.id));
+
+                for (const p of matchedProfiles) {
+                    includedProfiles.add(p.id);
+                }
+                return matchedProfiles;
+            } else {
+                return [];
+            }
+        })
+        .map((v) => v.id);
+    logger.debug('using profiles', profiles, 'for appid', appId);
+
+    return profiles;
 }

@@ -58,13 +58,13 @@ function PlayBtnMenuItem({
 
     const action = appProfile?.isOk
         ? launchActions.find(
-              (a) => a.profile.id == appProfile.data.default_profile,
+              (a) => a.profileId == appProfile.data.default_profile,
           ) ?? launchActions[0]
         : null;
 
     const target = useAppTarget({
         isPrimary: true,
-        profileId: action?.profile.id ?? null,
+        profileId: action?.profileId ?? null,
     });
 
     const onLaunch = action?.targets?.find((t) => t.target === target)?.action;

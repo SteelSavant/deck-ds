@@ -1,5 +1,5 @@
 import { DialogButton, Focusable } from '@decky/ui';
-import { ReactElement, useEffect, useState } from 'react';
+import { ReactElement, useState } from 'react';
 import { IconForTarget } from '../../components/IconForTarget';
 import { useAppState } from '../../context/appContext';
 import useAppTarget from '../../hooks/useAppTarget';
@@ -15,21 +15,13 @@ interface SecondaryPlayButtonProps {
 // - gamemode is not a target
 // then this would display the icon from the normal play button, and run its on clicked/pressed function when pressed
 export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): ReactElement | null {
-    const { appDetails, appProfile, ensureSelectedClientUpdated } =
-        useAppState();
+    const { appDetails, appProfile } = useAppState();
     const launchActions = useLaunchActions(appDetails);
     const [isFocused, setIsFocused] = useState(false);
 
-    // Hack to ensure we have the correct selected_clientid
-    useEffect(() => {
-        for (const timeout of [100, 200, 500, 1000, 2000, 5000, 10000]) {
-            setTimeout(() => ensureSelectedClientUpdated(), timeout);
-        }
-    }, [appDetails?.selected_clientid]);
-
     const action = appProfile?.isOk
         ? launchActions.find(
-              (a) => a.profile.id == appProfile.data.default_profile,
+              (a) => a.profileId == appProfile.data.default_profile,
           ) ?? launchActions[0]
         : null;
 
@@ -38,12 +30,10 @@ export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): React
 
     const target = useAppTarget({
         isPrimary: false,
-        profileId: action?.profile.id ?? null,
+        profileId: action?.profileId ?? null,
     });
 
-    let onLaunch = launchActions[0]?.targets?.find(
-        (t) => t.target === target,
-    )?.action;
+    let onLaunch = action?.targets?.find((t) => t.target === target)?.action;
     if (target === 'Gamemode' && appDetails) {
         onLaunch ??= () =>
             SteamClient.Apps.RunGame(

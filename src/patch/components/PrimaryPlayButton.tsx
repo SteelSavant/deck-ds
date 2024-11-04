@@ -20,16 +20,16 @@ export default function PrimaryPlayButton({
 
     const action = appProfile?.isOk
         ? launchActions.find(
-              (a) => a.profile.id == appProfile.data.default_profile,
+              (a) => a.profileId == appProfile.data.default_profile,
           ) ?? launchActions[0]
         : null;
 
     const target = useAppTarget({
         isPrimary: true,
-        profileId: action?.profile.id ?? null,
+        profileId: action?.profileId ?? null,
     });
 
-    logger.trace(
+    logger.debug(
         'primary play loading:',
         'ad:',
         appDetails,

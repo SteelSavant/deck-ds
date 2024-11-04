@@ -20,7 +20,6 @@ import HandleLoading from '../../components/HandleLoading';
 import { IconForTarget } from '../../components/IconForTarget';
 import { ShortAppDetails, useAppState } from '../../context/appContext';
 import { ConfigErrorContext } from '../../context/configErrorContext';
-import useEnsureAppOverridePipeline from '../../hooks/useEnsureAppOverridePipeline';
 import useLaunchActions, { LaunchActions } from '../../hooks/useLaunchActions';
 import { logger } from '../../util/log';
 import AppDefaultProfileDropdown from './AppDefaultProfileDropdown';
@@ -75,7 +74,7 @@ function DeckDSProfilesForApp({
         <>
             {launchActions.map((a) => {
                 return (
-                    <ProfileContext.Provider value={a.profile.id}>
+                    <ProfileContext.Provider value={a.profileId}>
                         <AppProfileSection launchActions={a} />
                     </ProfileContext.Provider>
                 );
@@ -147,9 +146,8 @@ function AppProfileSection({
 }): ReactElement {
     const height = '40px';
     const margin = '5px';
-    const profileId = launchActions.profile.id;
+    const profileId = launchActions.profileId;
 
-    useEnsureAppOverridePipeline(profileId);
     const { reifiedPipelines } = useAppState();
     const reified = reifiedPipelines[profileId];
 
@@ -173,7 +171,7 @@ function AppProfileSection({
                             alignItems: 'center',
                         }}
                     >
-                        <p>{launchActions.profile.pipeline.name}</p>
+                        <p>{reified.pipeline.name}</p>
                         <DialogButton
                             style={{
                                 width: 'fit-content',

@@ -3,6 +3,7 @@ import { ReactElement } from 'react';
 import { AppProfile } from '../../backend';
 import { ShortAppDetails, useAppState } from '../../context/appContext';
 import { LaunchActions } from '../../hooks/useLaunchActions';
+import useProfiles from '../../hooks/useProfiles';
 
 export default function AppDefaultProfileDropdown({
     appDetails,
@@ -14,14 +15,17 @@ export default function AppDefaultProfileDropdown({
     launchActions: LaunchActions[];
 }): ReactElement | null {
     const appDetailsState = useAppState();
+    const { profiles } = useProfiles();
+
+    const availableProfiles = profiles?.isOk ? profiles.data : [];
 
     if (launchActions.length <= 1) {
         return null;
     }
 
     const selected =
-        launchActions.find((a) => a.profile.id == appProfile.default_profile)
-            ?.profile?.id ?? null;
+        launchActions.find((a) => a.profileId == appProfile.default_profile)
+            ?.profileId ?? null;
 
     return (
         <PanelSection title="Default Profile">
@@ -35,8 +39,11 @@ export default function AppDefaultProfileDropdown({
                         },
                         ...launchActions.map((a) => {
                             return {
-                                label: a.profile.pipeline.name,
-                                data: a.profile.id,
+                                label:
+                                    availableProfiles.find(
+                                        (v) => v.id === a.profileId,
+                                    )?.pipeline.name ?? '',
+                                data: a.profileId,
                             };
                         }),
                     ]}
