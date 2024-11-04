@@ -621,13 +621,13 @@ function patchFinalElement(
         afterPatch(playButton.type, 'render', (_play, retPlayButton) => {
             console.log('retPlayButton', retPlayButton);
             const ref = retPlayButton.ref;
-            // if (ref) {
-            //     ref.current = null;
+            if (ref) {
+                ref.current = null;
 
-            //     setTimeout(() => {
-            //         ref.current = null;
-            //     }, 100);
-            // }
+                setTimeout(() => {
+                    ref.current = null;
+                }, 100);
+            }
 
             wrapReactClass(retPlayButton);
             afterPatch(
@@ -648,6 +648,7 @@ function patchFinalElement(
                             )
                         ) {
                             const actualPlayButton = children[0];
+
                             cachedPlayButton = actualPlayButton;
 
                             children.splice(
