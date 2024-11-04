@@ -484,6 +484,8 @@ export const ShortAppDetailsStateContextProvider: FC<
         ...ShortAppDetailsStateClass.getPublicState(),
     });
 
+    // TODO::get global settings from hook, instead of function call when needed
+
     useEffect(() => {
         function onUpdate() {
             setPublicState({ ...ShortAppDetailsStateClass.getPublicState() });
