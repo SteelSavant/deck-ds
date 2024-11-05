@@ -61,10 +61,7 @@ export default function PrimaryPlayButton({
 
     const playText = (playButton.props.children as any[])[2] ?? <div>Play</div>;
     playButton.props.autoFocus = false; // prevents snapping back to play button after every rebuild
-    const playRef = playButton.ref;
-    if (playRef) {
-        playRef.current = null;
-    }
+
     // if (!onLaunch) {
     //     playButton.ref = ref;
     // }
