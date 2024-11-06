@@ -3,6 +3,7 @@ import {
     afterPatch,
     appDetailsClasses,
     basicAppDetailsSectionStylerClasses,
+    beforePatch,
     findInReactTree,
     replacePatch,
     wrapReactClass,
@@ -279,24 +280,9 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                             onFocusWithin,
                                                                         );
 
-                                                                        lastOnNavTime =
-                                                                            Date.now();
-
                                                                         // console.log(
                                                                         //     'handling focus within...',
                                                                         // );
-                                                                        if (
-                                                                            v[1] ===
-                                                                                3 &&
-                                                                            focusArgs.length >
-                                                                                0 &&
-                                                                            !focusArgs[0]
-                                                                        ) {
-                                                                            console.log(
-                                                                                'ignoring focuswithin',
-                                                                            );
-                                                                            return;
-                                                                        }
 
                                                                         onFocusWithin(
                                                                             ...focusArgs,
@@ -344,6 +330,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                             'calling onNav',
                                                                             onNavIncr,
                                                                         );
+                                                                        lastOnNavTime =
+                                                                            Date.now();
                                                                         onNav(
                                                                             ...args,
                                                                         );
@@ -560,6 +548,16 @@ function patchFinalElement(
                         ) {
                             const actualPlayButton = children[0];
                             cachedPlayButton = actualPlayButton;
+
+                            wrapReactType(actualPlayButton);
+                            beforePatch(
+                                actualPlayButton.type,
+                                'render',
+                                (args) => {
+                                    args[0].autoFocus = false;
+                                    args[1] = null;
+                                },
+                            );
 
                             children.splice(
                                 0,
