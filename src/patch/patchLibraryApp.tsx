@@ -4,6 +4,7 @@ import {
     appDetailsClasses,
     basicAppDetailsSectionStylerClasses,
     beforePatch,
+    callOriginal,
     findInReactTree,
     replacePatch,
     wrapReactClass,
@@ -18,7 +19,7 @@ import { isSteamGame } from '../util/util';
 import PrimaryPlayButton from './components/PrimaryPlayButton';
 import SecondaryPlayButton from './components/SecondaryPlayButton';
 
-const onNavDebounceTime = 300;
+const onNavDebounceTime = 1000;
 const onNavMaxIncr = 1;
 let cachedPlayButton: ReactElement | null = null;
 
@@ -43,6 +44,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                     console.log('ret', ret);
                     let lastOnNavTime = 0;
                     let onNavIncr = 0;
+                    let appDetailsFalseCount = 0;
 
                     // findModuleExport((e) => {
                     //     if (!e || typeof e === 'string') {
@@ -93,7 +95,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                             console.log('ret2 child', child);
 
                             wrapReactType(child);
-
                             afterPatch(
                                 child.type,
                                 'render',
@@ -262,6 +263,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                     child.props[
                                                                         v[1]
                                                                     ];
+
                                                                 wrapReactType(
                                                                     child,
                                                                     'props',
@@ -284,17 +286,41 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                         //     'handling focus within...',
                                                                         // );
 
-                                                                        onFocusWithin(
-                                                                            ...focusArgs,
-                                                                        );
+                                                                        if (
+                                                                            v[0] ===
+                                                                            3
+                                                                        ) {
+                                                                            if (
+                                                                                !focusArgs[0]
+                                                                            ) {
+                                                                                appDetailsFalseCount += 1;
+                                                                                if (
+                                                                                    appDetailsFalseCount >
+                                                                                    1
+                                                                                ) {
+                                                                                    console.log(
+                                                                                        'calling onnav from appdetailssection focuswithin',
+                                                                                    );
+                                                                                    playSection.props.onNav();
+                                                                                } else {
+                                                                                    console.log(
+                                                                                        'setting appdetailssection focuswithin true',
+                                                                                    );
+                                                                                    focusArgs[0] =
+                                                                                        true;
+                                                                                }
+                                                                                appDetailsFalseCount %= 2;
+                                                                            }
+                                                                        }
+
+                                                                        return callOriginal;
                                                                     },
                                                                 );
                                                             }
 
-                                                            const onNav =
-                                                                playSection
-                                                                    .props
-                                                                    .onNav;
+                                                            wrapReactType(
+                                                                playSection,
+                                                            );
                                                             wrapReactType(
                                                                 playSection,
                                                                 'props',
@@ -302,10 +328,10 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                             replacePatch(
                                                                 playSection.props,
                                                                 'onNav',
-                                                                (args) => {
+                                                                (_args) => {
                                                                     console.log(
                                                                         'ret6child onnav',
-                                                                        args,
+                                                                        _args,
                                                                     );
 
                                                                     const elapsed =
@@ -314,7 +340,9 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                                                     if (
                                                                         elapsed <
-                                                                        onNavDebounceTime
+                                                                            onNavDebounceTime ||
+                                                                        appDetailsFalseCount <
+                                                                            2
                                                                     ) {
                                                                         console.log(
                                                                             'calling onNav debounce elapsed',
@@ -332,9 +360,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                         );
                                                                         lastOnNavTime =
                                                                             Date.now();
-                                                                        onNav(
-                                                                            ...args,
-                                                                        );
+                                                                        return callOriginal;
                                                                     } else {
                                                                         console.log(
                                                                             'calling onNav debounce build',
@@ -342,19 +368,19 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                         );
                                                                     }
 
-                                                                    onNavIncr += 1;
-                                                                    onNavIncr %=
-                                                                        onNavMaxIncr;
+                                                                    // onNavIncr += 1;
+                                                                    // onNavIncr %=
+                                                                    //     onNavMaxIncr;
 
-                                                                    console.log(
-                                                                        'set onnav incr to',
-                                                                        onNavIncr,
-                                                                    );
+                                                                    // console.log(
+                                                                    //     'set onnav incr to',
+                                                                    //     onNavIncr,
+                                                                    // );
+
+                                                                    return;
                                                                 },
                                                             );
-                                                            wrapReactType(
-                                                                playSection,
-                                                            );
+
                                                             afterPatch(
                                                                 playSection.type,
                                                                 'render',
