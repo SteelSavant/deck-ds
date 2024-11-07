@@ -341,8 +341,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                     if (
                                                                         elapsed <
                                                                             onNavDebounceTime ||
-                                                                        appDetailsFalseCount <
-                                                                            2
+                                                                        appDetailsFalseCount ===
+                                                                            1
                                                                     ) {
                                                                         console.log(
                                                                             'calling onNav debounce elapsed',
