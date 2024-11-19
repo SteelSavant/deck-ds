@@ -19,7 +19,7 @@ import { isSteamGame } from '../util/util';
 import PrimaryPlayButton from './components/PrimaryPlayButton';
 import SecondaryPlayButton from './components/SecondaryPlayButton';
 
-const onNavDebounceTime = 1000;
+const onNavDebounceTime = 250;
 const onNavMaxIncr = 1;
 let cachedPlayButton: ReactElement | null = null;
 
@@ -231,23 +231,16 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 return ret6;
                                                             }
 
-                                                            console.log(
-                                                                'have play section, and installed',
-                                                                overview,
-                                                                status,
-                                                                installed,
-                                                            );
-
                                                             playSection.key =
                                                                 'ret6child';
 
                                                             for (const v of [
                                                                 // [0, 'onNav'],
-                                                                [1, 'onFocus'],
-                                                                [
-                                                                    2,
-                                                                    'onFocusWithin',
-                                                                ],
+                                                                // [1, 'onFocus'],
+                                                                // [
+                                                                //     2,
+                                                                //     'onFocusWithin',
+                                                                // ],
                                                                 [
                                                                     3,
                                                                     'onFocusWithin',
@@ -301,7 +294,12 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                                     console.log(
                                                                                         'calling onnav from appdetailssection focuswithin',
                                                                                     );
+
                                                                                     playSection.props.onNav();
+                                                                                    playSection.props.onNav();
+
+                                                                                    lastOnNavTime =
+                                                                                        Date.now();
                                                                                 } else {
                                                                                     console.log(
                                                                                         'setting appdetailssection focuswithin true',
@@ -345,7 +343,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                             1
                                                                     ) {
                                                                         console.log(
-                                                                            'calling onNav debounce elapsed',
+                                                                            'calling onNav debounce elapsed, false==',
+                                                                            appDetailsFalseCount,
                                                                         );
                                                                         return;
                                                                     }
@@ -358,8 +357,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                             'calling onNav',
                                                                             onNavIncr,
                                                                         );
-                                                                        lastOnNavTime =
-                                                                            Date.now();
+
                                                                         return callOriginal;
                                                                     } else {
                                                                         console.log(
@@ -438,6 +436,21 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                             return ret8;
                                                                         },
                                                                     );
+
+                                                                    if (
+                                                                        appDetailsFalseCount >
+                                                                        1
+                                                                    ) {
+                                                                        console.log(
+                                                                            'calling onnav from rebuild',
+                                                                        );
+
+                                                                        playSection.props.onNav();
+                                                                        playSection.props.onNav();
+
+                                                                        lastOnNavTime =
+                                                                            Date.now();
+                                                                    }
 
                                                                     return ret7;
                                                                 },

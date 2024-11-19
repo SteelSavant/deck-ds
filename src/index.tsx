@@ -91,7 +91,7 @@ export default definePlugin(() => {
 
     // Ensure patch handler settings loaded
     let loaded = true;
-    setTimeout(async () => {
+    const id = setInterval(async () => {
         if (!loaded || !usdplReady) {
             logger.warn('Not setting patch setting; not ready.');
             return;
@@ -103,10 +103,11 @@ export default definePlugin(() => {
             PatchHandler.getInstance().setPatchEnabled(
                 globalSettings.data.global_settings.enable_ui_inject,
             );
+            clearInterval(id);
         } else if (!globalSettings.isOk) {
             logger.error('Not setting patch setting: ', globalSettings.err);
         }
-    }, 1000); // We defer until after the backend should be initialized to avoid potential issues.
+    }, 100); // We defer until after the backend should be initialized to avoid potential issues.
 
     function updateAppDetails(this: any, currentRoute: string): void {
         const re = /^\/library\/app\/(\d+)(\/?.*)/;
@@ -116,11 +117,12 @@ export default definePlugin(() => {
             const appId = Number.parseInt(appIdStr);
             const overview = appStore.GetAppOverviewByAppID(appId);
 
-            // console.log('steam client app overview:', overview);
-            // console.log(
-            //     'steam client app details',
-            //     appDetailsStore.GetAppDetails(appId),
-            // );
+            console.log('route:', currentRoute);
+            console.log('steam client app overview:', overview);
+            console.log(
+                'steam client app details',
+                appDetailsStore.GetAppDetails(appId),
+            );
 
             appDetailsState.setOnAppPage({
                 appId,
