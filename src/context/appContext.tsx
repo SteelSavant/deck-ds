@@ -111,6 +111,8 @@ export class ShortAppDetailsState {
     setOnAppPage(appDetails: ShortAppDetails | null) {
         const time = Date.now();
 
+        logger.trace('trying to set app to', appDetails?.sortAs, '@', time);
+
         setTimeout(
             () => {
                 this.setOnAppPageInternal(appDetails, time);
@@ -405,14 +407,16 @@ export class ShortAppDetailsState {
             (appDetails === null && this.appDetails === null) ||
             (appDetails?.appId === this.appDetails?.appId &&
                 appDetails?.gameId === this.appDetails?.gameId);
-        logger.trace('trying to set app to', appDetails?.sortAs);
 
-        if (time < this.lastOnAppPageTime || areEqual) {
+        if (time <= this.lastOnAppPageTime || areEqual) {
             this.ensureSelectedClientUpdated();
+            if (areEqual) {
+                this.lastOnAppPageTime = time;
+            }
             return;
         }
 
-        logger.debug('setting app to ', appDetails?.sortAs);
+        logger.debug('setting app to ', appDetails?.sortAs, '@', Date.now());
 
         this.appDetails = appDetails;
         this.appProfile = null;

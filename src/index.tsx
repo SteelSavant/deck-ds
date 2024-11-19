@@ -89,26 +89,6 @@ export default definePlugin(() => {
     // console.log('collection store:', collectionStore);
     // console.log('collections:', collectionStore.userCollections);
 
-    // Ensure patch handler settings loaded
-    let loaded = true;
-    const id = setInterval(async () => {
-        if (!loaded || !usdplReady) {
-            logger.warn('Not setting patch setting; not ready.');
-            return;
-        }
-
-        const globalSettings = await backend.getSettings();
-
-        if (globalSettings.isOk && loaded) {
-            PatchHandler.getInstance().setPatchEnabled(
-                globalSettings.data.global_settings.enable_ui_inject,
-            );
-            clearInterval(id);
-        } else if (!globalSettings.isOk) {
-            logger.error('Not setting patch setting: ', globalSettings.err);
-        }
-    }, 100); // We defer until after the backend should be initialized to avoid potential issues.
-
     function updateAppDetails(this: any, currentRoute: string): void {
         const re = /^\/library\/app\/(\d+)(\/?.*)/;
 
@@ -238,8 +218,6 @@ export default definePlugin(() => {
         content: <Content />,
 
         onDismount: () => {
-            loaded = false;
-
             backend.log(LogLevel.Debug, 'DeckDS shutting down');
 
             unlistenHistory();

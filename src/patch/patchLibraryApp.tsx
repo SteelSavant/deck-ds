@@ -19,8 +19,7 @@ import { isSteamGame } from '../util/util';
 import PrimaryPlayButton from './components/PrimaryPlayButton';
 import SecondaryPlayButton from './components/SecondaryPlayButton';
 
-const onNavDebounceTime = 250;
-const onNavMaxIncr = 1;
+const onNavDebounceTime = 500;
 let cachedPlayButton: ReactElement | null = null;
 
 function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
@@ -45,23 +44,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                     let lastOnNavTime = 0;
                     let onNavIncr = 0;
                     let appDetailsFalseCount = 0;
-
-                    // findModuleExport((e) => {
-                    //     if (!e || typeof e === 'string') {
-                    //         return false;
-                    //     }
-                    //     if (!e.toString) {
-                    //         console.log('module export:', typeof e, e);
-                    //     } else {
-                    //         console.log(
-                    //             'module export str:',
-                    //             typeof e,
-                    //             e.toString(),
-                    //         );
-                    //     }
-                    //     return false;
-                    // });
-                    // debugPrintStyles();
 
                     wrapReactType(ret.props.children);
                     afterPatch(
