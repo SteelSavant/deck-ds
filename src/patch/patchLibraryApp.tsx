@@ -19,8 +19,12 @@ import { isSteamGame } from '../util/util';
 import PrimaryPlayButton from './components/PrimaryPlayButton';
 import SecondaryPlayButton from './components/SecondaryPlayButton';
 
-const onNavDebounceTime = 500;
+const onNavDebounceTime = 300;
+
 let cachedPlayButton: ReactElement | null = null;
+
+// Literally everthing about this is at terrible hack.
+// Curse the need to wrap forwardRefs
 
 function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
     return routerHook.addPatch(
@@ -30,8 +34,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                 return props;
             }
 
-            console.log('props', props);
-
             afterPatch(
                 props.children.props,
                 'renderFunc',
@@ -40,10 +42,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                         return ret;
                     }
 
-                    console.log('ret', ret);
                     let lastOnNavTime = 0;
-                    let onNavIncr = 0;
-                    let appDetailsFalseCount = 0;
+                    let appDetailsFalseCount = 2;
 
                     wrapReactType(ret.props.children);
                     afterPatch(
@@ -53,7 +53,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                             _2: Record<string, unknown>[],
                             ret2?: ReactElement,
                         ) => {
-                            console.log('ret2', ret2);
                             const container = findInReactTree(
                                 ret2,
                                 (x: ReactElement) =>
@@ -74,8 +73,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                 ),
                             );
 
-                            console.log('ret2 child', child);
-
                             wrapReactType(child);
                             afterPatch(
                                 child.type,
@@ -87,9 +84,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                     if (!ret3) {
                                         return ret3;
                                     }
-
-                                    console.log('ret3', ret3);
-                                    ret3.key = 'ret3';
 
                                     const child = findInReactTree(
                                         ret3,
@@ -108,34 +102,20 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                 return ret4;
                                             }
 
-                                            console.log('ret4', ret4);
-
-                                            ret4.key = 'ret4';
-
                                             const child = findInReactTree(
                                                 ret4,
                                                 (x: ReactElement) =>
                                                     x?.props?.overview,
                                             );
 
-                                            child.key = 'ret4_child';
                                             afterPatch(
                                                 child,
                                                 'type',
                                                 (_5, ret5) => {
-                                                    console.log('ret5', ret5);
-                                                    ret5.key = 'ret5';
-
                                                     afterPatch(
                                                         ret5,
                                                         'type',
                                                         (_6, ret6) => {
-                                                            console.log(
-                                                                'ret6',
-                                                                ret6,
-                                                            );
-
-                                                            ret6.key = 'ret6';
                                                             lastOnNavTime =
                                                                 Date.now(); // prevents nav when rebuilding
 
@@ -148,23 +128,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                         x?.type
                                                                             ?.render,
                                                                 );
-
-                                                            const appDetailsSection =
-                                                                findInReactTree(
-                                                                    ret6,
-                                                                    (x) =>
-                                                                        x?.props?.className?.includes(
-                                                                            basicAppDetailsSectionStylerClasses.AppDetailsContainer,
-                                                                        ) &&
-                                                                        x?.type
-                                                                            ?.render,
-                                                                );
-
-                                                            console.log(
-                                                                'ret6 child',
-                                                                playSection,
-                                                                appDetailsSection,
-                                                            );
 
                                                             const overview =
                                                                 playSection
@@ -213,9 +176,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 return ret6;
                                                             }
 
-                                                            playSection.key =
-                                                                'ret6child';
-
                                                             for (const v of [
                                                                 // [0, 'onNav'],
                                                                 // [1, 'onFocus'],
@@ -250,16 +210,19 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                         focusArgs,
                                                                     ) => {
                                                                         console.log(
-                                                                            'ret6 focuswithin',
+                                                                            'ret6 focuswithin/onnav',
                                                                             v[0],
                                                                             v[1],
                                                                             focusArgs,
                                                                             onFocusWithin,
                                                                         );
 
-                                                                        // console.log(
-                                                                        //     'handling focus within...',
-                                                                        // );
+                                                                        // if (
+                                                                        //     v[0] ===
+                                                                        //     2
+                                                                        // ) {
+                                                                        //     appDetailsFalseCount = 0;
+                                                                        // }
 
                                                                         if (
                                                                             v[0] ===
@@ -331,32 +294,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                         return;
                                                                     }
 
-                                                                    if (
-                                                                        onNavIncr ===
-                                                                        0
-                                                                    ) {
-                                                                        console.log(
-                                                                            'calling onNav',
-                                                                            onNavIncr,
-                                                                        );
-
-                                                                        return callOriginal;
-                                                                    } else {
-                                                                        console.log(
-                                                                            'calling onNav debounce build',
-                                                                            onNavIncr,
-                                                                        );
-                                                                    }
-
-                                                                    // onNavIncr += 1;
-                                                                    // onNavIncr %=
-                                                                    //     onNavMaxIncr;
-
-                                                                    // console.log(
-                                                                    //     'set onnav incr to',
-                                                                    //     onNavIncr,
-                                                                    // );
-
                                                                     return;
                                                                 },
                                                             );
@@ -365,13 +302,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 playSection.type,
                                                                 'render',
                                                                 (_7, ret7) => {
-                                                                    console.log(
-                                                                        'ret7',
-                                                                        ret7,
-                                                                    );
-                                                                    ret7.key =
-                                                                        'ret7';
-
                                                                     const ret7Child =
                                                                         findInReactTree(
                                                                             ret7,
@@ -384,18 +314,10 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                                     ?.type
                                                                                     ?.render,
                                                                         );
-                                                                    ret7Child.key =
-                                                                        'ret7Child';
-
-                                                                    console.log(
-                                                                        'ret7Child',
-                                                                        ret7Child,
-                                                                    );
 
                                                                     wrapReactType(
                                                                         ret7Child,
                                                                     );
-
                                                                     afterPatch(
                                                                         ret7Child.type,
                                                                         'render',
@@ -403,16 +325,14 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                             _8,
                                                                             ret8,
                                                                         ) => {
-                                                                            console.log(
-                                                                                'ret8',
-                                                                                ret8,
-                                                                            );
-                                                                            ret8.key =
-                                                                                'ret8';
                                                                             patchFinalElement(
                                                                                 ret8,
                                                                                 overview,
                                                                                 appDetailsState,
+                                                                                {
+                                                                                    autoFocus:
+                                                                                        false,
+                                                                                },
                                                                             );
 
                                                                             return ret8;
@@ -471,6 +391,9 @@ function patchFinalElement(
     ret: ReactElement,
     overview: any,
     appDetailsState: ShortAppDetailsState,
+    flags: {
+        autoFocus: boolean;
+    },
 ) {
     const status = overview.per_client_data.find(
         (d: any) => d.clientid === overview.selected_clientid,
@@ -540,14 +463,6 @@ function patchFinalElement(
         wrapReactType(playButton);
         afterPatch(playButton.type, 'render', (_play, retPlayButton) => {
             console.log('retPlayButton', retPlayButton);
-            // const ref = retPlayButton.ref;
-            // if (ref) {
-            //     ref.current = null;
-
-            //     setTimeout(() => {
-            //         ref.current = null;
-            //     }, 100);
-            // }
 
             wrapReactClass(retPlayButton);
             afterPatch(
@@ -575,8 +490,10 @@ function patchFinalElement(
                                 actualPlayButton.type,
                                 'render',
                                 (args) => {
-                                    args[0].autoFocus = false;
-                                    args[1] = null;
+                                    args[0].autoFocus = flags.autoFocus;
+                                    if (flags.autoFocus) {
+                                        args[1] = null;
+                                    }
                                 },
                             );
 
