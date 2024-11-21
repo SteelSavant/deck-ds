@@ -1,5 +1,4 @@
-import { Button } from '@decky/ui';
-import { ReactElement } from 'react';
+import { ReactElement, useRef } from 'react';
 import { IconForTarget } from '../../components/IconForTarget';
 import { useAppState } from '../../context/appContext';
 import useLaunchActions from '../../hooks/useLaunchActions';
@@ -15,6 +14,9 @@ export default function PrimaryPlayButton({
 }: PrimaryPlayButtonProps): ReactElement {
     const { appDetails, appProfile, useAppTarget } = useAppState();
     const launchActions = useLaunchActions(appDetails);
+    // Store the original button onclick/icon
+    const buttonRef = useRef(playButton.props.children[1]);
+    const launchRef = useRef(playButton.props.onClick);
 
     const action = appProfile?.isOk
         ? launchActions.find(
@@ -58,28 +60,15 @@ export default function PrimaryPlayButton({
         onLaunch,
     );
 
-    const playText = (playButton.props.children as any[])[2] ?? <div>Play</div>;
+    const children = playButton.props.children as any[];
 
-    return target && onLaunch ? (
-        <Button
-            onClick={onLaunch}
-            onOKButton={onLaunch}
-            onOKActionDescription={`Launch ${target}`}
-            className={playButton.props.className}
-        >
-            <div
-                style={{
-                    alignContent: 'center',
-                    justifyContent: 'left',
-                    display: 'flex',
-                    flexDirection: 'row',
-                }}
-            >
-                <IconForTarget target={target} />
-                {playText}
-            </div>
-        </Button>
-    ) : (
-        playButton
-    );
+    if (target && onLaunch) {
+        children[1] = <IconForTarget target={target} />;
+        playButton.props.onClick = onLaunch;
+    } else {
+        children[1] = buttonRef.current;
+        playButton.props.onClick = launchRef.current;
+    }
+
+    return playButton;
 }

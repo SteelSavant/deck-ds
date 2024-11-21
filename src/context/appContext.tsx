@@ -359,6 +359,8 @@ export class ShortAppDetailsState {
                     }
                 }
 
+                this.appProfile = newProfile;
+
                 if (!this.appProfile?.isOk) {
                     logger.toastWarn(
                         'failed to refetch app(',
@@ -389,6 +391,8 @@ export class ShortAppDetailsState {
 
                     logger.debug(
                         'refetched; updating to',
+                        this.appProfile.data.default_profile,
+                        ':',
                         this.appProfile.data?.overrides,
                     );
                 }

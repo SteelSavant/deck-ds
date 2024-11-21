@@ -19,7 +19,14 @@ import { isSteamGame } from '../util/util';
 import PrimaryPlayButton from './components/PrimaryPlayButton';
 import SecondaryPlayButton from './components/SecondaryPlayButton';
 
-const onNavDebounceTime = 500;
+function getOnNavDebounceTime(appDetailsFalseCount: number): number {
+    switch (appDetailsFalseCount) {
+        case 0:
+            return 1500;
+        default:
+            return 250;
+    }
+}
 let cachedPlayButton: ReactElement | null = null;
 
 function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
@@ -271,7 +278,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                                 appDetailsFalseCount += 1;
                                                                                 if (
                                                                                     appDetailsFalseCount >
-                                                                                    1
+                                                                                    0
                                                                                 ) {
                                                                                     console.log(
                                                                                         'calling onnav from appdetailssection focuswithin',
@@ -290,6 +297,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                                         true;
                                                                                 }
                                                                                 appDetailsFalseCount %= 2;
+                                                                            } else {
+                                                                                appDetailsFalseCount = 0;
                                                                             }
                                                                         }
 
@@ -320,9 +329,11 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                                                     if (
                                                                         elapsed <
-                                                                            onNavDebounceTime ||
+                                                                            getOnNavDebounceTime(
+                                                                                appDetailsFalseCount,
+                                                                            ) ||
                                                                         appDetailsFalseCount ===
-                                                                            1
+                                                                            0
                                                                     ) {
                                                                         console.log(
                                                                             'calling onNav debounce elapsed, false==',

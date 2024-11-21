@@ -26,7 +26,7 @@ const useLaunchActions = (
 ): LaunchActions[] => {
     let { reifiedPipelines } = useAppState();
 
-    console.log('using reifid pipelines', reifiedPipelines);
+    console.log('using reified pipelines', reifiedPipelines);
 
     if (appDetails) {
         return Object.keys(reifiedPipelines)
