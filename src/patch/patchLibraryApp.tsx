@@ -24,7 +24,7 @@ function getOnNavDebounceTime(appDetailsFalseCount: number): number {
         case 0:
             return 1500;
         default:
-            return 250;
+            return 500;
     }
 }
 let cachedPlayButton: ReactElement | null = null;
@@ -50,7 +50,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                     console.log('ret', ret);
                     let lastOnNavTime = 0;
                     let onNavIncr = 0;
-                    let appDetailsFalseCount = 0;
+                    let appDetailsFalseCount = 1;
 
                     wrapReactType(ret.props.children);
                     afterPatch(
@@ -276,27 +276,16 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                                 !focusArgs[0]
                                                                             ) {
                                                                                 appDetailsFalseCount += 1;
-                                                                                if (
-                                                                                    appDetailsFalseCount >
-                                                                                    0
-                                                                                ) {
-                                                                                    console.log(
-                                                                                        'calling onnav from appdetailssection focuswithin',
-                                                                                    );
 
-                                                                                    playSection.props.onNav();
-                                                                                    playSection.props.onNav();
+                                                                                console.log(
+                                                                                    'calling onnav from appdetailssection focuswithin',
+                                                                                );
 
-                                                                                    lastOnNavTime =
-                                                                                        Date.now();
-                                                                                } else {
-                                                                                    console.log(
-                                                                                        'setting appdetailssection focuswithin true',
-                                                                                    );
-                                                                                    focusArgs[0] =
-                                                                                        true;
-                                                                                }
-                                                                                appDetailsFalseCount %= 2;
+                                                                                playSection.props.onNav();
+                                                                                playSection.props.onNav();
+
+                                                                                lastOnNavTime =
+                                                                                    Date.now();
                                                                             } else {
                                                                                 appDetailsFalseCount = 0;
                                                                             }
@@ -432,7 +421,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                                                     if (
                                                                         appDetailsFalseCount >
-                                                                        1
+                                                                        0
                                                                     ) {
                                                                         console.log(
                                                                             'calling onnav from rebuild',
