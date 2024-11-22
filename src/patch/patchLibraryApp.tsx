@@ -49,7 +49,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                     console.log('ret', ret);
                     let lastOnNavTime = 0;
-                    let onNavIncr = 0;
+                    let lastEnterAppDetailsTime = 0;
                     let appDetailsFalseCount = 1;
 
                     wrapReactType(ret.props.children);
@@ -288,6 +288,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                                     Date.now();
                                                                             } else {
                                                                                 appDetailsFalseCount = 0;
+                                                                                lastEnterAppDetailsTime =
+                                                                                    Date.now();
                                                                             }
                                                                         }
 
@@ -331,33 +333,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                         return;
                                                                     }
 
-                                                                    if (
-                                                                        onNavIncr ===
-                                                                        0
-                                                                    ) {
-                                                                        console.log(
-                                                                            'calling onNav',
-                                                                            onNavIncr,
-                                                                        );
-
-                                                                        return callOriginal;
-                                                                    } else {
-                                                                        console.log(
-                                                                            'calling onNav debounce build',
-                                                                            onNavIncr,
-                                                                        );
-                                                                    }
-
-                                                                    // onNavIncr += 1;
-                                                                    // onNavIncr %=
-                                                                    //     onNavMaxIncr;
-
-                                                                    // console.log(
-                                                                    //     'set onnav incr to',
-                                                                    //     onNavIncr,
-                                                                    // );
-
-                                                                    return;
+                                                                    return callOriginal;
                                                                 },
                                                             );
 
@@ -409,10 +385,23 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                             );
                                                                             ret8.key =
                                                                                 'ret8';
+
+                                                                            const elapsedAppDetails =
+                                                                                Date.now() -
+                                                                                lastEnterAppDetailsTime;
+
+                                                                            const shouldAutoFocus =
+                                                                                elapsedAppDetails >
+                                                                                    100 &&
+                                                                                appDetailsFalseCount >
+                                                                                    0;
                                                                             patchFinalElement(
                                                                                 ret8,
                                                                                 overview,
                                                                                 appDetailsState,
+                                                                                {
+                                                                                    shouldAutoFocus,
+                                                                                },
                                                                             );
 
                                                                             return ret8;
@@ -471,6 +460,9 @@ function patchFinalElement(
     ret: ReactElement,
     overview: any,
     appDetailsState: ShortAppDetailsState,
+    flags: {
+        shouldAutoFocus: boolean;
+    },
 ) {
     const status = overview.per_client_data.find(
         (d: any) => d.clientid === overview.selected_clientid,
@@ -540,14 +532,6 @@ function patchFinalElement(
         wrapReactType(playButton);
         afterPatch(playButton.type, 'render', (_play, retPlayButton) => {
             console.log('retPlayButton', retPlayButton);
-            // const ref = retPlayButton.ref;
-            // if (ref) {
-            //     ref.current = null;
-
-            //     setTimeout(() => {
-            //         ref.current = null;
-            //     }, 100);
-            // }
 
             wrapReactClass(retPlayButton);
             afterPatch(
@@ -575,8 +559,11 @@ function patchFinalElement(
                                 actualPlayButton.type,
                                 'render',
                                 (args) => {
-                                    args[0].autoFocus = false;
-                                    args[1] = null;
+                                    args[0].autoFocus = flags.shouldAutoFocus;
+                                    // flags.shouldAutoFocus;
+                                    // if (!flags.shouldAutoFocus) {
+                                    //     args[1] = null;
+                                    // }
                                 },
                             );
 

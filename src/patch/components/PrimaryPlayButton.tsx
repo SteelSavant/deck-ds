@@ -1,4 +1,5 @@
-import { ReactElement, useRef } from 'react';
+import { uniqueId } from 'lodash';
+import { ReactElement, useEffect, useRef, useState } from 'react';
 import { IconForTarget } from '../../components/IconForTarget';
 import { useAppState } from '../../context/appContext';
 import useLaunchActions from '../../hooks/useLaunchActions';
@@ -17,6 +18,8 @@ export default function PrimaryPlayButton({
     // Store the original button onclick/icon
     const buttonRef = useRef(playButton.props.children[1]);
     const launchRef = useRef(playButton.props.onClick);
+
+    const [patch, setPatch] = useState(false); // hack to force rerenders when necessary
 
     const action = appProfile?.isOk
         ? launchActions.find(
@@ -44,25 +47,35 @@ export default function PrimaryPlayButton({
     );
 
     const onLaunch = action?.targets?.find((t) => t.target === target)?.action;
+    useEffect(() => {
+        logger.debug(
+            'patching play button with target: ',
+            target,
+            'action:',
+            action,
+            'onLaunch:',
+            onLaunch,
+        );
 
-    logger.debug(
-        'patching play button with target: ',
-        target,
-        'action:',
-        action,
-        'onLaunch:',
-        onLaunch,
-    );
+        const children = playButton.props.children as any[];
+        const shouldPatch = !!(target && onLaunch);
 
-    const children = playButton.props.children as any[];
+        if (shouldPatch) {
+            console.log('Using play target');
+            children[1] = <IconForTarget target={target} />;
+            playButton.props.onClick = onLaunch;
+        } else {
+            console.log('Using play original');
+            children[1] = buttonRef.current;
+            playButton.props.onClick = launchRef.current;
+        }
 
-    if (target && onLaunch) {
-        children[1] = <IconForTarget target={target} />;
-        playButton.props.onClick = onLaunch;
-    } else {
-        children[1] = buttonRef.current;
-        playButton.props.onClick = launchRef.current;
-    }
+        if (patch !== shouldPatch) {
+            console.log('forcing rebuild...');
+            playButton.key = uniqueId();
+            setPatch(shouldPatch);
+        }
+    }, [target, onLaunch]);
 
     return playButton;
 }
