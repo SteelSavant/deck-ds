@@ -19,13 +19,8 @@ import { isSteamGame } from '../util/util';
 import PrimaryPlayButton from './components/PrimaryPlayButton';
 import SecondaryPlayButton from './components/SecondaryPlayButton';
 
-function getOnNavDebounceTime(appDetailsFalseCount: number): number {
-    switch (appDetailsFalseCount) {
-        case 0:
-            return 1500;
-        default:
-            return 500;
-    }
+function getOnNavDebounceTime(isNonSteamGame: boolean): number {
+    return isNonSteamGame ? 400 : 200;
 }
 let cachedPlayButton: ReactElement | null = null;
 
@@ -178,6 +173,10 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                     ?.props
                                                                     ?.overview;
 
+                                                            const isNonSteamGame =
+                                                                overview.app_type ==
+                                                                1073741824;
+
                                                             const status =
                                                                 overview.per_client_data.find(
                                                                     (d: any) =>
@@ -277,15 +276,15 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                             ) {
                                                                                 appDetailsFalseCount += 1;
 
-                                                                                console.log(
-                                                                                    'calling onnav from appdetailssection focuswithin',
-                                                                                );
+                                                                                // console.log(
+                                                                                //     'calling onnav from appdetailssection focuswithin',
+                                                                                // );
 
-                                                                                playSection.props.onNav();
-                                                                                playSection.props.onNav();
+                                                                                // playSection.props.onNav();
+                                                                                // playSection.props.onNav();
 
-                                                                                lastOnNavTime =
-                                                                                    Date.now();
+                                                                                // lastOnNavTime =
+                                                                                //     Date.now();
                                                                             } else {
                                                                                 appDetailsFalseCount = 0;
                                                                                 lastEnterAppDetailsTime =
@@ -321,7 +320,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                     if (
                                                                         elapsed <
                                                                             getOnNavDebounceTime(
-                                                                                appDetailsFalseCount,
+                                                                                isNonSteamGame,
                                                                             ) ||
                                                                         appDetailsFalseCount ===
                                                                             0
@@ -332,6 +331,9 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                         );
                                                                         return;
                                                                     }
+
+                                                                    lastOnNavTime =
+                                                                        Date.now();
 
                                                                     return callOriginal;
                                                                 },
@@ -392,7 +394,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                                                             const shouldAutoFocus =
                                                                                 elapsedAppDetails >
-                                                                                    100 &&
+                                                                                    250 &&
                                                                                 appDetailsFalseCount >
                                                                                     0;
                                                                             patchFinalElement(
