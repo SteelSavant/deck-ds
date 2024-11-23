@@ -19,8 +19,6 @@ export default function PrimaryPlayButton({
     const buttonRef = useRef(playButton.props.children[1]);
     const launchRef = useRef(playButton.props.onClick);
 
-    const [patch, setPatch] = useState(false); // hack to force rerenders when necessary
-
     const action = appProfile?.isOk
         ? launchActions.find(
               (a) => a.profileId == appProfile.data.default_profile,
@@ -47,6 +45,9 @@ export default function PrimaryPlayButton({
     );
 
     const onLaunch = action?.targets?.find((t) => t.target === target)?.action;
+
+    const [patch, setPatch] = useState(!!(onLaunch && target)); // hack to force rerenders when necessary
+
     useEffect(() => {
         logger.debug(
             'patching play button with target: ',
