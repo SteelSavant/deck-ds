@@ -76,6 +76,11 @@ export default function PrimaryPlayButton({
             playButton.key = uniqueId();
             setPatch(shouldPatch);
         }
+
+        return () => {
+            children[1] = buttonRef.current;
+            playButton.props.onClick = launchRef.current;
+        };
     }, [target, onLaunch]);
 
     return playButton;

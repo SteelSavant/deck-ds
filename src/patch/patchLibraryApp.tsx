@@ -19,10 +19,11 @@ import { isSteamGame } from '../util/util';
 import PrimaryPlayButton from './components/PrimaryPlayButton';
 import SecondaryPlayButton from './components/SecondaryPlayButton';
 
+let cachedPlayButton: ReactElement | null = null;
+
 function getOnNavDebounceTime(isNonSteamGame: boolean): number {
     return isNonSteamGame ? 400 : 200;
 }
-let cachedPlayButton: ReactElement | null = null;
 
 function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
     return routerHook.addPatch(
@@ -222,80 +223,84 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                             playSection.key =
                                                                 'ret6child';
 
-                                                            for (const v of [
-                                                                // [0, 'onNav'],
-                                                                // [1, 'onFocus'],
-                                                                // [
-                                                                //     2,
-                                                                //     'onFocusWithin',
-                                                                // ],
-                                                                [
-                                                                    3,
-                                                                    'onFocusWithin',
-                                                                ],
-                                                            ]) {
-                                                                const child =
-                                                                    ret6.props
-                                                                        .children[
-                                                                        v[0]
-                                                                    ];
+                                                            const onFocusWithin =
+                                                                appDetailsSection
+                                                                    .props
+                                                                    .onFocusWithin;
+                                                            wrapReactType(
+                                                                appDetailsSection,
+                                                                'props',
+                                                            );
+                                                            replacePatch(
+                                                                appDetailsSection.props,
+                                                                'onFocusWithin',
+                                                                (focusArgs) => {
+                                                                    console.log(
+                                                                        'appDetailsSection focuswithin',
 
-                                                                const onFocusWithin =
-                                                                    child.props[
-                                                                        v[1]
-                                                                    ];
-
-                                                                wrapReactType(
-                                                                    child,
-                                                                    'props',
-                                                                );
-                                                                replacePatch(
-                                                                    child.props,
-                                                                    v[1] as string,
-                                                                    (
+                                                                        focusArgs.toString(),
                                                                         focusArgs,
-                                                                    ) => {
+                                                                    );
+
+                                                                    const elapsedOnNav =
+                                                                        Date.now() -
+                                                                        lastOnNavTime;
+                                                                    const elapsedAppDetails =
+                                                                        Date.now() -
+                                                                        lastEnterAppDetailsTime;
+
+                                                                    if (
+                                                                        elapsedAppDetails <
+                                                                            250 ||
+                                                                        elapsedOnNav <
+                                                                            getOnNavDebounceTime(
+                                                                                isNonSteamGame,
+                                                                            )
+                                                                    ) {
                                                                         console.log(
-                                                                            'ret6 focuswithin',
-                                                                            v[0],
-                                                                            v[1],
-                                                                            focusArgs,
-                                                                            onFocusWithin,
+                                                                            'skipping app details false ==',
+                                                                            appDetailsFalseCount,
                                                                         );
+                                                                        focusArgs[0] =
+                                                                            true;
+                                                                        onFocusWithin(
+                                                                            focusArgs,
+                                                                        );
+                                                                    }
 
-                                                                        // console.log(
-                                                                        //     'handling focus within...',
-                                                                        // );
+                                                                    if (
+                                                                        !focusArgs[0]
+                                                                    ) {
+                                                                        appDetailsFalseCount += 1;
+                                                                    } else {
+                                                                        appDetailsFalseCount = 0;
+                                                                        lastEnterAppDetailsTime =
+                                                                            Date.now();
+                                                                    }
 
-                                                                        if (
-                                                                            v[0] ===
-                                                                            3
-                                                                        ) {
-                                                                            if (
-                                                                                !focusArgs[0]
-                                                                            ) {
-                                                                                appDetailsFalseCount += 1;
+                                                                    return callOriginal;
+                                                                },
+                                                            );
+                                                            replacePatch(
+                                                                appDetailsSection
+                                                                    .props
+                                                                    .children
+                                                                    .props,
+                                                                'fnOnCancelFromTabHeader',
+                                                                (_args) => {
+                                                                    lastEnterAppDetailsTime = 0;
+                                                                    lastOnNavTime = 0;
+                                                                    appDetailsFalseCount = 1;
+                                                                    setTimeout(
+                                                                        playSection
+                                                                            .props
+                                                                            .onNav,
+                                                                        1,
+                                                                    );
 
-                                                                                // console.log(
-                                                                                //     'calling onnav from appdetailssection focuswithin',
-                                                                                // );
-
-                                                                                // playSection.props.onNav();
-                                                                                // playSection.props.onNav();
-
-                                                                                // lastOnNavTime =
-                                                                                //     Date.now();
-                                                                            } else {
-                                                                                appDetailsFalseCount = 0;
-                                                                                lastEnterAppDetailsTime =
-                                                                                    Date.now();
-                                                                            }
-                                                                        }
-
-                                                                        return callOriginal;
-                                                                    },
-                                                                );
-                                                            }
+                                                                    return callOriginal;
+                                                                },
+                                                            );
 
                                                             wrapReactType(
                                                                 playSection,
@@ -409,21 +414,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                             return ret8;
                                                                         },
                                                                     );
-
-                                                                    if (
-                                                                        appDetailsFalseCount >
-                                                                        0
-                                                                    ) {
-                                                                        console.log(
-                                                                            'calling onnav from rebuild',
-                                                                        );
-
-                                                                        playSection.props.onNav();
-                                                                        playSection.props.onNav();
-
-                                                                        lastOnNavTime =
-                                                                            Date.now();
-                                                                    }
 
                                                                     return ret7;
                                                                 },
@@ -562,10 +552,6 @@ function patchFinalElement(
                                 'render',
                                 (args) => {
                                     args[0].autoFocus = flags.shouldAutoFocus;
-                                    // flags.shouldAutoFocus;
-                                    // if (!flags.shouldAutoFocus) {
-                                    //     args[1] = null;
-                                    // }
                                 },
                             );
 

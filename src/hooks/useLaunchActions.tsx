@@ -153,8 +153,6 @@ const useLaunchActions = (
                     targets: defaultTargets,
                 };
 
-                console.log('returning mapped actions:', res);
-
                 return res;
             })
             .filter((v) => v)
