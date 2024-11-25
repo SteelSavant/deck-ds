@@ -36,7 +36,7 @@ impl CategoryProfile {
             pipeline: self.pipeline.save_all_and_transform(rw)?,
         };
 
-        rw.insert(db_profile)?;
+        rw.upsert(db_profile)?;
 
         Ok(())
     }

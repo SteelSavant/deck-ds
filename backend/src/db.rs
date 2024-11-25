@@ -126,7 +126,7 @@ impl ProfileDb {
     ) -> Result<()> {
         let rw = self.read_write();
 
-        rw.insert(DbAppOverride {
+        rw.upsert(DbAppOverride {
             id: (app_id, profile_id),
             pipeline: definition.save_all_and_transform(&rw)?,
         })?;
@@ -141,7 +141,7 @@ impl ProfileDb {
     ) -> Result<()> {
         let rw = self.read_write();
 
-        rw.insert(DbAppSettings {
+        rw.upsert(DbAppSettings {
             app_id,
             default_profile,
         })?;
