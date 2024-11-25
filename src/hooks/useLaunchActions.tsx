@@ -1,4 +1,6 @@
 import { showModal } from '@decky/ui';
+import _ from 'lodash';
+import { useRef } from 'react';
 import {
     DependencyError,
     PipelineTarget,
@@ -7,7 +9,11 @@ import {
     reifyPipeline,
 } from '../backend';
 import ConfigErrorModal from '../components/ConfigErrorModal';
-import { ShortAppDetails, useAppState } from '../context/appContext';
+import {
+    ReifiedPipelines,
+    ShortAppDetails,
+    useAppState,
+} from '../context/appContext';
 import { setupClientPipeline } from '../pipeline/client_pipeline';
 import { logger } from '../util/log';
 
@@ -25,11 +31,17 @@ const useLaunchActions = (
     appDetails: ShortAppDetails | null,
 ): LaunchActions[] => {
     let { reifiedPipelines } = useAppState();
-
-    console.log('using reified pipelines', reifiedPipelines);
+    let previousPipelines = useRef<ReifiedPipelines>();
+    let cachedActions = useRef<LaunchActions[]>([]);
 
     if (appDetails) {
-        return Object.keys(reifiedPipelines)
+        if (_.isEqual(previousPipelines.current, reifiedPipelines)) {
+            return cachedActions.current;
+        }
+
+        previousPipelines.current = reifiedPipelines;
+
+        const actions = Object.keys(reifiedPipelines)
             .map((pid) => {
                 const reified = reifiedPipelines[pid];
 
@@ -157,6 +169,10 @@ const useLaunchActions = (
             })
             .filter((v) => v)
             .map((v) => v!);
+
+        cachedActions.current = actions;
+
+        return actions;
     } else {
         logger.warn('not building actions; no app details');
     }

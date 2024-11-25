@@ -33,7 +33,6 @@ function PlayBtnMenuItem({
     useEffect(() => {
         for (const timeout of [100, 200, 500, 1000, 2000, 5000]) {
             setTimeout(() => {
-                console.log('playbutton ref:', ref);
                 (ref?.current as any)?.focus();
             }, timeout);
         }

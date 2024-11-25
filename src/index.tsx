@@ -97,13 +97,6 @@ export default definePlugin(() => {
             const appId = Number.parseInt(appIdStr);
             const overview = appStore.GetAppOverviewByAppID(appId);
 
-            console.log('route:', currentRoute);
-            console.log('steam client app overview:', overview);
-            console.log(
-                'steam client app details',
-                appDetailsStore.GetAppDetails(appId),
-            );
-
             appDetailsState.setOnAppPage({
                 appId,
                 gameId: overview.m_gameid,

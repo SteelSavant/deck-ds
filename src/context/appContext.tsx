@@ -32,6 +32,10 @@ import { Result } from '../util/result';
 // - Expose launch actions for profiles
 // - Subscribe to category changes, to allow dynamically updating the overrides
 
+export type ReifiedPipelines = {
+    [k: string]: Result<ReifyPipelineResponse, ApiError>;
+};
+
 export interface StateAction {
     externalProfile: MaybeString;
     update: PipelineUpdate;
@@ -84,9 +88,7 @@ export class ShortAppDetailsState {
     private readonly delayMs = 1000;
     private appDetails: ShortAppDetails | null = null;
     private appProfile: Loading<AppProfile>;
-    private reifiedPipelines: {
-        [k: string]: Result<ReifyPipelineResponse, ApiError>;
-    } = {};
+    private reifiedPipelines: ReifiedPipelines = {};
     private openViews: { [k: string]: { [k: string]: boolean } } = {};
     private lastOnAppPageTime: number = 0;
     private appTargets: { [profileId: string]: AppTargetSelection } = {};
@@ -432,26 +434,14 @@ export class ShortAppDetailsState {
     }
 
     private async fetchProfile(appDetails: ShortAppDetails | null) {
-        console.log('starting profile fetch for', appDetails);
         if (appDetails) {
-            console.log('fetching profile for', appDetails);
-
             const profile = (
                 await getAppProfile({ app_id: appDetails.appId.toString() })
             ).map((v) => v.app ?? null);
             if (this.appDetails?.appId == appDetails.appId) {
-                console.log('fetched profile for', appDetails, ':', profile);
-
                 this.appProfile = profile;
 
                 if (profile.isOk) {
-                    console.log(
-                        'handling profile for',
-                        appDetails,
-                        ':',
-                        profile.data,
-                    );
-
                     const profileIds = await getProfileIdsForAppId(
                         appDetails.appId,
                     );

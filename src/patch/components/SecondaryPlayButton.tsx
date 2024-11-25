@@ -1,9 +1,8 @@
 import { DialogButton, Focusable } from '@decky/ui';
-import { ReactElement, useEffect, useState } from 'react';
+import { ReactElement, useState } from 'react';
 import { IconForTarget } from '../../components/IconForTarget';
-import { useAppState } from '../../context/appContext';
-import useLaunchActions from '../../hooks/useLaunchActions';
 import { logger } from '../../util/log';
+import useActionButtonProps from '../hooks/useActionButtonProps';
 
 interface SecondaryPlayButtonProps {
     deckDSDesktopSentinel: 'sentinel';
@@ -14,67 +13,38 @@ interface SecondaryPlayButtonProps {
 // - gamemode is not a target
 // then this would display the icon from the normal play button, and run its on clicked/pressed function when pressed
 export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): ReactElement | null {
-    const {
-        appDetails,
-        appProfile,
-        useAppTarget,
-        ensureSelectedClientUpdated,
-    } = useAppState();
-    const launchActions = useLaunchActions(appDetails);
+    const { target, onLaunch, selectedClientId } = useActionButtonProps({
+        isPrimary: false,
+    });
     const [isFocused, setIsFocused] = useState(false);
 
-    // Hack to ensure we have the correct selected_clientid
-    useEffect(() => {
-        for (const timeout of [100, 200, 500, 1000, 2000, 5000, 10000]) {
-            setTimeout(() => ensureSelectedClientUpdated(), timeout);
+    function setFocusChecked(shouldFocus: boolean) {
+        if (isFocused !== shouldFocus) {
+            setIsFocused(shouldFocus);
         }
-    }, [appDetails?.selected_clientid]);
-
-    const action = appProfile?.isOk
-        ? launchActions.find(
-              (a) => a.profileId == appProfile.data.default_profile,
-          ) ?? launchActions[0]
-        : null;
+    }
 
     const vPadding = 14;
     const wPadding = 15;
 
-    const target = useAppTarget({
-        isPrimary: false,
-        profileId: action?.profileId ?? null,
-    });
-
-    let onLaunch = action?.targets?.find((t) => t.target === target)?.action;
-    if (target === 'Gamemode' && appDetails) {
-        onLaunch ??= () =>
-            SteamClient.Apps.RunGame(
-                appDetails.gameId ?? appDetails.appId.toString(),
-                '',
-                -1,
-                100,
-            );
-    }
-
     logger.debug(
         'patching secondary button with target: ',
         target,
-        'action:',
-        action,
         'onLaunch:',
         onLaunch,
         'clientid:',
-        appDetails?.selected_clientid,
+        selectedClientId,
     );
 
-    return appDetails?.selected_clientid === '0' && // hack to ensure we're not using streaming
+    return selectedClientId === '0' && // hack to ensure we're not using streaming
         target &&
         onLaunch ? (
         <Focusable
             onFocus={() => {
-                setIsFocused(true);
+                setFocusChecked(true);
             }}
             onBlur={() => {
-                setIsFocused(false);
+                setFocusChecked(false);
             }}
         >
             <DialogButton

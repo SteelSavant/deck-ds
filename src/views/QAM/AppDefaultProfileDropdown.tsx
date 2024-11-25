@@ -27,13 +27,6 @@ export default function AppDefaultProfileDropdown({
         launchActions.find((a) => a.profileId == appProfile.default_profile)
             ?.profileId ?? null;
 
-    console.log(
-        'selected profile:',
-        selected,
-        ', was actually found:',
-        !!launchActions.find((a) => a.profileId == appProfile.default_profile),
-    );
-
     return (
         <PanelSection title="Default Profile">
             <PanelSectionRow>

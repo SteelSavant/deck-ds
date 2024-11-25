@@ -15,6 +15,7 @@ import {
     ShortAppDetailsState,
     ShortAppDetailsStateContextProvider,
 } from '../context/appContext';
+import { logger } from '../util/log';
 import { isSteamGame } from '../util/util';
 import PrimaryPlayButton from './components/PrimaryPlayButton';
 import SecondaryPlayButton from './components/SecondaryPlayButton';
@@ -22,7 +23,7 @@ import SecondaryPlayButton from './components/SecondaryPlayButton';
 let cachedPlayButton: ReactElement | null = null;
 
 function getOnNavDebounceTime(isNonSteamGame: boolean): number {
-    return isNonSteamGame ? 400 : 200;
+    return 200;
 }
 
 function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
@@ -33,8 +34,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                 return props;
             }
 
-            console.log('props', props);
-
             afterPatch(
                 props.children.props,
                 'renderFunc',
@@ -43,7 +42,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                         return ret;
                     }
 
-                    console.log('ret', ret);
                     let lastOnNavTime = 0;
                     let lastEnterAppDetailsTime = 0;
                     let appDetailsFalseCount = 1;
@@ -56,7 +54,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                             _2: Record<string, unknown>[],
                             ret2?: ReactElement,
                         ) => {
-                            console.log('ret2', ret2);
                             const container = findInReactTree(
                                 ret2,
                                 (x: ReactElement) =>
@@ -77,8 +74,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                 ),
                             );
 
-                            console.log('ret2 child', child);
-
                             wrapReactType(child);
                             afterPatch(
                                 child.type,
@@ -90,9 +85,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                     if (!ret3) {
                                         return ret3;
                                     }
-
-                                    console.log('ret3', ret3);
-                                    ret3.key = 'ret3';
 
                                     const child = findInReactTree(
                                         ret3,
@@ -111,34 +103,20 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                 return ret4;
                                             }
 
-                                            console.log('ret4', ret4);
-
-                                            ret4.key = 'ret4';
-
                                             const child = findInReactTree(
                                                 ret4,
                                                 (x: ReactElement) =>
                                                     x?.props?.overview,
                                             );
 
-                                            child.key = 'ret4_child';
                                             afterPatch(
                                                 child,
                                                 'type',
                                                 (_5, ret5) => {
-                                                    console.log('ret5', ret5);
-                                                    ret5.key = 'ret5';
-
                                                     afterPatch(
                                                         ret5,
                                                         'type',
                                                         (_6, ret6) => {
-                                                            console.log(
-                                                                'ret6',
-                                                                ret6,
-                                                            );
-
-                                                            ret6.key = 'ret6';
                                                             lastOnNavTime =
                                                                 Date.now(); // prevents nav when rebuilding
 
@@ -162,12 +140,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                         x?.type
                                                                             ?.render,
                                                                 );
-
-                                                            console.log(
-                                                                'ret6 child',
-                                                                playSection,
-                                                                appDetailsSection,
-                                                            );
 
                                                             const overview =
                                                                 playSection
@@ -213,15 +185,8 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                             );
 
                                                             if (!installed) {
-                                                                console.log(
-                                                                    'not installed',
-                                                                );
-
                                                                 return ret6;
                                                             }
-
-                                                            playSection.key =
-                                                                'ret6child';
 
                                                             const onFocusWithin =
                                                                 appDetailsSection
@@ -235,7 +200,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 appDetailsSection.props,
                                                                 'onFocusWithin',
                                                                 (focusArgs) => {
-                                                                    console.log(
+                                                                    logger.trace(
                                                                         'appDetailsSection focuswithin',
 
                                                                         focusArgs.toString(),
@@ -257,7 +222,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                                 isNonSteamGame,
                                                                             )
                                                                     ) {
-                                                                        console.log(
+                                                                        logger.trace(
                                                                             'skipping app details false ==',
                                                                             appDetailsFalseCount,
                                                                         );
@@ -313,7 +278,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 playSection.props,
                                                                 'onNav',
                                                                 (_args) => {
-                                                                    console.log(
+                                                                    logger.trace(
                                                                         'ret6child onnav',
                                                                         _args,
                                                                     );
@@ -330,7 +295,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                         appDetailsFalseCount ===
                                                                             0
                                                                     ) {
-                                                                        console.log(
+                                                                        logger.trace(
                                                                             'calling onNav debounce elapsed, false==',
                                                                             appDetailsFalseCount,
                                                                         );
@@ -348,13 +313,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 playSection.type,
                                                                 'render',
                                                                 (_7, ret7) => {
-                                                                    console.log(
-                                                                        'ret7',
-                                                                        ret7,
-                                                                    );
-                                                                    ret7.key =
-                                                                        'ret7';
-
                                                                     const ret7Child =
                                                                         findInReactTree(
                                                                             ret7,
@@ -367,18 +325,10 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                                     ?.type
                                                                                     ?.render,
                                                                         );
-                                                                    ret7Child.key =
-                                                                        'ret7Child';
-
-                                                                    console.log(
-                                                                        'ret7Child',
-                                                                        ret7Child,
-                                                                    );
 
                                                                     wrapReactType(
                                                                         ret7Child,
                                                                     );
-
                                                                     afterPatch(
                                                                         ret7Child.type,
                                                                         'render',
@@ -386,13 +336,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                             _8,
                                                                             ret8,
                                                                         ) => {
-                                                                            console.log(
-                                                                                'ret8',
-                                                                                ret8,
-                                                                            );
-                                                                            ret8.key =
-                                                                                'ret8';
-
                                                                             const elapsedAppDetails =
                                                                                 Date.now() -
                                                                                 lastEnterAppDetailsTime;
@@ -481,11 +424,10 @@ function patchFinalElement(
     const missingAppButtons = typeof appButtons !== 'object';
     const missingPlayButton = typeof playButton !== 'object';
 
-    console.log('appbuttons', appButtons);
+    logger.trace('appbuttons', appButtons);
+    logger.trace('playbutton', playButton);
 
-    console.log('playbutton', playButton);
-
-    if (!missingAppButtons) {
+    if (!missingAppButtons && flags.shouldAutoFocus) {
         const children = appButtons?.props?.children;
 
         if (children) {
@@ -523,14 +465,14 @@ function patchFinalElement(
     if (!missingPlayButton) {
         wrapReactType(playButton);
         afterPatch(playButton.type, 'render', (_play, retPlayButton) => {
-            console.log('retPlayButton', retPlayButton);
+            logger.trace('retPlayButton', retPlayButton);
 
             wrapReactClass(retPlayButton);
             afterPatch(
                 retPlayButton.type.prototype,
                 'render',
                 (_playClass, classPlayButton) => {
-                    console.log('classPlayButton', classPlayButton);
+                    logger.trace('classPlayButton', classPlayButton);
 
                     const children = classPlayButton?.props?.children;
 
