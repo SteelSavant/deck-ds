@@ -1,4 +1,4 @@
-import { DialogButton, Focusable } from '@decky/ui';
+import { DialogButton, Focusable, playSectionClasses } from '@decky/ui';
 import { ReactElement, useState } from 'react';
 import { IconForTarget } from '../../components/IconForTarget';
 import { logger } from '../../util/log';
@@ -25,7 +25,7 @@ export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): React
     }
 
     const vPadding = 14;
-    const wPadding = 15;
+    const wPadding = 14;
 
     logger.debug(
         'patching secondary button with target: ',
@@ -48,14 +48,13 @@ export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): React
             }}
         >
             <DialogButton
-                // I would be thrilled if this matched the other buttons exactly, but alas...
+                className={playSectionClasses.MenuButton}
                 style={{
                     minWidth: 0,
                     paddingLeft: wPadding,
                     paddingRight: wPadding,
-                    paddingTop: vPadding + 3,
-                    paddingBottom: vPadding - 3,
-                    backgroundColor: isFocused ? 'white' : '#ACB2C924',
+                    paddingTop: vPadding,
+                    paddingBottom: vPadding,
                 }}
                 onClick={onLaunch}
                 onOKButton={onLaunch}

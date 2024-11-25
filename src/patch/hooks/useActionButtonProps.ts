@@ -60,7 +60,7 @@ const useActionButtonProps = ({
     const selectedClientId = appDetails?.selected_clientid;
 
     let onLaunch = action?.targets?.find((t) => t.target === target)?.action;
-    if (target === 'Gamemode' && appDetails) {
+    if (target === 'Gamemode' && appDetails && !onLaunch) {
         target = 'Native';
         onLaunch ??= () =>
             SteamClient.Apps.RunGame(
