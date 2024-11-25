@@ -4,8 +4,10 @@ import { useAppState } from '../../context/appContext';
 import useLaunchActions from '../../hooks/useLaunchActions';
 import { PipelineTarget } from '../../types/backend_api';
 
+export type PipelineTargetOrNative = PipelineTarget | 'Native';
+
 export interface ActionButtonProps {
-    target: PipelineTarget | null;
+    target: PipelineTargetOrNative | null;
     onLaunch: (() => Promise<void>) | undefined;
     selectedClientId: string | undefined;
 }
@@ -33,7 +35,7 @@ const useActionButtonProps = ({
           ) ?? launchActions[0]
         : null;
 
-    const target = useAppTarget({
+    let target: PipelineTargetOrNative | null = useAppTarget({
         isPrimary,
         profileId: action?.profileId ?? null,
     });
@@ -59,6 +61,7 @@ const useActionButtonProps = ({
 
     let onLaunch = action?.targets?.find((t) => t.target === target)?.action;
     if (target === 'Gamemode' && appDetails) {
+        target = 'Native';
         onLaunch ??= () =>
             SteamClient.Apps.RunGame(
                 appDetails.gameId ?? appDetails.appId.toString(),

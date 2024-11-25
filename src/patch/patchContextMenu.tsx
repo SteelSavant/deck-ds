@@ -4,18 +4,18 @@ import {
     afterPatch,
     fakeRenderComponent,
     findModuleChild,
-    Focusable,
     Patch,
 } from '@decky/ui';
-import { ReactElement, useEffect, useRef } from 'react';
+import { ReactElement, useEffect, useRef, useState } from 'react';
 import { IconForTarget } from '../components/IconForTarget';
 import {
     ShortAppDetailsState,
     ShortAppDetailsStateContextProvider,
     useAppState,
 } from '../context/appContext';
-import useLaunchActions from '../hooks/useLaunchActions';
+import { logger } from '../util/log';
 import { isSteamGame } from '../util/util';
+import useActionButtonProps from './hooks/useActionButtonProps';
 
 const appDetailsState = new ShortAppDetailsState();
 
@@ -24,19 +24,21 @@ function PlayBtnMenuItem({
     playButton,
 }: {
     appId: number;
-    playButton: ReactElement;
+    playButton: any;
 }): ReactElement {
-    const { appDetails, appProfile, useAppTarget } = useAppState();
-    const launchActions = useLaunchActions(appDetails);
-    const ref = useRef<HTMLDivElement>(null);
+    console.log('building play btn menu item');
+    const { appDetails } = useAppState();
+    const { target, onLaunch } = useActionButtonProps({
+        isPrimary: true,
+    });
+    const [patch, setPatch] = useState(!!(onLaunch && target)); // hack to force rerenders when necessary
+    const ref = useRef<any>();
 
-    useEffect(() => {
-        for (const timeout of [100, 200, 500, 1000, 2000, 5000]) {
-            setTimeout(() => {
-                (ref?.current as any)?.focus();
-            }, timeout);
-        }
-    }, []);
+    // Store the original button onclick/icon
+    const buttonRef = useRef(playButton.props.children[0]);
+    const launchRef = useRef(playButton.props.onSelected);
+    const keyRef = useRef(playButton.key);
+    const refRef = useRef(playButton.ref);
 
     useEffect(() => {
         // Ensure we're set to the right page
@@ -54,58 +56,53 @@ function PlayBtnMenuItem({
         }
     }, [appDetails?.appId, appId]);
 
-    const action = appProfile?.isOk
-        ? launchActions.find(
-              (a) => a.profileId == appProfile.data.default_profile,
-          ) ?? launchActions[0]
-        : null;
+    useEffect(() => {
+        const children = playButton.props.children as any[];
+        const shouldPatch = !!(target && onLaunch);
 
-    const target = useAppTarget({
-        isPrimary: true,
-        profileId: action?.profileId ?? null,
-    });
+        console.log(
+            'playbutton',
+            playButton,
+            'shouldPatch',
+            shouldPatch,
+            'target',
+            target,
+            'onLaunch',
+            onLaunch,
+        );
 
-    const onLaunch = action?.targets?.find((t) => t.target === target)?.action;
+        if (shouldPatch) {
+            logger.trace('Using play target');
+            children[0] = <IconForTarget target={target} />;
+            playButton.props.onSelected = onLaunch;
+            playButton.ref = ref;
+        } else {
+            logger.trace('Using play original');
+            children[0] = buttonRef.current;
+            playButton.props.onSelected = launchRef.current;
+            playButton.ref = refRef.current;
+        }
 
-    const shouldCustomize = !!target && !!onLaunch;
+        if (patch !== shouldPatch) {
+            logger.trace('forcing primary play button rebuild...');
+            playButton.key = shouldPatch
+                ? 'deckds-ctx-play-btn'
+                : keyRef.current;
+            setPatch(shouldPatch);
 
-    console.log(
-        'playbutton',
-        playButton,
-        'shouldCustomize',
-        shouldCustomize,
-        'target',
-        target,
-        'onLaunch',
-        onLaunch,
-        'action',
-        action,
-        'appDetails',
-        appDetails,
-        'appProfile',
-        appProfile,
-    );
+            setTimeout(() => {
+                ref.current?.Focus();
+            }, 1);
+        }
 
-    if (!shouldCustomize) {
-        console.log('returning playbutton');
-        return playButton;
-    }
+        return () => {
+            children[0] = buttonRef.current;
+            playButton.props.onSelected = launchRef.current;
+            playButton.key = keyRef.current;
+        };
+    }, [target, onLaunch]);
 
-    const modifiedPlayButton = {
-        ...playButton,
-    };
-
-    modifiedPlayButton.props = { ...playButton.props };
-    modifiedPlayButton.props.children = [
-        IconForTarget({ target }),
-        playButton.props.children[1],
-    ];
-    modifiedPlayButton.props.onSelected = onLaunch;
-    modifiedPlayButton.key = 'deckds-play-btn';
-
-    console.log('modified playbutton', modifiedPlayButton);
-
-    return <Focusable ref={ref}> {modifiedPlayButton}</Focusable>;
+    return playButton;
 }
 
 const splicePlayButton = (children: any[], appid: number) => {
@@ -161,27 +158,38 @@ const contextMenuPatch = (LibraryContextMenu: any) => {
             return null;
         },
     };
+    console.log('patching context menu', patches);
     patches.outer = afterPatch(
         LibraryContextMenu.prototype,
         'render',
-        (_: Record<string, unknown>[], component: any) => {
+        (args: Record<string, unknown>[], component: any) => {
             const appid: number = component._owner.pendingProps.overview.appid;
+            console.log('patching context menu afterpatch', patches, args);
 
             if (!patches.inner) {
+                console.log('no inner patch');
+
                 patches.inner = afterPatch(
                     component.type.prototype,
                     'shouldComponentUpdate',
                     ([nextProps]: any, shouldUpdate: any) => {
+                        console.log('patching context menu afterpatch 2');
+
                         try {
                             const ddsIdx = nextProps.children.findIndex(
-                                (x: any) => x?.key === 'deckds-play-btn',
+                                (x: any) => x?.key === 'deckds-ctx-play-btn',
                             );
                             if (ddsIdx != -1)
                                 nextProps.children.splice(ddsIdx, 1);
                         } catch (e) {
+                            console.log('wrong component?');
                             // wrong context menu (probably)
                             return component;
                         }
+
+                        console.log(
+                            'actually patching context menu afterpatch 2',
+                        );
 
                         if (shouldUpdate === true) {
                             let updatedAppid: number = appid;
@@ -200,16 +208,19 @@ const contextMenuPatch = (LibraryContextMenu: any) => {
                                     parentOverview._owner.pendingProps.overview
                                         .appid;
                             }
-
+                            console.log('definitely splice');
                             splicePlayButton(nextProps.children, updatedAppid);
+                        } else {
+                            console.log('dont splice?');
                         }
 
                         return shouldUpdate;
                     },
                 );
-            } else {
-                splicePlayButton(component.props.children, appid);
             }
+
+            splicePlayButton(component.props.children, appid);
+            console.log('returning component', component);
 
             return component;
         },
@@ -232,6 +243,7 @@ export const LibraryContextMenu = fakeRenderComponent(
                 m[prop]?.toString() &&
                 m[prop].toString().includes('().LibraryContextMenu')
             ) {
+                console.log('returning fake obj');
                 return Object.values(m).find(
                     (sibling) =>
                         sibling?.toString().includes('createElement') &&
@@ -239,6 +251,7 @@ export const LibraryContextMenu = fakeRenderComponent(
                 );
             }
         }
+        console.log('not returning fake obj');
         return;
     }),
 ).type;

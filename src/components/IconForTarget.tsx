@@ -1,11 +1,11 @@
 import { ReactElement } from 'react';
-import { FaDesktop } from 'react-icons/fa6';
-import { PipelineTarget } from '../backend';
+import { FaDesktop, FaPlay } from 'react-icons/fa6';
+import { PipelineTargetOrNative } from '../patch/hooks/useActionButtonProps';
 
 export function IconForTarget({
     target,
 }: {
-    target: PipelineTarget;
+    target: PipelineTargetOrNative;
 }): ReactElement {
     switch (target) {
         case 'Desktop':
@@ -27,6 +27,8 @@ export function IconForTarget({
                     ></path>
                 </svg>
             );
+        case 'Native':
+            return <FaPlay />;
         default:
             const typecheck: never = target;
             throw `icon for target ${typecheck} failed to typecheck`;

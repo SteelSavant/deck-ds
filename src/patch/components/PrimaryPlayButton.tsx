@@ -44,14 +44,14 @@ export default function PrimaryPlayButton({
 
         if (patch !== shouldPatch) {
             logger.trace('forcing primary play button rebuild...');
-            playButton.key = shouldPatch ? 'patchedPlayButton' : keyRef.current;
+            playButton.key = shouldPatch ? 'deckds-play-btn' : keyRef.current;
             setPatch(shouldPatch);
         }
 
         return () => {
             children[1] = buttonRef.current;
             playButton.props.onClick = launchRef.current;
-            playButton.ref = keyRef.current;
+            playButton.key = keyRef.current;
         };
     }, [target, onLaunch]);
 
