@@ -86,7 +86,7 @@ export function CreateProfileModal({
                     } else {
                         setDone(true);
                         logger.toastWarn(
-                            'Failed to create set:',
+                            'Failed to create profile:',
                             profile.err.err,
                         );
                     }
