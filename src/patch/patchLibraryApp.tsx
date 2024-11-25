@@ -20,11 +20,8 @@ import { isSteamGame } from '../util/util';
 import PrimaryPlayButton from './components/PrimaryPlayButton';
 import SecondaryPlayButton from './components/SecondaryPlayButton';
 
-let cachedPlayButton: ReactElement | null = null;
-
-function getOnNavDebounceTime(isNonSteamGame: boolean): number {
-    return 200;
-}
+const onNavDebounceTime = 100;
+const appDetailsDebounceTime = 250;
 
 function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
     return routerHook.addPatch(
@@ -146,10 +143,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                     ?.props
                                                                     ?.overview;
 
-                                                            const isNonSteamGame =
-                                                                overview.app_type ==
-                                                                1073741824;
-
                                                             const status =
                                                                 overview.per_client_data.find(
                                                                     (d: any) =>
@@ -216,11 +209,9 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                                                     if (
                                                                         elapsedAppDetails <
-                                                                            250 ||
+                                                                            appDetailsDebounceTime ||
                                                                         elapsedOnNav <
-                                                                            getOnNavDebounceTime(
-                                                                                isNonSteamGame,
-                                                                            )
+                                                                            onNavDebounceTime
                                                                     ) {
                                                                         logger.trace(
                                                                             'skipping app details false ==',
@@ -289,9 +280,7 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
 
                                                                     if (
                                                                         elapsed <
-                                                                            getOnNavDebounceTime(
-                                                                                isNonSteamGame,
-                                                                            ) ||
+                                                                            onNavDebounceTime ||
                                                                         appDetailsFalseCount ===
                                                                             0
                                                                     ) {
@@ -486,7 +475,6 @@ function patchFinalElement(
                             )
                         ) {
                             const actualPlayButton = children[0];
-                            cachedPlayButton = actualPlayButton;
 
                             wrapReactType(actualPlayButton);
                             beforePatch(
@@ -509,20 +497,6 @@ function patchFinalElement(
                                     />
                                 </ShortAppDetailsStateContextProvider>,
                             );
-                        } else {
-                            const sentinel = children.findIndex(
-                                (c: any) =>
-                                    c?.props?.children?.props
-                                        ?.deckDSGameModeSentinel === 'sentinel',
-                            );
-
-                            if (
-                                sentinel >= 0 &&
-                                !installed &&
-                                cachedPlayButton
-                            ) {
-                                children.splice(sentinel, 1, cachedPlayButton);
-                            }
                         }
                     }
 
