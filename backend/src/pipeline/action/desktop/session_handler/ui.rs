@@ -187,7 +187,7 @@ impl DeckDsUi {
                 self.tx
                     .send(cc.egui_ctx.clone())
                     .expect("send egui context should succeed");
-                Box::new(self)
+                Ok(Box::new(self))
             }),
         )
     }

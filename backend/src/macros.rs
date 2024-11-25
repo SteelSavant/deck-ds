@@ -41,9 +41,13 @@ macro_rules! newtype_uuid {
             }
         }
 
-        impl native_db::InnerKeyValue for $id {
-            fn database_inner_key_value(&self) -> native_db::db_type::DatabaseInnerKeyValue {
-                self.0.database_inner_key_value()
+        impl native_db::ToKey for $id {
+            fn to_key(&self) -> native_db::Key {
+                native_db::Key::new(self.0.as_bytes().to_vec())
+            }
+
+            fn key_names() -> Vec<String> {
+                vec![format!("Uuid#{}", stringify!($id))]
             }
         }
     };
@@ -77,9 +81,13 @@ macro_rules! newtype_strid {
             }
         }
 
-        impl native_db::InnerKeyValue for $id {
-            fn database_inner_key_value(&self) -> native_db::db_type::DatabaseInnerKeyValue {
-                self.0.database_inner_key_value()
+        impl native_db::ToKey for $id {
+            fn to_key(&self) -> native_db::Key {
+                self.0.to_key()
+            }
+
+            fn key_names() -> Vec<String> {
+                vec![format!("Strid#{}", stringify!($id))]
             }
         }
     };

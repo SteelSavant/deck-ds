@@ -19,6 +19,7 @@ use crate::settings::CategoryProfile;
 use crate::settings::ProfileId;
 use anyhow::Result;
 
+mod codec;
 mod convert;
 mod migrate;
 mod model;
@@ -105,8 +106,8 @@ impl ProfileDb {
             .scan()
             .primary::<DbCategoryProfile>()
             .expect("failed to scan category profiles")
-            .all()
-            .map(|p| p.reconstruct(&ro))
+            .all()?
+            .map(|p| p.unwrap().reconstruct(&ro))
             .collect::<Result<_>>()?;
         Ok(profiles)
     }
