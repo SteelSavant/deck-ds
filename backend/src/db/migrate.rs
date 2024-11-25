@@ -1,14 +1,10 @@
 /// Contains migrations between model versions
 use anyhow::Result;
-use native_db::Database;
+use native_db::transaction::RwTransaction;
 
-pub trait Migrate {
-    fn migrate(&self) -> Result<()>;
-}
-
-impl<'a> Migrate for Database<'a> {
-    fn migrate(&self) -> Result<()> {
-        // no migrations right now
-        Ok(())
-    }
+/// Runs migrations using the provided `RwTransaction`.
+/// Committing the migration is handled externally.
+pub fn migrate(rw: &RwTransaction) -> Result<()> {
+    // no migrations right now
+    Ok(())
 }
