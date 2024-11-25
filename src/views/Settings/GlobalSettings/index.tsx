@@ -178,7 +178,7 @@ export const GlobalSettingsPage: VFC = () => {
                         <Builder
                             indentLevel={1}
                             label="Enable UI Patching"
-                            description="Allow patching game pages to have custom buttons to launch DeckDS profiles, instead of having to launch from the Quick Acess Menu."
+                            description="Allow patching game pages to have custom buttons to launch DeckDS profiles, instead of having to launch from the Quick Access Menu."
                         >
                             <Toggle
                                 value={settings.enable_ui_inject}

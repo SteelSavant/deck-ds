@@ -1,4 +1,4 @@
-module Impl {
+namespace Impl {
     export class ResultImpl<T, E, O extends boolean> {
         readonly isOk: O;
         readonly data: T;
@@ -43,10 +43,26 @@ module Impl {
                 return new Promise((resolve) => resolve(Err(this.err)));
             }
         }
+
+        public expect(msg: string): T {
+            if (!this.isOk) {
+                throw new Error(`${msg}: ${this.err}`);
+            }
+
+            return this.data;
+        }
+
+        public unwrap(): T {
+            if (!this.isOk) {
+                throw new Error(`${this.err}`);
+            }
+
+            return this.data;
+        }
     }
 }
 
-export module Result {
+export namespace Result {
     export interface Ok<T, E> {
         isOk: true;
         data: T;
@@ -56,6 +72,8 @@ export module Result {
         andThenAsync<R>(
             fn: (res: T) => Promise<Result<R, E>>,
         ): Promise<Result<R, E>>;
+        expect(msg: string): T;
+        unwrap(): T;
     }
 
     export interface Err<T, E> {
@@ -67,6 +85,8 @@ export module Result {
         andThenAsync<R>(
             fn: (res: T) => Promise<Result<R, E>>,
         ): Promise<Result<R, E>>;
+        expect(msg: string): T;
+        unwrap(): T;
     }
 }
 

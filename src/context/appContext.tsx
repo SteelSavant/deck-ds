@@ -1,6 +1,5 @@
 // Adapted from https://github.com/OMGDuke/SDH-GameThemeMusic/blob/main/src/state/ShortAppDetailsState.tsx
 
-import _ from 'lodash';
 import { createContext, FC, useContext, useEffect, useState } from 'react';
 import {
     ApiError,
@@ -8,6 +7,8 @@ import {
     getAppProfile,
     getDefaultAppOverrideForProfileRequest,
     getProfile,
+    getProfiles,
+    getSettings,
     PipelineDefinition,
     PipelineTarget,
     reifyPipeline,
@@ -24,19 +25,35 @@ import { logger } from '../util/log';
 import { patchPipeline, PipelineUpdate } from '../util/patchPipeline';
 import { Result } from '../util/result';
 
+// When setting the app
+// - Load all profiles
+// - Find matching profiles for app
+// - Load all overrides (including defaults)
+// - Expose launch actions for profiles
+// - Subscribe to category changes, to allow dynamically updating the overrides
+
+export type ReifiedPipelines = {
+    [k: string]: Result<ReifyPipelineResponse, ApiError>;
+};
+
 export interface StateAction {
     externalProfile: MaybeString;
     update: PipelineUpdate;
 }
 
-export type ShortAppDetails = {
+export interface ShortAppDetails {
     appId: number;
     gameId: string;
     userId64: string;
     sortAs: string;
     isSteamGame: boolean;
     selected_clientid: string;
-};
+}
+
+export interface AppTargetSelection {
+    primaryTarget: PipelineTarget | null;
+    secondaryTarget: PipelineTarget | null;
+}
 
 interface PublicAppState {
     appDetails: ShortAppDetails | null;
@@ -59,8 +76,11 @@ interface PublicAppStateContext extends PublicAppState {
         isOpen: boolean,
     ): void;
     dispatchUpdate(profileId: string, action: StateAction): Promise<void>;
-    loadProfileOverride(appId: number, profileId: string): Promise<void>;
     ensureSelectedClientUpdated(): Promise<void>;
+    useAppTarget(props: {
+        profileId: string | null;
+        isPrimary: boolean;
+    }): PipelineTarget | null;
 }
 
 // This class creates the getter and setter functions for all of the global state data.
@@ -68,11 +88,10 @@ export class ShortAppDetailsState {
     private readonly delayMs = 1000;
     private appDetails: ShortAppDetails | null = null;
     private appProfile: Loading<AppProfile>;
-    private reifiedPipelines: {
-        [k: string]: Result<ReifyPipelineResponse, ApiError>;
-    } = {};
+    private reifiedPipelines: ReifiedPipelines = {};
     private openViews: { [k: string]: { [k: string]: boolean } } = {};
     private lastOnAppPageTime: number = 0;
+    private appTargets: { [profileId: string]: AppTargetSelection } = {};
 
     // You can listen to this eventBus' 'stateUpdate' event and use that to trigger a useState or other function that causes a re-render
     public readonly eventBus = new EventTarget();
@@ -86,8 +105,15 @@ export class ShortAppDetailsState {
         };
     }
 
+    getAppTarget(profileId: string, isPrimary: boolean) {
+        const target = this.appTargets[profileId];
+        return isPrimary ? target?.primaryTarget : target?.secondaryTarget;
+    }
+
     setOnAppPage(appDetails: ShortAppDetails | null) {
         const time = Date.now();
+
+        logger.trace('trying to set app to', appDetails?.sortAs, '@', time);
 
         setTimeout(
             () => {
@@ -175,8 +201,8 @@ export class ShortAppDetailsState {
         }
     }
 
-    async loadProfileOverride(appId: number, profileId: string) {
-        logger.debug('loading app profile');
+    private async loadProfileOverride(appId: number, profileId: string) {
+        logger.debug('loading app profile', appId, ':', profileId);
         let shouldUpdate = false;
         if (this.appDetails?.appId === appId && this.appProfile?.isOk) {
             const overrides = this.appProfile.data.overrides;
@@ -214,6 +240,9 @@ export class ShortAppDetailsState {
                     ),
                 );
                 this.reifiedPipelines[profileId] = res;
+                this.appTargets[profileId] = await computeAppTargetSelection(
+                    overrides[profileId],
+                );
                 logger.debug(
                     'load reified to:',
                     this.reifiedPipelines[profileId],
@@ -332,6 +361,8 @@ export class ShortAppDetailsState {
                     }
                 }
 
+                this.appProfile = newProfile;
+
                 if (!this.appProfile?.isOk) {
                     logger.toastWarn(
                         'failed to refetch app(',
@@ -355,10 +386,15 @@ export class ShortAppDetailsState {
                         );
 
                         this.reifiedPipelines[k] = reified;
+                        this.appTargets[k] = await computeAppTargetSelection(
+                            overrides[k],
+                        );
                     }
 
                     logger.debug(
                         'refetched; updating to',
+                        this.appProfile.data.default_profile,
+                        ':',
                         this.appProfile.data?.overrides,
                     );
                 }
@@ -373,32 +409,48 @@ export class ShortAppDetailsState {
         appDetails: ShortAppDetails | null,
         time: number,
     ) {
-        const areEqual = _.isEqual(appDetails, this.appDetails);
-        logger.trace('trying to set app to', appDetails?.sortAs);
+        const areEqual =
+            (appDetails === null && this.appDetails === null) ||
+            (appDetails?.appId === this.appDetails?.appId &&
+                appDetails?.gameId === this.appDetails?.gameId);
 
-        if (time < this.lastOnAppPageTime || areEqual) {
+        if (time <= this.lastOnAppPageTime || areEqual) {
+            this.ensureSelectedClientUpdated();
+            if (areEqual) {
+                this.lastOnAppPageTime = time;
+            }
             return;
         }
 
-        logger.trace('setting app to ', appDetails?.sortAs);
+        logger.debug('setting app to ', appDetails?.sortAs, '@', Date.now());
 
         this.appDetails = appDetails;
         this.appProfile = null;
         this.openViews = {};
         this.reifiedPipelines = {};
         this.lastOnAppPageTime = time;
-        this.fetchProfile();
         this.forceUpdate();
+        this.fetchProfile(appDetails);
     }
 
-    private async fetchProfile() {
-        const appDetails = this.appDetails;
+    private async fetchProfile(appDetails: ShortAppDetails | null) {
         if (appDetails) {
             const profile = (
                 await getAppProfile({ app_id: appDetails.appId.toString() })
             ).map((v) => v.app ?? null);
             if (this.appDetails?.appId == appDetails.appId) {
                 this.appProfile = profile;
+
+                if (profile.isOk) {
+                    const profileIds = await getProfileIdsForAppId(
+                        appDetails.appId,
+                    );
+
+                    const profiles = profileIds.map((profileId) =>
+                        this.loadProfileOverride(appDetails.appId, profileId),
+                    );
+                    await Promise.all(profiles);
+                }
                 this.forceUpdate();
             }
         }
@@ -430,6 +482,8 @@ export const ShortAppDetailsStateContextProvider: FC<
         ...ShortAppDetailsStateClass.getPublicState(),
     });
 
+    // TODO::get global settings from hook, instead of function call when needed
+
     useEffect(() => {
         function onUpdate() {
             setPublicState({ ...ShortAppDetailsStateClass.getPublicState() });
@@ -459,7 +513,6 @@ export const ShortAppDetailsStateContextProvider: FC<
             defaultProfileId,
         );
     };
-
     const setAppViewOpen = (
         profileId: string,
         view: PipelineTarget,
@@ -472,14 +525,15 @@ export const ShortAppDetailsStateContextProvider: FC<
         ShortAppDetailsStateClass.dispatchUpdate(profileId, action);
     };
 
-    const loadProfileOverride = async (appId: number, profileId: string) => {
-        ShortAppDetailsStateClass.loadProfileOverride(appId, profileId);
-    };
-
     const ensureSelectedClientUpdated = async () => {
         ShortAppDetailsStateClass.ensureSelectedClientUpdated();
     };
 
+    const getAppTarget = (props: { profileId: string; isPrimary: boolean }) =>
+        ShortAppDetailsStateClass.getAppTarget(
+            props.profileId,
+            props.isPrimary,
+        );
     return (
         <AppContext.Provider
             value={{
@@ -488,8 +542,8 @@ export const ShortAppDetailsStateContextProvider: FC<
                 setAppProfileDefault,
                 setAppViewOpen,
                 dispatchUpdate,
-                loadProfileOverride,
                 ensureSelectedClientUpdated,
+                useAppTarget: getAppTarget,
             }}
         >
             {children}
@@ -557,4 +611,45 @@ function patchProfileOverridesForMissing(
     logger.debug('reify response after patch: ', response.pipeline);
 
     return response;
+}
+
+async function getProfileIdsForAppId(appId: number): Promise<string[]> {
+    const loadedProfiles = (await getProfiles()).unwrap().profiles;
+    const includedProfiles = new Set<string>();
+    const profiles = collectionStore.userCollections
+        .flatMap((uc) => {
+            const containsApp = uc.apps.has(appId);
+
+            if (containsApp) {
+                const matchedProfiles = loadedProfiles
+                    .filter((p) => !includedProfiles.has(p.id))
+                    .filter((p) => p.tags.includes(uc.id));
+
+                for (const p of matchedProfiles) {
+                    includedProfiles.add(p.id);
+                }
+                return matchedProfiles;
+            } else {
+                return [];
+            }
+        })
+        .map((v) => v.id);
+    logger.debug('using profiles', profiles, 'for appid', appId);
+
+    return profiles;
+}
+
+async function computeAppTargetSelection(
+    pipeline: PipelineDefinition,
+): Promise<AppTargetSelection> {
+    const settings = await getSettings();
+    const defaultTarget = settings.isOk
+        ? settings.data.global_settings.primary_ui_target
+        : 'Gamemode';
+    const primaryTarget = pipeline.primary_target_override ?? defaultTarget;
+
+    return {
+        primaryTarget,
+        secondaryTarget: primaryTarget === 'Gamemode' ? 'Desktop' : 'Gamemode',
+    };
 }

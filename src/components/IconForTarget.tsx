@@ -1,19 +1,22 @@
 import { ReactElement } from 'react';
-import { FaDesktop } from 'react-icons/fa6';
-import { PipelineTarget } from '../backend';
+import { FaDesktop, FaPlay } from 'react-icons/fa6';
+import { PipelineTargetOrNative } from '../patch/hooks/useActionButtonProps';
 
 export function IconForTarget({
     target,
 }: {
-    target: PipelineTarget;
+    target: PipelineTargetOrNative;
 }): ReactElement {
+    // TODO::figure out how to make the FaIcons match the style, since currently it is ignored.
+    const className = 'SVGIcon_Button SVGIcon_BigPicture';
     switch (target) {
         case 'Desktop':
-            return <FaDesktop />;
+            return <FaDesktop className={className} />;
         case 'Gamemode':
             // gamepad icon from Deck UI
             return (
                 <svg
+                    className={className}
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 36 36"
                     fill="none"
@@ -27,6 +30,8 @@ export function IconForTarget({
                     ></path>
                 </svg>
             );
+        case 'Native':
+            return <FaPlay className={className} />;
         default:
             const typecheck: never = target;
             throw `icon for target ${typecheck} failed to typecheck`;

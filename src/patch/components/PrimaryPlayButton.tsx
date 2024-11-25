@@ -1,10 +1,7 @@
-import { Button } from '@decky/ui';
-import { ReactElement, useRef } from 'react';
+import { ReactElement, useEffect, useRef, useState } from 'react';
 import { IconForTarget } from '../../components/IconForTarget';
-import { useAppState } from '../../context/appContext';
-import useAppTarget from '../../hooks/useAppTarget';
-import useLaunchActions from '../../hooks/useLaunchActions';
 import { logger } from '../../util/log';
+import useActionButtonProps from '../hooks/useActionButtonProps';
 
 interface PrimaryPlayButtonProps {
     deckDSGameModeSentinel: 'sentinel';
@@ -14,75 +11,49 @@ interface PrimaryPlayButtonProps {
 export default function PrimaryPlayButton({
     playButton,
 }: PrimaryPlayButtonProps): ReactElement {
-    const { appDetails, appProfile } = useAppState();
-    const launchActions = useLaunchActions(appDetails);
-    const ref = useRef<HTMLDivElement>(null);
-
-    const action = appProfile?.isOk
-        ? launchActions.find(
-              (a) => a.profile.id == appProfile.data.default_profile,
-          ) ?? launchActions[0]
-        : null;
-
-    const target = useAppTarget({
+    const { target, onLaunch } = useActionButtonProps({
         isPrimary: true,
-        profileId: action?.profile.id ?? null,
     });
+    const [patch, setPatch] = useState(!!(onLaunch && target)); // hack to force rerenders when necessary
 
-    logger.trace(
-        'primary play loading:',
-        'ad:',
-        appDetails,
-        'ap:',
-        appProfile,
-        'la:',
-        launchActions,
-        'a:',
-        action,
-        't',
-        target,
-    );
-
-    const onLaunch = action?.targets?.find((t) => t.target === target)?.action;
-
-    // useEffect(() => {
-    //     setTimeout(() => {
-    //         ref?.current?.focus();
-    //     }, 750);
-    // }, []);
+    // Store the original button onclick/icon
+    const buttonRef = useRef(playButton.props.children[1]);
+    const launchRef = useRef(playButton.props.onClick);
+    const keyRef = useRef(playButton.key);
 
     logger.debug(
         'patching play button with target: ',
         target,
-        'action:',
-        action,
         'onLaunch:',
         onLaunch,
     );
 
-    const playText = (playButton.props.children as any[])[2] ?? <div>Play</div>;
+    useEffect(() => {
+        const children = playButton.props.children as any[];
+        const shouldPatch = !!(target && onLaunch);
 
-    return target && onLaunch ? (
-        <Button
-            ref={ref}
-            onClick={onLaunch}
-            onOKButton={onLaunch}
-            onOKActionDescription={`Launch ${target}`}
-            className={playButton.props.className}
-        >
-            <div
-                style={{
-                    alignContent: 'center',
-                    justifyContent: 'left',
-                    display: 'flex',
-                    flexDirection: 'row',
-                }}
-            >
-                <IconForTarget target={target} />
-                {playText}
-            </div>
-        </Button>
-    ) : (
-        playButton
-    );
+        if (shouldPatch) {
+            logger.trace('Using play target');
+            children[1] = <IconForTarget target={target} />;
+            playButton.props.onClick = onLaunch;
+        } else {
+            logger.trace('Using play original');
+            children[1] = buttonRef.current;
+            playButton.props.onClick = launchRef.current;
+        }
+
+        if (patch !== shouldPatch) {
+            logger.trace('forcing primary play button rebuild...');
+            playButton.key = shouldPatch ? 'deckds-play-btn' : keyRef.current;
+            setPatch(shouldPatch);
+        }
+
+        return () => {
+            children[1] = buttonRef.current;
+            playButton.props.onClick = launchRef.current;
+            playButton.key = keyRef.current;
+        };
+    }, [target, onLaunch]);
+
+    return playButton;
 }

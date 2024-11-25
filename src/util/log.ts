@@ -17,23 +17,23 @@ class Logger {
     }
 
     public trace(...args: any[]) {
-        this.log(LogLevel.Trace, args);
+        this.log(LogLevel.Trace, ...args);
     }
 
     public debug(...args: any[]) {
-        this.log(LogLevel.Debug, args);
+        this.log(LogLevel.Debug, ...args);
     }
 
     public info(...args: any[]) {
-        this.log(LogLevel.Info, args);
+        this.log(LogLevel.Info, ...args);
     }
 
     public warn(...args: any[]) {
-        this.log(LogLevel.Warn, args);
+        this.log(LogLevel.Warn, ...args);
     }
 
     public error(...args: any[]) {
-        this.log(LogLevel.Error, args);
+        this.log(LogLevel.Error, ...args);
     }
 
     public log(level: LogLevel, ...args: any[]) {

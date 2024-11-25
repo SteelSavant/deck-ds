@@ -1,6 +1,7 @@
 import { showModal } from '@decky/ui';
+import _ from 'lodash';
+import { useRef } from 'react';
 import {
-    CategoryProfile,
     DependencyError,
     PipelineTarget,
     autoStart,
@@ -8,13 +9,16 @@ import {
     reifyPipeline,
 } from '../backend';
 import ConfigErrorModal from '../components/ConfigErrorModal';
-import { ShortAppDetails, useAppState } from '../context/appContext';
+import {
+    ReifiedPipelines,
+    ShortAppDetails,
+    useAppState,
+} from '../context/appContext';
 import { setupClientPipeline } from '../pipeline/client_pipeline';
 import { logger } from '../util/log';
-import useProfiles from './useProfiles';
 
 export interface LaunchActions {
-    profile: CategoryProfile;
+    profileId: string;
     targets: LaunchTarget[];
 }
 
@@ -26,43 +30,27 @@ type LaunchTarget = {
 const useLaunchActions = (
     appDetails: ShortAppDetails | null,
 ): LaunchActions[] => {
-    let { profiles } = useProfiles();
-    let { reifiedPipelines, loadProfileOverride } = useAppState();
+    let { reifiedPipelines } = useAppState();
+    let previousPipelines = useRef<ReifiedPipelines>();
+    let cachedActions = useRef<LaunchActions[]>([]);
 
-    if (appDetails && profiles?.isOk) {
-        const loadedProfiles = profiles.data;
-        const includedProfiles = new Set<string>();
-        const validProfiles = collectionStore.userCollections.flatMap((uc) => {
-            const containsApp = uc.apps.has(appDetails.appId);
+    if (appDetails) {
+        if (_.isEqual(previousPipelines.current, reifiedPipelines)) {
+            return cachedActions.current;
+        }
 
-            if (containsApp) {
-                const matchedProfiles = loadedProfiles
-                    .filter((p) => !includedProfiles.has(p.id))
-                    .filter((p) => p.tags.includes(uc.id));
+        previousPipelines.current = reifiedPipelines;
 
-                for (const p of matchedProfiles) {
-                    includedProfiles.add(p.id);
-                }
-                return matchedProfiles;
-            } else {
-                return [];
-            }
-        });
-
-        return validProfiles
-            .map((p) => {
-                const reified = reifiedPipelines[p.id];
+        const actions = Object.keys(reifiedPipelines)
+            .map((pid) => {
+                const reified = reifiedPipelines[pid];
 
                 if (!reified || !reified.isOk) {
-                    loadProfileOverride(appDetails?.appId, p.id);
-                    logger.warn(
-                        `unable to map actions for ${p.id}; pipeline not reified:`,
+                    logger.error(
+                        `unable to map actions for ${pid}; pipeline not reified:`,
                         reified?.err,
                     );
-                    return {
-                        profile: p,
-                        targets: [],
-                    };
+                    return null;
                 }
 
                 const defaultTargets: LaunchTarget[] = [];
@@ -75,13 +63,22 @@ const useLaunchActions = (
                         // HACK: QAM does weird caching that means the profile can be outdated,
                         // so we reload the profile in the action to ensure it is current
                         const currentPipeline = await getProfile({
-                            profile_id: p.id,
+                            profile_id: pid,
                         });
 
-                        p =
-                            (currentPipeline?.isOk
-                                ? currentPipeline.data.profile
-                                : null) ?? p;
+                        const p = currentPipeline?.isOk
+                            ? currentPipeline.data.profile
+                            : null;
+
+                        if (!p) {
+                            logger.toastWarn(
+                                'profile with id',
+                                pid,
+                                'does not exist for action',
+                                target,
+                            );
+                            return;
+                        }
 
                         // Reify pipeline and run autostart procedure for target
 
@@ -164,13 +161,20 @@ const useLaunchActions = (
                 }
 
                 const res = {
-                    profile: p,
+                    profileId: pid,
                     targets: defaultTargets,
                 };
 
                 return res;
             })
-            .filter((v) => v);
+            .filter((v) => v)
+            .map((v) => v!);
+
+        cachedActions.current = actions;
+
+        return actions;
+    } else {
+        logger.warn('not building actions; no app details');
     }
 
     return [];
