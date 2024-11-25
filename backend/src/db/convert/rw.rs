@@ -3,6 +3,7 @@ use anyhow::{Context, Result};
 use native_db::transaction::RwTransaction;
 
 use crate::{
+    db::convert::ext::RwExt,
     db::model::{
         DbAction, DbAppOverride, DbCategoryProfile, DbCemuAudio, DbCemuLayout, DbCitraLayout,
         DbConfigSelection, DbDesktopControllerLayoutHack, DbDesktopSessionHandler, DbDisplayConfig,
@@ -38,46 +39,46 @@ impl Action {
 
         match cloned {
             Action::DesktopSessionHandler(action) => {
-                rw.insert::<DbDesktopSessionHandler>(action.into())?;
+                rw.upsert::<DbDesktopSessionHandler>(action.into())?;
             }
             Action::DisplayConfig(action) => {
-                rw.insert::<DbDisplayConfig>(action.into())?;
+                rw.upsert::<DbDisplayConfig>(action.into())?;
             }
             Action::VirtualScreen(action) => {
-                rw.insert::<DbVirtualScreen>(action.into())?;
+                rw.upsert::<DbVirtualScreen>(action.into())?;
             }
             Action::MultiWindow(action) => {
-                rw.insert::<DbMultiWindow>(action.into())?;
+                rw.upsert::<DbMultiWindow>(action.into())?;
             }
             Action::CitraLayout(action) => {
-                rw.insert::<DbCitraLayout>(action.into())?;
+                rw.upsert::<DbCitraLayout>(action.into())?;
             }
             Action::CemuLayout(action) => {
-                rw.insert::<DbCemuLayout>(action.into())?;
+                rw.upsert::<DbCemuLayout>(action.into())?;
             }
             Action::CemuAudio(action) => {
-                rw.insert::<DbCemuAudio>(action.into())?;
+                rw.upsert::<DbCemuAudio>(action.into())?;
             }
             Action::MelonDSLayout(action) => {
-                rw.insert::<DbMelonDSLayout>(action.into())?;
+                rw.upsert::<DbMelonDSLayout>(action.into())?;
             }
             Action::SourceFile(action) => {
-                rw.insert::<DbSourceFile>(action.into())?;
+                rw.upsert::<DbSourceFile>(action.into())?;
             }
             Action::LaunchSecondaryFlatpakApp(action) => {
-                rw.insert::<DbLaunchSecondaryApp>(action.into())?;
+                rw.upsert::<DbLaunchSecondaryApp>(action.into())?;
             }
             Action::LaunchSecondaryAppPreset(action) => {
-                rw.insert::<DbLaunchSecondaryAppPreset>(action.into())?;
+                rw.upsert::<DbLaunchSecondaryAppPreset>(action.into())?;
             }
             Action::MainAppAutomaticWindowing(action) => {
-                rw.insert::<DbMainAppAutomaticWindowing>(action.into())?;
+                rw.upsert::<DbMainAppAutomaticWindowing>(action.into())?;
             }
             Action::Lime3dsLayout(action) => {
-                rw.insert::<DbLime3dsLayout>(action.into())?;
+                rw.upsert::<DbLime3dsLayout>(action.into())?;
             }
             Action::DesktopControllerLayoutHack(action) => {
-                rw.insert::<DbDesktopControllerLayoutHack>(action.into())?;
+                rw.upsert::<DbDesktopControllerLayoutHack>(action.into())?;
             }
         };
 
@@ -152,9 +153,13 @@ impl PipelineActionLookup {
                     is_visible_on_qam: v.is_visible_on_qam,
                 };
 
-                log::debug!("TMP::saving action with id:{:?}", settings.id);
+                let id = settings.id.clone();
 
-                rw.insert(settings)?;
+                log::debug!("TMP::saving action with id:{:?}", id);
+
+                rw.upsert(settings)?;
+
+                log::debug!("TMP::saved action:{:?}", id);
 
                 Ok(k)
             })
@@ -169,9 +174,10 @@ impl DbCategoryProfile {
         let overrides = rw
             .scan()
             .primary()?
-            .all()
-            .filter(|app: &DbAppOverride| app.id.1 == self.id)
-            .map(|app: DbAppOverride| app)
+            .all()?
+            .filter_map(|app: Result<DbAppOverride, _>| app.ok()) // TODO::log/error on failure
+            .filter(|app| app.id.1 == self.id)
+            .map(|app| app)
             .collect::<Vec<_>>();
 
         for o in overrides {
@@ -200,59 +206,59 @@ impl DbAction {
         match dtype {
             ActionType::DesktopSessionHandler => {
                 let action = rw.get().primary::<DbDesktopSessionHandler>(id)?;
-                action.map(|a| rw.remove(a))
+                action.map(|a| rw.remove_blind(a))
             }
             ActionType::DisplayConfig => {
                 let action = rw.get().primary::<DbDisplayConfig>(id)?;
-                action.map(|a| rw.remove(a))
+                action.map(|a| rw.remove_blind(a))
             }
             ActionType::VirtualScreen => {
                 let action = rw.get().primary::<DbVirtualScreen>(id)?;
-                action.map(|a| rw.remove(a))
+                action.map(|a| rw.remove_blind(a))
             }
             ActionType::MultiWindow => {
                 let action = rw.get().primary::<DbMultiWindow>(id)?;
-                action.map(|a| rw.remove(a))
+                action.map(|a| rw.remove_blind(a))
             }
             ActionType::CitraLayout => {
                 let action = rw.get().primary::<DbCitraLayout>(id)?;
-                action.map(|a| rw.remove(a))
+                action.map(|a| rw.remove_blind(a))
             }
             ActionType::CemuLayout => {
                 let action = rw.get().primary::<DbCemuLayout>(id)?;
-                action.map(|a| rw.remove(a))
+                action.map(|a| rw.remove_blind(a))
             }
             ActionType::CemuAudio => {
                 let action = rw.get().primary::<DbCemuAudio>(id)?;
-                action.map(|a| rw.remove(a))
+                action.map(|a| rw.remove_blind(a))
             }
             ActionType::MelonDSLayout => {
                 let action = rw.get().primary::<DbMelonDSLayout>(id)?;
-                action.map(|a| rw.remove(a))
+                action.map(|a| rw.remove_blind(a))
             }
             ActionType::SourceFile => {
                 let action = rw.get().primary::<DbSourceFile>(id)?;
-                action.map(|a| rw.remove(a))
+                action.map(|a| rw.remove_blind(a))
             }
             ActionType::LaunchSecondaryFlatpakApp => {
                 let action = rw.get().primary::<DbLaunchSecondaryApp>(id)?;
-                action.map(|a| rw.remove(a))
+                action.map(|a| rw.remove_blind(a))
             }
             ActionType::LaunchSecondaryAppPreset => {
                 let action = rw.get().primary::<DbLaunchSecondaryAppPreset>(id)?;
-                action.map(|a| rw.remove(a))
+                action.map(|a| rw.remove_blind(a))
             }
             ActionType::MainAppAutomaticWindowing => {
                 let action = rw.get().primary::<DbMainAppAutomaticWindowing>(id)?;
-                action.map(|a| rw.remove(a))
+                action.map(|a| rw.remove_blind(a))
             }
             ActionType::Lime3dsLayout => {
                 let action = rw.get().primary::<DbLime3dsLayout>(id)?;
-                action.map(|a| rw.remove(a))
+                action.map(|a| rw.remove_blind(a))
             }
             ActionType::DesktopControllerLayoutHack => {
                 let action = rw.get().primary::<DbDesktopControllerLayoutHack>(id)?;
-                action.map(|a| rw.remove(a))
+                action.map(|a| rw.remove_blind(a))
             }
         }
         .transpose()

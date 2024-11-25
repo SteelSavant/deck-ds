@@ -1,4 +1,4 @@
-use native_db::DatabaseBuilder;
+use native_db::Models;
 use once_cell::sync::Lazy;
 use strum::IntoEnumIterator;
 
@@ -35,71 +35,71 @@ pub type DbLaunchSecondaryAppPreset = v1::DbLaunchSecondaryAppPreset;
 pub type DbMainAppAutomaticWindowing = v1::DbMainAppAutomaticWindowing;
 pub type DbDesktopControllerLayoutHack = v1::DbDesktopControllerLayoutHack;
 
-pub static DATABASE_BUILDER: Lazy<native_db::DatabaseBuilder> = Lazy::new(|| {
-    let mut builder = DatabaseBuilder::new();
+pub static MODELS: Lazy<native_db::Models> = Lazy::new(|| {
+    let mut models = Models::new();
     // V1
     {
         // Profiles
 
-        builder
+        models
             .define::<v1::DbCategoryProfile>()
             .expect("failed to define CategoryProfile v1");
-        builder
+        models
             .define::<v1::DbAppSettings>()
             .expect("failed to define AppProfile v1");
-        builder
+        models
             .define::<v1::DbAppOverride>()
             .expect("failed to define AppProfile v1");
-        builder
+        models
             .define::<v1::DbPipelineDefinition>()
             .expect("failed to define DbPipelineDefinition v1");
-        builder
+        models
             .define::<v1::DbPipelineActionSettings>()
             .expect("failed to define DbPipelineActionSettings v1");
 
         // Actions
 
         let v1_actions = [
-            builder
+            models
                 .define::<v1::DbCemuLayout>()
                 .expect("failed to define CemuLayout v1"),
-            builder
+            models
                 .define::<v1::DbCemuAudio>()
                 .expect("failed to define DbCemuAudio v1"),
-            builder
+            models
                 .define::<v1::DbCitraLayout>()
                 .expect("failed to define CitraLayout v1"),
-            builder
+            models
                 .define::<v1::DbLime3dsLayout>()
                 .expect("failed to define DbLime3dsLayout v1"),
-            builder
+            models
                 .define::<v1::DbMelonDSLayout>()
                 .expect("failed to define MelonDSLayout v1"),
-            builder
+            models
                 .define::<v1::DbDesktopSessionHandler>()
                 .expect("failed to define DesktopSessionHandler v1"),
-            builder
+            models
                 .define::<v1::DbMultiWindow>()
                 .expect("failed to define MultiWindow v1"),
-            builder
+            models
                 .define::<v1::DbVirtualScreen>()
                 .expect("failed to define VirtualScreen v1"),
-            builder
+            models
                 .define::<v1::DbSourceFile>()
                 .expect("failed to define SourceDbSourceFile v1"),
-            builder
+            models
                 .define::<v1::DbDisplayConfig>()
                 .expect("failed to define DbDisplayConfig v1"),
-            builder
+            models
                 .define::<v1::DbLaunchSecondaryFlatpakApp>()
                 .expect("failed to define LaunchSecondaryApp v1"),
-            builder
+            models
                 .define::<v1::DbLaunchSecondaryAppPreset>()
                 .expect("failed to define LaunchSecondaryAppPreset v1"),
-            builder
+            models
                 .define::<v1::DbMainAppAutomaticWindowing>()
                 .expect("failed to define DbMainAppAutomaticWindowing v1"),
-            builder
+            models
                 .define::<v1::DbDesktopControllerLayoutHack>()
                 .expect("failed to define DbDesktopControllerLayoutHack v1"),
         ];
@@ -107,5 +107,5 @@ pub static DATABASE_BUILDER: Lazy<native_db::DatabaseBuilder> = Lazy::new(|| {
         assert_eq!(ActionType::iter().len(), v1_actions.len());
     }
 
-    builder
+    models
 });

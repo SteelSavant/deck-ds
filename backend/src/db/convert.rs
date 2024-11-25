@@ -15,7 +15,9 @@ use crate::{
 };
 
 use super::model::{DbAppSettings, DbTopLevelDefinition};
+use ext::RwExt;
 
+mod ext;
 mod ro;
 mod rw;
 
@@ -34,7 +36,7 @@ impl CategoryProfile {
             pipeline: self.pipeline.save_all_and_transform(rw)?,
         };
 
-        rw.insert(db_profile)?;
+        rw.upsert(db_profile)?;
 
         Ok(())
     }
@@ -46,9 +48,10 @@ impl AppProfile {
         let mut overrides = HashMap::from_iter(
             ro.scan()
                 .primary()?
-                .all()
-                .filter(|app: &DbAppOverride| app.id.0 == *app_id)
-                .map(|app: DbAppOverride| Ok((app.id.1, app.pipeline.transform(ro)?)))
+                .all()?
+                .filter_map(|app: Result<DbAppOverride, _>| app.ok()) // TODO::log/error on failure
+                .filter(|app| app.id.0 == *app_id)
+                .map(|app| Ok((app.id.1, app.pipeline.transform(ro)?)))
                 .collect::<Result<Vec<_>>>()?,
         );
 
@@ -146,8 +149,9 @@ impl PipelineDefinition {
         let existing_toplevel = rw
             .scan()
             .primary()?
-            .all()
-            .filter_map(|v: DbPipelineActionSettings| {
+            .all()?
+            .filter_map(|app: Result<DbPipelineActionSettings, _>| app.ok()) // TODO::log/error on failure
+            .filter_map(|v| {
                 if v.id.0 == id && v.id.1 != platform.id {
                     Some(v.id)
                 } else {
@@ -216,7 +220,7 @@ impl DbCategoryProfile {
         };
         self.pipeline.toplevel = vec![];
 
-        Ok(rw.remove(self)?)
+        Ok(rw.remove_blind(self)?)
     }
 
     pub fn reconstruct(self, ro: &RTransaction) -> Result<CategoryProfile> {

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 use crate::{
-    native_model_serde_json::NativeModelJSON,
+    db::codec::rmp_serde_1_3::RmpSerdeNamed,
     pipeline::{
         action::{
             cemu_audio::{CemuAudio, CemuAudioChannels, CemuAudioSetting, CemuAudioState},
@@ -56,7 +56,7 @@ use crate::{
 
 #[derive(Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1, version = 1, with = RmpSerdeNamed)]
 pub struct DbCategoryProfile {
     #[primary_key]
     pub id: ProfileId,
@@ -66,7 +66,7 @@ pub struct DbCategoryProfile {
 
 #[derive(Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 2, version = 1, with = NativeModelJSON)]
+#[native_model(id = 2, version = 1, with = RmpSerdeNamed)]
 pub struct DbAppSettings {
     #[primary_key]
     pub app_id: AppId,
@@ -75,7 +75,7 @@ pub struct DbAppSettings {
 
 #[derive(Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 3, version = 1, with = NativeModelJSON)]
+#[native_model(id = 3, version = 1, with = RmpSerdeNamed)]
 pub struct DbAppOverride {
     #[primary_key]
     pub id: (AppId, ProfileId),
@@ -84,7 +84,7 @@ pub struct DbAppOverride {
 
 #[derive(Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 4, version = 1, with = NativeModelJSON)]
+#[native_model(id = 4, version = 1, with = RmpSerdeNamed)]
 pub struct DbPipelineDefinition {
     #[primary_key]
     pub id: PipelineDefinitionId,
@@ -138,7 +138,7 @@ pub struct DbTopLevelDefinition {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 5, version = 1, with = NativeModelJSON)]
+#[native_model(id = 5, version = 1, with = RmpSerdeNamed)]
 pub struct DbPipelineActionSettings {
     #[primary_key]
     pub id: (PipelineDefinitionId, TopLevelId, PipelineActionId),
@@ -165,7 +165,7 @@ pub struct DbAction {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1001, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1001, version = 1, with = RmpSerdeNamed)]
 pub struct DbCemuLayout {
     #[primary_key]
     pub id: ActionId,
@@ -197,7 +197,7 @@ impl From<DbCemuLayout> for CemuLayout {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[native_db]
-#[native_model(id = 1002, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1002, version = 1, with = RmpSerdeNamed)]
 pub struct DbCitraLayout {
     #[primary_key]
     pub id: ActionId,
@@ -263,7 +263,7 @@ pub enum DbCitraLayoutOption {
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1003, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1003, version = 1, with = RmpSerdeNamed)]
 pub struct DbMelonDSLayout {
     #[primary_key]
     pub id: ActionId,
@@ -338,7 +338,7 @@ pub enum DbMelonDSSizingOption {
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1004, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1004, version = 1, with = RmpSerdeNamed)]
 pub struct DbDesktopSessionHandler {
     #[primary_key]
     pub id: ActionId,
@@ -562,7 +562,7 @@ pub enum DbAspectRatioOption {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1005, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1005, version = 1, with = RmpSerdeNamed)]
 pub struct DbMultiWindow {
     #[primary_key]
     pub id: ActionId,
@@ -754,7 +754,7 @@ impl From<DbMultiWindowGeneralOptions> for GeneralOptions {
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize)]
 #[native_db]
-#[native_model(id = 1006, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1006, version = 1, with = RmpSerdeNamed)]
 pub struct DbSourceFile {
     #[primary_key]
     pub id: ActionId,
@@ -850,7 +850,7 @@ pub enum DbAppImageSource {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1007, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1007, version = 1, with = RmpSerdeNamed)]
 pub struct DbVirtualScreen {
     #[primary_key]
     pub id: ActionId,
@@ -870,7 +870,7 @@ impl From<DbVirtualScreen> for VirtualScreen {
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1008, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1008, version = 1, with = RmpSerdeNamed)]
 pub struct DbDisplayConfig {
     #[primary_key]
     pub id: ActionId,
@@ -903,7 +903,7 @@ impl From<DbDisplayConfig> for DisplayConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1009, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1009, version = 1, with = RmpSerdeNamed)]
 pub struct DbLaunchSecondaryFlatpakApp {
     #[primary_key]
     pub id: ActionId,
@@ -1047,7 +1047,7 @@ impl From<DbSecondaryAppScreenPreference> for SecondaryAppScreenPreference {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1010, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1010, version = 1, with = RmpSerdeNamed)]
 pub struct DbLaunchSecondaryAppPreset {
     #[primary_key]
     pub id: ActionId,
@@ -1080,7 +1080,7 @@ impl From<DbLaunchSecondaryAppPreset> for LaunchSecondaryAppPreset {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1011, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1011, version = 1, with = RmpSerdeNamed)]
 pub struct DbMainAppAutomaticWindowing {
     #[primary_key]
     id: ActionId,
@@ -1203,31 +1203,64 @@ pub enum DbGamescopeFilter {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[native_db(primary_key(get_id))]
-#[native_model(id = 1012, version = 1, with = NativeModelJSON)]
-pub struct DbLime3dsLayout(DbCitraLayout);
+#[native_db]
+#[native_model(id = 1012, version = 1, with = RmpSerdeNamed)]
+pub struct DbLime3dsLayout {
+    #[primary_key]
+    pub id: ActionId,
+    pub layout_option: DbCitraLayoutOption,
+    pub swap_screens: bool,
+    pub fullscreen: bool,
+    pub rotate_upright: bool,
+}
 
 impl From<Lime3dsLayout> for DbLime3dsLayout {
     fn from(value: Lime3dsLayout) -> Self {
-        Self(value.0.into())
+        let value = value.0;
+
+        Self {
+            id: value.id,
+            layout_option: match value.layout.layout_option {
+                CitraLayoutOption::Default => DbCitraLayoutOption::Default,
+                CitraLayoutOption::SingleScreen => DbCitraLayoutOption::SingleScreen,
+                CitraLayoutOption::LargeScreen => DbCitraLayoutOption::LargeScreen,
+                CitraLayoutOption::SideBySide => DbCitraLayoutOption::SideBySide,
+                CitraLayoutOption::SeparateWindows => DbCitraLayoutOption::SeparateWindows,
+                CitraLayoutOption::HybridScreen => DbCitraLayoutOption::HybridScreen,
+                CitraLayoutOption::Unknown(v) => DbCitraLayoutOption::Unknown(v),
+            },
+            swap_screens: value.layout.swap_screens,
+            fullscreen: value.layout.fullscreen,
+            rotate_upright: value.layout.rotate_upright,
+        }
     }
 }
 
 impl From<DbLime3dsLayout> for Lime3dsLayout {
     fn from(value: DbLime3dsLayout) -> Self {
-        Self(value.0.into())
-    }
-}
-
-impl DbLime3dsLayout {
-    fn get_id(&self) -> ActionId {
-        self.0.id
+        Lime3dsLayout(CitraLayout {
+            id: value.id,
+            layout: CitraLayoutState {
+                layout_option: match value.layout_option {
+                    DbCitraLayoutOption::Default => CitraLayoutOption::Default,
+                    DbCitraLayoutOption::SingleScreen => CitraLayoutOption::SingleScreen,
+                    DbCitraLayoutOption::LargeScreen => CitraLayoutOption::LargeScreen,
+                    DbCitraLayoutOption::SideBySide => CitraLayoutOption::SideBySide,
+                    DbCitraLayoutOption::SeparateWindows => CitraLayoutOption::SeparateWindows,
+                    DbCitraLayoutOption::HybridScreen => CitraLayoutOption::HybridScreen,
+                    DbCitraLayoutOption::Unknown(v) => CitraLayoutOption::Unknown(v),
+                },
+                swap_screens: value.swap_screens,
+                fullscreen: value.fullscreen,
+                rotate_upright: value.rotate_upright,
+            },
+        })
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1013, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1013, version = 1, with = RmpSerdeNamed)]
 pub struct DbCemuAudio {
     #[primary_key]
     pub id: ActionId,
@@ -1323,7 +1356,7 @@ pub enum DbCemuAudioChannels {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1014, version = 1, with = NativeModelJSON)]
+#[native_model(id = 1014, version = 1, with = RmpSerdeNamed)]
 pub struct DbDesktopControllerLayoutHack {
     #[primary_key]
     pub id: ActionId,

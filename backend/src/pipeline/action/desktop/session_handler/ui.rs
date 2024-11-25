@@ -4,8 +4,8 @@ use std::sync::mpsc::{Receiver, Sender};
 
 use eframe::egui;
 use egui::{
-    Color32, Frame, Label, Pos2, RichText, Style, Ui, Vec2, ViewportBuilder, ViewportCommand,
-    WindowLevel,
+    epaint, Color32, Frame, Label, Pos2, RichText, Style, Ui, Vec2, ViewportBuilder,
+    ViewportCommand, WindowLevel,
 };
 use serde::Deserialize;
 use winit::platform::x11::EventLoopBuilderExtX11;
@@ -95,13 +95,13 @@ impl DeckDsUi {
         tx: Sender<egui::Context>,
     ) -> Self {
         let custom_frame = egui::containers::Frame {
-            inner_margin: egui::style::Margin {
+            inner_margin: epaint::Margin {
                 left: 10.,
                 right: 10.,
                 top: 10.,
                 bottom: 10.,
             },
-            outer_margin: egui::style::Margin::ZERO,
+            outer_margin: epaint::Margin::ZERO,
             rounding: egui::Rounding {
                 nw: 1.0,
                 ne: 1.0,
@@ -109,7 +109,9 @@ impl DeckDsUi {
                 se: 1.0,
             },
             shadow: eframe::epaint::Shadow {
-                extrusion: 1.0,
+                offset: Vec2 { x: 1.0, y: 1.0 },
+                blur: 0.5,
+                spread: 0.5,
                 color: Color32::BLACK,
             },
             fill: Color32::BLACK,
@@ -185,7 +187,7 @@ impl DeckDsUi {
                 self.tx
                     .send(cc.egui_ctx.clone())
                     .expect("send egui context should succeed");
-                Box::new(self)
+                Ok(Box::new(self))
             }),
         )
     }

@@ -10,15 +10,16 @@ use crate::pipeline::data::TemplateId;
 use crate::settings::AppId;
 use crate::settings::AppProfile;
 
-use self::model::{DbAppOverride, DbAppSettings, DATABASE_BUILDER};
+use self::model::{DbAppOverride, DbAppSettings, MODELS};
 use self::templates::build_templates;
-use self::{migrate::Migrate, model::DbCategoryProfile};
+use self::{migrate::migrate, model::DbCategoryProfile};
 
 use crate::settings::CategoryProfile;
 
 use crate::settings::ProfileId;
 use anyhow::Result;
 
+mod codec;
 mod convert;
 mod migrate;
 mod model;
@@ -31,12 +32,17 @@ pub struct ProfileDb {
 
 impl ProfileDb {
     pub fn new(db_path: PathBuf, registrar: PipelineActionRegistrar) -> Self {
-        let db = DATABASE_BUILDER
-            .create(db_path)
+        let mut db = native_db::Builder::new()
+            .create(&MODELS, db_path)
             .expect("database should be instantiable");
 
-        db.migrate().expect("db migrations should succeed");
+        let rw = db
+            .rw_transaction()
+            .expect("initial migration transaction should be valid");
+        migrate(&rw).expect("db migrations should succeed");
+        rw.commit().expect("migrations should commit");
 
+        db.compact().expect("db compact should succeed");
         let templates = build_templates(registrar);
 
         ProfileDb { db, templates }
@@ -100,8 +106,8 @@ impl ProfileDb {
             .scan()
             .primary::<DbCategoryProfile>()
             .expect("failed to scan category profiles")
-            .all()
-            .map(|p| p.reconstruct(&ro))
+            .all()?
+            .map(|p| p.unwrap().reconstruct(&ro))
             .collect::<Result<_>>()?;
         Ok(profiles)
     }
@@ -120,7 +126,7 @@ impl ProfileDb {
     ) -> Result<()> {
         let rw = self.read_write();
 
-        rw.insert(DbAppOverride {
+        rw.upsert(DbAppOverride {
             id: (app_id, profile_id),
             pipeline: definition.save_all_and_transform(&rw)?,
         })?;
@@ -135,7 +141,7 @@ impl ProfileDb {
     ) -> Result<()> {
         let rw = self.read_write();
 
-        rw.insert(DbAppSettings {
+        rw.upsert(DbAppSettings {
             app_id,
             default_profile,
         })?;

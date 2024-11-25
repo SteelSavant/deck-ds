@@ -71,10 +71,14 @@ export function CreateProfileModal({
                                         .map((v) => v!),
                                 },
                             });
-                            Navigation.CloseSideMenus();
                             Navigation.Navigate(
                                 `/deck-ds/settings/profiles/${id}`,
                             );
+                            Navigation.CloseSideMenus();
+                            setTimeout(() => {
+                                Navigation.CloseSideMenus();
+                            }, 100);
+
                             closeModal!();
                         } else {
                             setDone(false);
@@ -86,7 +90,7 @@ export function CreateProfileModal({
                     } else {
                         setDone(true);
                         logger.toastWarn(
-                            'Failed to create set:',
+                            'Failed to create profile:',
                             profile.err.err,
                         );
                     }

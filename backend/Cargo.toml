@@ -29,14 +29,14 @@ ureq = { version = "2", features = [
     "brotli",
     "charset",
 ], default-features = false, optional = true }
-clap = { version = "4.4.6", features = ["derive"] }
-derive_more = "0.99.17"
+clap = { version = "^4.5", features = ["derive"] }
+derive_more = { version = "^1.0", features = ["full"] }
 indexmap = { version = "^2.1.0", features = ["serde"] }
-schemars = { version = "0.8.15", features = ["indexmap2", "uuid1", "either"] }
-anyhow = { version = "1.0.75", features = ["backtrace"] }
-rand = "0.8.5"
-nix = { version = "0.27.1", features = ["process", "zerocopy", "signal"] }
-float-cmp = "0.9.0"
+schemars = { version = "^0.8.15", features = ["indexmap2", "uuid1", "either"] }
+anyhow = { version = "^1.0.75", features = ["backtrace"] }
+rand = "^0.8.5"
+nix = { version = "^0.27.1", features = ["process", "zerocopy", "signal"] }
+float-cmp = "^0.9.0"
 enum_delegate = "0.2.0"
 uuid = { version = "^1.6.0", features = ["serde", "v4"] }
 xrandr = { git = "https://github.com/dzfranklin/xrandr-rs", features = [
@@ -44,18 +44,18 @@ xrandr = { git = "https://github.com/dzfranklin/xrandr-rs", features = [
 ] }
 shellexpand = "3.1.0"
 include_dir = "0.7.3"
-lazy_static = "1.4.0"
+lazy_static = "^1.4.0"
 dirs = "5.0.1"
-which = "5.0.0"
-either = { version = "1.9.0", features = ["serde"] }
+which = "^5.0.0"
+either = { version = "^1.9.0", features = ["serde"] }
 configparser = { version = "3.0.3", features = ["indexmap"] }
-strum = { version = "0.25.0", features = ["std", "derive"] }
-native_db = { version = "0.5.3", features = ["uuid"] }
-native_model = { version = "0.4.10" }
-once_cell = "1.19.0"
-egui = "0.25.0"
-eframe = "0.25.0"
-winit = "0.29.9"
+strum = { version = "^0.25.0", features = ["std", "derive"] }
+native_db = { version = "0.8.1" }
+native_model = { version = "0.4.20" }
+once_cell = "^1.19.0"
+egui = "^0.29.1"
+eframe = "^0.29.1"
+winit = "0.30.5"
 type_reg = { version = "0.7.0", features = ["untagged"] }
 thiserror = "1.0.56"
 smart-default = "0.7.1"
@@ -64,11 +64,12 @@ testing_logger = "0.1.1"
 edid-rs = "0.1.0"
 typemap-ors = "1.0.0"
 str-distance = "0.1.0"
-serde_with = "3.8.1"
+serde_with = "^3.8.1"
 dbus = "0.9.7"
-tempfile = "3.10.1"
-unicode-segmentation = "1.11.0"
+tempfile = "^3.10.1"
+unicode-segmentation = "^1.11.0"
 steamdeck-controller-hidraw = { git = "https://github.com/SteelSavant/steamdeck-controller-hidraw" }
+rmp-serde = "1.3.0" # this cannot up updated without breaking the
 
 [features]
 default = ["online", "decky"]
@@ -95,4 +96,4 @@ overflow-checks = false
 split-debuginfo = "packed"
 
 [dev-dependencies]
-pretty_assertions = "1.4.0"
+pretty_assertions = "^1.4.0"

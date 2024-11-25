@@ -110,12 +110,12 @@ const splicePlayButton = (children: any[], appid: number) => {
     const overview = appStore.GetAppOverviewByAppID(appid);
 
     const status = overview.per_client_data.find(
-        (d: any) => d.clientid === overview.selected_clientid,
+        (d: any) => d?.clientid === overview.selected_clientid,
     );
 
-    const streaming = status.clientid !== '0';
+    const streaming = status?.clientid !== '0';
     const installed: boolean =
-        !streaming && status.status_percentage == 100 && status.installed;
+        !streaming && status?.status_percentage === 100 && status?.installed;
 
     const missingPlayBtn = !children[0] || streaming || !installed;
 
