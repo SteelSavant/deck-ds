@@ -5363,12 +5363,12 @@ checksum = "af310deaae937e48a26602b730250b4949e125f468f11e6990be3e5304ddd96f"
 [[package]]
 name = "xrandr"
 version = "0.2.0"
-source = "git+https://github.com/dzfranklin/xrandr-rs#865a04778ad15119cc0a49e27d748daf82189c9c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "67a14ec30c869847f1d2f4632d38e0360b0b3380cbb12ac241bfe24050a6a8de"
 dependencies = [
  "indexmap 1.9.3",
  "itertools",
  "libc",
- "serde",
  "thiserror",
  "time",
  "x11",

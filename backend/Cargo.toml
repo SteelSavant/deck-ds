@@ -39,9 +39,7 @@ nix = { version = "^0.27.1", features = ["process", "zerocopy", "signal"] }
 float-cmp = "^0.9.0"
 enum_delegate = "0.2.0"
 uuid = { version = "^1.6.0", features = ["serde", "v4"] }
-xrandr = { git = "https://github.com/dzfranklin/xrandr-rs", features = [
-    "serialize",
-] }
+xrandr = { version = "^0.2.0" }
 shellexpand = "3.1.0"
 include_dir = "0.7.3"
 lazy_static = "^1.4.0"
@@ -69,7 +67,7 @@ dbus = "0.9.7"
 tempfile = "^3.10.1"
 unicode-segmentation = "^1.11.0"
 steamdeck-controller-hidraw = { git = "https://github.com/SteelSavant/steamdeck-controller-hidraw" }
-rmp-serde = "1.3.0" # this cannot up updated without breaking the
+rmp-serde = "1.3.0" # this cannot up updated without breaking the db
 
 [features]
 default = ["online", "decky"]
