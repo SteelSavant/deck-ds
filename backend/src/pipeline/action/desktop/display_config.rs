@@ -18,6 +18,7 @@ pub struct DisplayConfig {
     pub deck_is_primary_display: bool,
 }
 
+// TODO::ideally, this would listen for changes to connected monitors and re-run accordingly
 impl ActionImpl for DisplayConfig {
     type State = ();
 

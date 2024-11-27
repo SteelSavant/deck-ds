@@ -362,6 +362,8 @@ impl PipelineActionRegistarBuilder {
                         profile_override: None,
                         selection: VirtualScreen {
                             id: ActionId::nil(),
+                            deck_location: RelativeLocation::Below,
+                            deck_is_primary_display: true,
                         }.into(),
                     })
                 })
