@@ -712,6 +712,8 @@ mod tests {
             .into(),
             VirtualScreen {
                 id: ActionId::nil(),
+                deck_is_primary_display: true,
+                deck_location: RelativeLocation::Below,
             }
             .clone()
             .into(),

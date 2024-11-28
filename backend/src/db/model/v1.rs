@@ -854,17 +854,27 @@ pub enum DbAppImageSource {
 pub struct DbVirtualScreen {
     #[primary_key]
     pub id: ActionId,
+    pub deck_location: RelativeLocation,
+    pub deck_is_primary_display: bool,
 }
 
 impl From<VirtualScreen> for DbVirtualScreen {
     fn from(value: VirtualScreen) -> Self {
-        Self { id: value.id }
+        Self {
+            id: value.id,
+            deck_is_primary_display: value.deck_is_primary_display,
+            deck_location: value.deck_location,
+        }
     }
 }
 
 impl From<DbVirtualScreen> for VirtualScreen {
     fn from(value: DbVirtualScreen) -> Self {
-        Self { id: value.id }
+        Self {
+            id: value.id,
+            deck_is_primary_display: value.deck_is_primary_display,
+            deck_location: value.deck_location,
+        }
     }
 }
 

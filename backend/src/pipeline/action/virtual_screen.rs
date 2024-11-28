@@ -1,7 +1,6 @@
 use anyhow::{Context, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use xrandr::Relation;
 
 use crate::{
     pipeline::{dependency::Dependency, executor::PipelineContext},

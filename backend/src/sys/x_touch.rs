@@ -108,7 +108,7 @@ pub fn reconfigure(
         external,
         touch_mode,
         TouchCalibrationMode::PreferEmbedded,
-    );
+    )?;
     reconfigure_internal(
         display,
         xrandr,
@@ -117,7 +117,7 @@ pub fn reconfigure(
         deck,
         touch_mode,
         TouchCalibrationMode::PreferExternal,
-    );
+    )?;
 
     Ok(())
 }

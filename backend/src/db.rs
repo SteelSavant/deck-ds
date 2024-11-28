@@ -9,6 +9,7 @@ use crate::pipeline::data::Template;
 use crate::pipeline::data::TemplateId;
 use crate::settings::AppId;
 use crate::settings::AppProfile;
+use crate::util::create_dir_all;
 
 use self::model::{DbAppOverride, DbAppSettings, MODELS};
 use self::templates::build_templates;
@@ -32,6 +33,14 @@ pub struct ProfileDb {
 
 impl ProfileDb {
     pub fn new(db_path: PathBuf, registrar: PipelineActionRegistrar) -> Self {
+        let parent = db_path
+            .parent()
+            .expect("db_path should have parent directory");
+
+        if !parent.exists() {
+            create_dir_all(parent).expect("should be able to create db dir");
+        }
+
         let mut db = native_db::Builder::new()
             .create(&MODELS, db_path)
             .expect("database should be instantiable");
