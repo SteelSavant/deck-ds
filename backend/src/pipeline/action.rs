@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 
 use desktop::desktop_controller_layout_hack::DesktopControllerLayoutHack;
+use desktop::touch_config::TouchConfig;
 use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use strum::{Display, EnumIter, EnumString};
@@ -34,6 +35,7 @@ pub mod virtual_screen;
 pub use desktop::desktop_controller_layout_hack;
 pub use desktop::display_config;
 pub use desktop::session_handler;
+pub use desktop::touch_config;
 pub use emu::cemu_audio;
 pub use emu::cemu_layout;
 pub use emu::citra_layout;
@@ -124,6 +126,7 @@ newtype_uuid!(ActionId);
 pub enum Action {
     DesktopSessionHandler(DesktopSessionHandler),
     DisplayConfig(DisplayConfig),
+    TouchConfig(TouchConfig),
     VirtualScreen(VirtualScreen),
     MultiWindow(MultiWindow),
     CitraLayout(CitraLayout),
@@ -163,6 +166,7 @@ impl Action {
                 Action::DesktopSessionHandler(DesktopSessionHandler { id, ..*a })
             }
             Action::DisplayConfig(a) => Action::DisplayConfig(DisplayConfig { id, ..a.clone() }),
+            Action::TouchConfig(a) => Action::TouchConfig(TouchConfig { id, ..a.clone() }),
             Action::VirtualScreen(a) => Action::VirtualScreen(VirtualScreen { id, ..a.clone() }),
             Action::MultiWindow(a) => Action::MultiWindow(MultiWindow { id, ..a.clone() }),
             Action::CitraLayout(a) => Action::CitraLayout(CitraLayout { id, ..*a }),
@@ -205,6 +209,7 @@ pub enum ActionType {
     MainAppAutomaticWindowing,
     MelonDSLayout,
     SourceFile,
+    TouchConfig,
     VirtualScreen,
     LaunchSecondaryFlatpakApp,
     LaunchSecondaryAppPreset,

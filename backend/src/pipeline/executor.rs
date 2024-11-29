@@ -28,12 +28,14 @@ use crate::pipeline::action::multi_window::secondary_app::{
 };
 use crate::pipeline::action::session_handler::DesktopSessionHandler;
 use crate::pipeline::action::source_file::SourceFile;
+use crate::pipeline::action::touch_config::TouchConfig;
 use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::action::{ActionImpl, ActionType};
 use crate::pipeline::data::RuntimeSelection;
 use crate::secondary_app::SecondaryAppManager;
 use crate::settings::{AppId, GameId, GlobalConfig, SteamLaunchInfo};
 use crate::sys::app_process::AppProcess;
+use crate::sys::kwin::screen_tracking::KWinScreenTrackingScope;
 use crate::sys::kwin::{next_active_window, KWin};
 use crate::sys::x_display::XDisplay;
 
@@ -55,6 +57,7 @@ pub struct PipelineContext {
     pub decky_env: Arc<DeckyEnv>,
     /// KWin script handler
     pub kwin: KWin,
+    pub screen_tracking: Option<KWinScreenTrackingScope>,
     /// Display handler,
     pub display: Option<XDisplay>,
     pub exit_hooks: Option<BtnChord>,
@@ -88,6 +91,11 @@ impl PipelineContext {
     ) -> Self {
         PipelineContext {
             kwin: KWin::new(decky_env.asset_manager()),
+            screen_tracking: KWinScreenTrackingScope::new()
+                .inspect_err(|err| {
+                    log::warn!("Failed to initialize KWinScreenTrackingScope: {err:#?}")
+                })
+                .ok(),
             display: XDisplay::new().ok(),
             state: TypeMap::new(),
             have_run: vec![],
@@ -140,6 +148,7 @@ impl PipelineContext {
         register_type::<MainAppAutomaticWindowing>(&mut type_reg);
         register_type::<Lime3dsLayout>(&mut type_reg);
         register_type::<CemuAudio>(&mut type_reg);
+        register_type::<TouchConfig>(&mut type_reg);
 
         type_reg.register::<Vec<String>>("__actions__".to_string());
         type_reg.register::<DeckyEnv>("__env__".to_string());
@@ -184,6 +193,9 @@ impl PipelineContext {
                     }
                     ActionType::DisplayConfig => {
                         load_state::<DisplayConfig>(&mut default, &type_map)
+                    }
+                    ActionType::TouchConfig => {
+                        load_state::<TouchConfig>(&mut default, &type_map);
                     }
                     ActionType::LaunchSecondaryFlatpakApp => {
                         load_state::<LaunchSecondaryFlatpakApp>(&mut default, &type_map)
@@ -251,6 +263,7 @@ impl PipelineContext {
             match action {
                 Action::DesktopSessionHandler(a) => insert_action(self, &mut map, a),
                 Action::DisplayConfig(a) => insert_action(self, &mut map, a),
+                Action::TouchConfig(a) => insert_action(self, &mut map, a),
                 Action::VirtualScreen(a) => insert_action(self, &mut map, a),
                 Action::MultiWindow(a) => insert_action(self, &mut map, a),
                 Action::CitraLayout(a) => insert_action(self, &mut map, a),
@@ -381,6 +394,7 @@ impl PipelineContext {
             ActionType::CitraLayout => handle::<CitraLayout>(self, is_push),
             ActionType::DesktopSessionHandler => handle::<DesktopSessionHandler>(self, is_push),
             ActionType::DisplayConfig => handle::<DisplayConfig>(self, is_push),
+            ActionType::TouchConfig => handle::<TouchConfig>(self, is_push),
             ActionType::MultiWindow => handle::<MultiWindow>(self, is_push),
             ActionType::MainAppAutomaticWindowing => {
                 handle::<MainAppAutomaticWindowing>(self, is_push)

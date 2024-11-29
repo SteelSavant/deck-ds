@@ -28,7 +28,7 @@ impl ActionImpl for DisplayConfig {
         let display = ctx
             .display
             .as_mut()
-            .with_context(|| "DisplayConfig requires x11 to be running")?;
+            .context("DisplayConfig requires x11 to be running")?;
 
         let preferred = display.get_preferred_external_output()?;
         let mut embedded = display.get_embedded_output()?;

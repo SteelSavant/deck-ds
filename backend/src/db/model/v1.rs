@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 use crate::{
-    db::codec::rmp_serde_1_3::RmpSerdeNamed,
+    db::codec::rmp_serde_1_3::RmpSerde,
     pipeline::{
         action::{
             cemu_audio::{CemuAudio, CemuAudioChannels, CemuAudioSetting, CemuAudioState},
@@ -30,12 +30,14 @@ use crate::{
                 },
             },
             session_handler::DesktopSessionHandler,
+            touch_config::TouchConfig,
             ActionId,
         },
         data::{PipelineActionId, PipelineDefinitionId, PipelineTarget, TopLevelId},
     },
     secondary_app::{FlatpakApp, SecondaryApp, SecondaryAppPresetId},
     settings::{AppId, ProfileId},
+    sys::x_display::x_touch::TouchSelectionMode,
 };
 
 // Core
@@ -56,7 +58,7 @@ use crate::{
 
 #[derive(Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 1, version = 1, with = RmpSerde)]
 pub struct DbCategoryProfile {
     #[primary_key]
     pub id: ProfileId,
@@ -66,7 +68,7 @@ pub struct DbCategoryProfile {
 
 #[derive(Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 2, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 2, version = 1, with = RmpSerde)]
 pub struct DbAppSettings {
     #[primary_key]
     pub app_id: AppId,
@@ -75,7 +77,7 @@ pub struct DbAppSettings {
 
 #[derive(Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 3, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 3, version = 1, with = RmpSerde)]
 pub struct DbAppOverride {
     #[primary_key]
     pub id: (AppId, ProfileId),
@@ -84,7 +86,7 @@ pub struct DbAppOverride {
 
 #[derive(Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 4, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 4, version = 1, with = RmpSerde)]
 pub struct DbPipelineDefinition {
     #[primary_key]
     pub id: PipelineDefinitionId,
@@ -138,7 +140,7 @@ pub struct DbTopLevelDefinition {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 5, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 5, version = 1, with = RmpSerde)]
 pub struct DbPipelineActionSettings {
     #[primary_key]
     pub id: (PipelineDefinitionId, TopLevelId, PipelineActionId),
@@ -165,7 +167,7 @@ pub struct DbAction {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1001, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 1001, version = 1, with = RmpSerde)]
 pub struct DbCemuLayout {
     #[primary_key]
     pub id: ActionId,
@@ -197,7 +199,7 @@ impl From<DbCemuLayout> for CemuLayout {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[native_db]
-#[native_model(id = 1002, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 1002, version = 1, with = RmpSerde)]
 pub struct DbCitraLayout {
     #[primary_key]
     pub id: ActionId,
@@ -263,7 +265,7 @@ pub enum DbCitraLayoutOption {
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1003, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 1003, version = 1, with = RmpSerde)]
 pub struct DbMelonDSLayout {
     #[primary_key]
     pub id: ActionId,
@@ -338,7 +340,7 @@ pub enum DbMelonDSSizingOption {
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1004, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 1004, version = 1, with = RmpSerde)]
 pub struct DbDesktopSessionHandler {
     #[primary_key]
     pub id: ActionId,
@@ -562,7 +564,7 @@ pub enum DbAspectRatioOption {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1005, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 1005, version = 1, with = RmpSerde)]
 pub struct DbMultiWindow {
     #[primary_key]
     pub id: ActionId,
@@ -754,7 +756,7 @@ impl From<DbMultiWindowGeneralOptions> for GeneralOptions {
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize)]
 #[native_db]
-#[native_model(id = 1006, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 1006, version = 1, with = RmpSerde)]
 pub struct DbSourceFile {
     #[primary_key]
     pub id: ActionId,
@@ -850,7 +852,7 @@ pub enum DbAppImageSource {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1007, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 1007, version = 1, with = RmpSerde)]
 pub struct DbVirtualScreen {
     #[primary_key]
     pub id: ActionId,
@@ -880,7 +882,7 @@ impl From<DbVirtualScreen> for VirtualScreen {
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1008, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 1008, version = 1, with = RmpSerde)]
 pub struct DbDisplayConfig {
     #[primary_key]
     pub id: ActionId,
@@ -913,7 +915,7 @@ impl From<DbDisplayConfig> for DisplayConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1009, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 1009, version = 1, with = RmpSerde)]
 pub struct DbLaunchSecondaryFlatpakApp {
     #[primary_key]
     pub id: ActionId,
@@ -1057,7 +1059,7 @@ impl From<DbSecondaryAppScreenPreference> for SecondaryAppScreenPreference {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1010, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 1010, version = 1, with = RmpSerde)]
 pub struct DbLaunchSecondaryAppPreset {
     #[primary_key]
     pub id: ActionId,
@@ -1090,7 +1092,7 @@ impl From<DbLaunchSecondaryAppPreset> for LaunchSecondaryAppPreset {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1011, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 1011, version = 1, with = RmpSerde)]
 pub struct DbMainAppAutomaticWindowing {
     #[primary_key]
     id: ActionId,
@@ -1214,7 +1216,7 @@ pub enum DbGamescopeFilter {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1012, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 1012, version = 1, with = RmpSerde)]
 pub struct DbLime3dsLayout {
     #[primary_key]
     pub id: ActionId,
@@ -1270,7 +1272,7 @@ impl From<DbLime3dsLayout> for Lime3dsLayout {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1013, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 1013, version = 1, with = RmpSerde)]
 pub struct DbCemuAudio {
     #[primary_key]
     pub id: ActionId,
@@ -1366,7 +1368,7 @@ pub enum DbCemuAudioChannels {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1014, version = 1, with = RmpSerdeNamed)]
+#[native_model(id = 1014, version = 1, with = RmpSerde)]
 pub struct DbDesktopControllerLayoutHack {
     #[primary_key]
     pub id: ActionId,
@@ -1390,6 +1392,48 @@ impl From<DbDesktopControllerLayoutHack> for DesktopControllerLayoutHack {
             id: value.id,
             nonsteam_override: value.nonsteam_override,
             steam_override: value.steam_override,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[native_db]
+#[native_model(id = 1015, version = 1, with = RmpSerde)]
+pub struct DbTouchConfig {
+    #[primary_key]
+    pub id: ActionId,
+    pub touch_mode: DbTouchSelectionMode,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+enum DbTouchSelectionMode {
+    PerDisplay,
+    PreferEmbedded,
+    PreferExternal,
+}
+
+impl From<TouchConfig> for DbTouchConfig {
+    fn from(value: TouchConfig) -> Self {
+        Self {
+            id: value.id,
+            touch_mode: match value.touch_mode {
+                TouchSelectionMode::PerDisplay => DbTouchSelectionMode::PerDisplay,
+                TouchSelectionMode::PreferEmbedded => DbTouchSelectionMode::PreferEmbedded,
+                TouchSelectionMode::PreferExternal => DbTouchSelectionMode::PreferExternal,
+            },
+        }
+    }
+}
+
+impl From<DbTouchConfig> for TouchConfig {
+    fn from(value: DbTouchConfig) -> Self {
+        Self {
+            id: value.id,
+            touch_mode: match value.touch_mode {
+                DbTouchSelectionMode::PerDisplay => TouchSelectionMode::PerDisplay,
+                DbTouchSelectionMode::PreferEmbedded => TouchSelectionMode::PreferEmbedded,
+                DbTouchSelectionMode::PreferExternal => TouchSelectionMode::PreferExternal,
+            },
         }
     }
 }

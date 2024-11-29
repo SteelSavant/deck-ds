@@ -22,34 +22,15 @@ use std::{
 
 use anyhow::{Ok, Result};
 
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use x11::{xinput2::*, xlib::*, xrandr::XRRGetScreenSizeRange};
-use xrandr::{Output, Rotation, ScreenResources, XHandle};
+use xrandr::{Output, Rotation, ScreenResources};
 
-use super::x_display::XDisplay;
+use super::{x_display_handle::XDisplayHandle, XDisplay};
 
-// The main handle consists simply of a pointer to the display
-type DisplayHandleSys = ptr::NonNull<Display>;
-#[derive(Debug)]
-pub struct XDisplayHandle {
-    sys: DisplayHandleSys,
-}
-
-impl XDisplayHandle {
-    pub fn open() -> Self {
-        Self {
-            sys: ptr::NonNull::new(unsafe { XOpenDisplay(ptr::null()) }).unwrap(),
-        }
-    }
-}
-
-impl Drop for XDisplayHandle {
-    fn drop(&mut self) {
-        unsafe { XCloseDisplay(self.sys.as_ptr()) };
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TouchCalibrationMode {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub enum TouchSelectionMode {
     PerDisplay,
     PreferEmbedded,
     PreferExternal,
@@ -71,111 +52,99 @@ struct DisplayInfo {
     rot: Rotation,
 }
 
-pub fn reconfigure(
-    touch_mode: TouchCalibrationMode,
-    display: &XDisplayHandle,
-    xrandr: &mut XHandle,
-    xdisplay: &mut XDisplay,
-) -> Result<()> {
-    let deck = xdisplay
-        .get_embedded_output()?
-        .filter(|v| v.connected && v.current_mode.is_some());
-    let external = xdisplay
-        .get_preferred_external_output()?
-        .filter(|v| v.connected && v.current_mode.is_some());
+impl XDisplay {
+    pub fn reconfigure_touch(&mut self, touch_mode: TouchSelectionMode) -> Result<()> {
+        let deck = self
+            .get_embedded_output()?
+            .filter(|v| v.connected && v.current_mode.is_some());
+        let external = self
+            .get_preferred_external_output()?
+            .filter(|v| v.connected && v.current_mode.is_some());
 
-    if deck.is_none() && external.is_none() {
-        println!("no displays found, not configuring touch...");
-        return Ok(());
+        if deck.is_none() && external.is_none() {
+            println!("no displays found, not configuring touch...");
+            return Ok(());
+        }
+
+        let deck = deck.as_ref();
+        let external = external.as_ref();
+
+        let inputs = enumerate_touch_devices(self.xhandle_mut());
+
+        let embedded_touch_name = "FTS3528:00 2808:1015";
+        let deck_touch = inputs.iter().find(|v| v.name == embedded_touch_name);
+        let external_touch = inputs.iter().find(|v| v.name != embedded_touch_name);
+
+        self.reconfigure_internal(
+            deck,
+            deck_touch,
+            external,
+            touch_mode,
+            TouchSelectionMode::PreferEmbedded,
+        )?;
+        self.reconfigure_internal(
+            external,
+            external_touch,
+            deck,
+            touch_mode,
+            TouchSelectionMode::PreferExternal,
+        )?;
+
+        Ok(())
     }
 
-    let deck = deck.as_ref();
-    let external = external.as_ref();
-
-    let inputs = enumerate_touch_devices(display);
-
-    let embedded_touch_name = "FTS3528:00 2808:1015";
-    let deck_touch = inputs.iter().find(|v| v.name == embedded_touch_name);
-    let external_touch = inputs.iter().find(|v| v.name != embedded_touch_name);
-
-    // println!("inputs: {inputs:?}");
-
-    reconfigure_internal(
-        display,
-        xrandr,
-        deck,
-        deck_touch,
-        external,
-        touch_mode,
-        TouchCalibrationMode::PreferEmbedded,
-    )?;
-    reconfigure_internal(
-        display,
-        xrandr,
-        external,
-        external_touch,
-        deck,
-        touch_mode,
-        TouchCalibrationMode::PreferExternal,
-    )?;
-
-    Ok(())
-}
-
-fn reconfigure_internal(
-    display: &XDisplayHandle,
-    xrandr: &mut XHandle,
-    primary: Option<&Output>,
-    primary_touch: Option<&TouchInputIdentifier>,
-    secondary: Option<&Output>,
-    touch_mode: TouchCalibrationMode,
-    touch_mode_preference: TouchCalibrationMode,
-) -> Result<()> {
-    match (primary, primary_touch) {
-        (Some(primary), Some(primary_touch)) => {
-            if touch_mode == TouchCalibrationMode::PerDisplay || touch_mode == touch_mode_preference {
-   TouchCalibrationTarget {
+    fn reconfigure_internal(
+        &mut self,
+        primary: Option<&Output>,
+        primary_touch: Option<&TouchInputIdentifier>,
+        secondary: Option<&Output>,
+        touch_mode: TouchSelectionMode,
+        touch_mode_preference: TouchSelectionMode,
+    ) -> Result<()> {
+        match (primary, primary_touch) {
+            (Some(primary), Some(primary_touch)) => {
+                if touch_mode == TouchSelectionMode::PerDisplay
+                    || touch_mode == touch_mode_preference
+                {
+                    TouchCalibrationTarget {
                         source_touch: primary_touch,
                         source_output: primary,
                         target_output: primary,
                     }
-            } else {
-TouchCalibrationTarget {
-                    source_touch: primary_touch,
-                    source_output: primary,
-                    target_output: secondary.unwrap_or(primary),
+                } else {
+                    TouchCalibrationTarget {
+                        source_touch: primary_touch,
+                        source_output: primary,
+                        target_output: secondary.unwrap_or(primary),
+                    }
+                }
+                .reconfigure(self);
+            }
+            (None, Some(primary_touch)) => {
+                if let Some(secondary) = secondary {
+                    TouchCalibrationTarget {
+                        source_touch: primary_touch,
+                        source_output: secondary,
+                        target_output: secondary,
+                    }
+                    .reconfigure(self);
+                } else {
+                    println!("no available display to map touch")
                 }
             }
-            .reconfigure(display, xrandr);
+            (_, None) => println!("touch not detected, not configuring"),
         }
-        (None, Some(primary_touch)) => {
-            if let Some(secondary) = secondary {
-                TouchCalibrationTarget {
-                    source_touch: primary_touch,
-                    source_output: secondary,
-                    target_output: secondary,
-                }
-                .reconfigure(display, xrandr);
-            } else {
-                println!("no available display to map touch")
-            }
-        }
-        (_, None) => println!("touch not detected, not configuring"),
-    }
 
-    Ok(())
+        Ok(())
+    }
 }
 
 impl DisplayInfo {
-    fn new(
-        display: &XDisplayHandle,
-        handle: &mut XHandle,
-        source_output: &Output,
-        target_output: &Output,
-    ) -> Self {
-        let res = ScreenResources::new(handle).unwrap();
+    fn new(display: &mut XDisplay, source_output: &Output, target_output: &Output) -> Self {
+        let (sw, sh) = get_screen_info(display.xhandle_mut());
 
-        let (sw, sh) = get_screen_info(&display);
+        let handle = display.xrandr_handle_mut();
+        let res = ScreenResources::new(handle).unwrap();
 
         let source_crtc = res.crtc(handle, source_output.crtc.unwrap()).unwrap();
         let source_rot = source_crtc.rotation;
@@ -217,19 +186,18 @@ struct TouchCalibrationTarget<'a> {
 }
 
 impl<'a> TouchCalibrationTarget<'a> {
-    fn reconfigure(&self, display: &XDisplayHandle, xrandr: &mut XHandle) {
-        let mut display_info =
-            DisplayInfo::new(display, xrandr, &self.source_output, &self.target_output);
+    fn reconfigure(&self, display: &mut XDisplay) {
+        let display_info = DisplayInfo::new(display, &self.source_output, &self.target_output);
         let deviceid = self.source_touch.deviceid;
 
         // TODO::there is a chance that the scaling mode of the display itself may affect the output.
         // Hoping that isn't the case
 
-        scaling_full_mode(&display, deviceid, &mut display_info)
+        scaling_full_mode(display.xhandle_mut(), deviceid, &display_info)
     }
 }
 
-fn scaling_full_mode(display: &XDisplayHandle, deviceid: i32, display_info: &mut DisplayInfo) {
+fn scaling_full_mode(display: &mut XDisplayHandle, deviceid: i32, display_info: &DisplayInfo) {
     let d = display_info;
 
     let shift = [
@@ -260,7 +228,7 @@ fn scaling_full_mode(display: &XDisplayHandle, deviceid: i32, display_info: &mut
     apply_matrix(display, deviceid, &m);
 }
 
-fn rotate_reflect(m: &[f32; 9], display_info: &mut DisplayInfo) -> [f32; 9] {
+fn rotate_reflect(m: &[f32; 9], display_info: &DisplayInfo) -> [f32; 9] {
     let rotation = display_info.rot;
 
     let t = match rotation {
@@ -294,16 +262,14 @@ fn multiply(a: &[f32; 9], b: &[f32; 9]) -> [f32; 9] {
     m
 }
 
-fn get_screen_info(display: &XDisplayHandle) -> (i32, i32) {
+fn get_screen_info(display: &mut XDisplayHandle) -> (i32, i32) {
     unsafe {
-        let screen = XDefaultScreen(display.sys.as_ptr());
-        let root = XRootWindow(display.sys.as_ptr(), screen);
+        let screen = XDefaultScreen(display.as_ptr());
+        let root = XRootWindow(display.as_ptr(), screen);
 
-        if (XRRGetScreenSizeRange(display.sys.as_ptr(), root, &mut 0, &mut 0, &mut 0, &mut 0))
-            == True
-        {
-            let sw = XDisplayWidth(display.sys.as_ptr(), screen);
-            let sh = XDisplayHeight(display.sys.as_ptr(), screen);
+        if (XRRGetScreenSizeRange(display.as_ptr(), root, &mut 0, &mut 0, &mut 0, &mut 0)) == True {
+            let sw = XDisplayWidth(display.as_ptr(), screen);
+            let sh = XDisplayHeight(display.as_ptr(), screen);
 
             return (sw, sh);
         } else {
@@ -314,7 +280,7 @@ fn get_screen_info(display: &XDisplayHandle) -> (i32, i32) {
 
 // fn map_to_output(input: &TouchInputIdentifier, input_display: &Output, output_display: &Output) {}
 
-fn enumerate_touch_devices(display: &XDisplayHandle) -> Vec<TouchInputIdentifier> {
+fn enumerate_touch_devices(display: &mut XDisplayHandle) -> Vec<TouchInputIdentifier> {
     let blacklist = ["Virtual core pointer"];
 
     let mut out = vec![];
@@ -322,7 +288,7 @@ fn enumerate_touch_devices(display: &XDisplayHandle) -> Vec<TouchInputIdentifier
     unsafe {
         let mut n_devices: i32 = 0;
 
-        let info = XIQueryDevice(display.sys.as_ptr(), XIAllDevices, &mut n_devices);
+        let info = XIQueryDevice(display.as_ptr(), XIAllDevices, &mut n_devices);
 
         for i in 0..n_devices {
             let dev = info.offset(i as isize);
@@ -345,15 +311,15 @@ fn enumerate_touch_devices(display: &XDisplayHandle) -> Vec<TouchInputIdentifier
     out
 }
 
-fn apply_matrix(display: &XDisplayHandle, deviceid: i32, m: &[f32; 9]) {
+fn apply_matrix(display: &mut XDisplayHandle, deviceid: i32, m: &[f32; 9]) {
     unsafe {
         // Get the current property values
 
         let float_atom_name = CString::new("FLOAT").unwrap();
         let matrix_atom_name = CString::new("Coordinate Transformation Matrix").unwrap();
 
-        let prop_float = XInternAtom(display.sys.as_ptr(), float_atom_name.as_ptr(), False);
-        let prop_matrix = XInternAtom(display.sys.as_ptr(), matrix_atom_name.as_ptr(), False);
+        let prop_float = XInternAtom(display.as_ptr(), float_atom_name.as_ptr(), False);
+        let prop_matrix = XInternAtom(display.as_ptr(), matrix_atom_name.as_ptr(), False);
 
         if prop_float == 0 {
             panic!("let atom not found. This server is too old.");
@@ -369,7 +335,7 @@ fn apply_matrix(display: &XDisplayHandle, deviceid: i32, m: &[f32; 9]) {
         let mut raw_data: *mut u8 = ptr::null_mut();
 
         let rc = XIGetProperty(
-            display.sys.as_ptr(),
+            display.as_ptr(),
             deviceid,
             prop_matrix,
             0,
@@ -400,7 +366,7 @@ fn apply_matrix(display: &XDisplayHandle, deviceid: i32, m: &[f32; 9]) {
 
         // Apply the new property values
         XIChangeProperty(
-            display.sys.as_ptr(),
+            display.as_ptr(),
             deviceid,
             prop_matrix,
             prop_float,

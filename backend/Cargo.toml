@@ -69,6 +69,7 @@ unicode-segmentation = "^1.11.0"
 steamdeck-controller-hidraw = { git = "https://github.com/SteelSavant/steamdeck-controller-hidraw" }
 rmp-serde = "1.3.0" # this cannot up updated without breaking the db
 x11 = { version = "2.18.2", features = ["xlib", "xinput"] }
+itertools = "0.13.0"
 
 [features]
 default = ["online", "decky"]
