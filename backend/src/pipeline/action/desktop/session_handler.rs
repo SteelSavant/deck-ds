@@ -244,8 +244,7 @@ impl ActionImpl for DesktopSessionHandler {
                     primary_position,
                     secondary_position,
                     secondary_text,
-                    ui_tx_clone,
-                    ui_rx,
+                    (ui_tx_clone, ui_rx),
                     main_tx,
                 )
                 .run()

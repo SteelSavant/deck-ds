@@ -14,7 +14,7 @@ use crate::{
         },
     },
     pipeline::{
-        action::{touch_config::TouchConfig, Action, ActionId, ActionType, ErasedPipelineAction},
+        action::{Action, ActionId, ActionType, ErasedPipelineAction},
         data::{
             ConfigSelection, PipelineActionId, PipelineActionLookup, PipelineDefinitionId,
             TopLevelDefinition, TopLevelId,
@@ -182,7 +182,6 @@ impl DbCategoryProfile {
             .all()?
             .filter_map(|app: Result<DbAppOverride, _>| app.ok()) // TODO::log/error on failure
             .filter(|app| app.id.1 == self.id)
-            .map(|app| app)
             .collect::<Vec<_>>();
 
         for o in overrides {

@@ -161,15 +161,12 @@ impl DisplayInfo {
         let mut dh = target_mode.height;
 
         if matches!(target_rot, Rotation::Left | Rotation::Right) {
-            dw ^= dh;
-            dh ^= dw;
-            dw ^= dh;
+            std::mem::swap(&mut dw, &mut dh);
         }
 
         Self {
             sh,
             sw,
-
             dw,
             dh,
             dx: target_crtc.x,
@@ -187,7 +184,7 @@ struct TouchCalibrationTarget<'a> {
 
 impl<'a> TouchCalibrationTarget<'a> {
     fn reconfigure(&self, display: &mut XDisplay) {
-        let display_info = DisplayInfo::new(display, &self.source_output, &self.target_output);
+        let display_info = DisplayInfo::new(display, self.source_output, self.target_output);
         let deviceid = self.source_touch.deviceid;
 
         // TODO::there is a chance that the scaling mode of the display itself may affect the output.
@@ -203,20 +200,20 @@ fn scaling_full_mode(display: &mut XDisplayHandle, deviceid: i32, display_info: 
     let shift = [
         1.,
         0.,
-        (*d).dx as f32 / (*d).sw as f32,
+        d.dx as f32 / d.sw as f32,
         0.,
         1.,
-        (*d).dy as f32 / (*d).sh as f32,
+        d.dy as f32 / d.sh as f32,
         0.,
         0.,
         1.,
     ];
     let zoom = [
-        (*d).dw as f32 / (*d).sw as f32,
+        d.dw as f32 / d.sw as f32,
         0.,
         0.,
         0.,
-        (*d).dh as f32 / (*d).sh as f32,
+        d.dh as f32 / d.sh as f32,
         0.,
         0.,
         0.,
@@ -271,7 +268,7 @@ fn get_screen_info(display: &mut XDisplayHandle) -> (i32, i32) {
             let sw = XDisplayWidth(display.as_ptr(), screen);
             let sh = XDisplayHeight(display.as_ptr(), screen);
 
-            return (sw, sh);
+            (sw, sh)
         } else {
             panic!("unable to determine screen size"); // TODO::loop through all active outputs + manually compute screen size
         }
@@ -360,9 +357,7 @@ fn apply_matrix(display: &mut XDisplayHandle, deviceid: i32, m: &[f32; 9]) {
 
         // Modify the retrieved property with the new matrix values
         let data = std::slice::from_raw_parts_mut(raw_data as *mut f32, nitems as usize);
-        for i in 0..9 {
-            data[i] = m[i];
-        }
+        data[..9].copy_from_slice(m);
 
         // Apply the new property values
         XIChangeProperty(

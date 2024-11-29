@@ -103,6 +103,9 @@ pub static MODELS: Lazy<native_db::Models> = Lazy::new(|| {
             models
                 .define::<v1::DbDesktopControllerLayoutHack>()
                 .expect("failed to define DbDesktopControllerLayoutHack v1"),
+            models
+                .define::<v1::DbTouchConfig>()
+                .expect("failed to define DbTouchConfig v1"),
         ];
 
         assert_eq!(ActionType::iter().len(), v1_actions.len());

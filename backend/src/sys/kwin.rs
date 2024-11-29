@@ -32,7 +32,7 @@ impl KWin {
         let bundle_path = bundle.file_path()?;
 
         let output = Command::new("kpackagetool5")
-            .args([&OsStr::new("-i"), bundle_path.as_os_str()])
+            .args([OsStr::new("-i"), bundle_path.as_os_str()])
             .output()?;
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -41,7 +41,7 @@ impl KWin {
             Ok(())
         } else if stdout.contains("already exists") || stderr.contains("already exists") {
             let status = Command::new("kpackagetool5")
-                .args([&OsStr::new("-u"), bundle_path.as_os_str()])
+                .args([OsStr::new("-u"), bundle_path.as_os_str()])
                 .status()
                 .ok()
                 .map(|s| s.success());

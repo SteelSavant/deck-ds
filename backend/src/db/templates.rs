@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-newtype_strid!("", AppId);
+newtype_strid!("Steam App Identifier", AppId);
 
 use crate::{
     macros::newtype_strid,

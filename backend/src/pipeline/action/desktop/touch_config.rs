@@ -10,7 +10,7 @@ use crate::{
         dependency::Dependency,
     },
     sys::{
-        kwin::screen_tracking::KwinScreenTrackingUpdateHandle,
+        kwin::screen_tracking::KWinScreenTrackingUpdateHandle,
         x_display::{x_touch::TouchSelectionMode, XDisplay},
     },
 };
@@ -23,7 +23,7 @@ pub struct TouchConfig {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TouchConfigState {
-    handle: KwinScreenTrackingUpdateHandle,
+    handle: KWinScreenTrackingUpdateHandle,
 }
 
 impl ActionImpl for TouchConfig {
@@ -42,9 +42,10 @@ impl ActionImpl for TouchConfig {
                 let xdisplay = XDisplay::new();
                 match xdisplay {
                     Ok(mut xdisplay) => {
-                        xdisplay.reconfigure_touch(touch_mode).inspect_err(|err| {
+                        let res = xdisplay.reconfigure_touch(touch_mode);
+                        if let Err(err) = res {
                             log::warn!("failed to reconfigure touch after change event: {err}");
-                        });
+                        }
                     }
                     Err(err) => log::warn!("failed to open xdisplay after change event: {err}"),
                 }
@@ -52,13 +53,10 @@ impl ActionImpl for TouchConfig {
 
         ctx.set_state::<Self>(TouchConfigState { handle });
 
-        let res = ctx
-            .display
+        ctx.display
             .as_mut()
             .context("TouchConfig requires x11 to be running")?
-            .reconfigure_touch(self.touch_mode);
-
-        res
+            .reconfigure_touch(self.touch_mode)
     }
 
     fn teardown(&self, ctx: &mut crate::pipeline::executor::PipelineContext) -> anyhow::Result<()> {

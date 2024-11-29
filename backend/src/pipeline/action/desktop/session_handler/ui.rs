@@ -91,8 +91,7 @@ impl DeckDsUi {
         primary_position: Pos,
         secondary_position: Option<Pos>,
         secondary_text: String,
-        ui_tx: Sender<UiEvent>,
-        ui_rx: Receiver<UiEvent>,
+        (ui_tx, ui_rx): (Sender<UiEvent>, Receiver<UiEvent>),
         tx: Sender<egui::Context>,
     ) -> Self {
         let custom_frame = egui::containers::Frame {

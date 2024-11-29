@@ -1153,8 +1153,8 @@ impl From<GamescopeOptions> for DbGamescopeOptions {
             },
             filter: match value.filter {
                 GamescopeFilter::Linear => DbGamescopeFilter::Linear,
-                GamescopeFilter::FSR => DbGamescopeFilter::FSR,
-                GamescopeFilter::NIS => DbGamescopeFilter::NIS,
+                GamescopeFilter::FSR => DbGamescopeFilter::Fsr,
+                GamescopeFilter::NIS => DbGamescopeFilter::Nis,
                 GamescopeFilter::Pixel => DbGamescopeFilter::Pixel,
             },
         }
@@ -1182,8 +1182,8 @@ impl From<DbGamescopeOptions> for GamescopeOptions {
             },
             filter: match value.filter {
                 DbGamescopeFilter::Linear => GamescopeFilter::Linear,
-                DbGamescopeFilter::FSR => GamescopeFilter::FSR,
-                DbGamescopeFilter::NIS => GamescopeFilter::NIS,
+                DbGamescopeFilter::Fsr => GamescopeFilter::FSR,
+                DbGamescopeFilter::Nis => GamescopeFilter::NIS,
                 DbGamescopeFilter::Pixel => GamescopeFilter::Pixel,
             },
         }
@@ -1209,8 +1209,8 @@ pub enum DbGamescopeScaler {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DbGamescopeFilter {
     Linear,
-    FSR,
-    NIS,
+    Fsr,
+    Nis,
     Pixel,
 }
 
@@ -1406,7 +1406,7 @@ pub struct DbTouchConfig {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-enum DbTouchSelectionMode {
+pub enum DbTouchSelectionMode {
     PerDisplay,
     PreferEmbedded,
     PreferExternal,

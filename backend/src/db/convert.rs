@@ -8,13 +8,12 @@ use native_db::transaction::{RTransaction, RwTransaction};
 use crate::{
     db::model::{DbAppOverride, DbCategoryProfile, DbPipelineActionSettings, DbPipelineDefinition},
     pipeline::data::{
-        PipelineActionId, PipelineActionLookup, PipelineDefinition, PipelineDefinitionId,
-        TopLevelDefinition, TopLevelId,
+        PipelineActionLookup, PipelineDefinition, PipelineDefinitionId, TopLevelDefinition,
     },
     settings::{AppId, AppProfile, CategoryProfile, ProfileId},
 };
 
-use super::model::{DbAppSettings, DbTopLevelDefinition};
+use super::model::DbAppSettings;
 use ext::RwExt;
 
 mod ext;
@@ -86,7 +85,7 @@ impl AppProfile {
                         for (action_id, action) in tl.actions.actions.iter_mut() {
                             if let Some(profile_action) = profile_tl.actions.actions.get(action_id)
                             {
-                                action.copy_qam_values(&profile_action);
+                                action.copy_qam_values(profile_action);
                             }
                         }
                     }
@@ -213,7 +212,7 @@ impl DbCategoryProfile {
             }
         }
 
-        Ok(rw.remove_blind(self)?)
+        rw.remove_blind(self)
     }
 
     pub fn reconstruct(self, ro: &RTransaction) -> Result<CategoryProfile> {

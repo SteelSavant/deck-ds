@@ -180,7 +180,7 @@ impl KWinNewWindowTrackingScope {
                 {
                     let has_match = {
                         let lock = info.lock().unwrap();
-                        get_best_match(&matcher.maybe_strings, &lock.deref()).is_some()
+                        get_best_match(&matcher.maybe_strings, lock.deref()).is_some()
                     };
 
                     if has_match {

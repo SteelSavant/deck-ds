@@ -348,7 +348,7 @@ pub fn get_default_app_override_pipeline_for_profile(
                                 if let Some(profile_action) =
                                     pipeline.platform.actions.actions.get(id)
                                 {
-                                    action.copy_qam_values(&profile_action);
+                                    action.copy_qam_values(profile_action);
                                 }
                             }
 
@@ -362,7 +362,7 @@ pub fn get_default_app_override_pipeline_for_profile(
                                         action.profile_override = Some(args.profile_id);
                                         // override the visibility with the profile visibility, since the QAM can't actually set it
                                         if let Some(profile_action) = v.actions.actions.get(id) {
-                                            action.copy_qam_values(&profile_action);
+                                            action.copy_qam_values(profile_action);
                                         }
                                     }
 

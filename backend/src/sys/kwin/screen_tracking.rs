@@ -3,7 +3,7 @@ use crate::{
     pipeline::action::session_handler::{Pos, Size},
 };
 use std::{
-    fmt::{self, Debug},
+    fmt::Debug,
     sync::{mpsc::Sender, Arc, Mutex},
     time::Duration,
 };
@@ -19,35 +19,15 @@ use xrandr::indexmap::IndexMap;
 
 use std::io::Write;
 
-newtype_uuid!(KwinScreenTrackingUpdateHandle);
+pub type KWinScreenTrackingUpdateHandler = Box<dyn Fn(&[KWinScreenInfo]) + Send + Sync>;
+newtype_uuid!(KWinScreenTrackingUpdateHandle);
 pub struct KWinScreenTrackingScope {
     script_name: uuid::Uuid,
     script_id: i32,
     kwin_conn: Connection,
     kill_tx: Sender<()>,
-    update_handles: Arc<
-        Mutex<
-            IndexMap<KwinScreenTrackingUpdateHandle, Box<dyn Fn(&[KWinScreenInfo]) + Send + Sync>>,
-        >,
-    >,
-}
-
-impl std::fmt::Debug for KWinScreenTrackingScope {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        #[derive(Debug)]
-        struct Impl {
-            script_name: uuid::Uuid,
-            script_id: i32,
-        }
-
-        std::fmt::Debug::fmt(
-            &Impl {
-                script_name: self.script_name,
-                script_id: self.script_id,
-            },
-            f,
-        )
-    }
+    update_handles:
+        Arc<Mutex<IndexMap<KWinScreenTrackingUpdateHandle, KWinScreenTrackingUpdateHandler>>>,
 }
 
 impl KWinScreenTrackingScope {
@@ -147,9 +127,9 @@ impl KWinScreenTrackingScope {
 
     pub fn register_update(
         &mut self,
-        f: Box<dyn Fn(&[KWinScreenInfo]) + Send + Sync>,
-    ) -> KwinScreenTrackingUpdateHandle {
-        let handle = KwinScreenTrackingUpdateHandle::new();
+        f: KWinScreenTrackingUpdateHandler,
+    ) -> KWinScreenTrackingUpdateHandle {
+        let handle = KWinScreenTrackingUpdateHandle::new();
 
         let mut lock = self
             .update_handles
@@ -160,7 +140,7 @@ impl KWinScreenTrackingScope {
         handle
     }
 
-    pub fn unregister_update(&mut self, handle: KwinScreenTrackingUpdateHandle) {
+    pub fn unregister_update(&mut self, handle: KWinScreenTrackingUpdateHandle) {
         let mut lock = self
             .update_handles
             .lock()
