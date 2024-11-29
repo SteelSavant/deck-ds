@@ -58,8 +58,8 @@ pub enum GamescopeScaler {
 pub enum GamescopeFilter {
     #[default]
     Linear,
-    FSR,
-    NIS,
+    Fsr,
+    Nis,
     Pixel,
 }
 

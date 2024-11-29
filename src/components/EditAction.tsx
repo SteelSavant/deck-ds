@@ -715,8 +715,8 @@ export function InternalEditAction({
             const filterOptions: GamescopeFilter[] = [
                 'Linear',
                 'Pixel',
-                'FSR',
-                'NIS',
+                'Fsr',
+                'Nis',
             ];
 
             return (
@@ -819,7 +819,7 @@ export function InternalEditAction({
                                     }}
                                 />
                             </Builder>
-                            {gamescope.filter === 'FSR' ? (
+                            {gamescope.filter === 'Fsr' ? (
                                 <SliderBuilder
                                     label="FSR Sharpness"
                                     value={gamescope.fsr_sharpness}
@@ -834,7 +834,7 @@ export function InternalEditAction({
                                         onChange(cloned);
                                     }}
                                 />
-                            ) : gamescope.filter === 'NIS' ? (
+                            ) : gamescope.filter === 'Nis' ? (
                                 <SliderBuilder
                                     label="NIS Sharpness"
                                     value={gamescope.nis_sharpness}

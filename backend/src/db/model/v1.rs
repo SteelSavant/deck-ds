@@ -1153,8 +1153,8 @@ impl From<GamescopeOptions> for DbGamescopeOptions {
             },
             filter: match value.filter {
                 GamescopeFilter::Linear => DbGamescopeFilter::Linear,
-                GamescopeFilter::FSR => DbGamescopeFilter::Fsr,
-                GamescopeFilter::NIS => DbGamescopeFilter::Nis,
+                GamescopeFilter::Fsr => DbGamescopeFilter::Fsr,
+                GamescopeFilter::Nis => DbGamescopeFilter::Nis,
                 GamescopeFilter::Pixel => DbGamescopeFilter::Pixel,
             },
         }
@@ -1182,8 +1182,8 @@ impl From<DbGamescopeOptions> for GamescopeOptions {
             },
             filter: match value.filter {
                 DbGamescopeFilter::Linear => GamescopeFilter::Linear,
-                DbGamescopeFilter::Fsr => GamescopeFilter::FSR,
-                DbGamescopeFilter::Nis => GamescopeFilter::NIS,
+                DbGamescopeFilter::Fsr => GamescopeFilter::Fsr,
+                DbGamescopeFilter::Nis => GamescopeFilter::Nis,
                 DbGamescopeFilter::Pixel => GamescopeFilter::Pixel,
             },
         }

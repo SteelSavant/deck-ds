@@ -215,7 +215,7 @@ export type SecondaryAppWindowingBehavior =
     | 'Maximized'
     | 'Minimized'
     | 'Unmanaged';
-export type GamescopeFilter = 'Linear' | 'FSR' | 'NIS' | 'Pixel';
+export type GamescopeFilter = 'Linear' | 'Fsr' | 'Nis' | 'Pixel';
 export type GamescopeFullscreenOption = 'Borderless' | 'Fullscreen';
 export type GamescopeScaler = 'Auto' | 'Integer' | 'Fit' | 'Fill' | 'Stretch';
 export type SecondaryApp = {
