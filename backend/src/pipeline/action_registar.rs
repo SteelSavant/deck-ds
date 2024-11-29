@@ -3,6 +3,7 @@ use strum::IntoEnumIterator;
 use crate::{
     secondary_app::{FlatpakApp, SecondaryAppPresetId},
     settings::ProfileId,
+    sys::x_display::x_touch::TouchSelectionMode,
 };
 
 use super::{
@@ -25,6 +26,7 @@ use super::{
         source_file::{
             AppImageSource, CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile,
         },
+        touch_config::TouchConfig,
         virtual_screen::VirtualScreen,
         ActionId,
     },
@@ -251,7 +253,7 @@ impl PipelineActionRegistarBuilder {
                             selection: PipelineActionId::new("core:secondary:launch_secondary_app_preset"), 
                             actions: vec![
                                 PipelineActionId::new("core:secondary:launch_secondary_app_preset"),
-                                PipelineActionId::new("core:secondary:launch_secondary_flatpak_app")
+                                PipelineActionId::new("core:secondary:launch_secondary_flatpak_app"),
                             ]
                         },
                     })
@@ -319,10 +321,21 @@ impl PipelineActionRegistarBuilder {
                                 nonsteam_override: None,
                             }.into(),
                         }
-                    )
-                })
-                .with_group("single_screen_platform", |group| {
-                    group.with_action("display_config", Some(PipelineTarget::Desktop), 
+                    ).with_action(
+                        "touch_config",
+                        Some(PipelineTarget::Desktop),
+                        PipelineActionDefinitionBuilder {
+                            name: "Touch Config".into(),
+                            description: Some("Maps touch screen inputs to desired displays.".into()),
+                            enabled: Some(true),
+                            profile_override: None,
+                            is_visible_on_qam: true,
+                            selection: TouchConfig {
+                                id: ActionId::nil(),
+                                touch_mode: TouchSelectionMode::PerDisplay,
+                            }.into()
+                        }
+                    ).with_action("display_config", Some(PipelineTarget::Desktop), 
                 PipelineActionDefinitionBuilder {
                             name: "Display Config".to_string(),
                             description: Some("Configures displays in desktop mode.".to_string()),
@@ -335,24 +348,7 @@ impl PipelineActionRegistarBuilder {
                                 deck_location: Some(RelativeLocation::Below),
                                 deck_is_primary_display: true,
                             }.into()
-                        })
-                })
-                .with_group("dual_screen_platform", |group| {
-                    group.with_action("display_config", Some(PipelineTarget::Desktop), 
-                PipelineActionDefinitionBuilder {
-                            name: "Display Config".to_string(),
-                            description: Some("Configures displays in desktop mode.".to_string()),
-                            enabled: None,
-                            is_visible_on_qam: false,
-                            profile_override: None,
-                            selection: DisplayConfig {
-                                id: ActionId::nil(),
-                                external_display_settings: ExternalDisplaySettings::Previous,
-                                deck_location: Some(RelativeLocation::Below),
-                                deck_is_primary_display: true,
-                            }.into()
-                        })
-                    .with_action("virtual_screen",      
+                     }).with_action("virtual_screen",      
                     Some(PipelineTarget::Desktop),
                     PipelineActionDefinitionBuilder {
                         name: "Virtual Screen".to_string(),
@@ -383,7 +379,8 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:citra:source"),
                             PipelineActionId::new("core:citra:layout"),
                             PipelineActionId::new("core:citra:multi_window"),
-                            PipelineActionId::new("core:dual_screen_platform:display_config"),
+                            PipelineActionId::new("core:core:display_config"),
+                            PipelineActionId::new("core:core:touch_config"),
                         ]),
                         is_visible_on_qam: true,
                     })
@@ -483,7 +480,8 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:lime3ds:source"),
                             PipelineActionId::new("core:lime3ds:layout"),
                             PipelineActionId::new("core:lime3ds:multi_window"),
-                            PipelineActionId::new("core:dual_screen_platform:display_config"),
+                            PipelineActionId::new("core:core:display_config"),
+                            PipelineActionId::new("core:core:touch_config"),
                         ]),
                         is_visible_on_qam: true,
                     })
@@ -588,7 +586,8 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:cemu:layout"),
                             PipelineActionId::new("core:cemu:audio"),
                             PipelineActionId::new("core:cemu:multi_window"),
-                            PipelineActionId::new("core:dual_screen_platform:display_config"),
+                            PipelineActionId::new("core:core:display_config"),
+                            PipelineActionId::new("core:core:touch_config"),
                         ]),
                         is_visible_on_qam: true,
                     })
@@ -746,7 +745,8 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:cemu_proton:source"),
                             PipelineActionId::new("core:cemu:layout"),
                             PipelineActionId::new("core:cemu:multi_window"),
-                            PipelineActionId::new("core:dual_screen_platform:display_config"),
+                            PipelineActionId::new("core:core:display_config"),
+                            PipelineActionId::new("core:core:touch_config"),
                         ]),
                         is_visible_on_qam: true,
                     })
@@ -787,7 +787,8 @@ impl PipelineActionRegistarBuilder {
                         selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:melonds:source"),
                             PipelineActionId::new("core:melonds:layout"),
-                            PipelineActionId::new("core:dual_screen_platform:virtual_screen"),
+                            PipelineActionId::new("core:core:virtual_screen"),
+                            PipelineActionId::new("core:core:touch_config"),
                         ]),
                         is_visible_on_qam: true,
                     })
@@ -865,7 +866,8 @@ impl PipelineActionRegistarBuilder {
                         is_visible_on_qam: true,
                         selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:app:multi_window"),
-                            PipelineActionId::new("core:single_screen_platform:display_config"),
+                            PipelineActionId::new("core:core:display_config"),
+                            PipelineActionId::new("core:core:touch_config"),
                         ]),
                     })
                     .with_action("multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {

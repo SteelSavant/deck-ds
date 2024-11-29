@@ -38,25 +38,14 @@ impl ActionImpl for TouchConfig {
             .as_mut()
             .context("TouchConfig requires kwin to be running")?
             .register_update(Box::new(move |_update| {
-                sleep(Duration::from_millis(100));
-                let xdisplay = XDisplay::new();
-                match xdisplay {
-                    Ok(mut xdisplay) => {
-                        let res = xdisplay.reconfigure_touch(touch_mode);
-                        if let Err(err) = res {
-                            log::warn!("failed to reconfigure touch after change event: {err}");
-                        }
-                    }
-                    Err(err) => log::warn!("failed to open xdisplay after change event: {err}"),
-                }
+                update_touch(touch_mode);
             }));
 
         ctx.set_state::<Self>(TouchConfigState { handle });
 
-        ctx.display
-            .as_mut()
-            .context("TouchConfig requires x11 to be running")?
-            .reconfigure_touch(self.touch_mode)
+        update_touch(touch_mode);
+
+        Ok(())
     }
 
     fn teardown(&self, ctx: &mut crate::pipeline::executor::PipelineContext) -> anyhow::Result<()> {
@@ -82,5 +71,19 @@ impl ActionImpl for TouchConfig {
     #[inline]
     fn get_id(&self) -> ActionId {
         self.id
+    }
+}
+
+fn update_touch(touch_mode: TouchSelectionMode) {
+    sleep(Duration::from_millis(100));
+    let xdisplay = XDisplay::new();
+    match xdisplay {
+        Ok(mut xdisplay) => {
+            let res = xdisplay.reconfigure_touch(touch_mode);
+            if let Err(err) = res {
+                log::warn!("failed to reconfigure touch after change event: {err}");
+            }
+        }
+        Err(err) => log::warn!("failed to open xdisplay after change event: {err}"),
     }
 }

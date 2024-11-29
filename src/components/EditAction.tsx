@@ -37,6 +37,7 @@ import {
     melonDSSizingOptions,
     secondaryAppScreenPreferences,
     secondaryAppWindowingOptions,
+    touchSelectionModeOptions,
 } from '../backend';
 import useAudioDeviceInfo from '../hooks/useAudioDeviceInfo';
 import useDisplayInfo from '../hooks/useDisplayInfo';
@@ -853,6 +854,24 @@ export function InternalEditAction({
                         </>
                     ) : null}
                 </>
+            );
+        case 'TouchConfig':
+            return (
+                <Builder indentLevel={indentLevel} label="Touch Mode">
+                    <Dropdown
+                        selectedOption={cloned.value.touch_mode}
+                        rgOptions={touchSelectionModeOptions.map((a) => {
+                            return {
+                                label: labelForCamelCase(a),
+                                data: a,
+                            };
+                        })}
+                        onChange={(option) => {
+                            cloned.value.touch_mode = option.data;
+                            onChange(cloned);
+                        }}
+                    />
+                </Builder>
             );
 
         case 'VirtualScreen':
