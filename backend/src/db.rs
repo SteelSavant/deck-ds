@@ -258,10 +258,16 @@ mod tests {
         expected_settings.enabled = expected_settings.enabled.map(|v| !v);
         expected_settings.is_visible_on_qam = !expected_settings.is_visible_on_qam;
 
-        expected.pipeline.platform.actions.actions.insert(
-            PipelineActionId::new("core:citra:layout:desktop"),
-            expected_settings.clone().into(),
-        );
+        for action in registrar.all().keys() {
+            // Adding all toplevel pipeline actions ensures all
+            // used actions can serialize/deserialize
+            expected
+                .pipeline
+                .platform
+                .actions
+                .actions
+                .insert(action.clone(), expected_settings.clone().into());
+        }
 
         db.set_profile(expected.clone())?;
 

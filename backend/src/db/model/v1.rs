@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 use crate::{
-    db::codec::rmp_serde_1_3::RmpSerde,
+    db::codec::rmp_serde_1_3::{RmpSerde, RmpSerdeNamed},
     pipeline::{
         action::{
             cemu_audio::{CemuAudio, CemuAudioChannels, CemuAudioSetting, CemuAudioState},
@@ -199,7 +199,7 @@ impl From<DbCemuLayout> for CemuLayout {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[native_db]
-#[native_model(id = 1002, version = 1, with = RmpSerde)]
+#[native_model(id = 1002, version = 1, with = RmpSerdeNamed)]
 pub struct DbCitraLayout {
     #[primary_key]
     pub id: ActionId,
@@ -340,7 +340,7 @@ pub enum DbMelonDSSizingOption {
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1004, version = 1, with = RmpSerde)]
+#[native_model(id = 1004, version = 1, with = RmpSerdeNamed)]
 pub struct DbDesktopSessionHandler {
     #[primary_key]
     pub id: ActionId,
@@ -882,7 +882,7 @@ impl From<DbVirtualScreen> for VirtualScreen {
 
 #[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1008, version = 1, with = RmpSerde)]
+#[native_model(id = 1008, version = 1, with = RmpSerdeNamed)]
 pub struct DbDisplayConfig {
     #[primary_key]
     pub id: ActionId,
@@ -1216,7 +1216,7 @@ pub enum DbGamescopeFilter {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[native_db]
-#[native_model(id = 1012, version = 1, with = RmpSerde)]
+#[native_model(id = 1012, version = 1, with = RmpSerdeNamed)]
 pub struct DbLime3dsLayout {
     #[primary_key]
     pub id: ActionId,
