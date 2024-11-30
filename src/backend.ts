@@ -272,7 +272,7 @@ async function call_backend_typed<T, R>(
             const end = i + windowLen;
             const slice = stringified.slice(i, end);
             if (slice.length > 0) {
-                logger.trace(
+                logger.trace_nobackend(
                     'writing chunk',
                     i / windowLen,
                     'of',
@@ -283,20 +283,20 @@ async function call_backend_typed<T, R>(
                 let typed = handle_backend_response<never>(res);
 
                 if (!typed.isOk) {
-                    logger.trace('error chunking request', typed.err);
+                    logger.error_nobackend('error chunking request', typed.err);
                     return typed;
                 }
             }
         }
 
         let res = await call_backend(fn, ['Chunked', id]);
-        logger.debug('api (chunked)', `${fn}(`, arg, ') ->', res);
+        logger.debug_nobackend('api (chunked)', `${fn}(`, arg, ') ->', res);
 
         return handle_backend_response(res);
     } else {
         const args = ['Full', arg];
         const res = await call_backend(fn, args);
-        logger.debug('api (single)', `${fn}(`, arg, ') ->', res);
+        logger.debug_nobackend('api (single)', `${fn}(`, arg, ') ->', res);
 
         return handle_backend_response(res);
     }
@@ -322,6 +322,7 @@ function handle_backend_response<T>(res: any[]): Result<T, ApiError> {
 
             logger.log(
                 level,
+                false,
                 'DeckDS backend encountered error:',
                 res[2] ?? unspecifiedMsg,
             );
@@ -342,12 +343,12 @@ async function initLogger() {
         if (currentSettings.isOk) {
             logger.minLevel = currentSettings.data.global_settings.log_level;
         } else {
-            logger.error(
+            logger.error_nobackend(
                 'failed to fetch backend settings when initializing logger',
             );
         }
     } catch (ex) {
-        logger.error(ex);
+        logger.error_nobackend(ex);
     }
 }
 
