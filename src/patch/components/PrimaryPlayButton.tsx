@@ -30,7 +30,7 @@ export default function PrimaryPlayButton({
 
     useEffect(() => {
         const children = playButton.props.children as any[];
-        const shouldPatch = !!(target && onLaunch);
+        const shouldPatch = !!(target && onLaunch) && target !== 'Native';
 
         if (shouldPatch) {
             logger.trace('Using play target');
