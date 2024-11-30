@@ -168,6 +168,24 @@
             "type": {
               "type": "string",
               "enum": [
+                "TouchConfig"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/TouchConfig"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
                 "VirtualScreen"
               ]
             },
@@ -1122,7 +1140,7 @@
             "type": {
               "type": "string",
               "enum": [
-                "KwinScriptNotFound"
+                "KWinScriptNotFound"
               ]
             },
             "value": {
@@ -1140,7 +1158,7 @@
             "type": {
               "type": "string",
               "enum": [
-                "KwinScriptFailedInstall"
+                "KWinScriptFailedInstall"
               ]
             },
             "value": {
@@ -1524,8 +1542,8 @@
       "type": "string",
       "enum": [
         "Linear",
-        "FSR",
-        "NIS",
+        "Fsr",
+        "Nis",
         "Pixel"
       ]
     },
@@ -2925,12 +2943,44 @@
         }
       }
     },
+    "TouchConfig": {
+      "type": "object",
+      "required": [
+        "id",
+        "touch_mode"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "touch_mode": {
+          "$ref": "#/definitions/TouchSelectionMode"
+        }
+      }
+    },
+    "TouchSelectionMode": {
+      "type": "string",
+      "enum": [
+        "PerDisplay",
+        "PreferEmbedded",
+        "PreferExternal"
+      ]
+    },
     "VirtualScreen": {
       "type": "object",
       "required": [
+        "deck_is_primary_display",
+        "deck_location",
         "id"
       ],
       "properties": {
+        "deck_is_primary_display": {
+          "type": "boolean"
+        },
+        "deck_location": {
+          "$ref": "#/definitions/RelativeLocation"
+        },
         "id": {
           "type": "string",
           "format": "uuid"

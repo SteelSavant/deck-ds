@@ -5,7 +5,7 @@ use crate::{
     sys::audio::{get_audio_sinks, get_audio_sources},
 };
 
-use super::{source_file::SourceFile, ActionId, ActionImpl, ActionType};
+use super::super::{source_file::SourceFile, ActionId, ActionImpl, ActionType};
 use anyhow::{Context, Result};
 use regex::Regex;
 use schemars::JsonSchema;

@@ -1,11 +1,11 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::pipeline::executor::PipelineContext;
+use crate::pipeline::{action::ActionId, executor::PipelineContext};
 
 use super::{
+    super::{Action, ActionImpl, ActionType, ErasedPipelineAction},
     citra_layout::{CitraLayout, CitraLayoutState},
-    Action, ActionImpl, ActionType, ErasedPipelineAction,
 };
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
@@ -17,7 +17,7 @@ impl ActionImpl for Lime3dsLayout {
 
     const TYPE: ActionType = ActionType::Lime3dsLayout;
 
-    fn get_id(&self) -> super::ActionId {
+    fn get_id(&self) -> ActionId {
         self.0.id
     }
 

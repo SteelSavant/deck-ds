@@ -3,13 +3,15 @@ use anyhow::{Context, Result};
 use native_db::transaction::RwTransaction;
 
 use crate::{
-    db::convert::ext::RwExt,
-    db::model::{
-        DbAction, DbAppOverride, DbCategoryProfile, DbCemuAudio, DbCemuLayout, DbCitraLayout,
-        DbConfigSelection, DbDesktopControllerLayoutHack, DbDesktopSessionHandler, DbDisplayConfig,
-        DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset, DbLime3dsLayout,
-        DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings,
-        DbSourceFile, DbTopLevelDefinition, DbVirtualScreen,
+    db::{
+        convert::ext::RwExt,
+        model::{
+            DbAction, DbAppOverride, DbCategoryProfile, DbCemuAudio, DbCemuLayout, DbCitraLayout,
+            DbConfigSelection, DbDesktopControllerLayoutHack, DbDesktopSessionHandler,
+            DbDisplayConfig, DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset, DbLime3dsLayout,
+            DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings,
+            DbSourceFile, DbTopLevelDefinition, DbTouchConfig, DbVirtualScreen,
+        },
     },
     pipeline::{
         action::{Action, ActionId, ActionType, ErasedPipelineAction},
@@ -79,6 +81,9 @@ impl Action {
             }
             Action::DesktopControllerLayoutHack(action) => {
                 rw.upsert::<DbDesktopControllerLayoutHack>(action.into())?;
+            }
+            Action::TouchConfig(action) => {
+                rw.upsert::<DbTouchConfig>(action.into())?;
             }
         };
 
@@ -177,7 +182,6 @@ impl DbCategoryProfile {
             .all()?
             .filter_map(|app: Result<DbAppOverride, _>| app.ok()) // TODO::log/error on failure
             .filter(|app| app.id.1 == self.id)
-            .map(|app| app)
             .collect::<Vec<_>>();
 
         for o in overrides {
@@ -258,6 +262,10 @@ impl DbAction {
             }
             ActionType::DesktopControllerLayoutHack => {
                 let action = rw.get().primary::<DbDesktopControllerLayoutHack>(id)?;
+                action.map(|a| rw.remove_blind(a))
+            }
+            ActionType::TouchConfig => {
+                let action = rw.get().primary::<DbTouchConfig>(id)?;
                 action.map(|a| rw.remove_blind(a))
             }
         }

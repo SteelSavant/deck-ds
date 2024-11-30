@@ -58,8 +58,8 @@ pub enum GamescopeScaler {
 pub enum GamescopeFilter {
     #[default]
     Linear,
-    FSR,
-    NIS,
+    Fsr,
+    Nis,
     Pixel,
 }
 
@@ -83,7 +83,7 @@ impl ActionImpl for MainAppAutomaticWindowing {
             .as_ref()
             .expect("main app automatic windowing requires launch info");
 
-        let maybe_strings = get_maybe_window_names_from_launch_info(&launch_info);
+        let maybe_strings = get_maybe_window_names_from_launch_info(launch_info);
 
         ctx.register_on_launch_callback(Box::new(move |_pid, ctx| {
             log::debug!("main app automatic windowing callback");

@@ -40,9 +40,9 @@ function DisplayError(error: DependencyError): ReactElement {
                 return `Expected path "${error.value}" to be a directory, not a file`;
             case 'PathNotFound':
                 return `Path "${error.value}" not found`;
-            case 'KwinScriptNotFound':
+            case 'KWinScriptNotFound':
                 return `Bundled kwinscript "${error.value}" not found`;
-            case 'KwinScriptFailedInstall':
+            case 'KWinScriptFailedInstall':
                 return `Bundled kwinscript "${error.value}" failed to install`;
             case 'FieldNotSet':
                 return `Field "${error.value}" must be set`;

@@ -10,7 +10,7 @@ use crate::{
         DbDesktopControllerLayoutHack, DbDesktopSessionHandler, DbDisplayConfig,
         DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset, DbLime3dsLayout,
         DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings,
-        DbPipelineDefinition, DbSourceFile, DbTopLevelDefinition, DbVirtualScreen,
+        DbPipelineDefinition, DbSourceFile, DbTopLevelDefinition, DbTouchConfig, DbVirtualScreen,
     },
     pipeline::{
         action::{Action, ActionType},
@@ -34,6 +34,10 @@ impl DbAction {
             ActionType::DisplayConfig => {
                 let action = ro.get().primary::<DbDisplayConfig>(id)?;
                 action.map(|a| Action::DisplayConfig(a.into()))
+            }
+            ActionType::TouchConfig => {
+                let action = ro.get().primary::<DbTouchConfig>(id)?;
+                action.map(|a| Action::TouchConfig(a.into()))
             }
             ActionType::VirtualScreen => {
                 let action = ro.get().primary::<DbVirtualScreen>(id)?;

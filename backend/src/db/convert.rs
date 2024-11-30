@@ -8,13 +8,12 @@ use native_db::transaction::{RTransaction, RwTransaction};
 use crate::{
     db::model::{DbAppOverride, DbCategoryProfile, DbPipelineActionSettings, DbPipelineDefinition},
     pipeline::data::{
-        PipelineActionId, PipelineActionLookup, PipelineDefinition, PipelineDefinitionId,
-        TopLevelDefinition, TopLevelId,
+        PipelineActionLookup, PipelineDefinition, PipelineDefinitionId, TopLevelDefinition,
     },
     settings::{AppId, AppProfile, CategoryProfile, ProfileId},
 };
 
-use super::model::{DbAppSettings, DbTopLevelDefinition};
+use super::model::DbAppSettings;
 use ext::RwExt;
 
 mod ext;
@@ -86,7 +85,7 @@ impl AppProfile {
                         for (action_id, action) in tl.actions.actions.iter_mut() {
                             if let Some(profile_action) = profile_tl.actions.actions.get(action_id)
                             {
-                                action.copy_qam_values(&profile_action);
+                                action.copy_qam_values(profile_action);
                             }
                         }
                     }
@@ -195,17 +194,17 @@ impl PipelineDefinition {
 // DB types
 
 impl DbCategoryProfile {
-    pub fn remove_all(mut self, rw: &RwTransaction) -> Result<()> {
+    pub fn remove_all(self, rw: &RwTransaction) -> Result<()> {
         self.remove_app_overrides(rw)?;
 
-        let actions = Some(self.pipeline.platform)
+        let actions = Some(&self.pipeline.platform)
             .into_iter()
-            .chain(self.pipeline.toplevel);
+            .chain(self.pipeline.toplevel.iter());
 
         for tl in actions {
-            for id in tl.actions {
+            for id in tl.actions.iter() {
                 let action: Option<DbPipelineActionSettings> =
-                    rw.get().primary((self.pipeline.id, tl.id, id))?;
+                    rw.get().primary((self.pipeline.id, tl.id, id.clone()))?;
                 if let Some(action) = action {
                     action.selection.remove_all(rw)?;
                     rw.remove(action)?;
@@ -213,14 +212,7 @@ impl DbCategoryProfile {
             }
         }
 
-        self.pipeline.platform = DbTopLevelDefinition {
-            id: TopLevelId::nil(),
-            root: PipelineActionId::new(""),
-            actions: vec![],
-        };
-        self.pipeline.toplevel = vec![];
-
-        Ok(rw.remove_blind(self)?)
+        rw.remove_blind(self)
     }
 
     pub fn reconstruct(self, ro: &RTransaction) -> Result<CategoryProfile> {

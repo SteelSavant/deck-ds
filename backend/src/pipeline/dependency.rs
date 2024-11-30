@@ -25,9 +25,9 @@ pub enum DependencyError {
     #[error("required path `{0}` does not exist")]
     PathNotFound(PathBuf),
     #[error("required kwin script `{0}` does not exist")]
-    KwinScriptNotFound(String),
+    KWinScriptNotFound(String),
     #[error("required kwin script `{0}` failed to install")]
-    KwinScriptFailedInstall(String),
+    KWinScriptFailedInstall(String),
     #[error("required field `{0}` must be set")]
     FieldNotSet(String),
     #[error("required flatpak `{0}` must be installed")]
@@ -39,7 +39,7 @@ pub enum DependencyError {
 pub enum Dependency {
     System(String),
     Path { path: PathBuf, is_file: bool },
-    KwinScript(String),
+    KWinScript(String),
     ConfigField(String),
     Flatpak(String),
     SecondaryAppPreset(SecondaryAppPresetId),
@@ -65,7 +65,7 @@ impl Dependency {
                     Err(DependencyError::PathNotFound(path.clone()))
                 }
             }
-            Dependency::KwinScript(script_name) => {
+            Dependency::KWinScript(script_name) => {
                 verify_system_deps(
                     &["kpackagetool5", "kreadconfig5", "kwriteconfig5", "qdbus"],
                     ctx,
@@ -74,7 +74,7 @@ impl Dependency {
                 ctx.kwin
                     .get_bundle(script_name)
                     .map(|_| ())
-                    .ok_or_else(|| DependencyError::KwinScriptNotFound(script_name.clone()))
+                    .ok_or_else(|| DependencyError::KWinScriptNotFound(script_name.clone()))
             }
             Dependency::ConfigField(field) => Err(DependencyError::FieldNotSet(field.clone())),
             Dependency::Display => verify_system_deps(&["xrandr", "cvt", "kscreen-doctor"], ctx),
@@ -115,10 +115,10 @@ impl Dependency {
         let res = self.verify_config(ctx);
 
         res.and_then(|_| {
-            if let Dependency::KwinScript(script_name) = self {
+            if let Dependency::KWinScript(script_name) = self {
                 ctx.kwin.install_script(script_name).map_err(|err| {
                     log::error!("{err}");
-                    DependencyError::KwinScriptFailedInstall(script_name.clone())
+                    DependencyError::KWinScriptFailedInstall(script_name.clone())
                 })
             } else {
                 Ok(())

@@ -1,19 +1,22 @@
 use std::fmt::Debug;
 
-use desktop_controller_layout_hack::DesktopControllerLayoutHack;
+use desktop::desktop_controller_layout_hack::DesktopControllerLayoutHack;
+use desktop::touch_config::TouchConfig;
 use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use strum::{Display, EnumIter, EnumString};
 
 use crate::macros::newtype_uuid;
 
-use self::cemu_audio::CemuAudio;
+use self::cemu_layout::CemuLayout;
+use self::citra_layout::CitraLayout;
 use self::display_config::DisplayConfig;
+use self::emu::cemu_audio::CemuAudio;
 use self::lime_3ds_layout::Lime3dsLayout;
+use self::melonds_layout::MelonDSLayout;
 use self::multi_window::main_app_automatic_windowing::MainAppAutomaticWindowing;
 use self::multi_window::secondary_app::{LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp};
 use self::{
-    cemu_layout::CemuLayout, citra_layout::CitraLayout, melonds_layout::MelonDSLayout,
     multi_window::primary_windowing::MultiWindow, session_handler::DesktopSessionHandler,
     source_file::SourceFile, virtual_screen::VirtualScreen,
 };
@@ -22,19 +25,22 @@ use super::data::{ConfigSelection, DefinitionSelection, RuntimeSelection};
 use super::{dependency::Dependency, executor::PipelineContext};
 use anyhow::Result;
 
-pub mod cemu_audio;
-pub mod cemu_layout;
-pub mod citra_layout;
 mod desktop;
-pub mod desktop_controller_layout_hack;
-pub mod lime_3ds_layout;
-pub mod melonds_layout;
+mod emu;
+
 pub mod multi_window;
 pub mod source_file;
 pub mod virtual_screen;
 
+pub use desktop::desktop_controller_layout_hack;
 pub use desktop::display_config;
 pub use desktop::session_handler;
+pub use desktop::touch_config;
+pub use emu::cemu_audio;
+pub use emu::cemu_layout;
+pub use emu::citra_layout;
+pub use emu::lime_3ds_layout;
+pub use emu::melonds_layout;
 
 pub trait ActionImpl: DeserializeOwned + Serialize {
     /// Type of runtime state of the action
@@ -120,6 +126,7 @@ newtype_uuid!(ActionId);
 pub enum Action {
     DesktopSessionHandler(DesktopSessionHandler),
     DisplayConfig(DisplayConfig),
+    TouchConfig(TouchConfig),
     VirtualScreen(VirtualScreen),
     MultiWindow(MultiWindow),
     CitraLayout(CitraLayout),
@@ -159,7 +166,8 @@ impl Action {
                 Action::DesktopSessionHandler(DesktopSessionHandler { id, ..*a })
             }
             Action::DisplayConfig(a) => Action::DisplayConfig(DisplayConfig { id, ..a.clone() }),
-            Action::VirtualScreen(_) => Action::VirtualScreen(VirtualScreen { id }),
+            Action::TouchConfig(a) => Action::TouchConfig(TouchConfig { id, ..a.clone() }),
+            Action::VirtualScreen(a) => Action::VirtualScreen(VirtualScreen { id, ..a.clone() }),
             Action::MultiWindow(a) => Action::MultiWindow(MultiWindow { id, ..a.clone() }),
             Action::CitraLayout(a) => Action::CitraLayout(CitraLayout { id, ..*a }),
             Action::CemuLayout(a) => Action::CemuLayout(CemuLayout { id, ..*a }),
@@ -201,6 +209,7 @@ pub enum ActionType {
     MainAppAutomaticWindowing,
     MelonDSLayout,
     SourceFile,
+    TouchConfig,
     VirtualScreen,
     LaunchSecondaryFlatpakApp,
     LaunchSecondaryAppPreset,

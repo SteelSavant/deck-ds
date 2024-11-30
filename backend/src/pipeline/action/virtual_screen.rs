@@ -1,22 +1,24 @@
 use anyhow::{Context, Result};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use xrandr::Relation;
 
 use crate::{
     pipeline::{dependency::Dependency, executor::PipelineContext},
     sys::x_display::{AspectRatioOption, ModeOption, ModePreference, Resolution},
 };
 
-use super::{ActionId, ActionImpl, ActionType};
+use super::{display_config::RelativeLocation, ActionId, ActionImpl, ActionType};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct VirtualScreen {
     pub id: ActionId,
+    pub deck_location: RelativeLocation,
+    pub deck_is_primary_display: bool,
 }
 
 const SCRIPT: &str = "truevideowall";
 
+// TODO::ideally, this would listen for changes to connected monitors and re-run accordingly
 impl ActionImpl for VirtualScreen {
     type State = bool;
 
@@ -31,6 +33,7 @@ impl ActionImpl for VirtualScreen {
             .display
             .as_mut()
             .with_context(|| "VirtualScreen requires x11 to be running")?;
+        // TODO::I don't actually think forcing an external display here is required...
 
         let external = display
             .get_preferred_external_output()?
@@ -42,7 +45,8 @@ impl ActionImpl for VirtualScreen {
 
         let deck_mode = display
             .get_current_mode(&deck)?
-            .expect("Deck screen should have active mode");
+            .expect("Embedded display should have active mode");
+
         let resolution = if deck_mode.width < deck_mode.height {
             Resolution {
                 h: deck_mode.width,
@@ -64,12 +68,19 @@ impl ActionImpl for VirtualScreen {
             },
         )?;
 
-        display.reconfigure_embedded(&mut deck, &Relation::Below, Some(&external), true)?;
+        display.reconfigure_embedded(
+            &mut deck,
+            &self.deck_location.into(),
+            Some(&external),
+            self.deck_is_primary_display,
+        )?;
 
         Ok(())
     }
 
     fn teardown(&self, ctx: &mut PipelineContext) -> Result<()> {
+        // Display teardown handled by session handler; we just need to disable the kwinscript
+
         let state = ctx.get_state::<Self>();
         ctx.kwin
             .set_script_enabled(SCRIPT, matches!(state, Some(true)))
@@ -77,7 +88,7 @@ impl ActionImpl for VirtualScreen {
 
     fn get_dependencies(&self, _ctx: &PipelineContext) -> Vec<Dependency> {
         vec![
-            Dependency::KwinScript(SCRIPT.to_string()),
+            Dependency::KWinScript(SCRIPT.to_string()),
             Dependency::Display,
         ]
     }

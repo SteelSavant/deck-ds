@@ -1,5 +1,5 @@
 FROM ghcr.io/steamdeckhomebrew/holo-toolchain-rust:latest
 
-RUN pacman -S --noconfirm cmake make clang git pkg-config libx11 libxrandr
+RUN pacman -S --noconfirm cmake make clang git pkg-config libx11 libxrandr libxi
 
-ENTRYPOINT [ "/backend/entrypoint.sh" ]
+ENTRYPOINT [ "/backend/entrypoint.sh" ]ssssss

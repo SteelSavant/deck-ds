@@ -119,11 +119,11 @@ async function execAction(
                     } -F ${gamescope.filter.toLowerCase()} -S ${gamescope.scaler.toLowerCase()}`,
                 ];
 
-                if (gamescope.filter === 'FSR') {
+                if (gamescope.filter === 'Fsr') {
                     gamescopeOptions.push(
                         `--sharpness ${gamescope.fsr_sharpness}`,
                     );
-                } else if (gamescope.filter === 'NIS') {
+                } else if (gamescope.filter === 'Nis') {
                     gamescopeOptions.push(
                         `--sharpness ${gamescope.nis_sharpness}`,
                     );

@@ -39,6 +39,10 @@ export type Action =
       value: DisplayConfig;
     }
   | {
+      type: "TouchConfig";
+      value: TouchConfig;
+    }
+  | {
       type: "VirtualScreen";
       value: VirtualScreen;
     }
@@ -135,6 +139,7 @@ export type ModeOptionFor_Resolution =
       type: "AtMost";
       value: Resolution;
     };
+export type TouchSelectionMode = "PerDisplay" | "PreferEmbedded" | "PreferExternal";
 export type MultiWindowLayout = "column-right" | "column-left" | "square-right" | "square-left" | "separate";
 export type LimitedMultiWindowLayout = "column-right" | "column-left" | "square-right" | "square-left";
 export type CitraLayoutOption =
@@ -188,7 +193,7 @@ export type AppImageSource = "Cemu";
 export type EmuDeckSource = "CemuProton";
 export type SecondaryAppScreenPreference = "PreferSecondary" | "PreferPrimary";
 export type SecondaryAppWindowingBehavior = "Fullscreen" | "Maximized" | "Minimized" | "Unmanaged";
-export type GamescopeFilter = "Linear" | "FSR" | "NIS" | "Pixel";
+export type GamescopeFilter = "Linear" | "Fsr" | "Nis" | "Pixel";
 export type GamescopeFullscreenOption = "Borderless" | "Fullscreen";
 export type GamescopeScaler = "Auto" | "Integer" | "Fit" | "Fill" | "Stretch";
 export type SecondaryApp = {
@@ -246,11 +251,11 @@ export type DependencyError =
       value: string;
     }
   | {
-      type: "KwinScriptNotFound";
+      type: "KWinScriptNotFound";
       value: string;
     }
   | {
-      type: "KwinScriptFailedInstall";
+      type: "KWinScriptFailedInstall";
       value: string;
     }
   | {
@@ -395,7 +400,13 @@ export interface DisplayConfig {
   external_display_settings: ExternalDisplaySettings;
   id: string;
 }
+export interface TouchConfig {
+  id: string;
+  touch_mode: TouchSelectionMode;
+}
 export interface VirtualScreen {
+  deck_is_primary_display: boolean;
+  deck_location: RelativeLocation;
   id: string;
 }
 export interface MultiWindow {

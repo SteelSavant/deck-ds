@@ -11,12 +11,18 @@ use anyhow::{Context, Result};
 
 use crate::pipeline::action::session_handler::{Pos, Size, UiEvent};
 
+use self::x_display_handle::XDisplayHandle;
+
+mod x_display_handle;
+pub mod x_touch;
+
 // TODO::raw edid at /sys/class/drm/XXX/edid, modes at /sys/class/drm/XXX/modes
 
 /// Thin wrapper around xrandr for common display operations.
 #[derive(Debug)]
 pub struct XDisplay {
-    xhandle: XHandle,
+    xrandr_handle: XHandle,
+    x_handle: XDisplayHandle,
     timing_fallback: TimingFallbackMethod,
 }
 
@@ -62,13 +68,22 @@ pub enum TimingFallbackMethod {
 impl XDisplay {
     pub fn new() -> Result<Self> {
         Ok(Self {
-            xhandle: xrandr::XHandle::open()?,
+            xrandr_handle: xrandr::XHandle::open()?,
+            x_handle: XDisplayHandle::open()?,
             timing_fallback: TimingFallbackMethod::Cvt, // TODO::make this configurable
         })
     }
 
+    pub fn xrandr_handle_mut(&mut self) -> &mut xrandr::XHandle {
+        &mut self.xrandr_handle
+    }
+
+    pub fn xhandle_mut(&mut self) -> &mut XDisplayHandle {
+        &mut self.x_handle
+    }
+
     pub fn get_embedded_output(&mut self) -> Result<Option<Output>> {
-        let outputs: Vec<Output> = self.xhandle.all_outputs()?;
+        let outputs: Vec<Output> = self.xrandr_handle.all_outputs()?;
 
         Ok(outputs.into_iter().filter(|o| o.name == "eDP").last())
     }
@@ -108,7 +123,7 @@ impl XDisplay {
     }
 
     fn get_preferred_external_output_maybe_disconnected(&mut self) -> Result<Option<Output>> {
-        let mut outputs: Vec<Output> = self.xhandle.all_outputs()?;
+        let mut outputs: Vec<Output> = self.xrandr_handle.all_outputs()?;
 
         outputs.sort_by(|a, b| {
             let is_primary = a.is_primary.cmp(&b.is_primary);
@@ -192,7 +207,7 @@ impl XDisplay {
             log::debug!("set {} as primary display", output.xid);
         };
 
-        self.xhandle
+        self.xrandr_handle
             .set_rotation(embedded, &xrandr::Rotation::Right)
             .with_context(|| "reset rotation failed")?;
 
@@ -206,7 +221,7 @@ impl XDisplay {
 
     /// Gets the current mode of an output
     pub fn get_current_mode(&mut self, output: &Output) -> Result<Option<Mode>> {
-        let resources = ScreenResources::new(&mut self.xhandle)?;
+        let resources = ScreenResources::new(&mut self.xrandr_handle)?;
         Ok(output
             .current_mode
             .map(|id| resources.mode(id))
@@ -256,11 +271,11 @@ impl XDisplay {
         log::trace!("setting output {} enabled: {}", output.xid, is_enabled);
 
         if is_enabled {
-            self.xhandle
+            self.xrandr_handle
                 .enable(output)
                 .with_context(|| "enable output failed")?;
         } else {
-            self.xhandle
+            self.xrandr_handle
                 .disable(output)
                 .with_context(|| "disable output failed")?;
         }
@@ -270,7 +285,7 @@ impl XDisplay {
 
     fn reconfigure_output(&mut self, output: &mut Output) -> Result<()> {
         let mut updated = self
-            .xhandle
+            .xrandr_handle
             .all_outputs()?
             .into_iter()
             .find(|v| v.xid == output.xid)
@@ -298,7 +313,9 @@ impl XDisplay {
         relative: &Relation,
         to_output: &Output,
     ) -> Result<()> {
-        Ok(self.xhandle.set_position(output, relative, to_output)?)
+        Ok(self
+            .xrandr_handle
+            .set_position(output, relative, to_output)?)
     }
 
     /// Finds a mode matching the preference, or creates one if none matching are found, and sets the output to that mode.
@@ -307,7 +324,7 @@ impl XDisplay {
         output: &Output,
         pref: &ModePreference,
     ) -> Result<()> {
-        let screen = ScreenResources::new(&mut self.xhandle)?;
+        let screen = ScreenResources::new(&mut self.xrandr_handle)?;
         let preferred_modes = output.preferred_modes.iter().collect::<Vec<_>>();
 
         let modes = output
@@ -494,7 +511,7 @@ impl XDisplay {
             },
         };
 
-        let screen = ScreenResources::new(&mut self.xhandle)?;
+        let screen = ScreenResources::new(&mut self.xrandr_handle)?;
         let nearest = Self::get_preferred_mode(native_ar, modes, &nearest_pref)?.ok_or(
             anyhow::anyhow!("Unable to find acceptable mode for {nearest_pref:?} from {modes:?}"),
         )?;
@@ -584,7 +601,7 @@ impl XDisplay {
             .args(["--addmode", &output.name, &timings.0])
             .status()?;
 
-        let resources = ScreenResources::new(&mut self.xhandle)?;
+        let resources = ScreenResources::new(&mut self.xrandr_handle)?;
         let mode = resources
             .modes
             .iter()
@@ -720,7 +737,7 @@ impl XDisplay {
     }
 
     pub(crate) fn get_mode(&mut self, mode: u64) -> Result<Mode> {
-        Ok(ScreenResources::new(&mut self.xhandle)?.mode(mode)?)
+        Ok(ScreenResources::new(&mut self.xrandr_handle)?.mode(mode)?)
     }
 }
 

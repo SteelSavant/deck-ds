@@ -9,6 +9,7 @@ use crate::pipeline::data::Template;
 use crate::pipeline::data::TemplateId;
 use crate::settings::AppId;
 use crate::settings::AppProfile;
+use crate::util::create_dir_all;
 
 use self::model::{DbAppOverride, DbAppSettings, MODELS};
 use self::templates::build_templates;
@@ -32,6 +33,14 @@ pub struct ProfileDb {
 
 impl ProfileDb {
     pub fn new(db_path: PathBuf, registrar: PipelineActionRegistrar) -> Self {
+        let parent = db_path
+            .parent()
+            .expect("db_path should have parent directory");
+
+        if !parent.exists() {
+            create_dir_all(parent).expect("should be able to create db dir");
+        }
+
         let mut db = native_db::Builder::new()
             .create(&MODELS, db_path)
             .expect("database should be instantiable");
@@ -249,10 +258,16 @@ mod tests {
         expected_settings.enabled = expected_settings.enabled.map(|v| !v);
         expected_settings.is_visible_on_qam = !expected_settings.is_visible_on_qam;
 
-        expected.pipeline.platform.actions.actions.insert(
-            PipelineActionId::new("core:citra:layout:desktop"),
-            expected_settings.clone().into(),
-        );
+        for action in registrar.all().keys() {
+            // Adding all toplevel pipeline actions ensures all
+            // used actions can serialize/deserialize
+            expected
+                .pipeline
+                .platform
+                .actions
+                .actions
+                .insert(action.clone(), expected_settings.clone().into());
+        }
 
         db.set_profile(expected.clone())?;
 

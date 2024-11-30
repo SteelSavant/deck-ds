@@ -30,6 +30,7 @@ pub type DbMultiWindow = v1::DbMultiWindow;
 pub type DbSourceFile = v1::DbSourceFile;
 pub type DbVirtualScreen = v1::DbVirtualScreen;
 pub type DbDisplayConfig = v1::DbDisplayConfig;
+pub type DbTouchConfig = v1::DbTouchConfig;
 pub type DbLaunchSecondaryApp = v1::DbLaunchSecondaryFlatpakApp;
 pub type DbLaunchSecondaryAppPreset = v1::DbLaunchSecondaryAppPreset;
 pub type DbMainAppAutomaticWindowing = v1::DbMainAppAutomaticWindowing;
@@ -102,6 +103,9 @@ pub static MODELS: Lazy<native_db::Models> = Lazy::new(|| {
             models
                 .define::<v1::DbDesktopControllerLayoutHack>()
                 .expect("failed to define DbDesktopControllerLayoutHack v1"),
+            models
+                .define::<v1::DbTouchConfig>()
+                .expect("failed to define DbTouchConfig v1"),
         ];
 
         assert_eq!(ActionType::iter().len(), v1_actions.len());

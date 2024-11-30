@@ -37,6 +37,7 @@ import {
     SetProfileRequest,
     SetSettingsRequest,
     Template,
+    TouchSelectionMode,
 } from './types/backend_api';
 import {
     call_backend,
@@ -182,6 +183,11 @@ export const melonDSSizingOptions: MelonDSSizingOption[] = [
     'Auto',
     'EmphasizeTop',
     'EmphasizeBottom',
+];
+export const touchSelectionModeOptions: TouchSelectionMode[] = [
+    'PerDisplay',
+    'PreferEmbedded',
+    'PreferExternal',
 ];
 
 // Utility

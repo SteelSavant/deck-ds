@@ -7,6 +7,7 @@ use egui::{
     epaint, Color32, Frame, Label, Pos2, RichText, Style, Ui, Vec2, ViewportBuilder,
     ViewportCommand, WindowLevel,
 };
+use itertools::Itertools;
 use serde::Deserialize;
 use winit::platform::x11::EventLoopBuilderExtX11;
 
@@ -90,8 +91,7 @@ impl DeckDsUi {
         primary_position: Pos,
         secondary_position: Option<Pos>,
         secondary_text: String,
-        ui_tx: Sender<UiEvent>,
-        ui_rx: Receiver<UiEvent>,
+        (ui_tx, ui_rx): (Sender<UiEvent>, Receiver<UiEvent>),
         tx: Sender<egui::Context>,
     ) -> Self {
         let custom_frame = egui::containers::Frame {
@@ -156,32 +156,36 @@ impl DeckDsUi {
             Box::new(|cc| {
                 let egui_ctx = cc.egui_ctx.clone();
                 let ui_tx = self.ui_tx.clone();
-                let screen_state_ctx =
-                    KWinScreenTrackingScope::new(Box::new(move |mut screens| {
-                        if screens.is_empty() {
-                            return;
-                        }
-                        screens.sort_by(|a, b| (a.size.w * a.size.h).cmp(&(b.size.w * b.size.h)));
-                        let primary = screens.last().unwrap();
-                        let secondary = if screens.len() > 1 {
-                            screens.first()
-                        } else {
-                            None
-                        };
-
-                        log::debug!("Using screens {:?}:{:?}", primary, secondary);
-
-                        let event = UiEvent::UpdateViewports {
-                            primary_size: primary.size,
-                            secondary_size: secondary.map(|v| v.size),
-                            primary_position: primary.pos,
-                            secondary_position: secondary.map(|v| v.pos),
-                        };
-
-                        let _ = ui_tx.send(event);
-                        egui_ctx.request_repaint();
-                    }))
+                let mut screen_state_ctx = KWinScreenTrackingScope::new()
                     .expect("kwin screen tracking scope should be constructible");
+
+                screen_state_ctx.register_update(Box::new(move |screens| {
+                    if screens.is_empty() {
+                        return;
+                    }
+                    let screens = screens
+                        .iter()
+                        .sorted_by(|a, b| (a.size.w * a.size.h).cmp(&(b.size.w * b.size.h)))
+                        .collect_vec();
+                    let primary = screens.last().unwrap();
+                    let secondary = if screens.len() > 1 {
+                        screens.first()
+                    } else {
+                        None
+                    };
+
+                    log::debug!("Using screens {:?}:{:?}", primary, secondary);
+
+                    let event = UiEvent::UpdateViewports {
+                        primary_size: primary.size,
+                        secondary_size: secondary.map(|v| v.size),
+                        primary_position: primary.pos,
+                        secondary_position: secondary.map(|v| v.pos),
+                    };
+
+                    let _ = ui_tx.send(event);
+                    egui_ctx.request_repaint();
+                }));
 
                 self.screen_state_ctx = Some(screen_state_ctx);
                 self.tx

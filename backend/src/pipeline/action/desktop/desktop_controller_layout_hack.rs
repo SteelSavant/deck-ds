@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::pipeline::executor::PipelineContext;
 
-use super::{ActionId, ActionImpl, ActionType};
+use super::super::{ActionId, ActionImpl, ActionType};
 
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
 pub struct DesktopControllerLayoutHack {
@@ -21,7 +21,7 @@ impl ActionImpl for DesktopControllerLayoutHack {
 
     const TYPE: ActionType = ActionType::DesktopControllerLayoutHack;
 
-    fn get_id(&self) -> super::ActionId {
+    fn get_id(&self) -> ActionId {
         self.id
     }
 

@@ -135,7 +135,7 @@ fn deserialize_steamdeck_gamepad_button<'de, D>(d: D) -> Result<SteamDeckGamepad
 where
     D: Deserializer<'de>,
 {
-    u32::deserialize(d).map(|v| SteamDeckGamepadButton::from_bits_retain(v))
+    u32::deserialize(d).map(SteamDeckGamepadButton::from_bits_retain)
 }
 
 impl BtnChord {

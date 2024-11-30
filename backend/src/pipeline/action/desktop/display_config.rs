@@ -18,6 +18,7 @@ pub struct DisplayConfig {
     pub deck_is_primary_display: bool,
 }
 
+// TODO::ideally, this would listen for changes to connected monitors and re-run accordingly
 impl ActionImpl for DisplayConfig {
     type State = ();
 
@@ -27,7 +28,7 @@ impl ActionImpl for DisplayConfig {
         let display = ctx
             .display
             .as_mut()
-            .with_context(|| "DisplayConfig requires x11 to be running")?;
+            .context("DisplayConfig requires x11 to be running")?;
 
         let preferred = display.get_preferred_external_output()?;
         let mut embedded = display.get_embedded_output()?;
