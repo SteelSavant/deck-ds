@@ -1,4 +1,4 @@
-import { DialogButton, Focusable, playSectionClasses } from '@decky/ui';
+import { DialogButton, Focusable } from '@decky/ui';
 import { ReactElement, useState } from 'react';
 import { IconForTarget } from '../../components/IconForTarget';
 import { logger } from '../../util/log';
@@ -18,15 +18,6 @@ export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): React
     });
     const [isFocused, setIsFocused] = useState(false);
 
-    function setFocusChecked(shouldFocus: boolean) {
-        if (isFocused !== shouldFocus) {
-            setIsFocused(shouldFocus);
-        }
-    }
-
-    const vPadding = 14;
-    const wPadding = 14;
-
     logger.debug(
         'patching secondary button with target: ',
         target,
@@ -41,20 +32,17 @@ export default function SecondaryPlayButton({}: SecondaryPlayButtonProps): React
         onLaunch ? (
         <Focusable
             onFocus={() => {
-                setFocusChecked(true);
+                setIsFocused(true);
             }}
             onBlur={() => {
-                setFocusChecked(false);
+                setIsFocused(false);
             }}
         >
             <DialogButton
-                className={playSectionClasses.MenuButton}
                 style={{
                     minWidth: 0,
-                    paddingLeft: wPadding,
-                    paddingRight: wPadding,
-                    paddingTop: vPadding,
-                    paddingBottom: vPadding,
+                    padding: 14,
+                    backgroundColor: isFocused ? 'white' : '#ACB2C924',
                 }}
                 onClick={onLaunch}
                 onOKButton={onLaunch}
