@@ -20,7 +20,7 @@ use std::{
     ptr,
 };
 
-use anyhow::{Ok, Result};
+use anyhow::{Context, Ok, Result};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -102,24 +102,22 @@ impl XDisplay {
         touch_mode_preference: TouchSelectionMode,
     ) -> Result<()> {
         match (primary, primary_touch) {
-            (Some(primary), Some(primary_touch)) => {
-                if touch_mode == TouchSelectionMode::PerDisplay
-                    || touch_mode == touch_mode_preference
-                {
-                    TouchCalibrationTarget {
-                        source_touch: primary_touch,
-                        source_output: primary,
-                        target_output: primary,
-                    }
-                } else {
-                    TouchCalibrationTarget {
-                        source_touch: primary_touch,
-                        source_output: primary,
-                        target_output: secondary.unwrap_or(primary),
-                    }
+            (Some(primary), Some(primary_touch)) => if touch_mode == TouchSelectionMode::PerDisplay
+                || touch_mode == touch_mode_preference
+            {
+                TouchCalibrationTarget {
+                    source_touch: primary_touch,
+                    source_output: primary,
+                    target_output: primary,
                 }
-                .reconfigure(self);
+            } else {
+                TouchCalibrationTarget {
+                    source_touch: primary_touch,
+                    source_output: primary,
+                    target_output: secondary.unwrap_or(primary),
+                }
             }
+            .reconfigure(self),
             (None, Some(primary_touch)) => {
                 if let Some(secondary) = secondary {
                     TouchCalibrationTarget {
@@ -127,34 +125,45 @@ impl XDisplay {
                         source_output: secondary,
                         target_output: secondary,
                     }
-                    .reconfigure(self);
+                    .reconfigure(self)
                 } else {
-                    println!("no available display to map touch")
+                    println!("no available display to map touch");
+                    Ok(())
                 }
             }
-            (_, None) => println!("touch not detected, not configuring"),
+            (_, None) => {
+                println!("touch not detected, not configuring");
+                Ok(())
+            }
         }
-
-        Ok(())
     }
 }
 
 impl DisplayInfo {
-    fn new(display: &mut XDisplay, source_output: &Output, target_output: &Output) -> Self {
-        let (sw, sh) = get_screen_info(display.xhandle_mut());
+    fn new(display: &mut XDisplay, source_output: &Output, target_output: &Output) -> Result<Self> {
+        let (sw, sh) = get_screen_info(display.xhandle_mut())?;
 
         let handle = display.xrandr_handle_mut();
-        let res = ScreenResources::new(handle).unwrap();
+        let res = ScreenResources::new(handle)?;
 
-        let source_crtc = res.crtc(handle, source_output.crtc.unwrap()).unwrap();
+        let source_crtc = res.crtc(
+            handle,
+            source_output
+                .crtc
+                .context("unable to find source output crtc")?,
+        )?;
         let source_rot = source_crtc.rotation;
 
-        let target_crtc = res.crtc(handle, target_output.crtc.unwrap()).unwrap();
+        let target_crtc = res.crtc(
+            handle,
+            target_output
+                .crtc
+                .context("unable to find target output crtc")?,
+        )?;
         let target_mode = target_output
             .current_mode
             .map(|id| res.mode(id))
-            .unwrap()
-            .unwrap();
+            .context("unable to find target mode")??;
 
         let target_rot = target_crtc.rotation;
         let mut dw = target_mode.width;
@@ -164,7 +173,7 @@ impl DisplayInfo {
             std::mem::swap(&mut dw, &mut dh);
         }
 
-        Self {
+        Ok(Self {
             sh,
             sw,
             dw,
@@ -172,7 +181,7 @@ impl DisplayInfo {
             dx: target_crtc.x,
             dy: target_crtc.y,
             rot: source_rot,
-        }
+        })
     }
 }
 
@@ -183,8 +192,8 @@ struct TouchCalibrationTarget<'a> {
 }
 
 impl<'a> TouchCalibrationTarget<'a> {
-    fn reconfigure(&self, display: &mut XDisplay) {
-        let display_info = DisplayInfo::new(display, self.source_output, self.target_output);
+    fn reconfigure(&self, display: &mut XDisplay) -> Result<()> {
+        let display_info = DisplayInfo::new(display, self.source_output, self.target_output)?;
         let deviceid = self.source_touch.deviceid;
 
         // TODO::there is a chance that the scaling mode of the display itself may affect the output.
@@ -194,7 +203,11 @@ impl<'a> TouchCalibrationTarget<'a> {
     }
 }
 
-fn scaling_full_mode(display: &mut XDisplayHandle, deviceid: i32, display_info: &DisplayInfo) {
+fn scaling_full_mode(
+    display: &mut XDisplayHandle,
+    deviceid: i32,
+    display_info: &DisplayInfo,
+) -> Result<()> {
     let d = display_info;
 
     let shift = [
@@ -222,7 +235,7 @@ fn scaling_full_mode(display: &mut XDisplayHandle, deviceid: i32, display_info: 
     let m = multiply(&shift, &zoom);
     let m = rotate_reflect(&m, d);
 
-    apply_matrix(display, deviceid, &m);
+    apply_matrix(display, deviceid, &m)
 }
 
 fn rotate_reflect(m: &[f32; 9], display_info: &DisplayInfo) -> [f32; 9] {
@@ -259,7 +272,7 @@ fn multiply(a: &[f32; 9], b: &[f32; 9]) -> [f32; 9] {
     m
 }
 
-fn get_screen_info(display: &mut XDisplayHandle) -> (i32, i32) {
+fn get_screen_info(display: &mut XDisplayHandle) -> Result<(i32, i32)> {
     unsafe {
         let screen = XDefaultScreen(display.as_ptr());
         let root = XRootWindow(display.as_ptr(), screen);
@@ -268,9 +281,10 @@ fn get_screen_info(display: &mut XDisplayHandle) -> (i32, i32) {
             let sw = XDisplayWidth(display.as_ptr(), screen);
             let sh = XDisplayHeight(display.as_ptr(), screen);
 
-            (sw, sh)
+            Ok((sw, sh))
         } else {
-            panic!("unable to determine screen size"); // TODO::loop through all active outputs + manually compute screen size
+            anyhow::bail!("unable to determine screen size")
+            // TODO::loop through all active outputs + manually compute screen size
         }
     }
 }
@@ -308,21 +322,23 @@ fn enumerate_touch_devices(display: &mut XDisplayHandle) -> Vec<TouchInputIdenti
     out
 }
 
-fn apply_matrix(display: &mut XDisplayHandle, deviceid: i32, m: &[f32; 9]) {
+fn apply_matrix(display: &mut XDisplayHandle, deviceid: i32, m: &[f32; 9]) -> Result<()> {
     unsafe {
         // Get the current property values
 
-        let float_atom_name = CString::new("FLOAT").unwrap();
-        let matrix_atom_name = CString::new("Coordinate Transformation Matrix").unwrap();
+        let float_atom_name = CString::new("FLOAT")?;
+        let matrix_atom_name = CString::new("Coordinate Transformation Matrix")?;
 
         let prop_float = XInternAtom(display.as_ptr(), float_atom_name.as_ptr(), False);
         let prop_matrix = XInternAtom(display.as_ptr(), matrix_atom_name.as_ptr(), False);
 
         if prop_float == 0 {
-            panic!("let atom not found. This server is too old.");
+            anyhow::bail!("FLOAT atom not found. This server is too old.");
         }
         if prop_matrix == 0 {
-            panic!("Coordinate transformation matrix not found. This server is too old.");
+            anyhow::bail!(
+                "Coordinate Transformation Matrix atom not found. This server is too old."
+            );
         }
 
         let mut type_return: Atom = 0;
@@ -352,7 +368,7 @@ fn apply_matrix(display: &mut XDisplayHandle, deviceid: i32, m: &[f32; 9]) {
             || nitems != 9
             || bytes_after != 0
         {
-            panic!("Failed to retrieve current property values");
+            anyhow::bail!("Failed to retrieve current property values");
         }
 
         // Modify the retrieved property with the new matrix values
@@ -373,4 +389,6 @@ fn apply_matrix(display: &mut XDisplayHandle, deviceid: i32, m: &[f32; 9]) {
 
         XFree(raw_data as *mut _);
     }
+
+    Ok(())
 }
