@@ -132,12 +132,14 @@ pub fn test_error() -> impl Fn(super::ApiParameterType) -> super::ApiParameterTy
 /// API web method to send log messages to the back-end log, callable from the front-end
 
 pub fn log_it() -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |params| {
-        if let Some(Primitive::F64(level)) = params.first() {
-            if let Some(Primitive::String(msg)) = params.get(1) {
+    move |args| {
+        log_invoke("LOG", &args);
+
+        if let Some(Primitive::F64(level)) = args.first() {
+            if let Some(Primitive::String(msg)) = args.get(1) {
                 log_msg_by_level(*level as u8, msg);
                 vec![true.into()]
-            } else if let Some(Primitive::Json(msg)) = params.get(1) {
+            } else if let Some(Primitive::Json(msg)) = args.get(1) {
                 log_msg_by_level(*level as u8, msg);
                 vec![true.into()]
             } else {

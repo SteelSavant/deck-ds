@@ -353,7 +353,12 @@ async function initLogger() {
 }
 
 export async function log(level: LogLevel, msg: string): Promise<boolean> {
-    return (await call_backend('LOG', [level, msg]))[0];
+    try {
+        return (await call_backend('LOG', [level, msg]))[0];
+    } catch (ex) {
+        logger.warn_nobackend('failed to log with backend:', ex);
+        return false;
+    }
 }
 
 // API
