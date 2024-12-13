@@ -110,10 +110,10 @@ export default definePlugin(() => {
         }
     }
 
-    const initialRoute = History.location?.pathname ?? '/library/home';
+    const initialRoute = History?.location?.pathname ?? '/library/home';
     updateAppDetails(initialRoute);
 
-    const unlistenHistory = History.listen(async (info: any) => {
+    const unlistenHistory = History?.listen(async (info: any) => {
         updateAppDetails(info.pathname);
     });
 
@@ -213,7 +213,7 @@ export default definePlugin(() => {
         onDismount: () => {
             backend.log(LogLevel.Debug, 'DeckDS shutting down');
 
-            unlistenHistory();
+            unlistenHistory?.();
             appDetailsState.setOnAppPage(null);
 
             PatchHandler.dispose();
