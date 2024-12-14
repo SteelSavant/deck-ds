@@ -211,6 +211,9 @@ fn main() -> Result<()> {
                         e.exec()
                     });
 
+                    // ensure any system effects from teardown have time to take effect
+                    sleep(Duration::from_millis(200));
+
                     // return to gamemode
 
                     use crate::sys::steamos_session_select::{steamos_session_select, Session};

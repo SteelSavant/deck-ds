@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use std::process::Command;
 
 #[derive(Debug, Clone, Copy)]
@@ -21,11 +21,30 @@ pub fn steamos_session_select(session: Session) -> Result<()> {
             if output.status.success() {
                 Ok(())
             } else {
-                Err(anyhow!(
+                anyhow::bail!(
                     "steamos-session-select failed with error {:?}, code {:?}",
                     String::from_utf8_lossy(&output.stderr),
                     output.status.code()
-                ))
+                )
             }
         })?
+}
+
+pub fn check_session() -> Result<Session> {
+    Command::new("w").output().map(|output| {
+        if output.status.success() {
+            let output = String::from_utf8_lossy(&output.stdout);
+            if output.contains("gamescope-session") {
+                Ok(Session::Gamescope)
+            } else {
+                Ok(Session::Plasma)
+            }
+        } else {
+            anyhow::bail!(
+                "w failed with error {:?}, code {:?}",
+                String::from_utf8_lossy(&output.stderr),
+                output.status.code()
+            )
+        }
+    })?
 }

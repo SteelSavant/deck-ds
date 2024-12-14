@@ -1,4 +1,5 @@
 import { toaster } from '@decky/api';
+import { log as backend_log } from '../backend';
 
 export enum LogLevel {
     Trace = 1,
@@ -17,29 +18,56 @@ class Logger {
     }
 
     public trace(...args: any[]) {
-        this.log(LogLevel.Trace, ...args);
+        this.log(LogLevel.Trace, true, ...args);
     }
 
     public debug(...args: any[]) {
-        this.log(LogLevel.Debug, ...args);
+        this.log(LogLevel.Debug, true, ...args);
     }
 
     public info(...args: any[]) {
-        this.log(LogLevel.Info, ...args);
+        this.log(LogLevel.Info, true, ...args);
     }
 
     public warn(...args: any[]) {
-        this.log(LogLevel.Warn, ...args);
+        this.log(LogLevel.Warn, true, ...args);
     }
 
     public error(...args: any[]) {
-        this.log(LogLevel.Error, ...args);
+        this.log(LogLevel.Error, true, ...args);
     }
 
-    public log(level: LogLevel, ...args: any[]) {
+    public trace_nobackend(...args: any[]) {
+        this.log(LogLevel.Trace, false, ...args);
+    }
+
+    public debug_nobackend(...args: any[]) {
+        this.log(LogLevel.Debug, false, ...args);
+    }
+
+    public info_nobackend(...args: any[]) {
+        this.log(LogLevel.Info, false, ...args);
+    }
+
+    public warn_nobackend(...args: any[]) {
+        this.log(LogLevel.Warn, false, ...args);
+    }
+
+    public error_nobackend(...args: any[]) {
+        this.log(LogLevel.Error, false, ...args);
+    }
+
+    public log(level: LogLevel, sendToBackend: boolean, ...args: any[]) {
         if (level >= this.minLevel) {
             // TODO::would be nice if these formatted like normal console.log.
             console.log(`DeckDS::${this.getStringForLevel(level)}:`, ...args);
+            if (sendToBackend) {
+                try {
+                    backend_log(level, args.toString());
+                } catch (ex) {
+                    this.warn_nobackend('failed to log', ...args, ':', ex);
+                }
+            }
         }
     }
 

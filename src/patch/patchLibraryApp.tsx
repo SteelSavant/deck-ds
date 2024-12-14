@@ -16,7 +16,6 @@ import {
     ShortAppDetailsStateContextProvider,
 } from '../context/appContext';
 import { logger } from '../util/log';
-import { isSteamGame } from '../util/util';
 import PrimaryPlayButton from './components/PrimaryPlayButton';
 import SecondaryPlayButton from './components/SecondaryPlayButton';
 
@@ -158,24 +157,6 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 status.status_percentage ==
                                                                     100 &&
                                                                 status.installed;
-
-                                                            appDetailsState.setOnAppPage(
-                                                                {
-                                                                    appId: overview.appid,
-                                                                    gameId: overview.m_gameid,
-                                                                    sortAs: overview.sort_as,
-                                                                    userId64:
-                                                                        App
-                                                                            .m_CurrentUser
-                                                                            .strSteamID,
-                                                                    isSteamGame:
-                                                                        isSteamGame(
-                                                                            overview,
-                                                                        ),
-                                                                    selected_clientid:
-                                                                        overview.selected_clientid,
-                                                                },
-                                                            );
 
                                                             if (!installed) {
                                                                 return ret6;

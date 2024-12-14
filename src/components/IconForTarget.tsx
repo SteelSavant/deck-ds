@@ -4,11 +4,12 @@ import { PipelineTargetOrNative } from '../patch/hooks/useActionButtonProps';
 
 export function IconForTarget({
     target,
+    className,
 }: {
     target: PipelineTargetOrNative;
+    className?: string;
 }): ReactElement {
-    // TODO::figure out how to make the FaIcons match the style, since currently it is ignored.
-    const className = 'SVGIcon_Button SVGIcon_BigPicture';
+    // TODO::figure out how to make the FaIcons match the className style, since currently it is ignored.
     switch (target) {
         case 'Desktop':
             return <FaDesktop className={className} />;

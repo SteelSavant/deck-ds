@@ -40,8 +40,6 @@ declare global {
 const appDetailsState = new ShortAppDetailsState();
 PatchHandler.init(appDetailsState);
 
-let usdplReady = false;
-
 (async function () {
     // Init backend
     await backend.initBackend();
@@ -54,12 +52,10 @@ let usdplReady = false;
             globalSettings.data.global_settings.enable_ui_inject,
         );
     }
-
-    usdplReady = true;
 })();
 
 const Content: VFC = () => {
-    if (!usdplReady) {
+    if (!backend.getUsdplReady()) {
         // Not translated on purpose (to avoid USDPL issues)
         return (
             <PanelSection>
@@ -110,10 +106,10 @@ export default definePlugin(() => {
         }
     }
 
-    const initialRoute = History.location?.pathname ?? '/library/home';
+    const initialRoute = History?.location?.pathname ?? '/library/home';
     updateAppDetails(initialRoute);
 
-    const unlistenHistory = History.listen(async (info: any) => {
+    const unlistenHistory = History?.listen(async (info: any) => {
         updateAppDetails(info.pathname);
     });
 
@@ -213,7 +209,7 @@ export default definePlugin(() => {
         onDismount: () => {
             backend.log(LogLevel.Debug, 'DeckDS shutting down');
 
-            unlistenHistory();
+            unlistenHistory?.();
             appDetailsState.setOnAppPage(null);
 
             PatchHandler.dispose();

@@ -216,11 +216,19 @@ export function resolve_nullable<T>(
     })();
 }
 
+let usdplReady = false;
+export function getUsdplReady(): boolean {
+    return usdplReady;
+}
+
 export async function initBackend() {
     // init usdpl
     await init_embedded();
     init_usdpl(USDPL_PORT);
+
     await initLogger();
+
+    usdplReady = true;
 
     logger.debug('USDPL started for framework: ' + target_usdpl());
     const user_locale =
@@ -231,17 +239,22 @@ export async function initBackend() {
     //let mo_path = "../plugins/DeckDS/translations/" + user_locale.toString() + ".mo";
     // await init_tr(user_locale);
     //await init_tr("../plugins/DeckDS/translations/test.mo");
-    //setReady(true);
 }
 
-export enum StatusCode {
+export type StatusCode = typeof StatusCodeOk & typeof StatusCodeErr;
+
+export enum StatusCodeOk {
     Ok = 200,
+}
+
+export enum StatusCodeErr {
     BadRequest = 400,
     ServerError = 500,
+    ServiceUnavailable = 503,
 }
 
 export type ApiError = {
-    code: StatusCode.BadRequest | StatusCode.ServerError;
+    code: StatusCodeErr;
     err: string;
 };
 
@@ -253,6 +266,13 @@ async function call_backend_typed<T, R>(
     fn: string,
     arg?: T | null,
 ): Response<R> {
+    if (!usdplReady) {
+        return Err({
+            code: StatusCodeErr.ServiceUnavailable,
+            err: 'USDPL not started',
+        });
+    }
+
     arg = arg ?? null;
 
     // USDPL has a comparatively small content limit, so we chunk manually to bypass.
@@ -272,7 +292,7 @@ async function call_backend_typed<T, R>(
             const end = i + windowLen;
             const slice = stringified.slice(i, end);
             if (slice.length > 0) {
-                logger.trace(
+                logger.trace_nobackend(
                     'writing chunk',
                     i / windowLen,
                     'of',
@@ -283,20 +303,20 @@ async function call_backend_typed<T, R>(
                 let typed = handle_backend_response<never>(res);
 
                 if (!typed.isOk) {
-                    logger.trace('error chunking request', typed.err);
+                    logger.error_nobackend('error chunking request', typed.err);
                     return typed;
                 }
             }
         }
 
         let res = await call_backend(fn, ['Chunked', id]);
-        logger.debug('api (chunked)', `${fn}(`, arg, ') ->', res);
+        logger.debug_nobackend('api (chunked)', `${fn}(`, arg, ') ->', res);
 
         return handle_backend_response(res);
     } else {
         const args = ['Full', arg];
         const res = await call_backend(fn, args);
-        logger.debug('api (single)', `${fn}(`, arg, ') ->', res);
+        logger.debug_nobackend('api (single)', `${fn}(`, arg, ') ->', res);
 
         return handle_backend_response(res);
     }
@@ -306,7 +326,7 @@ function handle_backend_response<T>(res: any[]): Result<T, ApiError> {
     const code = res ? res[0] : 0;
 
     switch (code) {
-        case StatusCode.Ok: {
+        case StatusCodeOk.Ok: {
             return Ok(res[1]); // no good way to typecheck here, so we assume the value is valid.
         }
         default: {
@@ -318,10 +338,13 @@ function handle_backend_response<T>(res: any[]): Result<T, ApiError> {
             const unspecifiedMsg = 'unspecified error occurred';
 
             const level =
-                code === StatusCode.BadRequest ? LogLevel.Warn : LogLevel.Error;
+                code === StatusCodeErr.ServiceUnavailable
+                    ? LogLevel.Warn
+                    : LogLevel.Error;
 
             logger.log(
                 level,
+                false,
                 'DeckDS backend encountered error:',
                 res[2] ?? unspecifiedMsg,
             );
@@ -342,17 +365,26 @@ async function initLogger() {
         if (currentSettings.isOk) {
             logger.minLevel = currentSettings.data.global_settings.log_level;
         } else {
-            logger.error(
+            logger.error_nobackend(
                 'failed to fetch backend settings when initializing logger',
             );
         }
     } catch (ex) {
-        logger.error(ex);
+        logger.error_nobackend(ex);
     }
 }
 
 export async function log(level: LogLevel, msg: string): Promise<boolean> {
-    return (await call_backend('LOG', [level, msg]))[0];
+    if (!usdplReady) {
+        return false;
+    }
+
+    try {
+        return (await call_backend('LOG', [level, msg]))[0];
+    } catch (ex) {
+        logger.warn_nobackend('failed to log with backend:', ex);
+        return false;
+    }
 }
 
 // API

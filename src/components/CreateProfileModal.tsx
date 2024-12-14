@@ -39,8 +39,21 @@ export function CreateProfileModal({
                     Choose the platform to use for the new profile. <br />
                     <br />
                     Select "App" for native PC games, the desired emulator
-                    otherwise. <br />A default has been selected based on the
-                    selected collection. <br />
+                    otherwise. <br />
+                    A default has been selected based on the selected
+                    collection. <br />
+                    <br />
+                    Note that there are two different versions of Cemu: <br />
+                    <ul>
+                        <li>
+                            Cemu - Use this if you are using a Linux native Cemu
+                            build.
+                        </li>
+                        <li>
+                            Cemu (Proton) - Use this if you are using a Windows
+                            build of Cemu, like the one bundled with EmuDeck.
+                        </li>
+                    </ul>
                 </div>
             }
             onOK={async () => {
