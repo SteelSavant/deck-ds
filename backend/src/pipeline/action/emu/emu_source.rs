@@ -1,35 +1,49 @@
 use std::path::{Path, PathBuf};
 
-use anyhow::Context;
+use anyhow::Result;
 use regex::Regex;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use crate::pipeline::{dependency::Dependency, executor::PipelineContext};
 
-use super::{ActionId, ActionImpl, ActionType};
+use super::super::{ActionId, ActionImpl, ActionType};
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
-pub struct SourceFile {
+pub struct EmuSettingsSourceConfig {
     pub id: ActionId,
-    pub source: FileSource,
+    pub source: EmuSettingsSource,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
 #[serde(tag = "type", content = "value")]
-pub enum FileSource {
+// enum_dispatch settings_file here...
+pub enum EmuSettingsSource {
     Flatpak(FlatpakSource),
     AppImage(AppImageSource),
     EmuDeck(EmuDeckSource),
-    Custom(CustomFileOptions),
+    Custom(CustomEmuSource),
+}
+
+trait EmuSettingsSourceFile {
+    fn settings_file(&self, ctx: &PipelineContext) -> Result<PathBuf, EmuSettingsSourceFileError>;
+}
+
+#[derive(Error, Debug)]
+pub enum EmuSettingsSourceFileError {
+    #[error("Emudeck settings not found at {0}")]
+    MissingEmudeckSettings(PathBuf),
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
-pub struct CustomFileOptions {
-    /// valid file extensions for source file
+pub struct CustomEmuSource {
+    /// valid file extensions for settings file
     pub valid_ext: Vec<String>,
+    /// command to run the emulator
+    // pub emu_cmd: Option<PathBuf>,
     /// user defined custom path
-    pub path: Option<PathBuf>,
+    pub settings_path: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -38,10 +52,6 @@ pub enum FlatpakSource {
     Citra,
     MelonDS,
     Lime3ds,
-}
-
-trait SettingsSource {
-    fn settings_file(&self, ctx: &PipelineContext) -> PathBuf;
 }
 
 impl FlatpakSource {
@@ -55,19 +65,21 @@ impl FlatpakSource {
     }
 }
 
-impl SettingsSource for FlatpakSource {
-    fn settings_file(&self, ctx: &PipelineContext) -> PathBuf {
+impl EmuSettingsSourceFile for FlatpakSource {
+    fn settings_file(&self, ctx: &PipelineContext) -> Result<PathBuf, EmuSettingsSourceFileError> {
         let dir = ctx
             .decky_env
             .deck_user_home
             .join(".var/app")
             .join(self.org());
-        match self {
+        let res = match self {
             FlatpakSource::Cemu => dir.join("config/Cemu/settings.xml"),
             FlatpakSource::Citra => dir.join("config/citra-emu/qt-config.ini"),
             FlatpakSource::MelonDS => dir.join("config/melonDS/melonDS.ini"),
             FlatpakSource::Lime3ds => dir.join("config/citra-emu/qt-config.ini"),
-        }
+        };
+
+        Ok(res)
     }
 }
 
@@ -77,13 +89,17 @@ pub enum EmuDeckSource {
     // Don't really expect any other EmuDeck sources to depend on it, but hey.
 }
 
-impl SettingsSource for EmuDeckSource {
-    fn settings_file(&self, ctx: &PipelineContext) -> PathBuf {
+impl EmuSettingsSourceFile for EmuDeckSource {
+    fn settings_file(&self, ctx: &PipelineContext) -> Result<PathBuf, EmuSettingsSourceFileError> {
         let emudeck_settings_file = ctx.decky_env.deck_user_home.join("emudeck/settings.sh");
 
         log::debug!("found emudeck settings file");
 
         let emudeck_settings = std::fs::read_to_string(&emudeck_settings_file);
+
+        let err = Err(EmuSettingsSourceFileError::MissingEmudeckSettings(
+            emudeck_settings_file,
+        ));
 
         match emudeck_settings {
             Ok(emudeck_settings) => {
@@ -107,13 +123,13 @@ impl SettingsSource for EmuDeckSource {
                         log::debug!("cemu_proton_path at {cemu_proton_path:?}",);
 
                         match self {
-                            EmuDeckSource::CemuProton => cemu_proton_path,
+                            EmuDeckSource::CemuProton => Ok(cemu_proton_path),
                         }
                     }
-                    None => emudeck_settings_file, // if this is missing, nothing works, so we return it as the path for deps to tell us its missing/wrong
+                    None => err,
                 }
             }
-            Err(_) => emudeck_settings_file, // same reasoning as previous return
+            Err(_) => err,
         }
     }
 }
@@ -123,49 +139,53 @@ pub enum AppImageSource {
     Cemu,
 }
 
-impl SettingsSource for AppImageSource {
-    fn settings_file(&self, ctx: &PipelineContext) -> PathBuf {
-        match self {
+impl EmuSettingsSourceFile for AppImageSource {
+    fn settings_file(&self, ctx: &PipelineContext) -> Result<PathBuf, EmuSettingsSourceFileError> {
+        let res = match self {
             AppImageSource::Cemu => ctx
                 .decky_env
                 .deck_user_home
                 .join(".config/Cemu/settings.xml"),
-        }
+        };
+
+        Ok(res)
     }
 }
 
-impl ActionImpl for SourceFile {
+impl ActionImpl for EmuSettingsSourceConfig {
     type State = PathBuf;
 
     const TYPE: ActionType = ActionType::SourceFile;
 
     fn setup(&self, ctx: &mut PipelineContext) -> anyhow::Result<()> {
         match &self.source {
-            FileSource::Flatpak(flatpak) => {
-                ctx.set_state::<Self>(flatpak.settings_file(ctx));
+            EmuSettingsSource::Flatpak(flatpak) => {
+                ctx.set_state::<Self>(flatpak.settings_file(ctx)?);
 
                 Ok(())
             }
-            FileSource::AppImage(appimage) => {
-                ctx.set_state::<Self>(appimage.settings_file(ctx));
+            EmuSettingsSource::AppImage(appimage) => {
+                ctx.set_state::<Self>(appimage.settings_file(ctx)?);
 
                 Ok(())
             }
-            FileSource::EmuDeck(emudeck) => {
-                ctx.set_state::<Self>(emudeck.settings_file(ctx));
+            EmuSettingsSource::EmuDeck(emudeck) => {
+                ctx.set_state::<Self>(emudeck.settings_file(ctx)?);
 
                 Ok(())
             }
-            FileSource::Custom(CustomFileOptions {
-                path: Some(file), ..
+            EmuSettingsSource::Custom(CustomEmuSource {
+                settings_path: Some(file),
+                ..
             }) => {
                 ctx.set_state::<Self>(file.clone());
 
                 Ok(())
             }
-            FileSource::Custom(CustomFileOptions { path: None, .. }) => {
-                None.with_context(|| "could not set source file; field not set")
-            }
+            EmuSettingsSource::Custom(CustomEmuSource {
+                settings_path: None,
+                ..
+            }) => anyhow::bail!("could not set source file; field not set"),
         }
     }
 
@@ -173,30 +193,46 @@ impl ActionImpl for SourceFile {
         &self,
         ctx: &PipelineContext,
     ) -> Vec<crate::pipeline::dependency::Dependency> {
-        let dep = match &self.source {
-            FileSource::Flatpak(flatpak) => Dependency::Path {
-                path: flatpak.settings_file(ctx),
-                is_file: true,
+        fn get_settings_file_path(
+            this: &EmuSettingsSourceConfig,
+            ctx: &PipelineContext,
+        ) -> Result<Dependency, EmuSettingsSourceFileError> {
+            Ok(match &this.source {
+                EmuSettingsSource::Flatpak(flatpak) => Dependency::Path {
+                    path: flatpak.settings_file(ctx)?,
+                    is_file: true,
+                },
+                EmuSettingsSource::AppImage(appimage) => Dependency::Path {
+                    path: appimage.settings_file(ctx)?,
+                    is_file: true,
+                },
+                EmuSettingsSource::EmuDeck(emudeck) => Dependency::Path {
+                    path: emudeck.settings_file(ctx)?,
+                    is_file: true,
+                },
+                EmuSettingsSource::Custom(CustomEmuSource {
+                    settings_path: Some(file),
+                    ..
+                }) => Dependency::Path {
+                    path: file.clone(),
+                    is_file: true,
+                },
+                EmuSettingsSource::Custom(CustomEmuSource {
+                    settings_path: None,
+                    ..
+                }) => Dependency::ConfigField("File Path".to_string()),
+            })
+        }
+
+        let dep = get_settings_file_path(self, ctx);
+        match dep {
+            Ok(dep) => vec![dep],
+            Err(err) => match err {
+                EmuSettingsSourceFileError::MissingEmudeckSettings(err) => {
+                    vec![Dependency::EmuDeckSettings(err)]
+                }
             },
-            FileSource::AppImage(appimage) => Dependency::Path {
-                path: appimage.settings_file(ctx),
-                is_file: true,
-            },
-            FileSource::EmuDeck(emudeck) => Dependency::Path {
-                path: emudeck.settings_file(ctx),
-                is_file: true,
-            },
-            FileSource::Custom(CustomFileOptions {
-                path: Some(file), ..
-            }) => Dependency::Path {
-                path: file.clone(),
-                is_file: true,
-            },
-            FileSource::Custom(CustomFileOptions { path: None, .. }) => {
-                Dependency::ConfigField("File Path".to_string())
-            }
-        };
-        vec![dep]
+        }
     }
 
     #[inline]
@@ -213,9 +249,10 @@ mod tests {
 
     #[test]
     fn test_custom_serde() -> Result<()> {
-        let expected = FileSource::Custom(CustomFileOptions {
+        let expected = EmuSettingsSource::Custom(CustomEmuSource {
             valid_ext: vec![".ini".to_string()],
-            path: None,
+            settings_path: None,
+            // emu_cmd: None,
         });
         let json = serde_json::to_string(&expected)?;
         let actual = serde_json::from_str(&json)?;
@@ -224,3 +261,8 @@ mod tests {
         Ok(())
     }
 }
+
+// If "Versioned" is a Selection, how does it determine the source app to query?
+// - track actions in tree during descent, pick EmuSource above?
+// - require Versioned to take a PipelineActionId to an EmuSource?
+// If "Versioned" is part of an action (like EmuSource), how is the correct action resolved during reification?

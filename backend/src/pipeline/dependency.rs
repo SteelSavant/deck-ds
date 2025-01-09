@@ -38,12 +38,22 @@ pub enum DependencyError {
 
 pub enum Dependency {
     System(String),
-    Path { path: PathBuf, is_file: bool },
+    Path {
+        path: PathBuf,
+        is_file: bool,
+    },
+    ///
     KWinScript(String),
+    ///
     ConfigField(String),
+    /// Requires specified flatpak to exist
     Flatpak(String),
+    /// Requires preset to exist
     SecondaryAppPreset(SecondaryAppPresetId),
+    /// Requires active display (KDE/Kwin/X11)
     Display,
+    /// EmuDeck; `PathBuf` points to required settings file
+    EmuDeckSettings(PathBuf),
 }
 
 impl Dependency {
@@ -106,6 +116,13 @@ impl Dependency {
                     }
                 } else {
                     Err(DependencyError::SecondaryAppPresetNotFound(*id))
+                }
+            }
+            Dependency::EmuDeckSettings(path) => {
+                if path.exists() {
+                    Ok(())
+                } else {
+                    Err(DependencyError::PathNotFound(path.clone()))
                 }
             }
         }

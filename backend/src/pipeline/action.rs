@@ -12,13 +12,14 @@ use self::cemu_layout::CemuLayout;
 use self::citra_layout::CitraLayout;
 use self::display_config::DisplayConfig;
 use self::emu::cemu_audio::CemuAudio;
+use self::emu_source::EmuSettingsSourceConfig;
 use self::lime_3ds_layout::Lime3dsLayout;
 use self::melonds_layout::MelonDSLayout;
 use self::multi_window::main_app_automatic_windowing::MainAppAutomaticWindowing;
 use self::multi_window::secondary_app::{LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp};
 use self::{
     multi_window::primary_windowing::MultiWindow, session_handler::DesktopSessionHandler,
-    source_file::SourceFile, virtual_screen::VirtualScreen,
+    virtual_screen::VirtualScreen,
 };
 
 use super::data::{ConfigSelection, DefinitionSelection, RuntimeSelection};
@@ -29,7 +30,6 @@ mod desktop;
 mod emu;
 
 pub mod multi_window;
-pub mod source_file;
 pub mod virtual_screen;
 
 pub use desktop::desktop_controller_layout_hack;
@@ -39,6 +39,7 @@ pub use desktop::touch_config;
 pub use emu::cemu_audio;
 pub use emu::cemu_layout;
 pub use emu::citra_layout;
+pub use emu::emu_source;
 pub use emu::lime_3ds_layout;
 pub use emu::melonds_layout;
 
@@ -134,7 +135,7 @@ pub enum Action {
     CemuAudio(CemuAudio),
     Lime3dsLayout(Lime3dsLayout),
     MelonDSLayout(MelonDSLayout),
-    SourceFile(SourceFile),
+    SourceFile(EmuSettingsSourceConfig),
     LaunchSecondaryFlatpakApp(LaunchSecondaryFlatpakApp),
     LaunchSecondaryAppPreset(LaunchSecondaryAppPreset),
     MainAppAutomaticWindowing(MainAppAutomaticWindowing),
@@ -173,7 +174,9 @@ impl Action {
             Action::CemuLayout(a) => Action::CemuLayout(CemuLayout { id, ..*a }),
             Action::CemuAudio(a) => Action::CemuAudio(CemuAudio { id, ..a.clone() }),
             Action::MelonDSLayout(a) => Action::MelonDSLayout(MelonDSLayout { id, ..*a }),
-            Action::SourceFile(a) => Action::SourceFile(SourceFile { id, ..a.clone() }),
+            Action::SourceFile(a) => {
+                Action::SourceFile(EmuSettingsSourceConfig { id, ..a.clone() })
+            }
             Action::LaunchSecondaryFlatpakApp(a) => {
                 Action::LaunchSecondaryFlatpakApp(LaunchSecondaryFlatpakApp { id, ..a.clone() })
             }

@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::pipeline::{
-    action::{source_file::SourceFile, ActionId, ActionImpl, ActionType},
+    action::{emu_source::EmuSettingsSourceConfig, ActionId, ActionImpl, ActionType},
     executor::PipelineContext,
 };
 
@@ -202,7 +202,7 @@ impl ActionImpl for MelonDSLayout {
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let ini_path = ctx
-            .get_state::<SourceFile>()
+            .get_state::<EmuSettingsSourceConfig>()
             .with_context(|| "No source file set for melonDS settings")?;
 
         let current = internal::MelonDSLayoutState {

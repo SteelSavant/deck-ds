@@ -13,6 +13,10 @@ use super::{
         citra_layout::{CitraLayout, CitraLayoutOption, CitraLayoutState},
         desktop_controller_layout_hack::DesktopControllerLayoutHack,
         display_config::DisplayConfig,
+        emu_source::{
+            AppImageSource, CustomEmuSource, EmuDeckSource, EmuSettingsSource,
+            EmuSettingsSourceConfig, FlatpakSource,
+        },
         lime_3ds_layout::Lime3dsLayout,
         melonds_layout::{MelonDSLayout, MelonDSLayoutOption, MelonDSSizingOption},
         multi_window::{
@@ -23,9 +27,6 @@ use super::{
             secondary_app::{LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp},
         },
         session_handler::{DesktopSessionHandler, ExternalDisplaySettings, RelativeLocation},
-        source_file::{
-            AppImageSource, CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile,
-        },
         touch_config::TouchConfig,
         virtual_screen::VirtualScreen,
         ActionId,
@@ -401,9 +402,9 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: true,
                         profile_override: None,
-                        selection:SourceFile {
+                        selection:EmuSettingsSourceConfig {
                             id: ActionId::nil(),
-                            source: FileSource::Flatpak(FlatpakSource::Citra),
+                            source: EmuSettingsSource::Flatpak(FlatpakSource::Citra),
                         }.into()
                     })
                     .with_action("custom_source", None, PipelineActionDefinitionBuilder {
@@ -412,9 +413,9 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: true,
                         profile_override: None,
-                        selection: SourceFile {
+                        selection: EmuSettingsSourceConfig {
                             id: ActionId::nil(),
-                            source: FileSource::Custom(CustomFileOptions {path: None, valid_ext: vec!["ini".to_string()]})
+                            source: EmuSettingsSource::Custom(CustomEmuSource {settings_path: None, valid_ext: vec!["ini".to_string()]})
                         }.into(),
                     })
                     .with_action("layout", Some(PipelineTarget::Desktop),   PipelineActionDefinitionBuilder {
@@ -502,9 +503,9 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: true,
                         profile_override: None,
-                        selection:SourceFile {
+                        selection:EmuSettingsSourceConfig {
                             id: ActionId::nil(),
-                            source: FileSource::Flatpak(FlatpakSource::Lime3ds),
+                            source: EmuSettingsSource::Flatpak(FlatpakSource::Lime3ds),
                         }.into()
                     })
                     .with_action("custom_source", None, PipelineActionDefinitionBuilder {
@@ -513,9 +514,9 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: true,
                         profile_override: None,
-                        selection: SourceFile {
+                        selection: EmuSettingsSourceConfig {
                             id: ActionId::nil(),
-                            source: FileSource::Custom(CustomFileOptions {path: None, valid_ext: vec!["ini".to_string()]})
+                            source: EmuSettingsSource::Custom(CustomEmuSource {settings_path: None, valid_ext: vec!["ini".to_string()]})
                         }.into(),
                     })
                     .with_action("layout", Some(PipelineTarget::Desktop),   PipelineActionDefinitionBuilder {
@@ -609,9 +610,9 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: true,
                         profile_override: None,
-                        selection:SourceFile {
+                        selection:EmuSettingsSourceConfig {
                             id: ActionId::nil(),
-                            source: FileSource::Flatpak(FlatpakSource::Cemu)
+                            source: EmuSettingsSource::Flatpak(FlatpakSource::Cemu)
                         }.into(),
                     })
                     .with_action("appimage_source", None,PipelineActionDefinitionBuilder {
@@ -620,9 +621,9 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: true,
                         profile_override: None,
-                        selection: SourceFile {
+                        selection: EmuSettingsSourceConfig {
                             id: ActionId::nil(),
-                            source: FileSource::AppImage(AppImageSource::Cemu)
+                            source: EmuSettingsSource::AppImage(AppImageSource::Cemu)
                         }.into(),
                     })
                     .with_action("custom_source", None, PipelineActionDefinitionBuilder {
@@ -631,9 +632,9 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: true,
                         profile_override: None,
-                        selection: SourceFile {
+                        selection: EmuSettingsSourceConfig {
                             id: ActionId::nil(),
-                            source: FileSource::Custom(CustomFileOptions {path: None, valid_ext: vec!["xml".to_string()]}),
+                            source: EmuSettingsSource::Custom(CustomEmuSource {settings_path: None, valid_ext: vec!["xml".to_string()]}),
                         }.into()
                     }).with_action("layout", Some(PipelineTarget::Desktop),     PipelineActionDefinitionBuilder {
                         name: cemu_layout_name.clone(),
@@ -767,9 +768,9 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: true,
                         profile_override: None,
-                        selection:SourceFile {
+                        selection:EmuSettingsSourceConfig {
                             id: ActionId::nil(),
-                            source: FileSource::EmuDeck(EmuDeckSource::CemuProton)
+                            source: EmuSettingsSource::EmuDeck(EmuDeckSource::CemuProton)
                         }.into(),
                     })
                 })
@@ -809,9 +810,9 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: true,
                         profile_override: None,
-                        selection: SourceFile {
+                        selection: EmuSettingsSourceConfig {
                             id: ActionId::nil(),
-                            source: FileSource::Flatpak(FlatpakSource::MelonDS)
+                            source: EmuSettingsSource::Flatpak(FlatpakSource::MelonDS)
                         }.into(),
                     })
                     .with_action("custom_source", None, PipelineActionDefinitionBuilder {
@@ -820,9 +821,9 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         is_visible_on_qam: true,
                         profile_override: None,
-                        selection: SourceFile {
+                        selection: EmuSettingsSourceConfig {
                             id: ActionId::nil(),
-                            source: FileSource::Custom(CustomFileOptions {path: None, valid_ext: vec!["ini".to_string()]}),
+                            source: EmuSettingsSource::Custom(CustomEmuSource {settings_path: None, valid_ext: vec!["ini".to_string()]}),
                         }.into()
                     })
                     .with_action("layout", Some(PipelineTarget::Desktop),     PipelineActionDefinitionBuilder {

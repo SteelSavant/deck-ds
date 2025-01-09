@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::pipeline::executor::PipelineContext;
 
-use super::super::{source_file::SourceFile, ActionId, ActionImpl, ActionType};
+use super::super::{emu_source::EmuSettingsSourceConfig, ActionId, ActionImpl, ActionType};
 use anyhow::{Context, Result};
 use regex::Regex;
 use schemars::JsonSchema;
@@ -68,7 +68,7 @@ impl ActionImpl for CemuLayout {
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let (xml_path, layout) = {
             let xml_path = ctx
-                .get_state::<SourceFile>()
+                .get_state::<EmuSettingsSourceConfig>()
                 .with_context(|| "No source file set for Cemu settings")?;
 
             (xml_path, CemuLayoutState::read(xml_path)?)
@@ -85,7 +85,7 @@ impl ActionImpl for CemuLayout {
         match state {
             Some(state) => {
                 let xml_path = ctx
-                    .get_state::<SourceFile>()
+                    .get_state::<EmuSettingsSourceConfig>()
                     .with_context(|| "No source file set for Cemu settings")?;
 
                 state.write(xml_path)

@@ -2,6 +2,7 @@ use derive_more::Display;
 use std::{
     collections::HashMap,
     marker::PhantomData,
+    sync::Arc,
     time::{Duration, Instant},
 };
 use steamdeck_controller_hidraw::SteamDeckGamepadButton;
@@ -190,7 +191,7 @@ pub struct Pipeline {
     pub desktop_controller_layout_hack: DesktopControllerLayoutHack,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PipelineActionDefinition {
     pub id: PipelineActionId,
     pub name: String,
@@ -257,7 +258,12 @@ impl PipelineActionLookup {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[typetag::serde(tag = "type")]
+pub trait VersionMatcher: std::fmt::Debug + Send + Sync {
+    fn matches_version(&self) -> bool;
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "value")]
 pub enum DefinitionSelection {
     Action(Action),
@@ -266,6 +272,18 @@ pub enum DefinitionSelection {
         actions: Vec<PipelineActionId>,
     },
     AllOf(Vec<PipelineActionId>),
+    Versioned {
+        default_action: PipelineActionId,
+        versions: Vec<VersionConfig>,
+    },
+}
+
+/// Stores the path to a `matcher` bash script (from either assets or user-provided),
+/// as well as the `action`` to run if the script returns true.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VersionConfig {
+    matcher: Arc<dyn VersionMatcher>,
+    action: PipelineActionId,
 }
 
 /// Configured selection for an specific pipeline. Only user values are saved;
@@ -295,6 +313,21 @@ impl From<DefinitionSelection> for ConfigSelection {
             DefinitionSelection::Action(action) => ConfigSelection::Action(action),
             DefinitionSelection::OneOf { selection, .. } => ConfigSelection::OneOf { selection },
             DefinitionSelection::AllOf(_) => ConfigSelection::AllOf,
+            DefinitionSelection::Versioned {
+                default_action,
+                versions,
+            } => ConfigSelection::OneOf {
+                selection: versions
+                    .into_iter()
+                    .find_map(|v| {
+                        if v.matcher.matches_version() {
+                            Some(v.action)
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or(default_action),
+            },
         }
     }
 }
