@@ -163,7 +163,7 @@ fn main() -> Result<()> {
 
     // teardown persisted state
     match PipelineContext::load(global_config, decky_env.clone()) {
-        Ok(Some(loaded)) => {
+        Ok(Some(mut loaded)) => {
             log::info!("Tearing down last executed pipeline");
             // TODO::this will cause display-dependent actions to automatically fail, but
             // this (hopefully) isn't a major problem because xrandr isn't persistent across reboots

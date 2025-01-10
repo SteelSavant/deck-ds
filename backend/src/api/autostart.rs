@@ -15,6 +15,7 @@ use crate::{
     pipeline::{
         action_registar::PipelineActionRegistrar,
         data::{Pipeline, PipelineTarget},
+        executor::PipelineContext,
     },
     settings::{self, AppId, GameId, ProfileId, Settings, SteamLaunchInfo, SteamUserId64},
     sys::steamos_session_select::{check_session, steamos_session_select, Session},
@@ -86,7 +87,15 @@ pub fn autostart(
                     Ok(definition) => {
                         let profiles = profile_db.get_profiles().unwrap();
 
-                        let pipeline = definition.reify(&profiles, &registrar).unwrap();
+                        let global_config = {
+                            let settings_lock = settings
+                                .lock()
+                                .expect("settings lock should not be poisoned");
+
+                            settings_lock.get_global_cfg()
+                        };
+                        let mut ctx = PipelineContext::new(None, global_config, decky_env.clone());
+                        let pipeline = definition.reify(&profiles, &mut ctx, &registrar).unwrap();
 
                         let id = args
                             .game_id

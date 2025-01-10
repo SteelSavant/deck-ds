@@ -554,7 +554,7 @@ pub fn reify_pipeline(
                 Ok(profiles) => {
                     let ctx =
                         &mut PipelineContext::new(None, Default::default(), decky_env.clone());
-                    let res = args.pipeline.reify(&profiles, &registrar);
+                    let res = args.pipeline.reify(&profiles, ctx, &registrar);
 
                     match res {
                         Ok(pipeline) => ReifyPipelineResponse {

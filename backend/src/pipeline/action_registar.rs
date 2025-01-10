@@ -28,12 +28,13 @@ use super::{
         },
         session_handler::{DesktopSessionHandler, ExternalDisplaySettings, RelativeLocation},
         touch_config::TouchConfig,
+        version_matchers::MelonDSVersionMatcher,
         virtual_screen::VirtualScreen,
         ActionId,
     },
     data::{
         DefinitionSelection, PipelineActionDefinition, PipelineActionId, PipelineActionLookup,
-        PipelineActionSettings, PipelineTarget,
+        PipelineActionSettings, PipelineTarget, VersionConfig,
     },
 };
 use std::{
@@ -90,6 +91,25 @@ impl PipelineActionRegistrar {
                 DefinitionSelection::Action(_) => HashSet::new(),
                 DefinitionSelection::OneOf { actions, .. }
                 | DefinitionSelection::AllOf(actions) => {
+                    let mut ids: HashSet<_> = actions
+                        .iter()
+                        .filter_map(|id| registrar.get(id, target))
+                        .flat_map(|def| get_ids(registrar, &def.settings.selection, target))
+                        .collect();
+
+                    for a in actions {
+                        ids.insert((a.clone(), target));
+                    }
+
+                    ids
+                }
+                DefinitionSelection::Versioned {
+                    default_action,
+                    versions,
+                } => {
+                    let mut actions: HashSet<_> = versions.iter().map(|v| &v.action).collect();
+                    actions.insert(default_action);
+
                     let mut ids: HashSet<_> = actions
                         .iter()
                         .filter_map(|id| registrar.get(id, target))
@@ -788,11 +808,61 @@ impl PipelineActionRegistarBuilder {
                         selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:melonds:source"),
                             PipelineActionId::new("core:melonds:layout"),
-                            PipelineActionId::new("core:core:virtual_screen"),
-                            PipelineActionId::new("core:core:touch_config"),
+                            PipelineActionId::new("core:melonds:version"),
                         ]),
                         is_visible_on_qam: true,
                     })
+                    .with_action("version", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                        name: "melonDS Version".to_string(),
+                        description: None,
+                        enabled: None,
+                        profile_override: None,
+                        is_visible_on_qam: false,
+                        selection: DefinitionSelection::Versioned { default_action: PipelineActionId::new("melonds:core:prerelease"), versions: vec![
+                            VersionConfig { 
+                                matcher: Arc::new(MelonDSVersionMatcher::v1()), 
+                                action: PipelineActionId::new("melonds:core:select_windows") // TODO::oneof singlewindow || multiwindow
+                            },
+                            VersionConfig { 
+                                matcher: Arc::new(MelonDSVersionMatcher::prerelease()), 
+                                action: PipelineActionId::new("melonds:core:single_window") 
+                            }
+                        ] },
+                    })
+                    .with_action("selectwindows", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                        name: "melonds Select Windows".to_string(),
+                        description: Some("selects window configuration for melonDS".to_string()),
+                        enabled: None,
+                        profile_override: None,
+                        selection: DefinitionSelection::OneOf { selection: PipelineActionId::new("core:melonds:multi_window"), actions: vec![
+                            PipelineActionId::new("core:melonds:single_window"),
+                            PipelineActionId::new("core:melonds:multi_window"),
+                        ] },
+                        is_visible_on_qam: false,
+                    })
+                    .with_action("single_window", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                        name: "melonds Single Window".to_string(),
+                        description: Some("melonDS running in a single window".to_string()),
+                        enabled: None,
+                        profile_override: None,
+                        selection: DefinitionSelection::AllOf(vec![
+                            PipelineActionId::new("core:core:virtual_screen"),
+                            PipelineActionId::new("core:core:touch_config"),
+                        ]),
+                        is_visible_on_qam: false,
+                    })
+                    .with_action("multi_window", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                        name: "melonds Single Window".to_string(),
+                        description: Some("melonDS running in a single window".to_string()),
+                        enabled: None,
+                        profile_override: None,
+                        selection: DefinitionSelection::AllOf(vec![
+                            PipelineActionId::new("core:melonds:kwin_multi_window"),
+                            PipelineActionId::new("core:core:touch_config"),
+                        ]),
+                        is_visible_on_qam: false,
+                    })
+                    // TODO::kwin_multi_window, layout2
                     .with_action("source", None, PipelineActionDefinitionBuilder {
                         name: "melonDS Settings Source".to_string(),
                         description: Some("Source file to use when editing melonDS settings.".to_string()),
@@ -812,7 +882,7 @@ impl PipelineActionRegistarBuilder {
                         profile_override: None,
                         selection: EmuSettingsSourceConfig {
                             id: ActionId::nil(),
-                            source: EmuSettingsSource::Flatpak(FlatpakSource::MelonDS)
+                            source: EmuSettingsSource::Flatpak(FlatpakSource::MelonDSPrerelease)
                         }.into(),
                     })
                     .with_action("custom_source", None, PipelineActionDefinitionBuilder {
@@ -838,6 +908,7 @@ impl PipelineActionRegistarBuilder {
                             sizing_option: MelonDSSizingOption::Even,
                             book_mode: false,
                             swap_screens: false,
+                            window_index: None,
                         }.into(),
                     }).with_action("layout", Some(PipelineTarget::Gamemode),    PipelineActionDefinitionBuilder {
                         name: melonds_layout_name.clone(),
@@ -851,6 +922,7 @@ impl PipelineActionRegistarBuilder {
                             sizing_option: MelonDSSizingOption::Even,
                             book_mode: false,
                             swap_screens: false,
+                            window_index: None,
                         }.into(),
                     })
                 })

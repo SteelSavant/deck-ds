@@ -30,6 +30,7 @@ mod desktop;
 mod emu;
 
 pub mod multi_window;
+pub mod version_matchers;
 pub mod virtual_screen;
 
 pub use desktop::desktop_controller_layout_hack;
@@ -71,6 +72,10 @@ pub trait ActionImpl: DeserializeOwned + Serialize {
     fn get_type(&self) -> ActionType {
         Self::TYPE
     }
+
+    fn should_setup_during_reify(&self) -> bool {
+        false
+    }
 }
 
 #[enum_delegate::register]
@@ -81,6 +86,7 @@ pub trait ErasedPipelineAction {
     fn get_id(&self) -> ActionId;
     /// Essentially a more stable, hardcoded typename.
     fn get_type(&self) -> ActionType;
+    fn should_setup_during_reify(&self) -> bool;
 }
 
 impl<T> ErasedPipelineAction for T
@@ -116,6 +122,10 @@ where
 
     fn get_type(&self) -> ActionType {
         self.get_type()
+    }
+
+    fn should_setup_during_reify(&self) -> bool {
+        self.should_setup_during_reify()
     }
 }
 

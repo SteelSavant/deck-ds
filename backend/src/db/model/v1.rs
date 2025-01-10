@@ -156,6 +156,7 @@ pub enum DbConfigSelection {
     Action(DbAction),
     OneOf { selection: PipelineActionId },
     AllOf,
+    Versioned,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -274,6 +275,7 @@ pub struct DbMelonDSLayout {
     pub sizing_option: DbMelonDSSizingOption,
     pub book_mode: bool, // if in book mode, set rotation to 270,
     pub swap_screens: bool,
+    pub window_index: Option<u8>,
 }
 
 impl From<MelonDSLayout> for DbMelonDSLayout {
@@ -295,6 +297,7 @@ impl From<MelonDSLayout> for DbMelonDSLayout {
             },
             book_mode: value.book_mode,
             swap_screens: value.swap_screens,
+            window_index: value.window_index,
         }
     }
 }
@@ -318,6 +321,7 @@ impl From<DbMelonDSLayout> for MelonDSLayout {
             },
             book_mode: value.book_mode,
             swap_screens: value.swap_screens,
+            window_index: value.window_index,
         }
     }
 }
@@ -773,6 +777,7 @@ impl From<EmuSettingsSourceConfig> for DbSourceFile {
                     FlatpakSource::Cemu => DbFlatpakSource::Cemu,
                     FlatpakSource::Citra => DbFlatpakSource::Citra,
                     FlatpakSource::MelonDS => DbFlatpakSource::MelonDS,
+                    FlatpakSource::MelonDSPrerelease => DbFlatpakSource::MelonDSPrerelease,
                     FlatpakSource::Lime3ds => DbFlatpakSource::Lime3ds,
                 }),
                 EmuSettingsSource::AppImage(v) => DbFileSource::AppImage(match v {
@@ -798,6 +803,7 @@ impl From<DbSourceFile> for EmuSettingsSourceConfig {
                 DbFileSource::Flatpak(v) => EmuSettingsSource::Flatpak(match v {
                     DbFlatpakSource::Cemu => FlatpakSource::Cemu,
                     DbFlatpakSource::Citra => FlatpakSource::Citra,
+                    DbFlatpakSource::MelonDSPrerelease => FlatpakSource::MelonDS,
                     DbFlatpakSource::MelonDS => FlatpakSource::MelonDS,
                     DbFlatpakSource::Lime3ds => FlatpakSource::Lime3ds,
                 }),
@@ -839,6 +845,7 @@ pub struct DbCustomEmuSource {
 pub enum DbFlatpakSource {
     Cemu,
     Citra,
+    MelonDSPrerelease,
     MelonDS,
     Lime3ds,
 }

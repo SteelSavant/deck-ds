@@ -18,7 +18,7 @@ pub struct EmuSettingsSourceConfig {
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
 #[serde(tag = "type", content = "value")]
-// enum_dispatch settings_file here...
+#[enum_delegate::implement(EmuSettingsSourceFile)]
 pub enum EmuSettingsSource {
     Flatpak(FlatpakSource),
     AppImage(AppImageSource),
@@ -26,6 +26,7 @@ pub enum EmuSettingsSource {
     Custom(CustomEmuSource),
 }
 
+#[enum_delegate::register]
 trait EmuSettingsSourceFile {
     fn settings_file(&self, ctx: &PipelineContext) -> Result<PathBuf, EmuSettingsSourceFileError>;
 }
@@ -34,6 +35,8 @@ trait EmuSettingsSourceFile {
 pub enum EmuSettingsSourceFileError {
     #[error("Emudeck settings not found at {0}")]
     MissingEmudeckSettings(PathBuf),
+    #[error("Custom File not set at field {0}")]
+    NotSet(String),
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize, JsonSchema)]
@@ -46,10 +49,21 @@ pub struct CustomEmuSource {
     pub settings_path: Option<PathBuf>,
 }
 
+impl EmuSettingsSourceFile for CustomEmuSource {
+    fn settings_file(&self, _ctx: &PipelineContext) -> Result<PathBuf, EmuSettingsSourceFileError> {
+        self.settings_path
+            .clone()
+            .ok_or(EmuSettingsSourceFileError::NotSet(
+                "settings_path".to_string(),
+            ))
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub enum FlatpakSource {
     Cemu,
     Citra,
+    MelonDSPrerelease,
     MelonDS,
     Lime3ds,
 }
@@ -59,6 +73,7 @@ impl FlatpakSource {
         match self {
             FlatpakSource::Cemu => "info.cemu.Cemu",
             FlatpakSource::Citra => "org.citra_emu.citra",
+            FlatpakSource::MelonDSPrerelease => "net.kuribo64.melonDS",
             FlatpakSource::MelonDS => "net.kuribo64.melonDS",
             FlatpakSource::Lime3ds => "io.github.lime3ds.Lime3DS",
         }
@@ -75,7 +90,8 @@ impl EmuSettingsSourceFile for FlatpakSource {
         let res = match self {
             FlatpakSource::Cemu => dir.join("config/Cemu/settings.xml"),
             FlatpakSource::Citra => dir.join("config/citra-emu/qt-config.ini"),
-            FlatpakSource::MelonDS => dir.join("config/melonDS/melonDS.ini"),
+            FlatpakSource::MelonDSPrerelease => dir.join("config/melonDS/melonDS.ini"),
+            FlatpakSource::MelonDS => dir.join("config/melonDS/melonDS.toml"), // untested (unreleased)
             FlatpakSource::Lime3ds => dir.join("config/citra-emu/qt-config.ini"),
         };
 
@@ -157,6 +173,10 @@ impl ActionImpl for EmuSettingsSourceConfig {
 
     const TYPE: ActionType = ActionType::SourceFile;
 
+    fn should_setup_during_reify(&self) -> bool {
+        true // needed for MelonDsVersionMatcher to determine version
+    }
+
     fn setup(&self, ctx: &mut PipelineContext) -> anyhow::Result<()> {
         match &self.source {
             EmuSettingsSource::Flatpak(flatpak) => {
@@ -231,6 +251,7 @@ impl ActionImpl for EmuSettingsSourceConfig {
                 EmuSettingsSourceFileError::MissingEmudeckSettings(err) => {
                     vec![Dependency::EmuDeckSettings(err)]
                 }
+                EmuSettingsSourceFileError::NotSet(field) => vec![Dependency::ConfigField(field)],
             },
         }
     }

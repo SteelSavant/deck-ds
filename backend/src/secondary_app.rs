@@ -25,6 +25,7 @@ pub struct SecondaryAppPreset {
     pub app: SecondaryApp,
 }
 
+#[derive(Debug)]
 pub struct SecondaryAppManager {
     asset_manager: AssetManager<'static>,
 }

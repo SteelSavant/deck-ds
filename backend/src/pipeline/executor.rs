@@ -52,23 +52,29 @@ pub struct PipelineExecutor {
 
 type OnLaunchCallback = Box<dyn FnOnce(Pid, &mut PipelineContext) -> Result<()>>;
 
+#[derive(derive_more::Debug)]
 pub struct PipelineContext {
     /// Decky environment variables for the session
     pub decky_env: Arc<DeckyEnv>,
     /// KWin script handler
+    #[debug(skip)]
     pub kwin: KWin,
+    #[debug(skip)]
     pub screen_tracking: Option<KWinScreenTrackingScope>,
     /// Display handler,
     pub display: Option<XDisplay>,
     pub exit_hooks: Option<BtnChord>,
     pub next_window_hooks: Option<BtnChord>,
+    #[debug(skip)]
     pub secondary_app: SecondaryAppManager,
     pub launch_info: Option<SteamLaunchInfo>,
     pub global_config: GlobalConfig,
     /// actions that have run
     have_run: Vec<Action>,
     /// pipeline state
+    #[debug(skip)]
     state: TypeMap,
+    #[debug(skip)]
     on_launch_callbacks: Vec<OnLaunchCallback>,
 }
 
@@ -354,17 +360,15 @@ impl PipelineContext {
         }
     }
 
-    pub fn teardown(mut self, errors: &mut Vec<anyhow::Error>) {
+    pub fn teardown(&mut self, errors: &mut Vec<anyhow::Error>) {
         while let Some(action) = self.have_run.pop() {
-            let ctx: &mut PipelineContext = &mut self;
-
             let msg = format!("tearing down {}...", action.get_type());
 
             log::info!("{msg}");
 
-            ctx.send_ui_event(UiEvent::UpdateStatusMsg(msg));
+            self.send_ui_event(UiEvent::UpdateStatusMsg(msg));
 
-            let res = ctx.teardown_action(action);
+            let res = self.teardown_action(action);
 
             if let Err(err) = res {
                 log::error!("{}", err);
@@ -698,7 +702,8 @@ mod tests {
         cemu_layout::CemuLayoutState,
         citra_layout::{CitraLayoutOption, CitraLayoutState, CitraState},
         emu_source::{EmuSettingsSource, FlatpakSource},
-        melonds_layout::{MelonDSLayoutOption, MelonDSLayoutState, MelonDSSizingOption},
+        melonds_layout::MelonDSLayoutState,
+        melonds_layout::{MelonDSLayoutOption, MelonDSSizingOption},
         multi_window::primary_windowing::{
             CemuWindowOptions, CitraWindowOptions, CustomWindowOptions, DolphinWindowOptions,
             GeneralOptions, LimitedMultiWindowLayout, MultiWindowLayout, MultiWindowOptions,
@@ -771,6 +776,7 @@ mod tests {
                 sizing_option: MelonDSSizingOption::Even,
                 book_mode: false,
                 swap_screens: false,
+                window_index: None,
             }
             .into(),
         ];
