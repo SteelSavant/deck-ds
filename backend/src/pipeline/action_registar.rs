@@ -399,7 +399,7 @@ impl PipelineActionRegistarBuilder {
                         selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:citra:source"),
                             PipelineActionId::new("core:citra:layout"),
-                            PipelineActionId::new("core:citra:multi_window"),
+                            PipelineActionId::new("core:citra:kwin_multi_window"),
                             PipelineActionId::new("core:core:display_config"),
                             PipelineActionId::new("core:core:touch_config"),
                         ]),
@@ -469,7 +469,7 @@ impl PipelineActionRegistarBuilder {
                             }
                         }.into(),
                     })
-                    .with_action("multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                    .with_action("kwin_multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
                         name: multi_window_name.clone(),
                         description: multi_window_description.clone(),
                         enabled: None,
@@ -500,7 +500,7 @@ impl PipelineActionRegistarBuilder {
                         selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:lime3ds:source"),
                             PipelineActionId::new("core:lime3ds:layout"),
-                            PipelineActionId::new("core:lime3ds:multi_window"),
+                            PipelineActionId::new("core:lime3ds:kwin_multi_window"),
                             PipelineActionId::new("core:core:display_config"),
                             PipelineActionId::new("core:core:touch_config"),
                         ]),
@@ -570,7 +570,7 @@ impl PipelineActionRegistarBuilder {
                             }
                         }).into(),
                     })
-                    .with_action("multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                    .with_action("kwin_multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
                         name: multi_window_name.clone(),
                         description: multi_window_description.clone(),
                         enabled: None,
@@ -606,7 +606,7 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:cemu:source"),
                             PipelineActionId::new("core:cemu:layout"),
                             PipelineActionId::new("core:cemu:audio"),
-                            PipelineActionId::new("core:cemu:multi_window"),
+                            PipelineActionId::new("core:cemu:kwin_multi_window"),
                             PipelineActionId::new("core:core:display_config"),
                             PipelineActionId::new("core:core:touch_config"),
                         ]),
@@ -737,7 +737,7 @@ impl PipelineActionRegistarBuilder {
                             },
                         }.into(),
                     })
-                    .with_action("multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                    .with_action("kwin_multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
                         name: multi_window_name.clone(),
                         description: multi_window_description.clone(),
                         enabled: None,
@@ -765,7 +765,7 @@ impl PipelineActionRegistarBuilder {
                         selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:cemu_proton:source"),
                             PipelineActionId::new("core:cemu:layout"),
-                            PipelineActionId::new("core:cemu:multi_window"),
+                            PipelineActionId::new("core:cemu:kwin_multi_window"),
                             PipelineActionId::new("core:core:display_config"),
                             PipelineActionId::new("core:core:touch_config"),
                         ]),
@@ -807,8 +807,8 @@ impl PipelineActionRegistarBuilder {
                         profile_override: None,
                         selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:melonds:source"),
-                            PipelineActionId::new("core:melonds:layout"),
                             PipelineActionId::new("core:melonds:version"),
+                            PipelineActionId::new("core:core:touch_config"),
                         ]),
                         is_visible_on_qam: true,
                     })
@@ -818,7 +818,7 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         profile_override: None,
                         is_visible_on_qam: false,
-                        selection: DefinitionSelection::Versioned { default_action: PipelineActionId::new("melonds:core:prerelease"), versions: vec![
+                        selection: DefinitionSelection::Versioned { default_action: PipelineActionId::new("melonds:core:single_window"), versions: vec![
                             VersionConfig { 
                                 matcher: Arc::new(MelonDSVersionMatcher::v1()), 
                                 action: PipelineActionId::new("melonds:core:select_windows") // TODO::oneof singlewindow || multiwindow
@@ -829,12 +829,20 @@ impl PipelineActionRegistarBuilder {
                             }
                         ] },
                     })
-                    .with_action("selectwindows", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
-                        name: "melonds Select Windows".to_string(),
+                    .with_action("version", Some(PipelineTarget::Gamemode), PipelineActionDefinitionBuilder {
+                        name: "melonDS Version".to_string(),
+                        description: None,
+                        enabled: None,
+                        profile_override: None,
+                        is_visible_on_qam: false,
+                        selection: DefinitionSelection::Versioned { default_action: PipelineActionId::new("melonds:core:single_window"), versions: vec![] },
+                    })
+                    .with_action("select_windows", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                        name: "melonds Window Configuration".to_string(),
                         description: Some("selects window configuration for melonDS".to_string()),
                         enabled: None,
                         profile_override: None,
-                        selection: DefinitionSelection::OneOf { selection: PipelineActionId::new("core:melonds:multi_window"), actions: vec![
+                        selection: DefinitionSelection::OneOf { selection: PipelineActionId::new("core:melonds:kwin_multi_window"), actions: vec![
                             PipelineActionId::new("core:melonds:single_window"),
                             PipelineActionId::new("core:melonds:multi_window"),
                         ] },
@@ -846,23 +854,24 @@ impl PipelineActionRegistarBuilder {
                         enabled: None,
                         profile_override: None,
                         selection: DefinitionSelection::AllOf(vec![
+                            PipelineActionId::new("core:melonds:layout"),
                             PipelineActionId::new("core:core:virtual_screen"),
-                            PipelineActionId::new("core:core:touch_config"),
                         ]),
                         is_visible_on_qam: false,
                     })
                     .with_action("multi_window", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
-                        name: "melonds Single Window".to_string(),
-                        description: Some("melonDS running in a single window".to_string()),
+                        name: "melonds Separate Windows".to_string(),
+                        description: Some("melonDS running in two separate windows".to_string()),
                         enabled: None,
                         profile_override: None,
                         selection: DefinitionSelection::AllOf(vec![
+                            PipelineActionId::new("core:melonds:layout0"),
+                            PipelineActionId::new("core:melonds:layout1"),
                             PipelineActionId::new("core:melonds:kwin_multi_window"),
-                            PipelineActionId::new("core:core:touch_config"),
                         ]),
                         is_visible_on_qam: false,
                     })
-                    // TODO::kwin_multi_window, layout2
+                    // TODO::kwin_multi_window, layout0, layout1
                     .with_action("source", None, PipelineActionDefinitionBuilder {
                         name: "melonDS Settings Source".to_string(),
                         description: Some("Source file to use when editing melonDS settings.".to_string()),
@@ -938,12 +947,12 @@ impl PipelineActionRegistarBuilder {
                         profile_override: None,
                         is_visible_on_qam: true,
                         selection: DefinitionSelection::AllOf(vec![
-                            PipelineActionId::new("core:app:multi_window"),
+                            PipelineActionId::new("core:app:kwin_multi_window"),
                             PipelineActionId::new("core:core:display_config"),
                             PipelineActionId::new("core:core:touch_config"),
                         ]),
                     })
-                    .with_action("multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                    .with_action("kwin_multi_window",Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
                         name: multi_window_name.clone(),
                         description: multi_window_description.clone(),
                         enabled: None,

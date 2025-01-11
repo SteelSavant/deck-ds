@@ -2033,7 +2033,7 @@
       }
     },
     "MelonDSLayoutOption": {
-      "description": "melonDS layout options. Because of the \"unique\" way melonDS handles layouts, these options do not map 1:1.",
+      "description": "melonDS layout options. Because of the \"unique\" way melonDS handles layouts (and how much I viscerally hate them), these options do not map 1:1.",
       "type": "string",
       "enum": [
         "Natural",

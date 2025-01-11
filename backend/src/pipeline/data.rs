@@ -282,7 +282,7 @@ pub enum DefinitionSelection {
     },
 }
 
-/// Stores the path to a `matcher` bash script (from either assets or user-provided),
+/// Stores an object capable of matching with the desired version,
 /// as well as the `action`` to run if the script returns true.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VersionConfig {

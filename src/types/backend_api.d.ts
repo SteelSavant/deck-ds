@@ -170,7 +170,7 @@ export type CitraLayoutOption =
     };
 export type CemuAudioChannels = "Mono" | "Stereo" | "Surround";
 /**
- * melonDS layout options. Because of the "unique" way melonDS handles layouts, these options do not map 1:1.
+ * melonDS layout options. Because of the "unique" way melonDS handles layouts (and how much I viscerally hate them), these options do not map 1:1.
  */
 export type MelonDSLayoutOption = "Natural" | "Vertical" | "Horizontal" | "Hybrid" | "Single";
 export type MelonDSSizingOption = "Even" | "EmphasizeTop" | "EmphasizeBottom" | "Auto";

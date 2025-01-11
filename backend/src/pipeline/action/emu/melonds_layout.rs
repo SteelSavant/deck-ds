@@ -16,14 +16,14 @@ use serde::{Deserialize, Serialize};
 pub use internal::MelonDSLayoutState;
 
 /// melonDS layout options. Because of the "unique" way melonDS handles
-/// layouts, these options do not map 1:1.
+/// layouts (and how much I viscerally hate them), these options do not map 1:1.
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub enum MelonDSLayoutOption {
     Natural,    // Puts screens vertical normally, horizonal in book mode.
     Vertical,   // Puts screens vertical always,
     Horizontal, // Puts screens horizonal always,
     Hybrid,     // Puts main screen large, with both screens adjacent. Overrides sizing settings.
-    Single,     // Displays only one screen,
+    Single,     // Displays only one screen, // TODO::topscreen 4, bottomscreen 5
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
