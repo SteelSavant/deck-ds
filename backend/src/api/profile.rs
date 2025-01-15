@@ -594,7 +594,7 @@ fn check_config_errors(
 
                 collect_actions(&action.selection, &action.id)
             }
-            RuntimeSelection::AllOf(actions) => actions
+            RuntimeSelection::AllOf(actions) | RuntimeSelection::AllOfErased(actions) => actions
                 .iter()
                 .flat_map(|a| collect_actions(&a.selection, &a.id))
                 .collect(),

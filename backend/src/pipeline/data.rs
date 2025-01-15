@@ -304,12 +304,17 @@ pub enum ConfigSelection {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "type", content = "value")]
 pub enum RuntimeSelection {
+    /// The action itself
     Action(Action),
+    /// Selects one of the available actions
     OneOf {
         selection: PipelineActionId,
         actions: Vec<PipelineAction>,
     },
+    /// Selects all of the available actions
     AllOf(Vec<PipelineAction>),
+    /// Like AllOf, but when rendered in the UI, don't display a header for the entries
+    AllOfErased(Vec<PipelineAction>),
 }
 
 impl From<DefinitionSelection> for ConfigSelection {
@@ -824,7 +829,7 @@ mod tests {
                         assert_selection_traversable(&a.selection, target, registrar)
                     }
                 }
-                RuntimeSelection::AllOf(actions) => {
+                RuntimeSelection::AllOf(actions) | RuntimeSelection::AllOfErased(actions) => {
                     for a in actions {
                         assert_eq!(registrar.get(&a.id, target).unwrap().id, a.id);
                         assert_selection_traversable(&a.selection, target, registrar)

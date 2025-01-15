@@ -288,6 +288,10 @@ export type RuntimeSelection =
   | {
       type: "AllOf";
       value: PipelineAction[];
+    }
+  | {
+      type: "AllOfErased";
+      value: PipelineAction[];
     };
 
 /**
