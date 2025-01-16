@@ -19,6 +19,7 @@ use crate::pipeline::action::cemu_layout::CemuLayout;
 use crate::pipeline::action::citra_layout::CitraLayout;
 use crate::pipeline::action::desktop_controller_layout_hack::DesktopControllerLayoutHack;
 use crate::pipeline::action::display_config::DisplayConfig;
+use crate::pipeline::action::emu_source::EmuSettingsSourceConfig;
 use crate::pipeline::action::lime_3ds_layout::Lime3dsLayout;
 use crate::pipeline::action::melonds_layout::MelonDSLayout;
 use crate::pipeline::action::multi_window::main_app_automatic_windowing::MainAppAutomaticWindowing;
@@ -27,7 +28,6 @@ use crate::pipeline::action::multi_window::secondary_app::{
     LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp,
 };
 use crate::pipeline::action::session_handler::DesktopSessionHandler;
-use crate::pipeline::action::source_file::SourceFile;
 use crate::pipeline::action::touch_config::TouchConfig;
 use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::action::{ActionImpl, ActionType};
@@ -52,23 +52,29 @@ pub struct PipelineExecutor {
 
 type OnLaunchCallback = Box<dyn FnOnce(Pid, &mut PipelineContext) -> Result<()>>;
 
+#[derive(derive_more::Debug)]
 pub struct PipelineContext {
     /// Decky environment variables for the session
     pub decky_env: Arc<DeckyEnv>,
     /// KWin script handler
+    #[debug(skip)]
     pub kwin: KWin,
+    #[debug(skip)]
     pub screen_tracking: Option<KWinScreenTrackingScope>,
     /// Display handler,
     pub display: Option<XDisplay>,
     pub exit_hooks: Option<BtnChord>,
     pub next_window_hooks: Option<BtnChord>,
+    #[debug(skip)]
     pub secondary_app: SecondaryAppManager,
     pub launch_info: Option<SteamLaunchInfo>,
     pub global_config: GlobalConfig,
     /// actions that have run
     have_run: Vec<Action>,
     /// pipeline state
+    #[debug(skip)]
     state: TypeMap,
+    #[debug(skip)]
     on_launch_callbacks: Vec<OnLaunchCallback>,
 }
 
@@ -138,7 +144,7 @@ impl PipelineContext {
         register_type::<DesktopSessionHandler>(&mut type_reg);
         register_type::<VirtualScreen>(&mut type_reg);
         register_type::<MultiWindow>(&mut type_reg);
-        register_type::<SourceFile>(&mut type_reg);
+        register_type::<EmuSettingsSourceConfig>(&mut type_reg);
         register_type::<CemuLayout>(&mut type_reg);
         register_type::<CitraLayout>(&mut type_reg);
         register_type::<MelonDSLayout>(&mut type_reg);
@@ -185,7 +191,9 @@ impl PipelineContext {
                         load_state::<VirtualScreen>(&mut default, &type_map)
                     }
                     ActionType::MultiWindow => load_state::<MultiWindow>(&mut default, &type_map),
-                    ActionType::SourceFile => load_state::<SourceFile>(&mut default, &type_map),
+                    ActionType::SourceFile => {
+                        load_state::<EmuSettingsSourceConfig>(&mut default, &type_map)
+                    }
                     ActionType::CemuLayout => load_state::<CemuLayout>(&mut default, &type_map),
                     ActionType::CitraLayout => load_state::<CitraLayout>(&mut default, &type_map),
                     ActionType::MelonDSLayout => {
@@ -352,17 +360,15 @@ impl PipelineContext {
         }
     }
 
-    pub fn teardown(mut self, errors: &mut Vec<anyhow::Error>) {
+    pub fn teardown(&mut self, errors: &mut Vec<anyhow::Error>) {
         while let Some(action) = self.have_run.pop() {
-            let ctx: &mut PipelineContext = &mut self;
-
             let msg = format!("tearing down {}...", action.get_type());
 
             log::info!("{msg}");
 
-            ctx.send_ui_event(UiEvent::UpdateStatusMsg(msg));
+            self.send_ui_event(UiEvent::UpdateStatusMsg(msg));
 
-            let res = ctx.teardown_action(action);
+            let res = self.teardown_action(action);
 
             if let Err(err) = res {
                 log::error!("{}", err);
@@ -400,7 +406,7 @@ impl PipelineContext {
                 handle::<MainAppAutomaticWindowing>(self, is_push)
             }
             ActionType::MelonDSLayout => handle::<MelonDSLayout>(self, is_push),
-            ActionType::SourceFile => handle::<SourceFile>(self, is_push),
+            ActionType::SourceFile => handle::<EmuSettingsSourceConfig>(self, is_push),
             ActionType::VirtualScreen => handle::<VirtualScreen>(self, is_push),
             ActionType::LaunchSecondaryFlatpakApp => {
                 handle::<LaunchSecondaryFlatpakApp>(self, is_push)
@@ -652,14 +658,16 @@ impl Pipeline {
 
                     build_recursive(action.selection)
                 }
-                RuntimeSelection::AllOf(actions) => actions
-                    .into_iter()
-                    .filter_map(|a| match a.enabled {
-                        None | Some(true) => Some(a.selection),
-                        Some(false) => None,
-                    })
-                    .flat_map(build_recursive)
-                    .collect(),
+                RuntimeSelection::AllOf(actions) | RuntimeSelection::AllOfErased(actions) => {
+                    actions
+                        .into_iter()
+                        .filter_map(|a| match a.enabled {
+                            None | Some(true) => Some(a.selection),
+                            Some(false) => None,
+                        })
+                        .flat_map(build_recursive)
+                        .collect()
+                }
             }
         }
 
@@ -695,13 +703,14 @@ mod tests {
     use crate::pipeline::action::{
         cemu_layout::CemuLayoutState,
         citra_layout::{CitraLayoutOption, CitraLayoutState, CitraState},
-        melonds_layout::{MelonDSLayoutOption, MelonDSLayoutState, MelonDSSizingOption},
+        emu_source::{EmuSettingsSource, FlatpakSource},
+        melonds_layout::MelonDSLayoutState,
+        melonds_layout::{MelonDSLayoutOption, MelonDSSizingOption},
         multi_window::primary_windowing::{
             CemuWindowOptions, CitraWindowOptions, CustomWindowOptions, DolphinWindowOptions,
             GeneralOptions, LimitedMultiWindowLayout, MultiWindowLayout, MultiWindowOptions,
         },
         session_handler::{DisplayState, ExternalDisplaySettings, RelativeLocation},
-        source_file::{FileSource, FlatpakSource},
         ActionId,
     };
 
@@ -740,9 +749,9 @@ mod tests {
                 custom: None,
             }
             .into(),
-            SourceFile {
+            EmuSettingsSourceConfig {
                 id: ActionId::nil(),
-                source: FileSource::Flatpak(FlatpakSource::Cemu),
+                source: EmuSettingsSource::Flatpak(FlatpakSource::Cemu),
             }
             .into(),
             CemuLayout {
@@ -769,6 +778,7 @@ mod tests {
                 sizing_option: MelonDSSizingOption::Even,
                 book_mode: false,
                 swap_screens: false,
+                window_index: None,
             }
             .into(),
         ];
@@ -810,7 +820,7 @@ mod tests {
             },
             custom: CustomWindowOptions::default(),
         });
-        ctx.set_state::<SourceFile>("some_random_path".into());
+        ctx.set_state::<EmuSettingsSourceConfig>("some_random_path".into());
         ctx.set_state::<CemuLayout>(CemuLayoutState {
             separate_gamepad_view: true,
             fullscreen: false,
@@ -843,7 +853,7 @@ mod tests {
         // check_state::<DisplayConfig>(&ctx, &loaded);
         check_state::<VirtualScreen>(&ctx, &loaded);
         check_state::<MultiWindow>(&ctx, &loaded);
-        check_state::<SourceFile>(&ctx, &loaded);
+        check_state::<EmuSettingsSourceConfig>(&ctx, &loaded);
         check_state::<CemuLayout>(&ctx, &loaded);
         check_state::<CitraLayout>(&ctx, &loaded);
         check_state::<MelonDSLayout>(&ctx, &loaded);

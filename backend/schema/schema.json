@@ -316,7 +316,7 @@
               ]
             },
             "value": {
-              "$ref": "#/definitions/SourceFile"
+              "$ref": "#/definitions/EmuSettingsSourceConfig"
             }
           }
         },
@@ -958,6 +958,20 @@
               ]
             }
           }
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Versioned"
+              ]
+            }
+          }
         }
       ]
     },
@@ -984,21 +998,21 @@
         }
       }
     },
-    "CustomFileOptions": {
+    "CustomEmuSource": {
       "type": "object",
       "required": [
         "valid_ext"
       ],
       "properties": {
-        "path": {
-          "description": "user defined custom path",
+        "settings_path": {
+          "description": "command to run the emulator user defined custom path",
           "type": [
             "string",
             "null"
           ]
         },
         "valid_ext": {
-          "description": "valid file extensions for source file",
+          "description": "valid file extensions for settings file",
           "type": "array",
           "items": {
             "type": "string"
@@ -1367,60 +1381,7 @@
         "CemuProton"
       ]
     },
-    "ExternalDisplaySettings": {
-      "oneOf": [
-        {
-          "description": "Previous resolution, before setup",
-          "type": "object",
-          "required": [
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Previous"
-              ]
-            }
-          }
-        },
-        {
-          "description": "Native resolution",
-          "type": "object",
-          "required": [
-            "type"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Native"
-              ]
-            }
-          }
-        },
-        {
-          "description": "Resolution based on specific settings",
-          "type": "object",
-          "required": [
-            "type",
-            "value"
-          ],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "Preference"
-              ]
-            },
-            "value": {
-              "$ref": "#/definitions/ModePreference"
-            }
-          }
-        }
-      ]
-    },
-    "FileSource": {
+    "EmuSettingsSource": {
       "oneOf": [
         {
           "type": "object",
@@ -1490,7 +1451,76 @@
               ]
             },
             "value": {
-              "$ref": "#/definitions/CustomFileOptions"
+              "$ref": "#/definitions/CustomEmuSource"
+            }
+          }
+        }
+      ]
+    },
+    "EmuSettingsSourceConfig": {
+      "type": "object",
+      "required": [
+        "id",
+        "source"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "source": {
+          "$ref": "#/definitions/EmuSettingsSource"
+        }
+      }
+    },
+    "ExternalDisplaySettings": {
+      "oneOf": [
+        {
+          "description": "Previous resolution, before setup",
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Previous"
+              ]
+            }
+          }
+        },
+        {
+          "description": "Native resolution",
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Native"
+              ]
+            }
+          }
+        },
+        {
+          "description": "Resolution based on specific settings",
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Preference"
+              ]
+            },
+            "value": {
+              "$ref": "#/definitions/ModePreference"
             }
           }
         }
@@ -1534,6 +1564,7 @@
       "enum": [
         "Cemu",
         "Citra",
+        "MelonDSPrerelease",
         "MelonDS",
         "Lime3ds"
       ]
@@ -1990,11 +2021,19 @@
         },
         "swap_screens": {
           "type": "boolean"
+        },
+        "window_index": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint8",
+          "minimum": 0.0
         }
       }
     },
     "MelonDSLayoutOption": {
-      "description": "melonDS layout options. Because of the \"unique\" way melonDS handles layouts, these options do not map 1:1.",
+      "description": "melonDS layout options. Because of the \"unique\" way melonDS handles layouts (and how much I viscerally hate them), these options do not map 1:1.",
       "type": "string",
       "enum": [
         "Natural",
@@ -2669,6 +2708,7 @@
     "RuntimeSelection": {
       "oneOf": [
         {
+          "description": "The action itself",
           "type": "object",
           "required": [
             "type",
@@ -2687,6 +2727,7 @@
           }
         },
         {
+          "description": "Selects one of the available actions",
           "type": "object",
           "required": [
             "type",
@@ -2720,6 +2761,7 @@
           }
         },
         {
+          "description": "Selects all of the available actions",
           "type": "object",
           "required": [
             "type",
@@ -2730,6 +2772,28 @@
               "type": "string",
               "enum": [
                 "AllOf"
+              ]
+            },
+            "value": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PipelineAction"
+              }
+            }
+          }
+        },
+        {
+          "description": "Like AllOf, but when rendered in the UI, don't display a header for the entries",
+          "type": "object",
+          "required": [
+            "type",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "AllOfErased"
               ]
             },
             "value": {
@@ -2859,22 +2923,6 @@
       "properties": {
         "global_settings": {
           "$ref": "#/definitions/GlobalConfig"
-        }
-      }
-    },
-    "SourceFile": {
-      "type": "object",
-      "required": [
-        "id",
-        "source"
-      ],
-      "properties": {
-        "id": {
-          "type": "string",
-          "format": "uuid"
-        },
-        "source": {
-          "$ref": "#/definitions/FileSource"
         }
       }
     },

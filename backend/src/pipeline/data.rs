@@ -1,7 +1,9 @@
 use derive_more::Display;
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
+    convert::identity,
     marker::PhantomData,
+    sync::Arc,
     time::{Duration, Instant},
 };
 use steamdeck_controller_hidraw::SteamDeckGamepadButton;
@@ -17,8 +19,11 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use super::{
-    action::{desktop_controller_layout_hack::DesktopControllerLayoutHack, Action},
+    action::{
+        desktop_controller_layout_hack::DesktopControllerLayoutHack, Action, ErasedPipelineAction,
+    },
     action_registar::PipelineActionRegistrar,
+    executor::PipelineContext,
 };
 
 newtype_strid!(
@@ -190,7 +195,7 @@ pub struct Pipeline {
     pub desktop_controller_layout_hack: DesktopControllerLayoutHack,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PipelineActionDefinition {
     pub id: PipelineActionId,
     pub name: String,
@@ -257,7 +262,12 @@ impl PipelineActionLookup {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[typetag::serde(tag = "type")]
+pub trait VersionMatcher: std::fmt::Debug + Send + Sync {
+    fn matches_version(&self, ctx: &PipelineContext) -> Result<bool>;
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "value")]
 pub enum DefinitionSelection {
     Action(Action),
@@ -266,6 +276,18 @@ pub enum DefinitionSelection {
         actions: Vec<PipelineActionId>,
     },
     AllOf(Vec<PipelineActionId>),
+    Versioned {
+        default_action: PipelineActionId,
+        versions: Vec<VersionConfig>,
+    },
+}
+
+/// Stores an object capable of matching with the desired version,
+/// as well as the `action`` to run if the script returns true.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VersionConfig {
+    pub matcher: Arc<dyn VersionMatcher>,
+    pub action: PipelineActionId,
 }
 
 /// Configured selection for an specific pipeline. Only user values are saved;
@@ -276,17 +298,23 @@ pub enum ConfigSelection {
     Action(Action),
     OneOf { selection: PipelineActionId },
     AllOf,
+    Versioned,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "type", content = "value")]
 pub enum RuntimeSelection {
+    /// The action itself
     Action(Action),
+    /// Selects one of the available actions
     OneOf {
         selection: PipelineActionId,
         actions: Vec<PipelineAction>,
     },
+    /// Selects all of the available actions
     AllOf(Vec<PipelineAction>),
+    /// Like AllOf, but when rendered in the UI, don't display a header for the entries
+    AllOfErased(Vec<PipelineAction>),
 }
 
 impl From<DefinitionSelection> for ConfigSelection {
@@ -295,6 +323,7 @@ impl From<DefinitionSelection> for ConfigSelection {
             DefinitionSelection::Action(action) => ConfigSelection::Action(action),
             DefinitionSelection::OneOf { selection, .. } => ConfigSelection::OneOf { selection },
             DefinitionSelection::AllOf(_) => ConfigSelection::AllOf,
+            DefinitionSelection::Versioned { .. } => ConfigSelection::Versioned,
         }
     }
 }
@@ -322,6 +351,7 @@ impl PipelineDefinition {
     pub fn reify<'a>(
         &'a self,
         profiles: &[CategoryProfile],
+        ctx: &mut PipelineContext,
         registrar: &'a PipelineActionRegistrar,
     ) -> Result<Pipeline> {
         let targets = PipelineTarget::iter()
@@ -332,7 +362,7 @@ impl PipelineDefinition {
                 let reified: Vec<_> = toplevel
                     .iter()
                     .filter(|v| actions_have_target(&v.root, t, registrar))
-                    .map(|v| v.reify(t, profiles, registrar))
+                    .map(|v| v.reify(t, profiles, registrar, ctx))
                     .filter_map(|v| v.transpose())
                     .collect::<Result<_>>()?;
 
@@ -370,28 +400,37 @@ impl TopLevelDefinition {
         target: PipelineTarget,
         profiles: &[CategoryProfile],
         registrar: &PipelineActionRegistrar,
+        ctx: &mut PipelineContext,
     ) -> Result<Option<PipelineAction>> {
-        self.root.reify(&ReificationCtx {
+        self.root.reify(&mut ReificationCtx {
             toplevel_id: self.id,
             target,
             actions: &self.actions,
             profiles,
             registrar,
+            ctx,
         })
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 struct ReificationCtx<'a> {
     toplevel_id: TopLevelId,
     target: PipelineTarget,
     actions: &'a PipelineActionLookup,
     profiles: &'a [CategoryProfile],
     registrar: &'a PipelineActionRegistrar,
+    ctx: &'a mut PipelineContext,
+}
+
+impl<'a> Drop for ReificationCtx<'a> {
+    fn drop(&mut self) {
+        let _ = self.ctx.teardown(&mut vec![]);
+    }
 }
 
 impl PipelineActionId {
-    fn reify(&self, ctx: &ReificationCtx) -> Result<Option<PipelineAction>> {
+    fn reify(&self, ctx: &mut ReificationCtx) -> Result<Option<PipelineAction>> {
         let config = ctx.actions.get(self, ctx.target).cloned().or_else(|| {
             log::warn!("missing action {self:?}; reifying from registry");
             ctx.registrar.get(self, ctx.target).and_then(|v| {
@@ -415,6 +454,7 @@ impl PipelineActionId {
                             })
                         }
                         DefinitionSelection::AllOf(_) => Some(ConfigSelection::AllOf),
+                        DefinitionSelection::Versioned { .. } => Some(ConfigSelection::Versioned),
                     }?,
                 })
             })
@@ -468,7 +508,7 @@ impl PipelineActionId {
 fn resolve_action_from_profile_override<'a>(
     profile: &'a CategoryProfile,
     id: &PipelineActionId,
-    ctx: &ReificationCtx,
+    ctx: &mut ReificationCtx,
 ) -> Option<&'a PipelineActionSettings<ConfigSelection>> {
     let toplevel = profile.pipeline.all_toplevel();
     toplevel
@@ -490,7 +530,7 @@ impl PipelineActionSettings<ConfigSelection> {
         &self,
         profile_override: Option<ProfileId>,
         definition: &PipelineActionDefinition,
-        ctx: &ReificationCtx,
+        ctx: &mut ReificationCtx,
     ) -> Result<PipelineAction> {
         let selection = self.selection.reify(&definition.id, ctx)?;
         Ok(PipelineAction {
@@ -507,7 +547,7 @@ impl PipelineActionSettings<ConfigSelection> {
 }
 
 impl ConfigSelection {
-    fn reify(&self, id: &PipelineActionId, ctx: &ReificationCtx) -> Result<RuntimeSelection> {
+    fn reify(&self, id: &PipelineActionId, ctx: &mut ReificationCtx) -> Result<RuntimeSelection> {
         let registered_selection = ctx
             .registrar
             .get(id, ctx.target)
@@ -517,7 +557,20 @@ impl ConfigSelection {
             })?;
 
         match self {
-            ConfigSelection::Action(action) => Ok(RuntimeSelection::Action(action.clone())),
+            ConfigSelection::Action(action) => {
+                if action.should_setup_during_reify() {
+                    // Set up actions that may affect reification; specifically
+                    // config-style actions used in version matching
+                    let _ = action.setup(ctx.ctx).inspect_err(|err| {
+                        log::warn!(
+                            "action {:?} failed to set up in reify: {:#?}",
+                            action.get_id(),
+                            err
+                        )
+                    });
+                }
+                Ok(RuntimeSelection::Action(action.clone()))
+            }
             ConfigSelection::OneOf { selection } => match registered_selection {
                 DefinitionSelection::OneOf { actions, .. } => {
                     let actions = actions
@@ -537,6 +590,27 @@ impl ConfigSelection {
                     .map(|a| a.reify(ctx))
                     .collect::<Result<Vec<_>>>()
                     .map(|v| RuntimeSelection::AllOf(v.into_iter().flatten().collect())),
+                _ => Err(anyhow::anyhow!("selection type mismatch in reify config")),
+            },
+            ConfigSelection::Versioned => match registered_selection {
+                DefinitionSelection::Versioned {
+                    default_action,
+                    versions,
+                } => {
+                    let action = versions
+                        .into_iter()
+                        .find_map(|v| {
+                            if v.matcher.matches_version(ctx.ctx).is_ok_and(identity) {
+                                Some(v.action)
+                            } else {
+                                None
+                            }
+                        })
+                        .unwrap_or(default_action);
+
+                    let reified = action.reify(ctx)?.with_context(|| format!("unable to find pipeline action {action:?} when reifying config version"))?;
+                    Ok(RuntimeSelection::AllOfErased(vec![reified]))
+                }
                 _ => Err(anyhow::anyhow!("selection type mismatch in reify config")),
             },
         }
@@ -566,6 +640,21 @@ fn actions_have_target(
                         None => false,
                     })
                     .any(|v| v),
+                DefinitionSelection::Versioned {
+                    default_action,
+                    versions,
+                } => {
+                    let mut actions: HashSet<_> = versions.iter().map(|v| &v.action).collect();
+                    actions.insert(default_action);
+
+                    actions
+                        .iter()
+                        .map(|id| match registrar.get(id, target) {
+                            Some(_) => search_settings(id, target, registrar),
+                            None => false,
+                        })
+                        .any(|v| v)
+                }
             },
             None => false,
         }
@@ -596,11 +685,11 @@ mod tests {
         );
 
         let registrar = PipelineActionRegistrar::builder().with_core().build();
-
+        let ctx = &mut PipelineContext::new(None, Default::default(), Default::default());
         let res: Vec<_> = profiles
             .get_templates()
             .into_iter()
-            .map(|t| (&t.pipeline, t.pipeline.clone().reify(&[], &registrar)))
+            .map(|t| (&t.pipeline, t.pipeline.clone().reify(&[], ctx, &registrar)))
             .collect();
 
         assert!(res.len() > 0);
@@ -645,6 +734,37 @@ mod tests {
                 Err(err) => panic!("{err}"),
             }
         }
+    }
+
+    #[test]
+    fn test_melonds_default_version_reification() -> Result<()> {
+        let root = PipelineActionId("core:melonds:version".into());
+        let registrar = PipelineActionRegistrar::builder().with_core().build();
+        let pipeline_cxt = &mut PipelineContext::new(None, Default::default(), Default::default());
+        let toplevel_id = Default::default();
+        let ctx = &mut ReificationCtx {
+            registrar: &registrar,
+            actions: &registrar.make_lookup(&root),
+            target: PipelineTarget::Desktop,
+            ctx: pipeline_cxt,
+            profiles: &[],
+            toplevel_id: toplevel_id,
+        };
+
+        let reified = root
+            .reify(ctx)?
+            .context("root action should exist")?
+            .selection;
+
+        let expected = RuntimeSelection::AllOfErased(vec![PipelineActionId::new(
+            "core:melonds:single_window".into(),
+        )
+        .reify(ctx)?
+        .context("core:melonds:single_window should exist")?]);
+
+        assert_eq!(expected, reified);
+
+        Ok(())
     }
 
     // #[test]
@@ -739,7 +859,7 @@ mod tests {
                         assert_selection_traversable(&a.selection, target, registrar)
                     }
                 }
-                RuntimeSelection::AllOf(actions) => {
+                RuntimeSelection::AllOf(actions) | RuntimeSelection::AllOfErased(actions) => {
                     for a in actions {
                         assert_eq!(registrar.get(&a.id, target).unwrap().id, a.id);
                         assert_selection_traversable(&a.selection, target, registrar)

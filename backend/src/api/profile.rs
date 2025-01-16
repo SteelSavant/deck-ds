@@ -554,7 +554,7 @@ pub fn reify_pipeline(
                 Ok(profiles) => {
                     let ctx =
                         &mut PipelineContext::new(None, Default::default(), decky_env.clone());
-                    let res = args.pipeline.reify(&profiles, &registrar);
+                    let res = args.pipeline.reify(&profiles, ctx, &registrar);
 
                     match res {
                         Ok(pipeline) => ReifyPipelineResponse {
@@ -594,7 +594,7 @@ fn check_config_errors(
 
                 collect_actions(&action.selection, &action.id)
             }
-            RuntimeSelection::AllOf(actions) => actions
+            RuntimeSelection::AllOf(actions) | RuntimeSelection::AllOfErased(actions) => actions
                 .iter()
                 .flat_map(|a| collect_actions(&a.selection, &a.id))
                 .collect(),

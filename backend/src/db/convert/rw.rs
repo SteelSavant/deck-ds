@@ -106,6 +106,7 @@ impl ConfigSelection {
                 selection: selection.clone(),
             },
             ConfigSelection::AllOf => DbConfigSelection::AllOf,
+            ConfigSelection::Versioned => DbConfigSelection::Versioned,
         };
 
         Ok(selection)

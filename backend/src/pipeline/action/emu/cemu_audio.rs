@@ -5,7 +5,7 @@ use crate::{
     sys::audio::{get_audio_sinks, get_audio_sources},
 };
 
-use super::super::{source_file::SourceFile, ActionId, ActionImpl, ActionType};
+use super::super::{emu_source::EmuSettingsSourceConfig, ActionId, ActionImpl, ActionType};
 use anyhow::{Context, Result};
 use regex::Regex;
 use schemars::JsonSchema;
@@ -193,7 +193,7 @@ impl ActionImpl for CemuAudio {
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let (xml_path, audio) = {
             let xml_path = ctx
-                .get_state::<SourceFile>()
+                .get_state::<EmuSettingsSourceConfig>()
                 .with_context(|| "No source file set for Cemu settings")?;
 
             (xml_path, CemuAudioState::read(xml_path)?)
@@ -252,7 +252,7 @@ impl ActionImpl for CemuAudio {
         match state {
             Some(state) => {
                 let xml_path = ctx
-                    .get_state::<SourceFile>()
+                    .get_state::<EmuSettingsSourceConfig>()
                     .with_context(|| "No source file set for Cemu settings")?;
 
                 state.write(xml_path)

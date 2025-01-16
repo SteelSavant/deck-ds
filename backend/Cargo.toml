@@ -70,6 +70,7 @@ steamdeck-controller-hidraw = { git = "https://github.com/SteelSavant/steamdeck-
 rmp-serde = "1.3.0" # this cannot up updated without breaking the db
 x11 = { version = "2.18.2", features = ["xlib", "xinput"] }
 itertools = "0.13.0"
+typetag = "0.2.19"
 
 [features]
 default = ["online", "decky"]

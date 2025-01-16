@@ -44,13 +44,14 @@ use crate::{
 
 use crate::{
     pipeline::action::{
+        emu_source::{
+            AppImageSource, CustomEmuSource, EmuDeckSource, EmuSettingsSource,
+            EmuSettingsSourceConfig, FlatpakSource,
+        },
         multi_window::primary_windowing::{
             LimitedMultiWindowLayout, MultiWindow, MultiWindowLayout,
         },
         session_handler::{ExternalDisplaySettings, RelativeLocation},
-        source_file::{
-            AppImageSource, CustomFileOptions, EmuDeckSource, FileSource, FlatpakSource, SourceFile,
-        },
         virtual_screen::VirtualScreen,
     },
     sys::x_display::{AspectRatioOption, ModeOption, ModePreference, Resolution},
@@ -155,6 +156,7 @@ pub enum DbConfigSelection {
     Action(DbAction),
     OneOf { selection: PipelineActionId },
     AllOf,
+    Versioned,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -273,6 +275,7 @@ pub struct DbMelonDSLayout {
     pub sizing_option: DbMelonDSSizingOption,
     pub book_mode: bool, // if in book mode, set rotation to 270,
     pub swap_screens: bool,
+    pub window_index: Option<u8>,
 }
 
 impl From<MelonDSLayout> for DbMelonDSLayout {
@@ -294,6 +297,7 @@ impl From<MelonDSLayout> for DbMelonDSLayout {
             },
             book_mode: value.book_mode,
             swap_screens: value.swap_screens,
+            window_index: value.window_index,
         }
     }
 }
@@ -317,6 +321,7 @@ impl From<DbMelonDSLayout> for MelonDSLayout {
             },
             book_mode: value.book_mode,
             swap_screens: value.swap_screens,
+            window_index: value.window_index,
         }
     }
 }
@@ -763,52 +768,55 @@ pub struct DbSourceFile {
     pub source: DbFileSource,
 }
 
-impl From<SourceFile> for DbSourceFile {
-    fn from(value: SourceFile) -> Self {
+impl From<EmuSettingsSourceConfig> for DbSourceFile {
+    fn from(value: EmuSettingsSourceConfig) -> Self {
         Self {
             id: value.id,
             source: match value.source {
-                FileSource::Flatpak(v) => DbFileSource::Flatpak(match v {
+                EmuSettingsSource::Flatpak(v) => DbFileSource::Flatpak(match v {
                     FlatpakSource::Cemu => DbFlatpakSource::Cemu,
                     FlatpakSource::Citra => DbFlatpakSource::Citra,
                     FlatpakSource::MelonDS => DbFlatpakSource::MelonDS,
+                    FlatpakSource::MelonDSPrerelease => DbFlatpakSource::MelonDSPrerelease,
                     FlatpakSource::Lime3ds => DbFlatpakSource::Lime3ds,
                 }),
-                FileSource::AppImage(v) => DbFileSource::AppImage(match v {
+                EmuSettingsSource::AppImage(v) => DbFileSource::AppImage(match v {
                     AppImageSource::Cemu => DbAppImageSource::Cemu,
                 }),
-                FileSource::EmuDeck(v) => DbFileSource::EmuDeck(match v {
+                EmuSettingsSource::EmuDeck(v) => DbFileSource::EmuDeck(match v {
                     EmuDeckSource::CemuProton => DbEmuDeckSource::CemuProton,
                 }),
-                FileSource::Custom(v) => DbFileSource::Custom(DbCustomFileOptions {
+                EmuSettingsSource::Custom(v) => DbFileSource::Custom(DbCustomEmuSource {
                     valid_ext: v.valid_ext,
-                    path: v.path,
+                    settings_path: v.settings_path,
                 }),
             },
         }
     }
 }
 
-impl From<DbSourceFile> for SourceFile {
+impl From<DbSourceFile> for EmuSettingsSourceConfig {
     fn from(value: DbSourceFile) -> Self {
         Self {
             id: value.id,
             source: match value.source {
-                DbFileSource::Flatpak(v) => FileSource::Flatpak(match v {
+                DbFileSource::Flatpak(v) => EmuSettingsSource::Flatpak(match v {
                     DbFlatpakSource::Cemu => FlatpakSource::Cemu,
                     DbFlatpakSource::Citra => FlatpakSource::Citra,
+                    DbFlatpakSource::MelonDSPrerelease => FlatpakSource::MelonDS,
                     DbFlatpakSource::MelonDS => FlatpakSource::MelonDS,
                     DbFlatpakSource::Lime3ds => FlatpakSource::Lime3ds,
                 }),
-                DbFileSource::AppImage(v) => FileSource::AppImage(match v {
+                DbFileSource::AppImage(v) => EmuSettingsSource::AppImage(match v {
                     DbAppImageSource::Cemu => AppImageSource::Cemu,
                 }),
-                DbFileSource::EmuDeck(v) => FileSource::EmuDeck(match v {
+                DbFileSource::EmuDeck(v) => EmuSettingsSource::EmuDeck(match v {
                     DbEmuDeckSource::CemuProton => EmuDeckSource::CemuProton,
                 }),
-                DbFileSource::Custom(v) => FileSource::Custom(CustomFileOptions {
+                DbFileSource::Custom(v) => EmuSettingsSource::Custom(CustomEmuSource {
                     valid_ext: v.valid_ext,
-                    path: v.path,
+                    settings_path: v.settings_path,
+                    // emu_cmd: v.emu_cmd,
                 }),
             },
         }
@@ -821,21 +829,23 @@ pub enum DbFileSource {
     Flatpak(DbFlatpakSource),
     AppImage(DbAppImageSource),
     EmuDeck(DbEmuDeckSource),
-    Custom(DbCustomFileOptions),
+    Custom(DbCustomEmuSource),
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Deserialize)]
-pub struct DbCustomFileOptions {
+pub struct DbCustomEmuSource {
     /// valid file extensions for source file
     pub valid_ext: Vec<String>,
     /// user defined custom path
-    pub path: Option<PathBuf>,
+    pub settings_path: Option<PathBuf>,
+    // pub emu_cmd: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DbFlatpakSource {
     Cemu,
     Citra,
+    MelonDSPrerelease,
     MelonDS,
     Lime3ds,
 }

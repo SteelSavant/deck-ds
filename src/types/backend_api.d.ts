@@ -28,6 +28,9 @@ export type ConfigSelection =
     }
   | {
       type: "AllOf";
+    }
+  | {
+      type: "Versioned";
     };
 export type Action =
   | {
@@ -72,7 +75,7 @@ export type Action =
     }
   | {
       type: "SourceFile";
-      value: SourceFile;
+      value: EmuSettingsSourceConfig;
     }
   | {
       type: "LaunchSecondaryFlatpakApp";
@@ -167,11 +170,11 @@ export type CitraLayoutOption =
     };
 export type CemuAudioChannels = "Mono" | "Stereo" | "Surround";
 /**
- * melonDS layout options. Because of the "unique" way melonDS handles layouts, these options do not map 1:1.
+ * melonDS layout options. Because of the "unique" way melonDS handles layouts (and how much I viscerally hate them), these options do not map 1:1.
  */
 export type MelonDSLayoutOption = "Natural" | "Vertical" | "Horizontal" | "Hybrid" | "Single";
 export type MelonDSSizingOption = "Even" | "EmphasizeTop" | "EmphasizeBottom" | "Auto";
-export type FileSource =
+export type EmuSettingsSource =
   | {
       type: "Flatpak";
       value: FlatpakSource;
@@ -186,9 +189,9 @@ export type FileSource =
     }
   | {
       type: "Custom";
-      value: CustomFileOptions;
+      value: CustomEmuSource;
     };
-export type FlatpakSource = "Cemu" | "Citra" | "MelonDS" | "Lime3ds";
+export type FlatpakSource = "Cemu" | "Citra" | "MelonDSPrerelease" | "MelonDS" | "Lime3ds";
 export type AppImageSource = "Cemu";
 export type EmuDeckSource = "CemuProton";
 export type SecondaryAppScreenPreference = "PreferSecondary" | "PreferPrimary";
@@ -284,6 +287,10 @@ export type RuntimeSelection =
     }
   | {
       type: "AllOf";
+      value: PipelineAction[];
+    }
+  | {
+      type: "AllOfErased";
       value: PipelineAction[];
     };
 
@@ -490,18 +497,19 @@ export interface MelonDSLayout {
   layout_option: MelonDSLayoutOption;
   sizing_option: MelonDSSizingOption;
   swap_screens: boolean;
+  window_index?: number | null;
 }
-export interface SourceFile {
+export interface EmuSettingsSourceConfig {
   id: string;
-  source: FileSource;
+  source: EmuSettingsSource;
 }
-export interface CustomFileOptions {
+export interface CustomEmuSource {
   /**
-   * user defined custom path
+   * command to run the emulator user defined custom path
    */
-  path?: string | null;
+  settings_path?: string | null;
   /**
-   * valid file extensions for source file
+   * valid file extensions for settings file
    */
   valid_ext: string[];
 }

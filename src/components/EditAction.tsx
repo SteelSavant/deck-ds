@@ -360,7 +360,7 @@ export function InternalEditAction({
 
             switch (sourceType) {
                 case 'Custom':
-                    const file = sourceValue.source.value.path;
+                    const file = sourceValue.source.value.settings_path;
                     const extensions = sourceValue.source.value.valid_ext;
                     async function onSelectFile() {
                         const pickedFile = await openFilePicker(
@@ -377,7 +377,7 @@ export function InternalEditAction({
                             source: {
                                 type: 'Custom',
                                 value: {
-                                    path: pickedFile.realpath, // TODO::consider path instead of realpath
+                                    settings_path: pickedFile.realpath, // TODO::consider path instead of realpath
                                     valid_ext: extensions,
                                 },
                             },

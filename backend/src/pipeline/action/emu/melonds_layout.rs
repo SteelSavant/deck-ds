@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::pipeline::{
-    action::{source_file::SourceFile, ActionId, ActionImpl, ActionType},
+    action::{emu_source::EmuSettingsSourceConfig, ActionId, ActionImpl, ActionType},
     executor::PipelineContext,
 };
 
@@ -16,14 +16,14 @@ use serde::{Deserialize, Serialize};
 pub use internal::MelonDSLayoutState;
 
 /// melonDS layout options. Because of the "unique" way melonDS handles
-/// layouts, these options do not map 1:1.
+/// layouts (and how much I viscerally hate them), these options do not map 1:1.
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub enum MelonDSLayoutOption {
     Natural,    // Puts screens vertical normally, horizonal in book mode.
     Vertical,   // Puts screens vertical always,
     Horizontal, // Puts screens horizonal always,
     Hybrid,     // Puts main screen large, with both screens adjacent. Overrides sizing settings.
-    Single,     // Displays only one screen,
+    Single,     // Displays only one screen, // TODO::topscreen 4, bottomscreen 5
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
@@ -53,6 +53,7 @@ pub struct MelonDSLayout {
     pub sizing_option: MelonDSSizingOption,
     pub book_mode: bool, // if in book mode, set rotation to 270,
     pub swap_screens: bool,
+    pub window_index: Option<u8>, // window index (for 1.0 multi-window); None for default window, index otherwise
 }
 
 mod internal {
@@ -202,7 +203,7 @@ impl ActionImpl for MelonDSLayout {
 
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let ini_path = ctx
-            .get_state::<SourceFile>()
+            .get_state::<EmuSettingsSourceConfig>()
             .with_context(|| "No source file set for melonDS settings")?;
 
         let current = internal::MelonDSLayoutState {
@@ -273,6 +274,7 @@ mod tests {
             sizing_option: MelonDSSizingOption::Even,
             book_mode: true,
             swap_screens: true,
+            window_index: None,
         }
         .into();
         expected.write(&path)?;

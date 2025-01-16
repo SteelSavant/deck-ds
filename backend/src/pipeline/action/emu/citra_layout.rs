@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::pipeline::{
-    action::{source_file::SourceFile, ActionId, ActionImpl, ActionType},
+    action::{emu_source::EmuSettingsSourceConfig, ActionId, ActionImpl, ActionType},
     executor::PipelineContext,
 };
 
@@ -209,7 +209,7 @@ impl ActionImpl for CitraLayout {
     fn setup(&self, ctx: &mut PipelineContext) -> Result<()> {
         let (ini_path, layout) = {
             let ini_path = ctx
-                .get_state::<SourceFile>()
+                .get_state::<EmuSettingsSourceConfig>()
                 .with_context(|| "No source file set for Citra settings")?;
 
             (ini_path.clone(), CitraLayoutState::read(ini_path)?)

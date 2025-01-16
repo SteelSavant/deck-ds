@@ -30,6 +30,7 @@ export default function PipelineTargetDisplay({
 }: {
     root: RuntimeSelection;
 }): ReactElement {
+    console.log('building PipelineTargetDisplay from', root);
     return (
         <DialogBody>
             <DialogControlsSection>
@@ -53,6 +54,7 @@ function buildSelection(
     qamHiddenByParent: boolean,
 ): ReactElement | null {
     const type = selection.type;
+    console.log('Building selection: ', selection);
     switch (type) {
         case 'Action':
             return buildAction(
@@ -63,7 +65,8 @@ function buildSelection(
             );
         case 'OneOf':
             return buildOneOf(selection.value, indentLevel, qamHiddenByParent);
-        case 'AllOf':
+        case 'AllOf': // fallthrough
+        case 'AllOfErased':
             return buildAllOf(selection.value, indentLevel, qamHiddenByParent);
         default:
             const typecheck: never = type;
@@ -131,6 +134,23 @@ function buildPipelineAction(
 
     const selection = action.selection;
     const isEnabled = action.enabled;
+
+    if (selection.type === 'AllOfErased') {
+        return (
+            <>
+                {' '}
+                {...selection.value.map((v) =>
+                    buildSelection(
+                        v.id,
+                        v.toplevel_id,
+                        v.selection,
+                        indentLevel,
+                        qamHiddenByParent,
+                    ),
+                )}{' '}
+            </>
+        );
+    }
 
     const forcedEnabled = isEnabled === null || isEnabled === undefined;
 

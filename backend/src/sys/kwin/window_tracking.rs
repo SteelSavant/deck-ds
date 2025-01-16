@@ -221,7 +221,7 @@ impl KWinNewWindowTrackingScope {
 
         let script_proxy = res.get_script_proxy();
 
-        script_proxy.method_call("org.kde.kwin.Script", "run", ())?;
+        script_proxy.method_call::<(), _, _, _>("org.kde.kwin.Script", "run", ())?;
 
         Ok(res)
     }

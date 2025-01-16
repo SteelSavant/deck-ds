@@ -577,7 +577,8 @@ function patchProfileOverridesForMissing(
                     patch(v.selection, actions);
                 }
                 return;
-            case 'AllOf':
+            case 'AllOf': // fallthrough
+            case 'AllOfErased':
                 for (const v of selection.value) {
                     if (!actions.actions[v.id]) {
                         v.profile_override = externalProfileId;

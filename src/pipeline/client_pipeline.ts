@@ -34,8 +34,8 @@ export async function setupClientPipeline(
                     (a) => a.id === s.value.selection && a.enabled !== false,
                 );
                 return found ? flattenSelection(found.selection) : [];
-
-            case 'AllOf':
+            case 'AllOf': // fallthrough 
+            case 'AllOfErased':
                 return s.value
                     .filter((v) => v.enabled !== false)
                     .flatMap((v) => flattenSelection(v.selection));
