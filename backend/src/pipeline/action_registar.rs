@@ -807,7 +807,8 @@ impl PipelineActionRegistarBuilder {
                         profile_override: None,
                         selection: DefinitionSelection::AllOf(vec![
                             PipelineActionId::new("core:melonds:source"),
-                            PipelineActionId::new("core:melonds:version"),
+                            PipelineActionId::new("core:melonds:single_window"),
+                            // PipelineActionId::new("core:melonds:version"),
                             PipelineActionId::new("core:core:touch_config"),
                         ]),
                         is_visible_on_qam: true,
