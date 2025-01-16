@@ -817,15 +817,15 @@ impl PipelineActionRegistarBuilder {
                         description: None,
                         enabled: None,
                         profile_override: None,
-                        is_visible_on_qam: false,
-                        selection: DefinitionSelection::Versioned { default_action: PipelineActionId::new("melonds:core:single_window"), versions: vec![
+                        is_visible_on_qam: true,
+                        selection: DefinitionSelection::Versioned { default_action: PipelineActionId::new("core:melonds:single_window"), versions: vec![
                             VersionConfig { 
                                 matcher: Arc::new(MelonDSVersionMatcher::v1()), 
-                                action: PipelineActionId::new("melonds:core:select_windows") // TODO::oneof singlewindow || multiwindow
+                                action: PipelineActionId::new("core:melonds:select_windows")
                             },
                             VersionConfig { 
                                 matcher: Arc::new(MelonDSVersionMatcher::prerelease()), 
-                                action: PipelineActionId::new("melonds:core:single_window") 
+                                action: PipelineActionId::new("core:melonds:single_window") 
                             }
                         ] },
                     })
@@ -834,8 +834,8 @@ impl PipelineActionRegistarBuilder {
                         description: None,
                         enabled: None,
                         profile_override: None,
-                        is_visible_on_qam: false,
-                        selection: DefinitionSelection::Versioned { default_action: PipelineActionId::new("melonds:core:single_window"), versions: vec![] },
+                        is_visible_on_qam: true,
+                        selection: DefinitionSelection::Versioned { default_action: PipelineActionId::new("core:melonds:single_window"), versions: vec![] },
                     })
                     .with_action("select_windows", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
                         name: "melonds Window Configuration".to_string(),
@@ -846,9 +846,9 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:melonds:single_window"),
                             PipelineActionId::new("core:melonds:multi_window"),
                         ] },
-                        is_visible_on_qam: false,
+                        is_visible_on_qam: true,
                     })
-                    .with_action("single_window", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
+                    .with_action("single_window", None, PipelineActionDefinitionBuilder {
                         name: "melonds Single Window".to_string(),
                         description: Some("melonDS running in a single window".to_string()),
                         enabled: None,
@@ -857,7 +857,7 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:melonds:layout"),
                             PipelineActionId::new("core:core:virtual_screen"),
                         ]),
-                        is_visible_on_qam: false,
+                        is_visible_on_qam: true,
                     })
                     .with_action("multi_window", Some(PipelineTarget::Desktop), PipelineActionDefinitionBuilder {
                         name: "melonds Separate Windows".to_string(),
@@ -869,7 +869,7 @@ impl PipelineActionRegistarBuilder {
                             PipelineActionId::new("core:melonds:layout1"),
                             PipelineActionId::new("core:melonds:kwin_multi_window"),
                         ]),
-                        is_visible_on_qam: false,
+                        is_visible_on_qam: true,
                     })
                     // TODO::kwin_multi_window, layout0, layout1
                     .with_action("source", None, PipelineActionDefinitionBuilder {
@@ -1016,7 +1016,7 @@ mod tests {
         let expected_keys: HashSet<PipelineActionId, RandomState> = HashSet::from_iter(
             [
                 "core:cemu:platform",
-                "core:cemu:multi_window:desktop",
+                "core:cemu:kwin_multi_window:desktop",
                 "core:cemu:source",
                 "core:cemu:flatpak_source",
                 "core:cemu:custom_source",

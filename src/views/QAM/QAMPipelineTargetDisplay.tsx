@@ -128,8 +128,13 @@ function buildPipelineAction(action: PipelineAction): ReactElement | null {
     };
 
     switch (type) {
-        case 'AllOf':
-            if (forcedEnabled || selection.value.length == 0) {
+        case 'AllOf': // fallthrough
+        case 'AllOfErased':
+            if (
+                forcedEnabled ||
+                selection.value.length == 0 ||
+                type === 'AllOfErased'
+            ) {
                 return buildAllOf(selection.value);
             } else {
                 return (

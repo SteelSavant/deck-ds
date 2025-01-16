@@ -608,9 +608,8 @@ impl ConfigSelection {
                         })
                         .unwrap_or(default_action);
 
-                    Ok(RuntimeSelection::AllOf(
-                        action.reify(ctx).map(|v| v.into_iter().collect())?,
-                    ))
+                    let reified = action.reify(ctx)?.with_context(|| format!("unable to find pipeline action {action:?} when reifying config version"))?;
+                    Ok(RuntimeSelection::AllOfErased(vec![reified]))
                 }
                 _ => Err(anyhow::anyhow!("selection type mismatch in reify config")),
             },
@@ -735,6 +734,37 @@ mod tests {
                 Err(err) => panic!("{err}"),
             }
         }
+    }
+
+    #[test]
+    fn test_melonds_default_version_reification() -> Result<()> {
+        let root = PipelineActionId("core:melonds:version".into());
+        let registrar = PipelineActionRegistrar::builder().with_core().build();
+        let pipeline_cxt = &mut PipelineContext::new(None, Default::default(), Default::default());
+        let toplevel_id = Default::default();
+        let ctx = &mut ReificationCtx {
+            registrar: &registrar,
+            actions: &registrar.make_lookup(&root),
+            target: PipelineTarget::Desktop,
+            ctx: pipeline_cxt,
+            profiles: &[],
+            toplevel_id: toplevel_id,
+        };
+
+        let reified = root
+            .reify(ctx)?
+            .context("root action should exist")?
+            .selection;
+
+        let expected = RuntimeSelection::AllOfErased(vec![PipelineActionId::new(
+            "core:melonds:single_window".into(),
+        )
+        .reify(ctx)?
+        .context("core:melonds:single_window should exist")?]);
+
+        assert_eq!(expected, reified);
+
+        Ok(())
     }
 
     // #[test]
