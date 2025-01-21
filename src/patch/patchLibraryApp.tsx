@@ -1,4 +1,4 @@
-import { routerHook } from '@decky/api';
+import { RoutePatch, routerHook } from '@decky/api';
 import {
     afterPatch,
     appDetailsClasses,
@@ -22,7 +22,12 @@ import SecondaryPlayButton from './components/SecondaryPlayButton';
 const onNavDebounceTime = 100;
 const appDetailsDebounceTime = 250;
 
-function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
+// All of this is an utter hack and I hate it.
+
+function patchLibraryApp(
+    route: string,
+    appDetailsState: ShortAppDetailsState,
+): RoutePatch {
     return routerHook.addPatch(
         route,
         (props?: { path?: string; children?: ReactElement }) => {
@@ -162,6 +167,22 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                 return ret6;
                                                             }
 
+                                                            const cloudSyncButton =
+                                                                ret6.props
+                                                                    .children[1];
+
+                                                            if (
+                                                                cloudSyncButton
+                                                            ) {
+                                                                replacePatch(
+                                                                    cloudSyncButton.props,
+                                                                    'onFocus',
+                                                                    (_args) => {
+                                                                        // do nothing
+                                                                    },
+                                                                );
+                                                            }
+
                                                             const onFocusWithin =
                                                                 appDetailsSection
                                                                     .props
@@ -200,8 +221,9 @@ function patchLibraryApp(route: string, appDetailsState: ShortAppDetailsState) {
                                                                         );
                                                                         focusArgs[0] =
                                                                             true;
+
                                                                         onFocusWithin(
-                                                                            focusArgs,
+                                                                            ...focusArgs,
                                                                         );
                                                                     }
 
