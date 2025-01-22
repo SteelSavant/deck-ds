@@ -29,15 +29,12 @@ pub use ui::UiEvent;
 #[derive(Debug, Copy, Clone, SmartDefault, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct DesktopSessionHandler {
     pub id: ActionId,
-    #[default(true)]
-    pub deck_is_primary_display: bool,
-    pub teardown_external_settings: ExternalDisplaySettings,
-    #[default(Some(Default::default()))]
-    pub teardown_deck_location: Option<RelativeLocation>,
 }
 
 impl DesktopSessionHandler {
     pub(crate) fn desktop_only(&self, ctx: &mut PipelineContext) -> Result<()> {
+        todo!("Check what displays are enabled. Load settings for connectd display, default if none found. Apply settings.");
+
         let mut display = ctx
             .display
             .take()
@@ -48,35 +45,35 @@ impl DesktopSessionHandler {
             .with_context(|| "unable to find embedded display")?;
         let current_output = display.get_preferred_external_output()?;
 
-        if let Some(current_output) = current_output.as_ref() {
-            if current_output.connected {
-                match self.teardown_external_settings {
-                    ExternalDisplaySettings::Previous => Ok(()),
-                    ExternalDisplaySettings::Native => {
-                        let native_mode = display.get_native_mode(current_output)?;
-                        if let Some(mode) = native_mode {
-                            display.set_output_mode(current_output, &mode)
-                        } else {
-                            Ok(())
-                        }
-                    }
-                    ExternalDisplaySettings::Preference(preference) => {
-                        display.set_or_create_preferred_mode(current_output, &preference)
-                    }
-                }?;
-            }
-        }
+        // if let Some(current_output) = current_output.as_ref() {
+        //     if current_output.connected {
+        //         match self.teardown_external_settings {
+        //             ExternalDisplaySettings::Previous => Ok(()),
+        //             ExternalDisplaySettings::Native => {
+        //                 let native_mode = display.get_native_mode(current_output)?;
+        //                 if let Some(mode) = native_mode {
+        //                     display.set_output_mode(current_output, &mode)
+        //                 } else {
+        //                     Ok(())
+        //                 }
+        //             }
+        //             ExternalDisplaySettings::Preference(preference) => {
+        //                 display.set_or_create_preferred_mode(current_output, &preference)
+        //             }
+        //         }?;
+        //     }
+        // }
 
-        if let Some(location) = self.teardown_deck_location {
-            display.reconfigure_embedded(
-                &mut deck,
-                &location.into(),
-                current_output.as_ref(),
-                self.deck_is_primary_display,
-            )?;
-        } else {
-            display.set_output_enabled(&mut deck, false)?;
-        }
+        // if let Some(location) = self.teardown_deck_location {
+        //     display.reconfigure_embedded(
+        //         &mut deck,
+        //         &location.into(),
+        //         current_output.as_ref(),
+        //         self.deck_is_primary_display,
+        //     )?;
+        // } else {
+        //     display.set_output_enabled(&mut deck, false)?;
+        // }
 
         Ok(())
     }
@@ -278,6 +275,8 @@ impl ActionImpl for DesktopSessionHandler {
 
         let res = match ctx.get_state::<Self>() {
             Some(state) => {
+                todo!("Check what displays are enabled. Load settings for connectd display, default if none found. Apply settings.");
+
                 if let Some(runtime) = state.runtime_state.as_ref() {
                     runtime.ui_ctx.request_repaint_after(Duration::from_secs(1))
                 }
@@ -298,62 +297,62 @@ impl ActionImpl for DesktopSessionHandler {
                     None => return Ok(()),
                 };
 
-                match self.teardown_external_settings {
-                    ExternalDisplaySettings::Previous => {
-                        match state.previous_external_output_mode {
-                            Some(mode) => {
-                                let mode = display.get_mode(mode)?;
-                                display.set_output_mode(&current_output, &mode)
-                            }
-                            None => DesktopSessionHandler {
-                                teardown_external_settings: ExternalDisplaySettings::Native,
-                                ..*self
-                            }
-                            .teardown(ctx),
-                        }
-                    }
-                    ExternalDisplaySettings::Native => {
-                        let mode = current_output
-                            .preferred_modes
-                            .iter()
-                            .map(|mode| display.get_mode(*mode))
-                            .collect::<Result<Vec<_>, _>>()?;
-                        let native_mode = mode.iter().reduce(|acc, e| {
-                            match (acc.width * acc.height).cmp(&(e.width * e.height)) {
-                                std::cmp::Ordering::Less => e,
-                                std::cmp::Ordering::Greater => acc,
-                                std::cmp::Ordering::Equal => {
-                                    if acc.rate > e.rate {
-                                        acc
-                                    } else {
-                                        e
-                                    }
-                                }
-                            }
-                        });
-                        if let Some(mode) = native_mode {
-                            display.set_output_mode(&current_output, mode)
-                        } else {
-                            Ok(())
-                        }
-                    }
-                    ExternalDisplaySettings::Preference(preference) => {
-                        display.set_or_create_preferred_mode(&current_output, &preference)
-                    }
-                }?;
+                // match self.teardown_external_settings {
+                //     ExternalDisplaySettings::Previous => {
+                //         match state.previous_external_output_mode {
+                //             Some(mode) => {
+                //                 let mode = display.get_mode(mode)?;
+                //                 display.set_output_mode(&current_output, &mode)
+                //             }
+                //             None => DesktopSessionHandler {
+                //                 teardown_external_settings: ExternalDisplaySettings::Native,
+                //                 ..*self
+                //             }
+                //             .teardown(ctx),
+                //         }
+                //     }
+                //     ExternalDisplaySettings::Native => {
+                //         let mode = current_output
+                //             .preferred_modes
+                //             .iter()
+                //             .map(|mode| display.get_mode(*mode))
+                //             .collect::<Result<Vec<_>, _>>()?;
+                //         let native_mode = mode.iter().reduce(|acc, e| {
+                //             match (acc.width * acc.height).cmp(&(e.width * e.height)) {
+                //                 std::cmp::Ordering::Less => e,
+                //                 std::cmp::Ordering::Greater => acc,
+                //                 std::cmp::Ordering::Equal => {
+                //                     if acc.rate > e.rate {
+                //                         acc
+                //                     } else {
+                //                         e
+                //                     }
+                //                 }
+                //             }
+                //         });
+                //         if let Some(mode) = native_mode {
+                //             display.set_output_mode(&current_output, mode)
+                //         } else {
+                //             Ok(())
+                //         }
+                //     }
+                //     ExternalDisplaySettings::Preference(preference) => {
+                //         display.set_or_create_preferred_mode(&current_output, &preference)
+                //     }
+                // }?;
 
-                let mut deck = display.get_embedded_output()?.unwrap();
+                // let mut deck = display.get_embedded_output()?.unwrap();
 
-                if let Some(location) = self.teardown_deck_location {
-                    display.reconfigure_embedded(
-                        &mut deck,
-                        &location.into(),
-                        Some(&current_output),
-                        self.deck_is_primary_display,
-                    )?;
-                } else {
-                    display.set_output_enabled(&mut deck, false)?;
-                }
+                // if let Some(location) = self.teardown_deck_location {
+                //     display.reconfigure_embedded(
+                //         &mut deck,
+                //         &location.into(),
+                //         Some(&current_output),
+                //         self.deck_is_primary_display,
+                //     )?;
+                // } else {
+                //     display.set_output_enabled(&mut deck, false)?;
+                // }
 
                 Ok(())
             }

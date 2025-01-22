@@ -710,7 +710,7 @@ mod tests {
             CemuWindowOptions, CitraWindowOptions, CustomWindowOptions, DolphinWindowOptions,
             GeneralOptions, LimitedMultiWindowLayout, MultiWindowLayout, MultiWindowOptions,
         },
-        session_handler::{DisplayState, ExternalDisplaySettings, RelativeLocation},
+        session_handler::{DisplayState, RelativeLocation},
         ActionId,
     };
 
@@ -727,9 +727,6 @@ mod tests {
         let actions: Vec<Action> = vec![
             DesktopSessionHandler {
                 id: ActionId::nil(),
-                teardown_external_settings: ExternalDisplaySettings::Native,
-                teardown_deck_location: Some(RelativeLocation::Below),
-                deck_is_primary_display: true,
             }
             .clone()
             .into(),

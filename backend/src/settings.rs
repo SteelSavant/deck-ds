@@ -254,3 +254,32 @@ Type=Application"#;
         assert_eq!(expected, actual);
     }
 }
+
+/*
+
+Fixed Hardware Settings
+- Deck Screen Location
+
+Software Settings Related to Hardware
+- External Display Resolution
+- Touch Config
+- Deck is Primary Display (w/KDE taskbar)
+
+- KWin Swap Screens
+
+
+
+Make separate hardware DB that, for each deviceId stores:
+- Deck Screen Location
+- External Display Resolution
+- Touch Config
+- Deck is Primary Display (w/KDE taskbar)
+- KWin Swap Screens
+
+Everything but Deck Screen Location is overridable per-config
+Make Kwin actions that depend on knowing swap-screens depend on display config action
+
+
+Store monitor list, sorted by last selected
+
+*/

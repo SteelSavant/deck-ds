@@ -10,12 +10,12 @@ use serde::Deserialize;
 
 use crate::{
     autostart::LoadedAutoStart,
-    db::ProfileDb,
     decky_env::DeckyEnv,
     pipeline::{
         action_registar::PipelineActionRegistrar,
         data::{Pipeline, PipelineTarget},
         executor::PipelineContext,
+        profile_db::ProfileDb,
     },
     settings::{self, AppId, GameId, ProfileId, Settings, SteamLaunchInfo, SteamUserId64},
     sys::steamos_session_select::{check_session, steamos_session_select, Session},

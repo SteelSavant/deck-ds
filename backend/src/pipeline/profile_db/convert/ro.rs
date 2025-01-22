@@ -5,7 +5,7 @@ use anyhow::{Context, Result};
 use native_db::transaction::RTransaction;
 
 use crate::{
-    db::model::{
+    pipeline::profile_db::model::{
         DbAction, DbCemuAudio, DbCemuLayout, DbCitraLayout, DbConfigSelection,
         DbDesktopControllerLayoutHack, DbDesktopSessionHandler, DbDisplayConfig,
         DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset, DbLime3dsLayout,

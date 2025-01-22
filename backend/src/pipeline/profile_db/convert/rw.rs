@@ -3,7 +3,7 @@ use anyhow::{Context, Result};
 use native_db::transaction::RwTransaction;
 
 use crate::{
-    db::{
+    pipeline::profile_db::{
         convert::ext::RwExt,
         model::{
             DbAction, DbAppOverride, DbCategoryProfile, DbCemuAudio, DbCemuLayout, DbCitraLayout,

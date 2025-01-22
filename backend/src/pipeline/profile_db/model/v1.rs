@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use std::path::PathBuf;
 
+use crate::pipeline::profile_db::codec::rmp_serde_1_3::{RmpSerde, RmpSerdeNamed};
 use crate::{
-    db::codec::rmp_serde_1_3::{RmpSerde, RmpSerdeNamed},
     pipeline::{
         action::{
             cemu_audio::{CemuAudio, CemuAudioChannels, CemuAudioSetting, CemuAudioState},
@@ -349,25 +349,11 @@ pub enum DbMelonDSSizingOption {
 pub struct DbDesktopSessionHandler {
     #[primary_key]
     pub id: ActionId,
-    pub teardown_external_settings: DbExternalDisplaySettings,
-    pub teardown_deck_location: Option<DbRelativeLocation>,
-    pub deck_is_primary_display: bool,
 }
 
 impl From<DesktopSessionHandler> for DbDesktopSessionHandler {
     fn from(value: DesktopSessionHandler) -> Self {
-        Self {
-            id: value.id,
-            teardown_external_settings: value.teardown_external_settings.into(),
-            teardown_deck_location: value.teardown_deck_location.map(|v| match v {
-                RelativeLocation::Above => DbRelativeLocation::Above,
-                RelativeLocation::Below => DbRelativeLocation::Below,
-                RelativeLocation::LeftOf => DbRelativeLocation::LeftOf,
-                RelativeLocation::RightOf => DbRelativeLocation::RightOf,
-                RelativeLocation::SameAs => DbRelativeLocation::SameAs,
-            }),
-            deck_is_primary_display: value.deck_is_primary_display,
-        }
+        Self { id: value.id }
     }
 }
 
@@ -461,28 +447,7 @@ impl From<AspectRatioOption> for DbAspectRatioOption {
 
 impl From<DbDesktopSessionHandler> for DesktopSessionHandler {
     fn from(value: DbDesktopSessionHandler) -> Self {
-        Self {
-            id: value.id,
-            teardown_external_settings: match value.teardown_external_settings {
-                DbExternalDisplaySettings::Previous => ExternalDisplaySettings::Previous,
-                DbExternalDisplaySettings::Native => ExternalDisplaySettings::Native,
-                DbExternalDisplaySettings::Preference(v) => {
-                    ExternalDisplaySettings::Preference(ModePreference {
-                        resolution: v.resolution.into(),
-                        aspect_ratio: v.aspect_ratio.into(),
-                        refresh: v.refresh.into(),
-                    })
-                }
-            },
-            teardown_deck_location: value.teardown_deck_location.map(|v| match v {
-                DbRelativeLocation::Above => RelativeLocation::Above,
-                DbRelativeLocation::Below => RelativeLocation::Below,
-                DbRelativeLocation::LeftOf => RelativeLocation::LeftOf,
-                DbRelativeLocation::RightOf => RelativeLocation::RightOf,
-                DbRelativeLocation::SameAs => RelativeLocation::SameAs,
-            }),
-            deck_is_primary_display: value.deck_is_primary_display,
-        }
+        Self { id: value.id }
     }
 }
 

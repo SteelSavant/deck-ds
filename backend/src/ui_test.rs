@@ -4,33 +4,22 @@ use std::{sync::Arc, time::Duration};
 use crate::{
     decky_env::DeckyEnv,
     pipeline::{
-        self,
         action::{
             multi_window::primary_windowing::{GeneralOptions, MultiWindow},
-            session_handler::{DesktopSessionHandler, ExternalDisplaySettings},
+            session_handler::DesktopSessionHandler,
             ActionId, ActionImpl,
         },
         executor::PipelineContext,
     },
     settings::GlobalConfig,
-    sys,
 };
 
 #[allow(dead_code)]
 pub fn ui_test(decky_env: Arc<DeckyEnv>) -> Result<()> {
-    use sys::x_display::{ModePreference, Resolution};
-
     let ctx = &mut PipelineContext::new(None, GlobalConfig::default(), decky_env);
 
     let ui = DesktopSessionHandler {
         id: ActionId::nil(),
-        teardown_external_settings: ExternalDisplaySettings::Preference(ModePreference {
-            resolution: sys::x_display::ModeOption::Exact(Resolution { w: 1920, h: 1080 }),
-            aspect_ratio: sys::x_display::AspectRatioOption::Any,
-            refresh: sys::x_display::ModeOption::AtLeast(60.),
-        }),
-        teardown_deck_location: Some(pipeline::action::session_handler::RelativeLocation::Below),
-        deck_is_primary_display: true,
     };
 
     let vscreen = MultiWindow {

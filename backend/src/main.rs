@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use client_pipeline::ClientPipelineHandler;
+use pipeline::profile_db::ProfileDb;
 
 use std::{
     env,
@@ -19,7 +20,6 @@ use crate::{
     api::{request_handler::RequestHandler, Api},
     autostart::AutoStart,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
-    db::ProfileDb,
     decky_env::DeckyEnv,
     pipeline::{action_registar::PipelineActionRegistrar, executor::PipelineContext},
     secondary_app::SecondaryAppManager,
@@ -32,7 +32,6 @@ use derive_more::Display;
 pub mod api;
 pub mod asset;
 pub mod consts;
-pub mod db;
 pub mod decky_env;
 mod macros;
 pub mod pipeline;

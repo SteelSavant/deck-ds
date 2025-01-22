@@ -321,9 +321,6 @@ impl PipelineActionRegistarBuilder {
                             profile_override: None,
                             selection: DesktopSessionHandler {
                                 id: ActionId::nil(),
-                                teardown_external_settings: ExternalDisplaySettings::Previous,
-                                teardown_deck_location: Some(RelativeLocation::Below),
-                                deck_is_primary_display: true,
                             } .into(),
                         },
                     )
