@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 use client_pipeline::ClientPipelineHandler;
-use pipeline::profile_db::ProfileDb;
+use profile_db::ProfileDb;
 
 use std::{
     env,
@@ -42,6 +42,11 @@ pub mod util;
 pub mod autostart;
 pub mod client_pipeline;
 pub mod settings;
+
+mod db;
+
+pub use db::profile_db;
+pub use db::settings_db;
 
 mod ui_test;
 

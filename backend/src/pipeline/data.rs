@@ -669,8 +669,9 @@ mod tests {
 
     use strum::IntoEnumIterator;
 
-    use crate::pipeline::{
-        action_registar::PipelineActionRegistrar, data::actions_have_target, profile_db::ProfileDb,
+    use crate::{
+        pipeline::{action_registar::PipelineActionRegistrar, data::actions_have_target},
+        profile_db::ProfileDb,
     };
 
     use super::*;

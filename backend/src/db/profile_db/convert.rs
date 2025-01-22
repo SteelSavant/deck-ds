@@ -9,7 +9,7 @@ use crate::{
     pipeline::data::{
         PipelineActionLookup, PipelineDefinition, PipelineDefinitionId, TopLevelDefinition,
     },
-    pipeline::profile_db::model::{
+    profile_db::model::{
         DbAppOverride, DbCategoryProfile, DbPipelineActionSettings, DbPipelineDefinition,
     },
     settings::{AppId, AppProfile, CategoryProfile, ProfileId},

@@ -3,7 +3,14 @@ use anyhow::{Context, Result};
 use native_db::transaction::RwTransaction;
 
 use crate::{
-    pipeline::profile_db::{
+    pipeline::{
+        action::{Action, ActionId, ActionType, ErasedPipelineAction},
+        data::{
+            ConfigSelection, PipelineActionId, PipelineActionLookup, PipelineDefinitionId,
+            TopLevelDefinition, TopLevelId,
+        },
+    },
+    profile_db::{
         convert::ext::RwExt,
         model::{
             DbAction, DbAppOverride, DbCategoryProfile, DbCemuAudio, DbCemuLayout, DbCitraLayout,
@@ -11,13 +18,6 @@ use crate::{
             DbDisplayConfig, DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset, DbLime3dsLayout,
             DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings,
             DbSourceFile, DbTopLevelDefinition, DbTouchConfig, DbVirtualScreen,
-        },
-    },
-    pipeline::{
-        action::{Action, ActionId, ActionType, ErasedPipelineAction},
-        data::{
-            ConfigSelection, PipelineActionId, PipelineActionLookup, PipelineDefinitionId,
-            TopLevelDefinition, TopLevelId,
         },
     },
 };

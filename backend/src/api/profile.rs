@@ -19,8 +19,8 @@ use crate::{
         },
         dependency::DependencyError,
         executor::PipelineContext,
-        profile_db::ProfileDb,
     },
+    profile_db::ProfileDb,
     settings::{AppId, AppProfile, CategoryProfile, ProfileId},
 };
 

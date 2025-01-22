@@ -20,7 +20,6 @@ use crate::settings::CategoryProfile;
 use crate::settings::ProfileId;
 use anyhow::Result;
 
-mod codec;
 mod convert;
 mod migrate;
 mod model;
@@ -41,9 +40,15 @@ impl ProfileDb {
             create_dir_all(parent).expect("should be able to create db dir");
         }
 
-        let mut db = native_db::Builder::new()
-            .create(&MODELS, db_path)
-            .expect("database should be instantiable");
+        let mut db = if db_path.is_file() {
+            native_db::Builder::new()
+                .open(&MODELS, db_path)
+                .expect("should be able to open profile db")
+        } else {
+            native_db::Builder::new()
+                .create(&MODELS, db_path)
+                .expect("should be able to create profile db")
+        };
 
         let rw = db
             .rw_transaction()

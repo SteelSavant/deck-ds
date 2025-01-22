@@ -4,7 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use std::path::PathBuf;
 
-use crate::pipeline::profile_db::codec::rmp_serde_1_3::{RmpSerde, RmpSerdeNamed};
+use crate::db::codec::rmp_serde_1_3::{RmpSerde, RmpSerdeNamed};
+
 use crate::{
     pipeline::{
         action::{
@@ -357,38 +358,6 @@ impl From<DesktopSessionHandler> for DbDesktopSessionHandler {
     }
 }
 
-impl From<ExternalDisplaySettings> for DbExternalDisplaySettings {
-    fn from(value: ExternalDisplaySettings) -> Self {
-        match value {
-            ExternalDisplaySettings::Previous => DbExternalDisplaySettings::Previous,
-            ExternalDisplaySettings::Native => DbExternalDisplaySettings::Native,
-            ExternalDisplaySettings::Preference(v) => {
-                DbExternalDisplaySettings::Preference(DbModePreference {
-                    resolution: v.resolution.into(),
-                    aspect_ratio: v.aspect_ratio.into(),
-                    refresh: v.refresh.into(),
-                })
-            }
-        }
-    }
-}
-
-impl From<DbExternalDisplaySettings> for ExternalDisplaySettings {
-    fn from(value: DbExternalDisplaySettings) -> Self {
-        match value {
-            DbExternalDisplaySettings::Previous => ExternalDisplaySettings::Previous,
-            DbExternalDisplaySettings::Native => ExternalDisplaySettings::Native,
-            DbExternalDisplaySettings::Preference(v) => {
-                ExternalDisplaySettings::Preference(ModePreference {
-                    resolution: v.resolution.into(),
-                    aspect_ratio: v.aspect_ratio.into(),
-                    refresh: v.refresh.into(),
-                })
-            }
-        }
-    }
-}
-
 impl From<RelativeLocation> for DbRelativeLocation {
     fn from(value: RelativeLocation) -> Self {
         match value {
@@ -491,18 +460,6 @@ pub enum DbRelativeLocation {
     LeftOf,
     RightOf,
     SameAs,
-}
-
-#[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", content = "value")]
-pub enum DbExternalDisplaySettings {
-    /// Previous resolution, before setup
-    #[default]
-    Previous,
-    /// Native resolution
-    Native,
-    /// Resolution based on specific settings
-    Preference(DbModePreference),
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
