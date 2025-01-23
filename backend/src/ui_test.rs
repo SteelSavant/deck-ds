@@ -11,7 +11,7 @@ use crate::{
         },
         executor::PipelineContext,
     },
-    settings::GlobalConfig,
+    config::GlobalConfig,
 };
 
 #[allow(dead_code)]

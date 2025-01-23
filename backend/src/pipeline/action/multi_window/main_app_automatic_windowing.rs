@@ -7,7 +7,7 @@ use smart_default::SmartDefault;
 
 use crate::{
     pipeline::action::{Action, ActionId, ActionImpl, ActionType, ErasedPipelineAction},
-    settings::SteamLaunchInfo,
+    config::SteamLaunchInfo,
     sys::{kwin::KWinClientMatcher, x_display::Resolution},
     util::{escape_string_for_regex, get_maybe_window_names_classes_from_title},
 };

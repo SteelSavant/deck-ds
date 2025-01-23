@@ -1264,56 +1264,36 @@
     "DesktopSessionHandler": {
       "type": "object",
       "required": [
-        "deck_is_primary_display",
-        "id",
-        "teardown_external_settings"
+        "id"
       ],
       "properties": {
-        "deck_is_primary_display": {
-          "type": "boolean"
-        },
         "id": {
           "type": "string",
           "format": "uuid"
-        },
-        "teardown_deck_location": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/RelativeLocation"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "teardown_external_settings": {
-          "$ref": "#/definitions/ExternalDisplaySettings"
         }
       }
     },
     "DisplayConfig": {
       "type": "object",
       "required": [
-        "deck_is_primary_display",
-        "external_display_settings",
         "id"
       ],
       "properties": {
         "deck_is_primary_display": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
-        "deck_location": {
+        "external_display_settings": {
           "anyOf": [
             {
-              "$ref": "#/definitions/RelativeLocation"
+              "$ref": "#/definitions/ExternalDisplaySettings"
             },
             {
               "type": "null"
             }
           ]
-        },
-        "external_display_settings": {
-          "$ref": "#/definitions/ExternalDisplaySettings"
         },
         "id": {
           "type": "string",
@@ -2661,16 +2641,6 @@
         }
       }
     },
-    "RelativeLocation": {
-      "type": "string",
-      "enum": [
-        "Above",
-        "Below",
-        "LeftOf",
-        "RightOf",
-        "SameAs"
-      ]
-    },
     "RemoveClientTeardownActionsRequest": {
       "type": "object",
       "required": [
@@ -3019,15 +2989,11 @@
       "type": "object",
       "required": [
         "deck_is_primary_display",
-        "deck_location",
         "id"
       ],
       "properties": {
         "deck_is_primary_display": {
           "type": "boolean"
-        },
-        "deck_location": {
-          "$ref": "#/definitions/RelativeLocation"
         },
         "id": {
           "type": "string",

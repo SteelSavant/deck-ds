@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use anyhow::Result;
 
-use crate::{asset::AssetManager, consts::PACKAGE_NAME, settings::Settings, AppModes};
+use crate::{asset::AssetManager, config::PathLocator, consts::PACKAGE_NAME, AppModes};
 
 use usdpl_back::api::decky;
 
@@ -41,7 +41,7 @@ impl DeckyEnv {
 
                 // Use the settings saved in the autostart if possible, the default env settings otherwise
 
-                Settings::new("", &env)
+                PathLocator::new("", &env)
                     .get_autostart_cfg()
                     .map(|v| v.env)
                     .unwrap_or(env)

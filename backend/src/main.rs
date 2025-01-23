@@ -19,11 +19,11 @@ use usdpl_back::Instance;
 use crate::{
     api::{request_handler::RequestHandler, Api},
     autostart::AutoStart,
+    config::PathLocator,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
     decky_env::DeckyEnv,
     pipeline::{action_registar::PipelineActionRegistrar, executor::PipelineContext},
     secondary_app::SecondaryAppManager,
-    settings::Settings,
     util::create_dir_all,
 };
 use clap::{Parser, Subcommand};
@@ -41,7 +41,7 @@ pub mod util;
 
 pub mod autostart;
 pub mod client_pipeline;
-pub mod settings;
+pub mod config;
 
 mod db;
 
@@ -97,7 +97,7 @@ fn main() -> Result<()> {
     );
 
     let log_filepath = decky_env.decky_plugin_log_dir.join(log_file_name);
-    let settings = Settings::new(env::current_exe()?, &decky_env);
+    let paths = PathLocator::new(env::current_exe()?, &decky_env);
 
     WriteLogger::init(
         #[cfg(debug_assertions)]
@@ -106,7 +106,7 @@ fn main() -> Result<()> {
         },
         #[cfg(not(debug_assertions))]
         {
-            match settings.get_global_cfg().log_level {
+            match paths.get_global_cfg().log_level {
                 1 => LevelFilter::Trace,
                 2 => LevelFilter::Debug,
                 3 => LevelFilter::Info,
@@ -156,9 +156,9 @@ fn main() -> Result<()> {
 
     let registrar = PipelineActionRegistrar::builder().with_core().build();
 
-    let global_config = settings.get_global_cfg();
+    let global_config = paths.get_global_cfg();
 
-    let settings = Arc::new(Mutex::new(settings));
+    let settings = Arc::new(Mutex::new(paths));
 
     let request_handler = Arc::new(Mutex::new(RequestHandler::new()));
     let secondary_app_manager = SecondaryAppManager::new(decky_env.asset_manager());
@@ -248,9 +248,11 @@ fn main() -> Result<()> {
         AppModes::Serve => {
             decky_env.write()?;
 
-            let db_path = decky_env.decky_plugin_runtime_dir.join("profiles.db");
-            let profiles_db: &'static ProfileDb =
-                Box::leak(Box::new(ProfileDb::new(db_path, registrar.clone())));
+            let profiles_db_path = decky_env.decky_plugin_runtime_dir.join("profiles.db");
+            let profiles_db: &'static ProfileDb = Box::leak(Box::new(ProfileDb::new(
+                profiles_db_path,
+                registrar.clone(),
+            )));
 
             let instance = Instance::new(PORT)
                 // logging

@@ -4,9 +4,11 @@ use serde::{Deserialize, Serialize};
 
 use std::path::PathBuf;
 
-use crate::db::codec::rmp_serde_1_3::{RmpSerde, RmpSerdeNamed};
+use crate::db::common::codec::rmp_serde_1_3::{RmpSerde, RmpSerdeNamed};
 
+use crate::db::common::model::DbExternalDisplaySettings;
 use crate::{
+    config::{AppId, ProfileId},
     pipeline::{
         action::{
             cemu_audio::{CemuAudio, CemuAudioChannels, CemuAudioSetting, CemuAudioState},
@@ -37,7 +39,6 @@ use crate::{
         data::{PipelineActionId, PipelineDefinitionId, PipelineTarget, TopLevelId},
     },
     secondary_app::{FlatpakApp, SecondaryApp, SecondaryAppPresetId},
-    settings::{AppId, ProfileId},
     sys::x_display::x_touch::TouchSelectionMode,
 };
 
@@ -52,10 +53,9 @@ use crate::{
         multi_window::primary_windowing::{
             LimitedMultiWindowLayout, MultiWindow, MultiWindowLayout,
         },
-        session_handler::{ExternalDisplaySettings, RelativeLocation},
         virtual_screen::VirtualScreen,
     },
-    sys::x_display::{AspectRatioOption, ModeOption, ModePreference, Resolution},
+    sys::x_display::Resolution,
 };
 
 #[derive(Serialize, Deserialize)]
@@ -358,135 +358,10 @@ impl From<DesktopSessionHandler> for DbDesktopSessionHandler {
     }
 }
 
-impl From<RelativeLocation> for DbRelativeLocation {
-    fn from(value: RelativeLocation) -> Self {
-        match value {
-            RelativeLocation::Above => DbRelativeLocation::Above,
-            RelativeLocation::Below => DbRelativeLocation::Below,
-            RelativeLocation::LeftOf => DbRelativeLocation::LeftOf,
-            RelativeLocation::RightOf => DbRelativeLocation::RightOf,
-            RelativeLocation::SameAs => DbRelativeLocation::SameAs,
-        }
-    }
-}
-
-impl From<DbRelativeLocation> for RelativeLocation {
-    fn from(value: DbRelativeLocation) -> Self {
-        match value {
-            DbRelativeLocation::Above => RelativeLocation::Above,
-            DbRelativeLocation::Below => RelativeLocation::Below,
-            DbRelativeLocation::LeftOf => RelativeLocation::LeftOf,
-            DbRelativeLocation::RightOf => RelativeLocation::RightOf,
-            DbRelativeLocation::SameAs => RelativeLocation::SameAs,
-        }
-    }
-}
-
-impl<T, R> From<ModeOption<T>> for DbModeOption<R>
-where
-    R: From<T>,
-{
-    fn from(value: ModeOption<T>) -> Self {
-        match value {
-            ModeOption::Exact(v) => DbModeOption::Exact(v.into()),
-            ModeOption::AtLeast(v) => DbModeOption::AtLeast(v.into()),
-            ModeOption::AtMost(v) => DbModeOption::AtMost(v.into()),
-        }
-    }
-}
-
-impl From<Resolution> for DbResolution {
-    fn from(value: Resolution) -> Self {
-        Self {
-            w: value.w,
-            h: value.h,
-        }
-    }
-}
-
-impl From<AspectRatioOption> for DbAspectRatioOption {
-    fn from(value: AspectRatioOption) -> Self {
-        match value {
-            AspectRatioOption::Any => DbAspectRatioOption::Any,
-            AspectRatioOption::Native => DbAspectRatioOption::Native,
-            AspectRatioOption::Exact(v) => DbAspectRatioOption::Exact(v),
-        }
-    }
-}
-
 impl From<DbDesktopSessionHandler> for DesktopSessionHandler {
     fn from(value: DbDesktopSessionHandler) -> Self {
         Self { id: value.id }
     }
-}
-
-impl<T, R> From<DbModeOption<T>> for ModeOption<R>
-where
-    R: From<T>,
-{
-    fn from(value: DbModeOption<T>) -> Self {
-        match value {
-            DbModeOption::Exact(v) => ModeOption::Exact(v.into()),
-            DbModeOption::AtLeast(v) => ModeOption::AtLeast(v.into()),
-            DbModeOption::AtMost(v) => ModeOption::AtMost(v.into()),
-        }
-    }
-}
-
-impl From<DbResolution> for Resolution {
-    fn from(value: DbResolution) -> Self {
-        Self {
-            w: value.w,
-            h: value.h,
-        }
-    }
-}
-
-impl From<DbAspectRatioOption> for AspectRatioOption {
-    fn from(value: DbAspectRatioOption) -> Self {
-        match value {
-            DbAspectRatioOption::Any => AspectRatioOption::Any,
-            DbAspectRatioOption::Native => AspectRatioOption::Native,
-            DbAspectRatioOption::Exact(v) => AspectRatioOption::Exact(v),
-        }
-    }
-}
-
-#[derive(Debug, Default, Copy, Clone, Serialize, Deserialize)]
-pub enum DbRelativeLocation {
-    Above,
-    #[default]
-    Below,
-    LeftOf,
-    RightOf,
-    SameAs,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct DbModePreference {
-    pub resolution: DbModeOption<DbResolution>,
-    pub aspect_ratio: DbAspectRatioOption,
-    pub refresh: DbModeOption<f64>,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub enum DbModeOption<T> {
-    Exact(T),
-    AtLeast(T),
-    AtMost(T),
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct DbResolution {
-    pub w: u32, // TODO::enforce w is multiple of 8 for CVT
-    pub h: u32,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub enum DbAspectRatioOption {
-    Any,
-    Native,
-    Exact(f32),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -788,27 +663,17 @@ pub enum DbAppImageSource {
 pub struct DbVirtualScreen {
     #[primary_key]
     pub id: ActionId,
-    pub deck_location: RelativeLocation,
-    pub deck_is_primary_display: bool,
 }
 
 impl From<VirtualScreen> for DbVirtualScreen {
     fn from(value: VirtualScreen) -> Self {
-        Self {
-            id: value.id,
-            deck_is_primary_display: value.deck_is_primary_display,
-            deck_location: value.deck_location,
-        }
+        Self { id: value.id }
     }
 }
 
 impl From<DbVirtualScreen> for VirtualScreen {
     fn from(value: DbVirtualScreen) -> Self {
-        Self {
-            id: value.id,
-            deck_is_primary_display: value.deck_is_primary_display,
-            deck_location: value.deck_location,
-        }
+        Self { id: value.id }
     }
 }
 
@@ -818,18 +683,16 @@ impl From<DbVirtualScreen> for VirtualScreen {
 pub struct DbDisplayConfig {
     #[primary_key]
     pub id: ActionId,
-    pub external_display_settings: DbExternalDisplaySettings,
-    pub deck_location: Option<DbRelativeLocation>,
-    pub deck_is_primary_display: bool,
+    pub external_display_settings: Option<DbExternalDisplaySettings>,
+    pub deck_is_enabled: Option<bool>,
 }
 
 impl From<DisplayConfig> for DbDisplayConfig {
     fn from(value: DisplayConfig) -> Self {
         Self {
             id: value.id,
-            external_display_settings: value.external_display_settings.into(),
-            deck_location: value.deck_location.map(std::convert::Into::into),
-            deck_is_primary_display: value.deck_is_primary_display,
+            deck_is_enabled: value.deck_is_enabled,
+            external_display_settings: value.external_display_settings.map(|v| v.into()),
         }
     }
 }
@@ -838,9 +701,8 @@ impl From<DbDisplayConfig> for DisplayConfig {
     fn from(value: DbDisplayConfig) -> Self {
         Self {
             id: value.id,
-            external_display_settings: value.external_display_settings.into(),
-            deck_location: value.deck_location.map(std::convert::Into::into),
-            deck_is_primary_display: value.deck_is_primary_display,
+            deck_is_enabled: value.deck_is_enabled,
+            external_display_settings: value.external_display_settings.map(|v| v.into()),
         }
     }
 }

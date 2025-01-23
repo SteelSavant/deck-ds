@@ -11,7 +11,6 @@ pub enum RelativeLocation {
     Below,
     LeftOf,
     RightOf,
-    SameAs,
 }
 
 impl From<RelativeLocation> for Relation {
@@ -21,7 +20,6 @@ impl From<RelativeLocation> for Relation {
             RelativeLocation::Below => Relation::Below,
             RelativeLocation::LeftOf => Relation::LeftOf,
             RelativeLocation::RightOf => Relation::RightOf,
-            RelativeLocation::SameAs => Relation::SameAs,
         }
     }
 }

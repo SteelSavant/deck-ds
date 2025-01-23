@@ -2,7 +2,7 @@ use strum::IntoEnumIterator;
 
 use crate::{
     secondary_app::{FlatpakApp, SecondaryAppPresetId},
-    settings::ProfileId,
+    config::ProfileId,
     sys::x_display::x_touch::TouchSelectionMode,
 };
 
@@ -26,7 +26,7 @@ use super::{
             },
             secondary_app::{LaunchSecondaryAppPreset, LaunchSecondaryFlatpakApp},
         },
-        session_handler::{DesktopSessionHandler, ExternalDisplaySettings, RelativeLocation},
+        session_handler::DesktopSessionHandler,
         touch_config::TouchConfig,
         version_matchers::MelonDSVersionMatcher,
         virtual_screen::VirtualScreen,
@@ -362,9 +362,8 @@ impl PipelineActionRegistarBuilder {
                             profile_override: None,
                             selection: DisplayConfig {
                                 id: ActionId::nil(),
-                                external_display_settings: ExternalDisplaySettings::Previous,
-                                deck_location: Some(RelativeLocation::Below),
-                                deck_is_primary_display: true,
+                                external_display_settings: None,
+                                deck_is_enabled: None,
                             }.into()
                      }).with_action("virtual_screen",      
                     Some(PipelineTarget::Desktop),
@@ -376,8 +375,6 @@ impl PipelineActionRegistarBuilder {
                         profile_override: None,
                         selection: VirtualScreen {
                             id: ActionId::nil(),
-                            deck_location: RelativeLocation::Below,
-                            deck_is_primary_display: true,
                         }.into(),
                     })
                 })

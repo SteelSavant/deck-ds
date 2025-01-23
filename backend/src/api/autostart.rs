@@ -10,6 +10,7 @@ use serde::Deserialize;
 
 use crate::{
     autostart::LoadedAutoStart,
+    config::{self, AppId, GameId, PathLocator, ProfileId, SteamLaunchInfo, SteamUserId64},
     decky_env::DeckyEnv,
     pipeline::{
         action_registar::PipelineActionRegistrar,
@@ -17,7 +18,6 @@ use crate::{
         executor::PipelineContext,
     },
     profile_db::ProfileDb,
-    settings::{self, AppId, GameId, ProfileId, Settings, SteamLaunchInfo, SteamUserId64},
     sys::steamos_session_select::{check_session, steamos_session_select, Session},
 };
 
@@ -41,7 +41,7 @@ pub fn autostart(
     request_handler: Arc<Mutex<RequestHandler>>,
     profile_db: &'static ProfileDb,
     registrar: PipelineActionRegistrar,
-    settings: Arc<Mutex<Settings>>,
+    paths: Arc<Mutex<PathLocator>>,
     decky_env: Arc<DeckyEnv>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
@@ -88,9 +88,8 @@ pub fn autostart(
                         let profiles = profile_db.get_profiles().unwrap();
 
                         let global_config = {
-                            let settings_lock = settings
-                                .lock()
-                                .expect("settings lock should not be poisoned");
+                            let settings_lock =
+                                paths.lock().expect("settings lock should not be poisoned");
 
                             settings_lock.get_global_cfg()
                         };
@@ -117,14 +116,14 @@ pub fn autostart(
                         match (args.target, session) {
                             (PipelineTarget::Desktop, Session::Gamescope) => {
                                 autostart_desktop_gamescope(
-                                    settings.clone(),
+                                    paths.clone(),
                                     autostart_info,
                                     launch_info,
                                 )
                             }
                             (target, _) => autostart_in_place(
                                 target,
-                                settings.clone(),
+                                paths.clone(),
                                 autostart_info,
                                 launch_info,
                             ),
@@ -146,16 +145,16 @@ struct AutostartInfo {
 
 fn autostart_in_place(
     target: PipelineTarget,
-    settings: Arc<Mutex<Settings>>,
+    paths: Arc<Mutex<PathLocator>>,
     autostart_info: AutostartInfo,
     launch_info: SteamLaunchInfo,
 ) -> super::ApiParameterType {
-    let lock: MutexGuard<Settings> = settings.lock().expect("settings mutex should be lockable");
+    let lock: MutexGuard<PathLocator> = paths.lock().expect("settings mutex should be lockable");
 
     let global_config = lock.get_global_cfg();
 
     let executor = LoadedAutoStart::new(
-        settings::AutoStartConfig {
+        config::AutoStartConfig {
             game_id: autostart_info.id,
             pipeline: autostart_info.pipeline,
             env: autostart_info.env.deref().clone(),
@@ -175,13 +174,13 @@ fn autostart_in_place(
 }
 
 fn autostart_desktop_gamescope(
-    settings: Arc<Mutex<Settings>>,
+    paths: Arc<Mutex<PathLocator>>,
     autostart_info: AutostartInfo,
     launch_info: SteamLaunchInfo,
 ) -> super::ApiParameterType {
-    let lock: MutexGuard<Settings> = settings.lock().expect("settings mutex should be lockable");
+    let lock: MutexGuard<PathLocator> = paths.lock().expect("settings mutex should be lockable");
 
-    let res = lock.set_autostart_cfg(&settings::AutoStartConfig {
+    let res = lock.set_autostart_cfg(&config::AutoStartConfig {
         game_id: autostart_info.id,
         pipeline: autostart_info.pipeline,
         env: autostart_info.env.deref().clone(),

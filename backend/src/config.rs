@@ -30,7 +30,7 @@ use crate::{
     PACKAGE_NAME,
 };
 
-pub struct Settings {
+pub struct PathLocator {
     // Path vars
     system_autostart_dir: PathBuf,
     global_config_path: PathBuf,
@@ -74,7 +74,7 @@ pub struct GlobalConfig {
     pub use_nonsteam_desktop_controller_layout_hack: bool,
 }
 
-impl Settings {
+impl PathLocator {
     pub fn new<P: AsRef<Path>>(exe_path: P, decky_env: &DeckyEnv) -> Self {
         Self {
             autostart_path: decky_env.decky_plugin_runtime_dir.join("autostart.json"),
@@ -232,11 +232,11 @@ mod tests {
 
     use pretty_assertions::assert_eq;
 
-    use crate::{consts::PACKAGE_NAME, decky_env::DeckyEnv, settings::Settings};
+    use crate::{consts::PACKAGE_NAME, decky_env::DeckyEnv, config::PathLocator};
 
     #[test]
     fn test_desktop_contents_correct() {
-        let settings = Settings::new(
+        let settings = PathLocator::new(
             Path::new("test/out/homebrew/plugins")
                 .join(PACKAGE_NAME)
                 .join("bin/backend"),

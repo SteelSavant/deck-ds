@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use anyhow::Result;
 
 use crate::{
+    config::{AppId, AppProfile, CategoryProfile, ProfileId},
     decky_env::DeckyEnv,
     pipeline::{
         action::{Action, ActionId, ErasedPipelineAction},
@@ -21,7 +22,6 @@ use crate::{
         executor::PipelineContext,
     },
     profile_db::ProfileDb,
-    settings::{AppId, AppProfile, CategoryProfile, ProfileId},
 };
 
 use super::{

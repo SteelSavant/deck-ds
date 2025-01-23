@@ -7,21 +7,21 @@ use crate::{
         data::{PipelineAction, PipelineActionId, PipelineTarget, RuntimeSelection, TopLevelId},
         executor::PipelineExecutor,
     },
-    settings::{GlobalConfig, Settings},
+    config::{GlobalConfig, PathLocator},
 };
 
 pub struct AutoStart {
-    settings: Arc<Mutex<Settings>>,
+    settings: Arc<Mutex<PathLocator>>,
 }
 
 #[derive(Debug)]
 pub struct LoadedAutoStart {
-    autostart: crate::settings::AutoStartConfig,
+    autostart: crate::config::AutoStartConfig,
     target: PipelineTarget,
 }
 
 impl AutoStart {
-    pub fn new(settings: Arc<Mutex<Settings>>) -> Self {
+    pub fn new(settings: Arc<Mutex<PathLocator>>) -> Self {
         Self { settings }
     }
 
@@ -78,7 +78,7 @@ impl AutoStart {
 }
 
 impl LoadedAutoStart {
-    pub fn new(autostart: crate::settings::AutoStartConfig, target: PipelineTarget) -> Self {
+    pub fn new(autostart: crate::config::AutoStartConfig, target: PipelineTarget) -> Self {
         Self { autostart, target }
     }
 

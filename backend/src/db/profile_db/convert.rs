@@ -12,7 +12,7 @@ use crate::{
     profile_db::model::{
         DbAppOverride, DbCategoryProfile, DbPipelineActionSettings, DbPipelineDefinition,
     },
-    settings::{AppId, AppProfile, CategoryProfile, ProfileId},
+    config::{AppId, AppProfile, CategoryProfile, ProfileId},
 };
 
 use super::model::DbAppSettings;

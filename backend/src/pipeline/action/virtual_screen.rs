@@ -7,13 +7,11 @@ use crate::{
     sys::x_display::{AspectRatioOption, ModeOption, ModePreference, Resolution},
 };
 
-use super::{display_config::RelativeLocation, ActionId, ActionImpl, ActionType};
+use super::{ActionId, ActionImpl, ActionType};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct VirtualScreen {
     pub id: ActionId,
-    pub deck_location: RelativeLocation,
-    pub deck_is_primary_display: bool,
 }
 
 const SCRIPT: &str = "truevideowall";
@@ -70,9 +68,9 @@ impl ActionImpl for VirtualScreen {
 
         display.reconfigure_embedded(
             &mut deck,
-            &self.deck_location.into(),
+            todo!("get relative deck location"),
             Some(&external),
-            self.deck_is_primary_display,
+            todo!("determine primary display"),
         )?;
 
         Ok(())

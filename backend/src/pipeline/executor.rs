@@ -13,6 +13,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use typemap_ors::{Key, TypeMap};
 
+use crate::config::{AppId, GameId, GlobalConfig, SteamLaunchInfo};
 use crate::decky_env::DeckyEnv;
 use crate::pipeline::action::cemu_audio::CemuAudio;
 use crate::pipeline::action::cemu_layout::CemuLayout;
@@ -33,7 +34,6 @@ use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::action::{ActionImpl, ActionType};
 use crate::pipeline::data::RuntimeSelection;
 use crate::secondary_app::SecondaryAppManager;
-use crate::settings::{AppId, GameId, GlobalConfig, SteamLaunchInfo};
 use crate::sys::app_process::AppProcess;
 use crate::sys::kwin::screen_tracking::KWinScreenTrackingScope;
 use crate::sys::kwin::{next_active_window, KWin};
@@ -732,8 +732,6 @@ mod tests {
             .into(),
             VirtualScreen {
                 id: ActionId::nil(),
-                deck_is_primary_display: true,
-                deck_location: RelativeLocation::Below,
             }
             .clone()
             .into(),

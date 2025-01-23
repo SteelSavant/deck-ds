@@ -7,17 +7,17 @@ use crate::pipeline::action_registar::PipelineActionRegistrar;
 use crate::pipeline::data::PipelineDefinition;
 use crate::pipeline::data::Template;
 use crate::pipeline::data::TemplateId;
-use crate::settings::AppId;
-use crate::settings::AppProfile;
+use crate::config::AppId;
+use crate::config::AppProfile;
 use crate::util::create_dir_all;
 
 use self::model::{DbAppOverride, DbAppSettings, MODELS};
 use self::templates::build_templates;
 use self::{migrate::migrate, model::DbCategoryProfile};
 
-use crate::settings::CategoryProfile;
+use crate::config::CategoryProfile;
 
-use crate::settings::ProfileId;
+use crate::config::ProfileId;
 use anyhow::Result;
 
 mod convert;

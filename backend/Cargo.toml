@@ -59,10 +59,9 @@ thiserror = "1.0.56"
 smart-default = "0.7.1"
 log-panics = { version = "2.1.0", features = ["with-backtrace"] }
 testing_logger = "0.1.1"
-edid-rs = "0.1.0"
 typemap-ors = "1.0.0"
 str-distance = "0.1.0"
-serde_with = "^3.8.1"
+serde_with = { version = "^3.8.1", features = ["schemars_0_8"] }
 dbus = "0.9.7"
 tempfile = "^3.10.1"
 unicode-segmentation = "^1.11.0"
@@ -71,6 +70,7 @@ rmp-serde = "1.3.0" # this cannot up updated without breaking the db
 x11 = { version = "2.18.2", features = ["xlib", "xinput"] }
 itertools = "0.13.0"
 typetag = "0.2.19"
+edid = "0.3.0"
 
 [features]
 default = ["online", "decky"]

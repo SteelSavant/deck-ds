@@ -86,69 +86,6 @@ export function InternalEditAction({
     const notConfigurable = null;
 
     switch (type) {
-        case 'DesktopSessionHandler':
-            const display = cloned.value;
-            const locations: RelativeLocation[] = [
-                'Above',
-                'Below',
-                'LeftOf',
-                'RightOf',
-            ]; // SameAs excluded because it doesn't really make sense
-            return (
-                <>
-                    <ExternalDisplaySettingsSelector
-                        indentLevel={indentLevel}
-                        settings={cloned.value.teardown_external_settings}
-                        Builder={Builder}
-                        onChange={(settings) => {
-                            cloned.value.teardown_external_settings = settings;
-                            onChange(cloned);
-                        }}
-                    />
-                    <Builder
-                        indentLevel={indentLevel}
-                        label="Deck Screen Location"
-                        description="Location of the Deck screen on the desktop relative to the external screen."
-                    >
-                        <Dropdown
-                            selectedOption={display.teardown_deck_location}
-                            rgOptions={[
-                                {
-                                    label: 'Disabled',
-                                    data: null,
-                                },
-                                ...locations.map((location) => {
-                                    return {
-                                        label: labelForCamelCase(location, '-'),
-                                        data: location,
-                                    };
-                                }),
-                            ]}
-                            onChange={(settings) => {
-                                cloned.value.teardown_deck_location =
-                                    settings.data;
-                                onChange(cloned);
-                            }}
-                        />
-                    </Builder>
-                    {cloned.value.teardown_deck_location ? (
-                        <Builder
-                            indentLevel={indentLevel}
-                            label="Deck is Primary Display"
-                            description="If enabled, the Deck's embedded display will be the primary desktop in KDE (the one with the taskbar)."
-                        >
-                            <Toggle
-                                value={cloned.value.deck_is_primary_display}
-                                onChange={(isEnabled) => {
-                                    cloned.value.deck_is_primary_display =
-                                        isEnabled;
-                                    onChange(cloned);
-                                }}
-                            />
-                        </Builder>
-                    ) : null}
-                </>
-            );
         case 'DisplayConfig': {
             // TODO::This is largely a duplicate of the above DesktopSessionHandler; refactor when Preference gets configured in UI.
             const display = cloned.value;
@@ -162,54 +99,13 @@ export function InternalEditAction({
                 <>
                     <ExternalDisplaySettingsSelector
                         indentLevel={indentLevel}
-                        settings={cloned.value.external_display_settings}
+                        settings={cloned.value.external_display_settings} //TODO::Global settings if None
                         Builder={Builder}
                         onChange={(settings) => {
                             cloned.value.external_display_settings = settings;
                             onChange(cloned);
                         }}
                     />
-                    <Builder
-                        indentLevel={indentLevel}
-                        label="Deck Screen Location"
-                        description="Location of the Deck screen on the desktop relative to the external screen."
-                    >
-                        <Dropdown
-                            selectedOption={display.deck_location}
-                            rgOptions={[
-                                {
-                                    label: 'Disabled',
-                                    data: null,
-                                },
-                                ...locations.map((location) => {
-                                    return {
-                                        label: labelForCamelCase(location, '-'),
-                                        data: location,
-                                    };
-                                }),
-                            ]}
-                            onChange={(settings) => {
-                                cloned.value.deck_location = settings.data;
-                                onChange(cloned);
-                            }}
-                        />
-                    </Builder>
-                    {cloned.value.deck_location ? (
-                        <Builder
-                            indentLevel={indentLevel}
-                            label="Deck is Primary Display"
-                            description="If enabled, the Deck's embedded display will be the primary desktop in KDE (the one with the taskbar)."
-                        >
-                            <Toggle
-                                value={cloned.value.deck_is_primary_display}
-                                onChange={(isEnabled) => {
-                                    cloned.value.deck_is_primary_display =
-                                        isEnabled;
-                                    onChange(cloned);
-                                }}
-                            />
-                        </Builder>
-                    ) : null}
                 </>
             );
         }
@@ -874,7 +770,8 @@ export function InternalEditAction({
                 </Builder>
             );
 
-        case 'VirtualScreen':
+        case 'VirtualScreen': // fallthrough
+        case 'DesktopSessionHandler':
             return notConfigurable;
         case 'DesktopControllerLayoutHack':
             throw new Error('layout hack not currently configurable as action'); // TODO::fix this

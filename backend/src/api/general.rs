@@ -5,11 +5,11 @@ use serde::{Deserialize, Serialize};
 use usdpl_back::core::serdes::Primitive;
 
 use crate::{
+    config::{GlobalConfig, PathLocator},
     decky_env::DeckyEnv,
-    settings::{GlobalConfig, Settings},
     sys::{
         audio::{get_audio_sinks, get_audio_sources, AudioDeviceInfo},
-        display_info::{self, DisplayValues},
+        display_info::DisplayMode,
     },
 };
 
@@ -26,7 +26,7 @@ pub struct GetSettingsResponse {
 }
 
 pub fn get_settings(
-    settings: Arc<Mutex<Settings>>,
+    settings: Arc<Mutex<PathLocator>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args| {
         log_invoke("get_settings", &args);
@@ -51,7 +51,7 @@ pub struct SetSettingsRequest {
 
 pub fn set_settings(
     request_handler: Arc<Mutex<RequestHandler>>,
-    settings: Arc<Mutex<Settings>>,
+    settings: Arc<Mutex<PathLocator>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args| {
         log_invoke("set_settings", &args);
@@ -83,16 +83,17 @@ pub fn set_settings(
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetDisplayInfoResponse {
-    available_values: Vec<DisplayValues>,
+    available_values: Vec<DisplayMode>,
 }
 
 pub fn get_display_info() -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args| {
         log_invoke("get_display_info", &args);
-        GetDisplayInfoResponse {
-            available_values: display_info::get_display_info().unwrap_or_default(),
-        }
-        .to_response()
+        todo!("Load monitor settings, find best match, and pass the path to its modes file at /sys/class/drm/*/modes. May require passing in a monitorId.");
+        // GetDisplayInfoResponse {
+        //     available_values: display_info::get_display_info().unwrap_or_default(),
+        // }
+        // .to_response()
     }
 }
 

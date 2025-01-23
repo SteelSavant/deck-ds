@@ -1,24 +1,34 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, path::Path};
 
+use anyhow::Result;
+use edid::EDID;
+use itertools::Itertools;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct DisplayInfo {
+    pub model: String,
+    pub serial: String,
+    pub display_modes: Vec<DisplayMode>,
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-pub struct DisplayValues {
+pub struct DisplayMode {
     width: u16,
     height: u16,
     refresh: Option<f32>, // can't fetch it now, but I'd like to in the future if possible
 }
 
-impl Eq for DisplayValues {}
+impl Eq for DisplayMode {}
 
-impl PartialOrd for DisplayValues {
+impl PartialOrd for DisplayMode {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for DisplayValues {
+impl Ord for DisplayMode {
     fn cmp(&self, other: &Self) -> Ordering {
         let area = self.width * self.height;
         let other_area = other.width * other.height;
@@ -39,19 +49,61 @@ impl Ord for DisplayValues {
 
 /// Gets raw display info direct from the system,
 /// without going through X. Primarily for displaying
-/// optional values in GameMode.
+/// available monitors and modes in GameMode.
 ///
-/// Returns an optional vec of [DisplayValues], ordered
-/// greatest to least.
-pub fn get_display_info() -> Option<Vec<DisplayValues>> {
-    // // Hardcode file for now.
-    // // People *DEFINITELY* will never use a second external monitor.
-    // // Or a different handheld. Definitely not.
-    let file = "/sys/class/drm/card0-DP-1/modes";
-    parse_modes(file)
+/// Returns an optional vec of [DisplayInfo], ordered
+/// by greatest to least [DisplayMode].
+pub fn get_display_info() -> Result<Vec<DisplayInfo>> {
+    let device_dir = "/sys/class/drm";
+    let mut info = Path::new(device_dir)
+        .read_dir()?
+        .into_iter()
+        .filter_map(|v| {
+            v.inspect_err(|err| log::warn!("failed to read dir entry: {:#?}", err))
+                .ok()
+        })
+        .filter(|v| v.path().is_dir())
+        .filter_map(|dir| {
+            let status_path = dir.path().join("status");
+            if status_path.is_file()
+                && std::fs::read_to_string(status_path)
+                    .unwrap_or_default()
+                    .starts_with("connected")
+            {
+                return Some(dir.path());
+            }
+
+            None
+        })
+        .map(|dir| {
+            let modes = parse_modes(dir.join("modes")).unwrap_or_default();
+
+            let mut info = DisplayInfo {
+                model: "Unknown".to_string(),
+                serial: "Unknown".to_string(),
+                display_modes: modes,
+            };
+            let edid = parse_edid(dir.join("edid"));
+            if let Ok(edid) = edid {
+                for d in edid.descriptors {
+                    match d {
+                        edid::Descriptor::SerialNumber(s) => info.serial = s,
+                        edid::Descriptor::ProductName(p) => info.model = p,
+                        _ => (),
+                    }
+                }
+            }
+
+            info
+        })
+        .collect_vec();
+
+    info.sort_by(|a, b| b.display_modes.cmp(&a.display_modes));
+
+    Ok(info)
 }
 
-fn parse_modes(file: &str) -> Option<Vec<DisplayValues>> {
+fn parse_modes<P: AsRef<Path>>(file: P) -> Option<Vec<DisplayMode>> {
     let modes = std::fs::read_to_string(file).ok()?;
 
     let mut modes = modes
@@ -70,7 +122,7 @@ fn parse_modes(file: &str) -> Option<Vec<DisplayValues>> {
                 .parse()
                 .unwrap();
 
-            DisplayValues {
+            DisplayMode {
                 width,
                 height,
                 refresh: None,
@@ -83,138 +135,18 @@ fn parse_modes(file: &str) -> Option<Vec<DisplayValues>> {
     Some(modes)
 }
 
-// We should technically parse the edid, but the file won't parse no matter which
-// display I use (or parsing application/library).
+fn parse_edid<P: AsRef<Path>>(file: P) -> Result<EDID> {
+    let bytes = std::fs::read(file)?;
+    let res = edid::parse(&bytes);
 
-// fn parse_edid(file: &str) -> Option<Vec<DisplayValues>> {
-//     let bytes = std::fs::read(file).ok()?;
-
-//     let edid = edid_rs::parse(&mut Cursor::new(bytes))
-//         .inspect_err(|err| {
-//             log::warn!("Error parsing EDID: {err}");
-//         })
-//         .ok()?;
-
-//     let established = edid
-//         .timings
-//         .established_timings
-//         .into_iter()
-//         .map(|v| match v {
-//             edid_rs::EstablishedTiming::H720V400F70 => DisplayValues {
-//                 width: 720,
-//                 height: 400,
-//                 refresh: 70.,
-//             },
-//             edid_rs::EstablishedTiming::H720V400F88 => DisplayValues {
-//                 width: 720,
-//                 height: 400,
-//                 refresh: 88.,
-//             },
-//             edid_rs::EstablishedTiming::H640V480F60 => DisplayValues {
-//                 width: 640,
-//                 height: 480,
-//                 refresh: 60.,
-//             },
-//             edid_rs::EstablishedTiming::H640V480F67 => DisplayValues {
-//                 width: 640,
-//                 height: 480,
-//                 refresh: 67.,
-//             },
-//             edid_rs::EstablishedTiming::H640V480F72 => DisplayValues {
-//                 width: 640,
-//                 height: 480,
-//                 refresh: 72.,
-//             },
-//             edid_rs::EstablishedTiming::H640V480F75 => DisplayValues {
-//                 width: 640,
-//                 height: 480,
-//                 refresh: 75.,
-//             },
-//             edid_rs::EstablishedTiming::H800V600F56 => DisplayValues {
-//                 width: 800,
-//                 height: 600,
-//                 refresh: 56.,
-//             },
-//             edid_rs::EstablishedTiming::H800V600F60 => DisplayValues {
-//                 width: 800,
-//                 height: 600,
-//                 refresh: 60.,
-//             },
-//             edid_rs::EstablishedTiming::H800V600F72 => DisplayValues {
-//                 width: 800,
-//                 height: 600,
-//                 refresh: 72.,
-//             },
-//             edid_rs::EstablishedTiming::H800V600F75 => DisplayValues {
-//                 width: 800,
-//                 height: 600,
-//                 refresh: 75.,
-//             },
-//             edid_rs::EstablishedTiming::H832V624F75 => DisplayValues {
-//                 width: 832,
-//                 height: 624,
-//                 refresh: 75.,
-//             },
-//             edid_rs::EstablishedTiming::H1024V768F87 => DisplayValues {
-//                 width: 1024,
-//                 height: 768,
-//                 refresh: 87.,
-//             },
-//             edid_rs::EstablishedTiming::H1024V768F60 => DisplayValues {
-//                 width: 1024,
-//                 height: 768,
-//                 refresh: 60.,
-//             },
-//             edid_rs::EstablishedTiming::H1024V768F70 => DisplayValues {
-//                 width: 1024,
-//                 height: 768,
-//                 refresh: 70.,
-//             },
-//             edid_rs::EstablishedTiming::H1024V768F75 => DisplayValues {
-//                 width: 1024,
-//                 height: 768,
-//                 refresh: 75.,
-//             },
-//             edid_rs::EstablishedTiming::H1280V1024F75 => DisplayValues {
-//                 width: 1280,
-//                 height: 1024,
-//                 refresh: 75.,
-//             },
-//             edid_rs::EstablishedTiming::H1152V870F75 => DisplayValues {
-//                 width: 1152,
-//                 height: 870,
-//                 refresh: 75.,
-//             },
-//         });
-
-//     let standard = edid.timings.standard_timings.into_iter().map(|v| {
-//         let width = v.horizontal_resolution ;
-//         DisplayValues {
-//             width: width,
-//             height: (width as f32 / v.aspect_ratio) as u16,
-//             refresh: v.refresh_rate as f32,
-//         }
-//     });
-
-//     let detailed = edid
-//         .timings
-//         .detailed_timings
-//         .into_iter()
-//         .map(|v| DisplayValues {
-//             width: v.active.0,
-//             height: v.active.1,
-//             refresh: (v.pixel_clock as f32
-//                 / (v.active.0 + v.front_porch.0 + v.back_porch.0) as f32)
-//                 * (1000. / (v.active.1 + v.front_porch.1 + v.back_porch.1) as f32),
-//         });
-
-//     let mut timings = established
-//         .chain(standard)
-//         .chain(detailed)
-//         .collect::<Vec<_>>();
-
-//     timings.sort();
-//     timings.reverse();
-
-//     Some(timings)
-// }
+    if res.is_done() {
+        Ok(res.unwrap().1)
+    } else if res.is_err() {
+        Err(anyhow::format_err!(
+            "Failed to parse EDID: {:#?}",
+            res.unwrap_err()
+        ))
+    } else {
+        anyhow::bail!("EDID incomplete: {:#?}", res.unwrap_inc())
+    }
+}

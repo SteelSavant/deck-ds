@@ -93,7 +93,6 @@ export type Action =
       type: "DesktopControllerLayoutHack";
       value: DesktopControllerLayoutHack;
     };
-export type RelativeLocation = "Above" | "Below" | "LeftOf" | "RightOf" | "SameAs";
 export type ExternalDisplaySettings =
   | {
       type: "Previous";
@@ -387,10 +386,12 @@ export interface PipelineActionSettingsFor_ConfigSelection {
   selection: ConfigSelection;
 }
 export interface DesktopSessionHandler {
-  deck_is_primary_display: boolean;
   id: string;
-  teardown_deck_location?: RelativeLocation | null;
-  teardown_external_settings: ExternalDisplaySettings;
+}
+export interface DisplayConfig {
+  deck_is_primary_display?: boolean | null;
+  external_display_settings?: ExternalDisplaySettings | null;
+  id: string;
 }
 export interface ModePreference {
   aspect_ratio: AspectRatioOption;
@@ -401,19 +402,12 @@ export interface Resolution {
   h: number;
   w: number;
 }
-export interface DisplayConfig {
-  deck_is_primary_display: boolean;
-  deck_location?: RelativeLocation | null;
-  external_display_settings: ExternalDisplaySettings;
-  id: string;
-}
 export interface TouchConfig {
   id: string;
   touch_mode: TouchSelectionMode;
 }
 export interface VirtualScreen {
   deck_is_primary_display: boolean;
-  deck_location: RelativeLocation;
   id: string;
 }
 export interface MultiWindow {

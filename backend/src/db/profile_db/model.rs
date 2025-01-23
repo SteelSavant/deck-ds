@@ -38,19 +38,20 @@ pub type DbDesktopControllerLayoutHack = v1::DbDesktopControllerLayoutHack;
 
 pub static MODELS: Lazy<native_db::Models> = Lazy::new(|| {
     let mut models = Models::new();
+
     // V1
     {
         // Profiles
 
         models
             .define::<v1::DbCategoryProfile>()
-            .expect("failed to define CategoryProfile v1");
+            .expect("failed to define DbCategoryProfile v1");
         models
             .define::<v1::DbAppSettings>()
-            .expect("failed to define AppProfile v1");
+            .expect("failed to define DbAppSettings v1");
         models
             .define::<v1::DbAppOverride>()
-            .expect("failed to define AppProfile v1");
+            .expect("failed to define DbAppOverride v1");
         models
             .define::<v1::DbPipelineDefinition>()
             .expect("failed to define DbPipelineDefinition v1");
@@ -63,7 +64,7 @@ pub static MODELS: Lazy<native_db::Models> = Lazy::new(|| {
         let v1_actions = [
             models
                 .define::<v1::DbCemuLayout>()
-                .expect("failed to define CemuLayout v1"),
+                .expect("failed to define DbCemuLayout v1"),
             models
                 .define::<v1::DbCemuAudio>()
                 .expect("failed to define DbCemuAudio v1"),
@@ -75,28 +76,28 @@ pub static MODELS: Lazy<native_db::Models> = Lazy::new(|| {
                 .expect("failed to define DbLime3dsLayout v1"),
             models
                 .define::<v1::DbMelonDSLayout>()
-                .expect("failed to define MelonDSLayout v1"),
+                .expect("failed to define DbMelonDSLayout v1"),
             models
                 .define::<v1::DbDesktopSessionHandler>()
-                .expect("failed to define DesktopSessionHandler v1"),
+                .expect("failed to define DbDesktopSessionHandler v1"),
             models
                 .define::<v1::DbMultiWindow>()
-                .expect("failed to define MultiWindow v1"),
+                .expect("failed to define DbMultiWindow v1"),
             models
                 .define::<v1::DbVirtualScreen>()
-                .expect("failed to define VirtualScreen v1"),
+                .expect("failed to define DbVirtualScreen v1"),
             models
                 .define::<v1::DbSourceFile>()
-                .expect("failed to define SourceDbSourceFile v1"),
+                .expect("failed to define DbSourceFile v1"),
             models
                 .define::<v1::DbDisplayConfig>()
                 .expect("failed to define DbDisplayConfig v1"),
             models
                 .define::<v1::DbLaunchSecondaryFlatpakApp>()
-                .expect("failed to define LaunchSecondaryApp v1"),
+                .expect("failed to define DbLaunchSecondaryApp v1"),
             models
                 .define::<v1::DbLaunchSecondaryAppPreset>()
-                .expect("failed to define LaunchSecondaryAppPreset v1"),
+                .expect("failed to define DbLaunchSecondaryAppPreset v1"),
             models
                 .define::<v1::DbMainAppAutomaticWindowing>()
                 .expect("failed to define DbMainAppAutomaticWindowing v1"),

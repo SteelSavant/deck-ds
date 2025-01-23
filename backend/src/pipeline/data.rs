@@ -11,7 +11,7 @@ use strum::{EnumIter, IntoEnumIterator};
 
 use crate::{
     macros::{newtype_strid, newtype_uuid},
-    settings::{CategoryProfile, ProfileId},
+    config::{CategoryProfile, ProfileId},
 };
 use anyhow::{Context, Result};
 
