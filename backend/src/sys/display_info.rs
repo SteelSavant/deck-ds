@@ -48,8 +48,7 @@ impl Ord for DisplayMode {
 }
 
 /// Gets raw display info direct from the system,
-/// without going through X. Primarily for displaying
-/// available monitors and modes in GameMode.
+/// without going through X.
 ///
 /// Returns an optional vec of [DisplayInfo], ordered
 /// by greatest to least [DisplayMode].

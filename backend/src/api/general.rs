@@ -9,7 +9,7 @@ use crate::{
     decky_env::DeckyEnv,
     sys::{
         audio::{get_audio_sinks, get_audio_sources, AudioDeviceInfo},
-        display_info::DisplayMode,
+        display_info::{self, DisplayInfo, DisplayMode},
     },
 };
 
@@ -76,17 +76,17 @@ pub fn set_settings(
 
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetDisplayInfoResponse {
-    available_values: Vec<DisplayMode>,
+    /// All available displays, sorted from most recently used to least recently used
+    available_displays: Vec<DisplayInfo>,
 }
 
 pub fn get_display_info() -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args| {
         log_invoke("get_display_info", &args);
-        todo!("Load monitor settings, find best match, and pass the path to its modes file at /sys/class/drm/*/modes. May require passing in a monitorId.");
-        // GetDisplayInfoResponse {
-        //     available_values: display_info::get_display_info().unwrap_or_default(),
-        // }
-        // .to_response()
+        GetDisplayInfoResponse {
+            available_displays: display_info::get_display_info().unwrap_or_default(),
+        }
+        .to_response()
     }
 }
 

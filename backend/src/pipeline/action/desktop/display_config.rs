@@ -30,8 +30,15 @@ impl ActionImpl for DisplayConfig {
             .as_mut()
             .context("DisplayConfig requires x11 to be running")?;
 
+        let display_settings = ctx
+            .settings_db
+            .get_monitor_display_settings()
+            .unwrap_or_default();
+
         let preferred = display.get_preferred_external_output()?;
         let mut embedded = display.get_embedded_output()?;
+
+        // TODO::SETTINGS_REFACTOR
 
         todo!("fix this to work with new global hardware setting");
 

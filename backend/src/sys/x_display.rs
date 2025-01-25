@@ -16,8 +16,6 @@ use self::x_display_handle::XDisplayHandle;
 mod x_display_handle;
 pub mod x_touch;
 
-// TODO::raw edid at /sys/class/drm/XXX/edid, modes at /sys/class/drm/XXX/modes
-
 /// Thin wrapper around xrandr for common display operations.
 #[derive(Debug)]
 pub struct XDisplay {

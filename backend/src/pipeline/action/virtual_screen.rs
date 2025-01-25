@@ -65,6 +65,7 @@ impl ActionImpl for VirtualScreen {
                 refresh: ModeOption::Exact(deck_mode.rate),
             },
         )?;
+        // TODO::SETTINGS_REFACTOR
 
         display.reconfigure_embedded(
             &mut deck,

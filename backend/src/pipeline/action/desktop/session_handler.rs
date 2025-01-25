@@ -31,6 +31,8 @@ pub struct DesktopSessionHandler;
 
 impl DesktopSessionHandler {
     pub(crate) fn desktop_only(&self, ctx: &mut PipelineContext) -> Result<()> {
+        // TODO::SETTINGS_REFACTOR
+
         todo!("Check what displays are enabled. Load settings for connectd display, default if none found. Apply settings.");
 
         let mut display = ctx

@@ -586,8 +586,8 @@ impl PipelineActionRegistarBuilder {
                     let cemu_audio_name = "Audio".to_string();
                     let cemu_audio_description = Some("Optional audio configuration for Cemu to handle desired audio outputs and related settings.".to_string());
 
-                    let deck_speakers = "alsa_output.pci-0000_04_00.5-platform-acp5x_mach.0.HiFi__hw_acp5x_1__sink"; // TODO::verify for multiple decks
-                    let deck_mic = "alsa_input.pci-0000_04_00.5-platform-acp5x_mach.0.HiFi__hw_acp5x_0__source"; // TODO::verify for multiple decks
+                    let deck_speakers = "alsa_output.pci-0000_04_00.5-platform-acp5x_mach.0.HiFi__hw_acp5x_1__sink"; 
+                    let deck_mic = "alsa_input.pci-0000_04_00.5-platform-acp5x_mach.0.HiFi__hw_acp5x_0__source";
 
                     group.with_action("platform", None, PipelineActionDefinitionBuilder {
                         name: cemu_name.clone(),

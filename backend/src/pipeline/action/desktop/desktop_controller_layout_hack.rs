@@ -1,5 +1,4 @@
-// TODO::this
-// Allow - global, enabled, disabled -- PER TARGET
+// TODO::Allow - global, enabled, disabled -- PER TARGET
 
 use anyhow::{Context, Ok};
 use schemars::JsonSchema;
