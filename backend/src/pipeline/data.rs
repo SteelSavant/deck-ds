@@ -10,8 +10,8 @@ use steamdeck_controller_hidraw::SteamDeckGamepadButton;
 use strum::{EnumIter, IntoEnumIterator};
 
 use crate::{
-    macros::{newtype_strid, newtype_uuid},
     config::{CategoryProfile, ProfileId},
+    macros::{newtype_strid, newtype_uuid},
 };
 use anyhow::{Context, Result};
 
@@ -672,6 +672,7 @@ mod tests {
     use crate::{
         pipeline::{action_registar::PipelineActionRegistrar, data::actions_have_target},
         profile_db::ProfileDb,
+        settings_db::SettingsDb,
     };
 
     use super::*;
@@ -679,13 +680,12 @@ mod tests {
     #[test]
     fn test_template_reification() {
         let registrar = PipelineActionRegistrar::builder().with_core().build();
-        let profiles = ProfileDb::new(
-            "test/out/.config/DeckDS/template_reification.db".into(),
-            registrar,
-        );
+        let profiles = ProfileDb::new("memory".into(), registrar);
+
+        let settings: SettingsDb = SettingsDb::new("memory");
 
         let registrar = PipelineActionRegistrar::builder().with_core().build();
-        let ctx = &mut PipelineContext::new(None, Default::default(), Default::default());
+        let ctx = &mut PipelineContext::new(None, Default::default(), settings, Default::default());
         let res: Vec<_> = profiles
             .get_templates()
             .into_iter()
@@ -740,7 +740,11 @@ mod tests {
     fn test_melonds_default_version_reification() -> Result<()> {
         let root = PipelineActionId("core:melonds:version".into());
         let registrar = PipelineActionRegistrar::builder().with_core().build();
-        let pipeline_cxt = &mut PipelineContext::new(None, Default::default(), Default::default());
+        let settings: SettingsDb =
+            SettingsDb::new("test/out/.config/DeckDS/template_reification.db");
+
+        let pipeline_cxt =
+            &mut PipelineContext::new(None, Default::default(), settings, Default::default());
         let toplevel_id = Default::default();
         let ctx = &mut ReificationCtx {
             registrar: &registrar,

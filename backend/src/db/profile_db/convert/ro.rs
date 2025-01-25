@@ -6,7 +6,7 @@ use native_db::transaction::RTransaction;
 
 use crate::{
     pipeline::{
-        action::{Action, ActionType},
+        action::{session_handler::DesktopSessionHandler, Action, ActionType},
         data::{
             ConfigSelection, PipelineActionLookup, PipelineActionSettings, PipelineDefinition,
             PipelineDefinitionId, TopLevelDefinition,
@@ -14,10 +14,10 @@ use crate::{
     },
     profile_db::model::{
         DbAction, DbCemuAudio, DbCemuLayout, DbCitraLayout, DbConfigSelection,
-        DbDesktopControllerLayoutHack, DbDesktopSessionHandler, DbDisplayConfig,
-        DbLaunchSecondaryApp, DbLaunchSecondaryAppPreset, DbLime3dsLayout,
-        DbMainAppAutomaticWindowing, DbMelonDSLayout, DbMultiWindow, DbPipelineActionSettings,
-        DbPipelineDefinition, DbSourceFile, DbTopLevelDefinition, DbTouchConfig, DbVirtualScreen,
+        DbDesktopControllerLayoutHack, DbDisplayConfig, DbLaunchSecondaryApp,
+        DbLaunchSecondaryAppPreset, DbLime3dsLayout, DbMainAppAutomaticWindowing, DbMelonDSLayout,
+        DbMultiWindow, DbPipelineActionSettings, DbPipelineDefinition, DbSourceFile,
+        DbTopLevelDefinition, DbTouchConfig, DbVirtualScreen,
     },
 };
 
@@ -28,8 +28,7 @@ impl DbAction {
 
         let transformed = match dtype {
             ActionType::DesktopSessionHandler => {
-                let action = ro.get().primary::<DbDesktopSessionHandler>(id)?;
-                action.map(|a| Action::DesktopSessionHandler(a.into()))
+                Some(Action::DesktopSessionHandler(DesktopSessionHandler)) // Nothing to save in db, so we build the action from the unit struct directly
             }
             ActionType::DisplayConfig => {
                 let action = ro.get().primary::<DbDisplayConfig>(id)?;

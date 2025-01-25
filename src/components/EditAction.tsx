@@ -31,7 +31,6 @@ import {
     LimitedMultiWindowLayout,
     ModePreference,
     MultiWindowLayout,
-    RelativeLocation,
     citraLayoutOptions,
     melonDSLayoutOptions,
     melonDSSizingOptions,

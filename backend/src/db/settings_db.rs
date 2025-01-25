@@ -47,6 +47,8 @@ pub struct MonitorDisplaySettings {
     /// Location of the deck in physical space in relation to the external monitor.
     pub deck_location: RelativeLocation,
     /// The display to make the primary display in KDE (the one with the taskbar).
+    /// If the application launched is single-window, it will appear on the OTHER display,
+    /// to allow the user to access the taskbar, etc. on the `system_display``
     pub system_display: SystemDisplay,
     /// If `true`, the deck screen is enabled. Otherwise, the deck screen is disabled.
     pub deck_is_enabled: bool,
@@ -64,8 +66,10 @@ pub enum SystemDisplay {
 }
 
 /// Database for per-monitor display (and possibly other) settings
+#[derive(derive_more::Debug)]
 pub struct SettingsDb {
-    db_path: PathBuf,
+    #[debug(skip)]
+    db: Database<'static>,
 }
 
 impl SettingsDb {
@@ -82,7 +86,11 @@ impl SettingsDb {
             create_dir_all(parent).expect("should be able to create db dir");
         }
 
-        let mut db = if db_path.is_file() {
+        let mut db = if db_path.to_string_lossy() == "memory" {
+            native_db::Builder::new()
+                .create_in_memory(&MODELS)
+                .expect("should be able to create in-memory db")
+        } else if db_path.is_file() {
             native_db::Builder::new()
                 .open(&MODELS, db_path)
                 .expect("should be able to open settings db")
@@ -100,28 +108,13 @@ impl SettingsDb {
 
         db.compact().expect("db compact should succeed");
 
-        // We store the path, and reinitialize the DB on every op
-        // to ensure the DB isn't in use in the background,
-        // in the server process when the autostart process is
-        // live, since it needs to be used both the server and autostart
-        // processes, and the DB isn't process safe.
-        // This won't be adequate long-term, if the plugin ever needs
-        // to run the server UI in desktop mode, but its decent enough
-        // for now.
-        Self {
-            db_path: db_path.to_path_buf(),
-        }
+        Self { db }
     }
 }
 
 impl SettingsDb {
-    fn load_db(&self) -> Result<Database, native_db::db_type::Error> {
-        native_db::Builder::new().open(&MODELS, &self.db_path)
-    }
-
     pub fn get_monitor_display_settings(&self) -> Result<Vec<MonitorDisplaySettings>> {
-        let db = self.load_db()?;
-        let r = db.r_transaction()?;
+        let r = self.db.r_transaction()?;
 
         let mut settings: Vec<MonitorDisplaySettings> = r
             .scan()
@@ -142,9 +135,7 @@ impl SettingsDb {
     ) -> Result<()> {
         settings.last_updated_at = SystemTime::now();
 
-        let db = self.load_db()?;
-
-        let rw = db.rw_transaction()?;
+        let rw = self.db.rw_transaction()?;
         rw.upsert::<DbMonitorDisplaySettings>(settings.into())?;
         rw.commit()?;
         Ok(())

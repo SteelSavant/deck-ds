@@ -26,24 +26,25 @@ use crate::{
         action::session_handler::DesktopSessionHandler,
         data::{BtnChord, Pipeline, PipelineDefinition, PipelineTarget, PressType},
     },
+    settings_db::SettingsDb,
     util::create_dir_all,
     PACKAGE_NAME,
 };
 
-pub struct PathLocator {
+#[derive(Debug)]
+pub struct ConfigLocator {
     // Path vars
     system_autostart_dir: PathBuf,
     global_config_path: PathBuf,
     autostart_path: PathBuf,
     exe_path: PathBuf,
     env_source_path: PathBuf,
+    settings_db_path: PathBuf,
 }
 
 #[serde_as]
 #[derive(Debug, SmartDefault, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct GlobalConfig {
-    #[serde_as(deserialize_as = "DefaultOnError")]
-    pub display_restoration: DesktopSessionHandler,
     #[default(false)]
     pub restore_displays_if_not_executing_pipeline: bool,
     /// If true, inject buttons onto app action bar
@@ -74,15 +75,21 @@ pub struct GlobalConfig {
     pub use_nonsteam_desktop_controller_layout_hack: bool,
 }
 
-impl PathLocator {
-    pub fn new<P: AsRef<Path>>(exe_path: P, decky_env: &DeckyEnv) -> Self {
+impl ConfigLocator {
+    pub fn new<P: AsRef<Path>>(exe_path: P, settings_db_path: P, decky_env: &DeckyEnv) -> Self {
         Self {
             autostart_path: decky_env.decky_plugin_runtime_dir.join("autostart.json"),
             global_config_path: decky_env.decky_plugin_settings_dir.join("config.json"),
             system_autostart_dir: decky_env.deck_user_home.join(".config/autostart"),
             env_source_path: decky_env.decky_env_path().clone(),
             exe_path: exe_path.as_ref().to_owned(),
+            settings_db_path: settings_db_path.as_ref().to_owned(),
         }
+    }
+    // SettingsDb
+
+    pub fn get_settings_db(&self) -> SettingsDb {
+        SettingsDb::new(&self.settings_db_path)
     }
 
     // File data
@@ -232,14 +239,15 @@ mod tests {
 
     use pretty_assertions::assert_eq;
 
-    use crate::{consts::PACKAGE_NAME, decky_env::DeckyEnv, config::PathLocator};
+    use crate::{config::ConfigLocator, consts::PACKAGE_NAME, decky_env::DeckyEnv};
 
     #[test]
     fn test_desktop_contents_correct() {
-        let settings = PathLocator::new(
+        let settings = ConfigLocator::new(
             Path::new("test/out/homebrew/plugins")
                 .join(PACKAGE_NAME)
                 .join("bin/backend"),
+            Path::new("memory").to_path_buf(),
             &DeckyEnv::new_test("desktop_contents"),
         );
 

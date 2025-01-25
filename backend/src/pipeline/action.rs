@@ -174,7 +174,7 @@ impl Action {
     pub fn cloned_with_id(&self, id: ActionId) -> Self {
         match self {
             Action::DesktopSessionHandler(a) => {
-                Action::DesktopSessionHandler(DesktopSessionHandler { id, ..*a })
+                Action::DesktopSessionHandler(DesktopSessionHandler { ..*a })
             }
             Action::DisplayConfig(a) => Action::DisplayConfig(DisplayConfig { id, ..a.clone() }),
             Action::TouchConfig(a) => Action::TouchConfig(TouchConfig { id, ..a.clone() }),

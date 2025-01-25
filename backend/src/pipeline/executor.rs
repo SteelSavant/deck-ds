@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use either::Either;
+use log_panics::Config;
 use nix::unistd::Pid;
 use steamdeck_controller_hidraw::{SteamDeckDevice, SteamDeckGamepadButton};
 use type_reg::untagged::{TypeMap as SerdeMap, TypeReg};
@@ -9,11 +10,11 @@ use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::process::Command;
 use std::str::FromStr;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use typemap_ors::{Key, TypeMap};
 
-use crate::config::{AppId, GameId, GlobalConfig, SteamLaunchInfo};
+use crate::config::{AppId, ConfigLocator, GameId, GlobalConfig, SteamLaunchInfo};
 use crate::decky_env::DeckyEnv;
 use crate::pipeline::action::cemu_audio::CemuAudio;
 use crate::pipeline::action::cemu_layout::CemuLayout;
@@ -34,6 +35,7 @@ use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::action::{ActionImpl, ActionType};
 use crate::pipeline::data::RuntimeSelection;
 use crate::secondary_app::SecondaryAppManager;
+use crate::settings_db::SettingsDb;
 use crate::sys::app_process::AppProcess;
 use crate::sys::kwin::screen_tracking::KWinScreenTrackingScope;
 use crate::sys::kwin::{next_active_window, KWin};
@@ -56,6 +58,9 @@ type OnLaunchCallback = Box<dyn FnOnce(Pid, &mut PipelineContext) -> Result<()>>
 pub struct PipelineContext {
     /// Decky environment variables for the session
     pub decky_env: Arc<DeckyEnv>,
+    /// Config
+    pub global_config: GlobalConfig,
+    pub settings_db: SettingsDb,
     /// KWin script handler
     #[debug(skip)]
     pub kwin: KWin,
@@ -68,7 +73,6 @@ pub struct PipelineContext {
     #[debug(skip)]
     pub secondary_app: SecondaryAppManager,
     pub launch_info: Option<SteamLaunchInfo>,
-    pub global_config: GlobalConfig,
     /// actions that have run
     have_run: Vec<Action>,
     /// pipeline state
@@ -93,6 +97,7 @@ impl PipelineContext {
     pub fn new(
         launch_info: Option<SteamLaunchInfo>,
         global_config: GlobalConfig,
+        settings_db: SettingsDb,
         decky_env: Arc<DeckyEnv>,
     ) -> Self {
         PipelineContext {
@@ -112,6 +117,7 @@ impl PipelineContext {
             launch_info,
             decky_env,
             global_config,
+            settings_db,
         }
     }
 
@@ -119,8 +125,13 @@ impl PipelineContext {
         self.on_launch_callbacks.push(callback);
     }
 
-    pub fn load(global_config: GlobalConfig, decky_env: Arc<DeckyEnv>) -> Result<Option<Self>> {
-        let mut default: PipelineContext = PipelineContext::new(None, global_config, decky_env);
+    pub fn load(
+        global_config: GlobalConfig,
+        settings_db: SettingsDb,
+        decky_env: Arc<DeckyEnv>,
+    ) -> Result<Option<Self>> {
+        let mut default: PipelineContext =
+            PipelineContext::new(None, global_config, settings_db, decky_env);
 
         let persisted = std::fs::read_to_string(default.get_state_path()).ok();
         let persisted = match persisted {
@@ -444,13 +455,18 @@ impl PipelineExecutor {
         target: PipelineTarget,
         decky_env: Arc<DeckyEnv>,
         launch_info: SteamLaunchInfo,
-        global_config: GlobalConfig,
+        config: &ConfigLocator,
     ) -> Result<Self> {
         let s = Self {
             game_id,
             pipeline: Some(pipeline),
             target,
-            ctx: PipelineContext::new(Some(launch_info), global_config, decky_env),
+            ctx: PipelineContext::new(
+                Some(launch_info),
+                config.get_global_cfg(),
+                config.get_settings_db(),
+                decky_env,
+            ),
         };
 
         Ok(s)
@@ -722,14 +738,15 @@ mod tests {
 
         let decky_env = Arc::new(DeckyEnv::new_test("ctx_serde"));
 
-        let mut ctx = PipelineContext::new(None, Default::default(), decky_env.clone());
+        let mut ctx = PipelineContext::new(
+            None,
+            Default::default(),
+            SettingsDb::new("memory"),
+            decky_env.clone(),
+        );
 
         let actions: Vec<Action> = vec![
-            DesktopSessionHandler {
-                id: ActionId::nil(),
-            }
-            .clone()
-            .into(),
+            DesktopSessionHandler.clone().into(),
             VirtualScreen {
                 id: ActionId::nil(),
             }
@@ -825,9 +842,13 @@ mod tests {
 
         ctx.persist()?;
 
-        let loaded = PipelineContext::load(Default::default(), decky_env.clone())
-            .with_context(|| "Persisted context should load")?
-            .with_context(|| "Persisted context should exist")?;
+        let loaded = PipelineContext::load(
+            Default::default(),
+            SettingsDb::new("memory"),
+            decky_env.clone(),
+        )
+        .with_context(|| "Persisted context should load")?
+        .with_context(|| "Persisted context should exist")?;
 
         for (expected_action, actual_action) in ctx.have_run.iter().zip(loaded.have_run.iter()) {
             assert_eq!(expected_action, actual_action);

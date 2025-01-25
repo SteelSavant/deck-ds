@@ -86,7 +86,6 @@ export {
     PipelineTarget,
     ReifyPipelineRequest,
     ReifyPipelineResponse,
-    RelativeLocation,
     RuntimeSelection,
     SecondaryAppWindowingBehavior,
     SetProfileRequest,

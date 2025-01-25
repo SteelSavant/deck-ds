@@ -3,12 +3,12 @@ use std::path::PathBuf;
 use native_db::transaction::{RTransaction, RwTransaction};
 use native_db::Database;
 
+use crate::config::AppId;
+use crate::config::AppProfile;
 use crate::pipeline::action_registar::PipelineActionRegistrar;
 use crate::pipeline::data::PipelineDefinition;
 use crate::pipeline::data::Template;
 use crate::pipeline::data::TemplateId;
-use crate::config::AppId;
-use crate::config::AppProfile;
 use crate::util::create_dir_all;
 
 use self::model::{DbAppOverride, DbAppSettings, MODELS};
@@ -40,7 +40,11 @@ impl ProfileDb {
             create_dir_all(parent).expect("should be able to create db dir");
         }
 
-        let mut db = if db_path.is_file() {
+        let mut db = if db_path.to_string_lossy() == "memory" {
+            native_db::Builder::new()
+                .create_in_memory(&MODELS)
+                .expect("should be able to create in-memory db")
+        } else if db_path.is_file() {
             native_db::Builder::new()
                 .open(&MODELS, db_path)
                 .expect("should be able to open profile db")
@@ -208,15 +212,7 @@ mod tests {
     fn test_profile_crud() -> Result<()> {
         let registrar = PipelineActionRegistrar::builder().with_core().build();
 
-        let path: PathBuf = "test/out/.config/deck-ds/profile_crud.db".into();
-        if path.exists() {
-            std::fs::remove_file(&path)?;
-        }
-
-        let parent = path.parent().unwrap();
-        create_dir_all(parent).unwrap();
-
-        let db = ProfileDb::new(path.clone(), registrar.clone());
+        let db = ProfileDb::new("memory".into(), registrar.clone());
 
         let pipeline_action_id = PipelineActionId::new("core:citra:layout");
 
@@ -301,7 +297,6 @@ mod tests {
 
         assert!(db.get_profile(&expected.id)?.is_none());
 
-        std::fs::remove_file(path)?;
         Ok(())
     }
 
@@ -309,15 +304,7 @@ mod tests {
     fn test_app_crud() -> Result<()> {
         let registrar = PipelineActionRegistrar::builder().with_core().build();
 
-        let path: PathBuf = "test/out/.config/deck-ds/app_crud.db".into();
-        if path.exists() {
-            std::fs::remove_file(&path)?;
-        }
-
-        let parent = path.parent().unwrap();
-        create_dir_all(parent).unwrap();
-
-        let db = ProfileDb::new(path.clone(), registrar.clone());
+        let db = ProfileDb::new("memory".into(), registrar.clone());
 
         let app_id = AppId::new("appid");
         let pd_id_1 = PipelineDefinitionId::new();
@@ -411,8 +398,6 @@ mod tests {
             expected.overrides[&profile2].platform.actions.actions[&targets2],
             actual.overrides[&profile2].platform.actions.actions[&targets2]
         );
-
-        std::fs::remove_file(&path)?;
 
         Ok(())
     }

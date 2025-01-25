@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use anyhow::Result;
 
 use crate::{
-    config::{AppId, AppProfile, CategoryProfile, ProfileId},
+    config::{AppId, AppProfile, CategoryProfile, ConfigLocator, ProfileId},
     decky_env::DeckyEnv,
     pipeline::{
         action::{Action, ActionId, ErasedPipelineAction},
@@ -22,6 +22,7 @@ use crate::{
         executor::PipelineContext,
     },
     profile_db::ProfileDb,
+    settings_db::{self, SettingsDb},
 };
 
 use super::{
@@ -537,6 +538,7 @@ pub fn reify_pipeline(
     request_handler: Arc<Mutex<RequestHandler>>,
     profiles: &'static ProfileDb,
     registrar: PipelineActionRegistrar,
+    config: Arc<ConfigLocator>,
     decky_env: Arc<DeckyEnv>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args: super::ApiParameterType| {
@@ -552,8 +554,14 @@ pub fn reify_pipeline(
         match args {
             Ok(args) => match profiles.get_profiles() {
                 Ok(profiles) => {
-                    let ctx =
-                        &mut PipelineContext::new(None, Default::default(), decky_env.clone());
+                    let settings_db = config.get_settings_db();
+
+                    let ctx = &mut PipelineContext::new(
+                        None,
+                        Default::default(),
+                        settings_db,
+                        decky_env.clone(),
+                    );
                     let res = args.pipeline.reify(&profiles, ctx, &registrar);
 
                     match res {

@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use client_pipeline::ClientPipelineHandler;
+use pipeline::action::session_handler::DesktopSessionHandler;
 use profile_db::ProfileDb;
 
 use std::{
@@ -19,7 +20,7 @@ use usdpl_back::Instance;
 use crate::{
     api::{request_handler::RequestHandler, Api},
     autostart::AutoStart,
-    config::PathLocator,
+    config::ConfigLocator,
     consts::{PACKAGE_NAME, PACKAGE_VERSION, PORT},
     decky_env::DeckyEnv,
     pipeline::{action_registar::PipelineActionRegistrar, executor::PipelineContext},
@@ -97,7 +98,9 @@ fn main() -> Result<()> {
     );
 
     let log_filepath = decky_env.decky_plugin_log_dir.join(log_file_name);
-    let paths = PathLocator::new(env::current_exe()?, &decky_env);
+
+    let settings_db_path = decky_env.decky_plugin_runtime_dir.join("settings.db");
+    let config = ConfigLocator::new(env::current_exe()?, settings_db_path, &decky_env);
 
     WriteLogger::init(
         #[cfg(debug_assertions)]
@@ -106,7 +109,7 @@ fn main() -> Result<()> {
         },
         #[cfg(not(debug_assertions))]
         {
-            match paths.get_global_cfg().log_level {
+            match config.get_global_cfg().log_level {
                 1 => LevelFilter::Trace,
                 2 => LevelFilter::Debug,
                 3 => LevelFilter::Info,
@@ -156,9 +159,7 @@ fn main() -> Result<()> {
 
     let registrar = PipelineActionRegistrar::builder().with_core().build();
 
-    let global_config = paths.get_global_cfg();
-
-    let settings = Arc::new(Mutex::new(paths));
+    let config = Arc::new(config);
 
     let request_handler = Arc::new(Mutex::new(RequestHandler::new()));
     let secondary_app_manager = SecondaryAppManager::new(decky_env.asset_manager());
@@ -166,7 +167,11 @@ fn main() -> Result<()> {
         Arc::new(Mutex::new(ClientPipelineHandler::new(decky_env.clone())));
 
     // teardown persisted state
-    match PipelineContext::load(global_config, decky_env.clone()) {
+    match PipelineContext::load(
+        config.get_global_cfg(),
+        config.get_settings_db(),
+        decky_env.clone(),
+    ) {
         Ok(Some(mut loaded)) => {
             log::info!("Tearing down last executed pipeline");
             // TODO::this will cause display-dependent actions to automatically fail, but
@@ -179,23 +184,17 @@ fn main() -> Result<()> {
 
     match mode {
         AppModes::Autostart { .. } => {
-            let global_config = settings.lock().unwrap().get_global_cfg();
-
             // build the executor
-            let executor = AutoStart::new(settings.clone())
+            let executor = AutoStart::new(config.clone())
                 .load()
-                .map(|l| l.build_executor(global_config.clone(), decky_env.clone()));
+                .map(|l| l.build_executor(&config, decky_env.clone()));
 
-            let thread_settings = settings.clone();
+            let thread_settings = config.clone();
 
             std::thread::spawn(move || loop {
                 // Ensure the autostart config gets removed, to avoid launching old configs
                 {
-                    let lock = thread_settings
-                        .lock()
-                        .expect("settings mutex should be able to lock");
-
-                    match lock.delete_autostart_cfg() {
+                    match thread_settings.delete_autostart_cfg() {
                         Ok(_) => return,
                         Err(err) => {
                             log::error!("Failed to delete autostart config; retrying: {err}")
@@ -226,16 +225,18 @@ fn main() -> Result<()> {
                 None => {
                     log::info!("No autostart pipeline found. Staying on desktop.");
 
-                    let lock = settings
-                        .lock()
-                        .expect("settings mutex should not be poisoned");
+                    let (config, settings_db) =
+                        { (config.get_global_cfg(), config.get_settings_db()) };
 
-                    let config = lock.get_global_cfg();
                     if config.restore_displays_if_not_executing_pipeline {
-                        let ctx =
-                            &mut PipelineContext::new(None, config.clone(), decky_env.clone());
+                        let ctx = &mut PipelineContext::new(
+                            None,
+                            config.clone(),
+                            settings_db,
+                            decky_env.clone(),
+                        );
 
-                        let res = config.display_restoration.desktop_only(ctx);
+                        let res = DesktopSessionHandler.desktop_only(ctx);
                         if let Err(err) = res {
                             log::error!("{err}");
                         }
@@ -325,6 +326,7 @@ fn main() -> Result<()> {
                         request_handler.clone(),
                         profiles_db,
                         registrar.clone(),
+                        config.clone(),
                         decky_env.clone(),
                     ),
                 )
@@ -365,11 +367,11 @@ fn main() -> Result<()> {
                 // settings
                 .register(
                     "get_settings",
-                    crate::api::general::get_settings(settings.clone()),
+                    crate::api::general::get_settings(config.clone()),
                 )
                 .register(
                     "set_settings",
-                    crate::api::general::set_settings(request_handler.clone(), settings.clone()),
+                    crate::api::general::set_settings(request_handler.clone(), config.clone()),
                 )
                 // system info
                 .register("get_display_info", api::general::get_display_info())
@@ -384,7 +386,7 @@ fn main() -> Result<()> {
                         request_handler.clone(),
                         profiles_db,
                         registrar.clone(),
-                        settings.clone(),
+                        config.clone(),
                         decky_env.clone(),
                     ),
                 )

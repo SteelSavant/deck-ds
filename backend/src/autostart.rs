@@ -1,17 +1,18 @@
 use anyhow::Result;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use crate::{
+    config::ConfigLocator,
     decky_env::DeckyEnv,
     pipeline::{
+        action::session_handler::DesktopSessionHandler,
         data::{PipelineAction, PipelineActionId, PipelineTarget, RuntimeSelection, TopLevelId},
         executor::PipelineExecutor,
     },
-    config::{GlobalConfig, PathLocator},
 };
 
 pub struct AutoStart {
-    settings: Arc<Mutex<PathLocator>>,
+    settings: Arc<ConfigLocator>,
 }
 
 #[derive(Debug)]
@@ -21,17 +22,14 @@ pub struct LoadedAutoStart {
 }
 
 impl AutoStart {
-    pub fn new(settings: Arc<Mutex<PathLocator>>) -> Self {
+    pub fn new(settings: Arc<ConfigLocator>) -> Self {
         Self { settings }
     }
 
     pub fn load(self) -> Option<LoadedAutoStart> {
         let autostart = {
-            let settings = self
-                .settings
-                .lock()
-                .expect("settings mutex should be lockable");
-            let config = settings.get_global_cfg();
+            let settings = self.settings;
+
             let autostart = settings.get_autostart_cfg();
             autostart.map(|mut a| {
                 // Add global pipeline actions
@@ -42,7 +40,7 @@ impl AutoStart {
                         RuntimeSelection::AllOf(
                             vec![
                                 // Add core desktop actions
-                                config.display_restoration.into(),
+                                DesktopSessionHandler.into(),
                                 a.pipeline.desktop_controller_layout_hack.into(),
                                 desktop,
                             ]
@@ -84,7 +82,7 @@ impl LoadedAutoStart {
 
     pub fn build_executor(
         self,
-        global_config: GlobalConfig,
+        config: &ConfigLocator,
         decky_env: Arc<DeckyEnv>,
     ) -> Result<PipelineExecutor> {
         PipelineExecutor::new(
@@ -93,7 +91,7 @@ impl LoadedAutoStart {
             self.target,
             decky_env,
             self.autostart.launch_info,
-            global_config,
+            config,
         )
     }
 }

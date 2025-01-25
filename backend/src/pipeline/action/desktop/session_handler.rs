@@ -27,9 +27,7 @@ pub use ui::Size;
 pub use ui::UiEvent;
 
 #[derive(Debug, Copy, Clone, SmartDefault, PartialEq, Serialize, Deserialize, JsonSchema)]
-pub struct DesktopSessionHandler {
-    pub id: ActionId,
-}
+pub struct DesktopSessionHandler;
 
 impl DesktopSessionHandler {
     pub(crate) fn desktop_only(&self, ctx: &mut PipelineContext) -> Result<()> {
@@ -377,6 +375,7 @@ impl ActionImpl for DesktopSessionHandler {
 
     #[inline]
     fn get_id(&self) -> ActionId {
-        self.id
+        // There is no internal config in the struct, so there is no reason to give it an ID to save in the DB to differentiate them
+        ActionId::nil()
     }
 }

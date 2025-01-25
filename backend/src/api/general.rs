@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use usdpl_back::core::serdes::Primitive;
 
 use crate::{
-    config::{GlobalConfig, PathLocator},
+    config::{ConfigLocator, GlobalConfig},
     decky_env::DeckyEnv,
     sys::{
         audio::{get_audio_sinks, get_audio_sources, AudioDeviceInfo},
@@ -26,17 +26,13 @@ pub struct GetSettingsResponse {
 }
 
 pub fn get_settings(
-    settings: Arc<Mutex<PathLocator>>,
+    settings: Arc<ConfigLocator>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args| {
         log_invoke("get_settings", &args);
 
-        let lock = settings
-            .lock()
-            .expect("request handler should not be poisoned");
-
         GetSettingsResponse {
-            global_settings: lock.get_global_cfg(),
+            global_settings: settings.get_global_cfg(),
         }
         .to_response()
     }
@@ -51,7 +47,7 @@ pub struct SetSettingsRequest {
 
 pub fn set_settings(
     request_handler: Arc<Mutex<RequestHandler>>,
-    settings: Arc<Mutex<PathLocator>>,
+    config: Arc<ConfigLocator>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args| {
         log_invoke("set_settings", &args);
@@ -65,10 +61,7 @@ pub fn set_settings(
         };
         match args {
             Ok(args) => {
-                let lock = settings
-                    .lock()
-                    .expect("settings mutex should not be poisoned");
-                let res = lock.set_global_cfg(&args.global_settings);
+                let res = config.set_global_cfg(&args.global_settings);
                 match res {
                     Ok(_) => ResponseOk.to_response(),
                     Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),

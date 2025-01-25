@@ -353,14 +353,16 @@ pub struct DbDesktopSessionHandler {
 }
 
 impl From<DesktopSessionHandler> for DbDesktopSessionHandler {
-    fn from(value: DesktopSessionHandler) -> Self {
-        Self { id: value.id }
+    fn from(_value: DesktopSessionHandler) -> Self {
+        Self {
+            id: ActionId::new(),
+        }
     }
 }
 
 impl From<DbDesktopSessionHandler> for DesktopSessionHandler {
-    fn from(value: DbDesktopSessionHandler) -> Self {
-        Self { id: value.id }
+    fn from(_value: DbDesktopSessionHandler) -> Self {
+        Self
     }
 }
 

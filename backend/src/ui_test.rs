@@ -2,6 +2,7 @@ use anyhow::Result;
 use std::{sync::Arc, time::Duration};
 
 use crate::{
+    config::GlobalConfig,
     decky_env::DeckyEnv,
     pipeline::{
         action::{
@@ -11,16 +12,19 @@ use crate::{
         },
         executor::PipelineContext,
     },
-    config::GlobalConfig,
+    settings_db::SettingsDb,
 };
 
 #[allow(dead_code)]
 pub fn ui_test(decky_env: Arc<DeckyEnv>) -> Result<()> {
-    let ctx = &mut PipelineContext::new(None, GlobalConfig::default(), decky_env);
+    let ctx = &mut PipelineContext::new(
+        None,
+        GlobalConfig::default(),
+        SettingsDb::new("memory"),
+        decky_env,
+    );
 
-    let ui = DesktopSessionHandler {
-        id: ActionId::nil(),
-    };
+    let ui = DesktopSessionHandler;
 
     let vscreen = MultiWindow {
         id: ActionId::nil(),

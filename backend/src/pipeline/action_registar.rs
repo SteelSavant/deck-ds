@@ -319,9 +319,7 @@ impl PipelineActionRegistarBuilder {
                             enabled: None,
                             is_visible_on_qam: false,
                             profile_override: None,
-                            selection: DesktopSessionHandler {
-                                id: ActionId::nil(),
-                            } .into(),
+                            selection: DesktopSessionHandler.into(),
                         },
                     )
                     .with_action(
