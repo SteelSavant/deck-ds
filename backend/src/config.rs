@@ -26,7 +26,7 @@ use crate::{
         action::session_handler::DesktopSessionHandler,
         data::{BtnChord, Pipeline, PipelineDefinition, PipelineTarget, PressType},
     },
-    settings_db::SettingsDb,
+    settings_db::SettingsRepository,
     util::create_dir_all,
     PACKAGE_NAME,
 };
@@ -88,8 +88,8 @@ impl ConfigLocator {
     }
     // SettingsDb
 
-    pub fn get_settings_db(&self) -> SettingsDb {
-        SettingsDb::new(&self.settings_db_path)
+    pub fn get_settings_db(&self) -> SettingsRepository {
+        SettingsRepository::new(&self.settings_db_path)
     }
 
     // File data

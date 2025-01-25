@@ -12,7 +12,7 @@ use crate::{
         },
         executor::PipelineContext,
     },
-    settings_db::SettingsDb,
+    settings_db::SettingsRepository,
 };
 
 #[allow(dead_code)]
@@ -20,7 +20,7 @@ pub fn ui_test(decky_env: Arc<DeckyEnv>) -> Result<()> {
     let ctx = &mut PipelineContext::new(
         None,
         GlobalConfig::default(),
-        SettingsDb::new("memory"),
+        SettingsRepository::new("memory"),
         decky_env,
     );
 

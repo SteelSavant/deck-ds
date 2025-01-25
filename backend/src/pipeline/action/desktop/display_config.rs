@@ -2,9 +2,13 @@ use anyhow::Context;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::pipeline::{
-    action::{ActionId, ActionImpl, ActionType},
-    dependency::Dependency,
+use crate::{
+    pipeline::{
+        action::{ActionId, ActionImpl, ActionType},
+        dependency::Dependency,
+    },
+    settings_db::SystemDisplay,
+    sys::display_info::get_display_info,
 };
 
 pub use super::common::{ExternalDisplaySettings, RelativeLocation};
@@ -30,55 +34,56 @@ impl ActionImpl for DisplayConfig {
             .as_mut()
             .context("DisplayConfig requires x11 to be running")?;
 
+        let display_info = get_display_info()?;
+
         let display_settings = ctx
             .settings_db
-            .get_monitor_display_settings()
-            .unwrap_or_default();
+            .get_monitor_display_settings(&display_info)?;
 
-        let preferred = display.get_preferred_external_output()?;
+        let preferred = display.get_preferred_external_output(&display_settings)?;
+
         let mut embedded = display.get_embedded_output()?;
 
-        // TODO::SETTINGS_REFACTOR
+        if let Some((preferred, monitor_settings)) = preferred.as_ref() {
+            if preferred.connected {
+                match self
+                    .external_display_settings
+                    .unwrap_or(monitor_settings.external_display_settings)
+                {
+                    ExternalDisplaySettings::Previous => Ok(()),
+                    ExternalDisplaySettings::Native => {
+                        let native_mode = display.get_native_mode(preferred)?;
+                        if let Some(mode) = native_mode {
+                            display.set_output_mode(preferred, &mode)
+                        } else {
+                            Ok(())
+                        }
+                    }
+                    ExternalDisplaySettings::Preference(preference) => {
+                        display.set_or_create_preferred_mode(preferred, &preference)
+                    }
+                }?;
 
-        todo!("fix this to work with new global hardware setting");
-
-        // if let Some(preferred) = preferred.as_ref() {
-        //     if preferred.connected {
-        //         match self.external_display_settings {
-        //             ExternalDisplaySettings::Previous => Ok(()),
-        //             ExternalDisplaySettings::Native => {
-        //                 let native_mode = display.get_native_mode(preferred)?;
-        //                 if let Some(mode) = native_mode {
-        //                     display.set_output_mode(preferred, &mode)
-        //                 } else {
-        //                     Ok(())
-        //                 }
-        //             }
-        //             ExternalDisplaySettings::Preference(preference) => {
-        //                 display.set_or_create_preferred_mode(preferred, &preference)
-        //             }
-        //         }?;
-
-        //         if let Some(embedded) = embedded.as_mut() {
-        //             match self.deck_location {
-        //                 Some(location) => {
-        //                     display
-        //                         .reconfigure_embedded(
-        //                             embedded,
-        //                             &location.into(),
-        //                             Some(preferred),
-        //                             self.deck_is_primary_display,
-        //                         )
-        //                         .with_context(|| "reconfigure embedded failed")?;
-        //                 }
-        //                 None => {
-        //                     // TODO:: viewport update for the remaining display
-        //                     display.set_output_enabled(embedded, false)?;
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+                if let Some(embedded) = embedded.as_mut() {
+                    if self
+                        .deck_is_enabled
+                        .unwrap_or(monitor_settings.deck_is_enabled)
+                    {
+                        display
+                            .reconfigure_embedded(
+                                embedded,
+                                &monitor_settings.deck_location.into(),
+                                Some(preferred),
+                                monitor_settings.system_display == SystemDisplay::Embedded,
+                            )
+                            .with_context(|| "reconfigure embedded failed")?;
+                    } else {
+                        // TODO:: viewport update for the remaining display
+                        display.set_output_enabled(embedded, false)?;
+                    }
+                }
+            }
+        }
 
         Ok(())
     }

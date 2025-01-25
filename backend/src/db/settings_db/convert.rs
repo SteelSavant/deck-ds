@@ -1,16 +1,16 @@
 use super::{
-    model::{DbMonitorDisplaySettings, DbPrimaryDisplayLocation},
-    MonitorDisplaySettings, SystemDisplay,
+    model::{DbMonitorDisplaySettings, DbSystemDisplay},
+    MonitorDisplaySetting, SystemDisplay,
 };
 
-impl From<DbMonitorDisplaySettings> for MonitorDisplaySettings {
+impl From<DbMonitorDisplaySettings> for MonitorDisplaySetting {
     fn from(value: DbMonitorDisplaySettings) -> Self {
         Self {
             id: value.id,
             external_display_settings: value.external_display_settings.into(),
             system_display: match value.system_display {
-                DbPrimaryDisplayLocation::External => SystemDisplay::External,
-                DbPrimaryDisplayLocation::Embedded => SystemDisplay::Embedded,
+                DbSystemDisplay::External => SystemDisplay::External,
+                DbSystemDisplay::Embedded => SystemDisplay::Embedded,
             },
             deck_location: value.deck_location.into(),
             deck_is_enabled: value.deck_is_enabled.into(),
@@ -19,14 +19,14 @@ impl From<DbMonitorDisplaySettings> for MonitorDisplaySettings {
     }
 }
 
-impl From<MonitorDisplaySettings> for DbMonitorDisplaySettings {
-    fn from(value: MonitorDisplaySettings) -> Self {
+impl From<MonitorDisplaySetting> for DbMonitorDisplaySettings {
+    fn from(value: MonitorDisplaySetting) -> Self {
         Self {
             id: value.id,
             external_display_settings: value.external_display_settings.into(),
             system_display: match value.system_display {
-                SystemDisplay::External => DbPrimaryDisplayLocation::External,
-                SystemDisplay::Embedded => DbPrimaryDisplayLocation::Embedded,
+                SystemDisplay::External => DbSystemDisplay::External,
+                SystemDisplay::Embedded => DbSystemDisplay::Embedded,
             },
             deck_location: value.deck_location.into(),
             deck_is_enabled: value.deck_is_enabled.into(),

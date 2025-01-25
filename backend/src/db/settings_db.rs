@@ -1,4 +1,6 @@
 use anyhow::Result;
+use edid::EDID;
+use itertools::Itertools;
 use schemars::JsonSchema;
 use std::{
     path::{Path, PathBuf},
@@ -6,7 +8,7 @@ use std::{
 };
 
 use migrate::migrate;
-use model::{DbMonitorDisplaySettings, MODELS};
+use model::{DbEmbeddedDisplaySettings, DbMonitorDisplaySettings, MODELS};
 use native_db::Database;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, TimestampMicroSeconds};
@@ -28,19 +30,66 @@ newtype_strid!(
 );
 
 impl MonitorId {
+    pub const UNKNOWN_STR: &'static str = "Unknown";
+
     pub fn from_display_info(info: &DisplayInfo) -> Self {
-        Self::new(&format!("{}-{}", info.model, info.serial))
+        let largest_mode = info.display_modes.first();
+        let width = largest_mode.map(|v| v.width).unwrap_or_default();
+        let height = largest_mode.map(|v| v.height).unwrap_or_default();
+
+        Self::new(&Self::format_id(&info.model, &info.serial, width, height))
+    }
+
+    pub fn from_edid(edid: &EDID, max_width: u32, max_height: u32) -> Self {
+        let mut serial = None;
+        let mut model = None;
+
+        for d in &edid.descriptors {
+            match d {
+                edid::Descriptor::SerialNumber(s) => serial = Some(s),
+                edid::Descriptor::ProductName(p) => model = Some(p),
+                _ => (),
+            }
+        }
+
+        Self::new(&Self::format_id(
+            &model.unwrap_or(&Self::UNKNOWN_STR.to_string()),
+            &serial.unwrap_or(&Self::UNKNOWN_STR.to_string()),
+            max_width,
+            max_height,
+        ))
+    }
+
+    fn format_id(model: &str, serial: &str, max_width: u32, max_height: u32) -> String {
+        format!("{}-{}_{}x{}", model, serial, max_width, max_height)
     }
 }
 
-#[serde_as]
-#[derive(Serialize, Deserialize, JsonSchema)]
+impl Default for MonitorId {
+    fn default() -> Self {
+        Self::new(&Self::format_id(
+            Self::UNKNOWN_STR,
+            Self::UNKNOWN_STR,
+            Default::default(),
+            Default::default(),
+        ))
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct MonitorDisplaySettings {
+    pub embedded_display_id: Option<MonitorId>,
+    pub monitor_display_settings: Vec<MonitorDisplaySetting>,
+}
+
 /// Display settings for an individual monitor.
 ///
 /// The following fields can be overridden by profiles:
 /// - deck_is_enabled,
 /// - external_display_settings
-pub struct MonitorDisplaySettings {
+#[serde_as]
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+pub struct MonitorDisplaySetting {
     pub id: MonitorId,
     /// Display settings for the external monitor.
     pub external_display_settings: ExternalDisplaySettings,
@@ -57,9 +106,23 @@ pub struct MonitorDisplaySettings {
     /// of the available monitors.
     #[serde_as(as = "TimestampMicroSeconds<i64>")]
     pub last_updated_at: SystemTime,
+    // TODO::add settings for calibration, like associated touch device, and whether or not the display is calibrated
 }
 
-#[derive(Serialize, Deserialize, JsonSchema)]
+impl Default for MonitorDisplaySetting {
+    fn default() -> Self {
+        Self {
+            id: Default::default(),
+            external_display_settings: Default::default(),
+            deck_location: Default::default(),
+            system_display: SystemDisplay::Embedded,
+            deck_is_enabled: true,
+            last_updated_at: SystemTime::UNIX_EPOCH,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub enum SystemDisplay {
     External,
     Embedded,
@@ -67,12 +130,12 @@ pub enum SystemDisplay {
 
 /// Database for per-monitor display (and possibly other) settings
 #[derive(derive_more::Debug)]
-pub struct SettingsDb {
+pub struct SettingsRepository {
     #[debug(skip)]
     db: Database<'static>,
 }
 
-impl SettingsDb {
+impl SettingsRepository {
     pub fn new<P>(db_path: P) -> Self
     where
         P: AsRef<Path>,
@@ -112,11 +175,42 @@ impl SettingsDb {
     }
 }
 
-impl SettingsDb {
-    pub fn get_monitor_display_settings(&self) -> Result<Vec<MonitorDisplaySettings>> {
-        let r = self.db.r_transaction()?;
+impl SettingsRepository {
+    /// Gets the stored display settings.
+    /// Will guess an embedded display from the `display_info` if none is present.
+    /// All items in `display_info` that do not match the embedded display, and
+    /// are not in the stored settings, will be added to the stored settings
+    pub fn get_monitor_display_settings(
+        &self,
+        display_info: &[DisplayInfo],
+    ) -> Result<MonitorDisplaySettings> {
+        let rw = self.db.rw_transaction()?;
 
-        let mut settings: Vec<MonitorDisplaySettings> = r
+        // Find best embedded display candidate
+
+        let embedded_display_settings = rw
+            .get()
+            .primary::<DbEmbeddedDisplaySettings>(DbEmbeddedDisplaySettings::KEY)?;
+
+        let maybe_embedded_display = display_info
+            .iter()
+            .find(|v| v.sys_path.to_string_lossy().contains("eDP"))
+            .or_else(|| display_info.last());
+
+        let embedded_id = embedded_display_settings
+            .map(|v| v.embedded_display_id)
+            .or_else(|| maybe_embedded_display.map(|v| MonitorId::from_display_info(v)));
+
+        // insert best candidate as
+        if embedded_id.is_none() {
+            if let Some(info) = maybe_embedded_display {
+                rw.upsert(DbEmbeddedDisplaySettings::new(info.get_id()));
+            }
+        }
+
+        // Load existing settings
+
+        let mut settings: Vec<MonitorDisplaySetting> = rw
             .scan()
             .primary::<DbMonitorDisplaySettings>()?
             .all()?
@@ -124,14 +218,42 @@ impl SettingsDb {
             .map(|v| Ok(v?))
             .collect::<Result<Vec<_>>>()?;
 
+        // Add missing settings
+
+        let missing = display_info
+            .iter()
+            .map(|v| MonitorId::from_display_info(&v))
+            .filter(|v| !settings.iter().any(|s| s.id == *v))
+            .collect_vec();
+
+        for m in missing {
+            settings.push(MonitorDisplaySetting {
+                id: m,
+                ..Default::default()
+            });
+        }
+
+        // Sort and filter settings by extant devices
+
+        settings = settings
+            .into_iter()
+            .filter(|v| {
+                Some(&v.id) != embedded_id.as_ref()
+                    && display_info.iter().any(|d| d.get_id() == v.id)
+            })
+            .collect();
+
         settings.sort_by(|a, b| b.last_updated_at.cmp(&a.last_updated_at));
 
-        Ok(settings)
+        Ok(MonitorDisplaySettings {
+            embedded_display_id: embedded_id,
+            monitor_display_settings: settings,
+        })
     }
 
     pub fn set_monitor_display_setting(
         &mut self,
-        mut settings: MonitorDisplaySettings,
+        mut settings: MonitorDisplaySetting,
     ) -> Result<()> {
         settings.last_updated_at = SystemTime::now();
 
@@ -140,9 +262,23 @@ impl SettingsDb {
         rw.commit()?;
         Ok(())
     }
+
+    pub fn set_embedded_monitor_setting(&mut self, id: MonitorId) -> Result<()> {
+        let rw = self.db.rw_transaction()?;
+        let item = rw.get().primary::<DbMonitorDisplaySettings>(id.clone())?;
+        if let Some(item) = item {
+            let _ = rw.remove(item);
+        }
+
+        rw.upsert(DbEmbeddedDisplaySettings::new(id));
+
+        rw.commit()?;
+        Ok(())
+    }
 }
 
 /*
+TODO::
 
 Fixed Hardware Settings
 - Deck Screen Location

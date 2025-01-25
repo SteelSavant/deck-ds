@@ -22,7 +22,7 @@ use crate::{
         executor::PipelineContext,
     },
     profile_db::ProfileDb,
-    settings_db::{self, SettingsDb},
+    settings_db::{self, SettingsRepository},
 };
 
 use super::{

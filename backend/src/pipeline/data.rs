@@ -672,7 +672,7 @@ mod tests {
     use crate::{
         pipeline::{action_registar::PipelineActionRegistrar, data::actions_have_target},
         profile_db::ProfileDb,
-        settings_db::SettingsDb,
+        settings_db::SettingsRepository,
     };
 
     use super::*;
@@ -682,7 +682,7 @@ mod tests {
         let registrar = PipelineActionRegistrar::builder().with_core().build();
         let profiles = ProfileDb::new("memory".into(), registrar);
 
-        let settings: SettingsDb = SettingsDb::new("memory");
+        let settings: SettingsRepository = SettingsRepository::new("memory");
 
         let registrar = PipelineActionRegistrar::builder().with_core().build();
         let ctx = &mut PipelineContext::new(None, Default::default(), settings, Default::default());
@@ -740,8 +740,8 @@ mod tests {
     fn test_melonds_default_version_reification() -> Result<()> {
         let root = PipelineActionId("core:melonds:version".into());
         let registrar = PipelineActionRegistrar::builder().with_core().build();
-        let settings: SettingsDb =
-            SettingsDb::new("test/out/.config/DeckDS/template_reification.db");
+        let settings: SettingsRepository =
+            SettingsRepository::new("test/out/.config/DeckDS/template_reification.db");
 
         let pipeline_cxt =
             &mut PipelineContext::new(None, Default::default(), settings, Default::default());

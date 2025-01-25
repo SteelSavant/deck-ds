@@ -1,6 +1,7 @@
 use std::{cmp::Ordering, process::Command, str::FromStr, time::Duration};
 
 use float_cmp::approx_eq;
+use itertools::Itertools;
 use regex::Regex;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -9,9 +10,17 @@ use xrandr::{Mode, Output, Relation, ScreenResources, XHandle, XId};
 
 use anyhow::{Context, Result};
 
-use crate::pipeline::action::session_handler::{Pos, Size, UiEvent};
+use crate::{
+    pipeline::action::{
+        display_config::ExternalDisplaySettings,
+        session_handler::{Pos, Size, UiEvent},
+    },
+    settings_db::{MonitorDisplaySetting, MonitorDisplaySettings, MonitorId},
+};
 
 use self::x_display_handle::XDisplayHandle;
+
+use super::display_info::DisplayMode;
 
 mod x_display_handle;
 pub mod x_touch;
@@ -88,27 +97,43 @@ impl XDisplay {
 
     // TODO::allow user to select target output.
     /// Gets the preferred output, ignoring the steam decks embedded display. Chooses primary enabled output if available, otherwise largest.
-    pub fn get_preferred_external_output(&mut self) -> Result<Option<Output>> {
+    pub fn get_preferred_external_output(
+        &mut self,
+        prefs: &MonitorDisplaySettings,
+    ) -> Result<Option<(Output, MonitorDisplaySetting)>> {
         let external = {
-            let mut maybe_external = self.get_preferred_external_output_maybe_disconnected()?;
+            let mut maybe_external =
+                self.get_preferred_external_output_maybe_disconnected(prefs)?;
 
             let mut fail_count = 0;
             const MAX_FAIL_COUNT: u16 = 150;
             while fail_count <= MAX_FAIL_COUNT {
                 if let Some(external) = maybe_external {
-                    if external.connected {
+                    let pref = prefs
+                        .monitor_display_settings
+                        .iter()
+                        .find(|p| p.id == external.1)
+                        .map(|v| v.clone())
+                        .unwrap_or_else(|| MonitorDisplaySetting {
+                            id: external.1,
+                            ..Default::default()
+                        });
+
+                    let out = (external.0, pref);
+                    if out.0.connected {
                         log::debug!("Returning connected external output");
 
-                        return Ok(Some(external));
+                        return Ok(Some(out));
                     } else if fail_count == MAX_FAIL_COUNT {
                         log::debug!("Returning disconnected external output");
 
-                        return Ok(Some(external));
+                        return Ok(Some(out));
                     }
 
                     fail_count += 1;
                     thread::sleep(Duration::from_millis(100));
-                    maybe_external = self.get_preferred_external_output_maybe_disconnected()?;
+                    maybe_external =
+                        self.get_preferred_external_output_maybe_disconnected(&prefs)?;
                 }
             }
 
@@ -117,29 +142,98 @@ impl XDisplay {
             maybe_external
         };
 
-        Ok(external)
+        Ok(external.map(|v| {
+            let pref = prefs
+                .monitor_display_settings
+                .iter()
+                .find(|p| p.id == v.1)
+                .map(|v| v.clone())
+                .unwrap_or_else(|| MonitorDisplaySetting {
+                    id: v.1,
+                    ..Default::default()
+                });
+
+            (v.0, pref)
+        }))
     }
 
-    fn get_preferred_external_output_maybe_disconnected(&mut self) -> Result<Option<Output>> {
-        let mut outputs: Vec<Output> = self.xrandr_handle.all_outputs()?;
+    fn get_preferred_external_output_maybe_disconnected(
+        &mut self,
+        prefs: &MonitorDisplaySettings,
+    ) -> Result<Option<(Output, MonitorId)>> {
+        let screen = ScreenResources::new(&mut self.xrandr_handle)?;
+
+        let mut outputs: Vec<_> = self
+            .xrandr_handle
+            .all_outputs()?
+            .into_iter()
+            .map(|o| {
+                let id = o
+                    .edid()
+                    .and_then(|v| edid::parse(&v).to_result().ok())
+                    .map(|v| {
+                        let mode = o
+                            .modes
+                            .iter()
+                            .map(|v| screen.mode(*v))
+                            .filter_map(|m| m.ok())
+                            .into_iter()
+                            .map(|v| DisplayMode {
+                                width: v.width,
+                                height: v.height,
+                            })
+                            .sorted()
+                            .rev()
+                            .next();
+                        let width = mode.map(|v| v.width).unwrap_or_default();
+                        let height = mode.map(|v| v.height).unwrap_or_default();
+
+                        MonitorId::from_edid(&v, width, height)
+                    })
+                    .unwrap_or_default();
+                (o, id)
+            })
+            .collect();
 
         outputs.sort_by(|a, b| {
-            let is_primary = a.is_primary.cmp(&b.is_primary);
-            if is_primary == Ordering::Equal {
-                let has_mode = a.current_mode.is_some().cmp(&b.current_mode.is_some());
-                if has_mode == Ordering::Equal {
-                    (a.mm_height * a.mm_width).cmp(&(b.mm_height * b.mm_width))
-                } else {
-                    has_mode
-                }
+            let a_index = prefs
+                .monitor_display_settings
+                .iter()
+                .find_position(|v| v.id == a.1)
+                .map(|v| v.0);
+            let b_index = prefs
+                .monitor_display_settings
+                .iter()
+                .find_position(|v| v.id == b.1)
+                .map(|v| v.0);
+
+            let is_pref = a_index.cmp(&b_index);
+            if is_pref != Ordering::Equal {
+                return is_pref;
+            }
+
+            let is_primary = a.0.is_primary.cmp(&b.0.is_primary);
+            if is_primary != Ordering::Equal {
+                return is_primary;
+            }
+
+            let has_mode = a.0.current_mode.is_some().cmp(&b.0.current_mode.is_some());
+            if has_mode == Ordering::Equal {
+                (a.0.mm_height * a.0.mm_width).cmp(&(b.0.mm_height * b.0.mm_width))
             } else {
-                is_primary
+                has_mode
             }
         });
 
         Ok(outputs
             .into_iter()
-            .filter_map(|o| if o.name == "eDP" { None } else { Some(o) })
+            .filter_map(|o| {
+                if Some(&o.1) == prefs.embedded_display_id.as_ref() {
+                    None
+                } else {
+                    Some(o)
+                }
+            })
             .next())
     }
 

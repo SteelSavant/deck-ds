@@ -1,4 +1,7 @@
-use std::{cmp::Ordering, path::Path};
+use std::{
+    cmp::Ordering,
+    path::{Path, PathBuf},
+};
 
 use anyhow::Result;
 use edid::EDID;
@@ -6,18 +9,46 @@ use itertools::Itertools;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+use crate::settings_db::MonitorId;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct DisplayInfo {
     pub model: String,
     pub serial: String,
     pub display_modes: Vec<DisplayMode>,
+    /// Path to the device folder on the system
+    pub sys_path: PathBuf,
+}
+
+impl DisplayInfo {
+    pub fn get_id(&self) -> MonitorId {
+        MonitorId::from_display_info(self)
+    }
+}
+
+impl PartialOrd for DisplayInfo {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for DisplayInfo {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let ord = self.display_modes.first().cmp(&other.display_modes.first());
+
+        if ord != Ordering::Equal {
+            return ord;
+        }
+
+        self.sys_path.cmp(&other.sys_path)
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct DisplayMode {
-    width: u16,
-    height: u16,
-    refresh: Option<f32>, // can't fetch it now, but I'd like to in the future if possible
+    pub width: u32,
+    pub height: u32,
+    // pub refresh: Option<f64>,
 }
 
 impl Eq for DisplayMode {}
@@ -37,12 +68,12 @@ impl Ord for DisplayMode {
             Ordering::Less
         } else if area > other_area {
             Ordering::Greater
-        } else if self.refresh < other.refresh {
-            Ordering::Less
-        } else if self.refresh > other.refresh {
-            Ordering::Greater
+        // } else if self.refresh < other.refresh {
+        //     Ordering::Less
+        // } else if self.refresh > other.refresh {
+        //     Ordering::Greater
         } else {
-            Ordering::Equal
+            self.width.cmp(&other.width)
         }
     }
 }
@@ -75,14 +106,18 @@ pub fn get_display_info() -> Result<Vec<DisplayInfo>> {
             None
         })
         .map(|dir| {
-            let modes = parse_modes(dir.join("modes")).unwrap_or_default();
+            let mut modes = parse_modes(dir.join("modes")).unwrap_or_default();
+            modes.sort_by(|a, b| b.cmp(a));
+
+            let edid = parse_edid(dir.join("edid"));
 
             let mut info = DisplayInfo {
-                model: "Unknown".to_string(),
-                serial: "Unknown".to_string(),
+                model: MonitorId::UNKNOWN_STR.to_string(),
+                serial: MonitorId::UNKNOWN_STR.to_string(),
                 display_modes: modes,
+                sys_path: dir,
             };
-            let edid = parse_edid(dir.join("edid"));
+
             if let Ok(edid) = edid {
                 for d in edid.descriptors {
                     match d {
@@ -97,7 +132,7 @@ pub fn get_display_info() -> Result<Vec<DisplayInfo>> {
         })
         .collect_vec();
 
-    info.sort_by(|a, b| b.display_modes.cmp(&a.display_modes));
+    info.sort_by(|a, b| b.cmp(a));
 
     Ok(info)
 }
@@ -121,11 +156,7 @@ fn parse_modes<P: AsRef<Path>>(file: P) -> Option<Vec<DisplayMode>> {
                 .parse()
                 .unwrap();
 
-            DisplayMode {
-                width,
-                height,
-                refresh: None,
-            }
+            DisplayMode { width, height }
         })
         .collect::<Vec<_>>();
 

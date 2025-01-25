@@ -18,7 +18,7 @@ use crate::{
         executor::PipelineContext,
     },
     profile_db::ProfileDb,
-    settings_db::{self, SettingsDb},
+    settings_db::{self, SettingsRepository},
     sys::steamos_session_select::{check_session, steamos_session_select, Session},
 };
 

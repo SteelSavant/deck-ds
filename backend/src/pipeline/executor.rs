@@ -35,7 +35,7 @@ use crate::pipeline::action::virtual_screen::VirtualScreen;
 use crate::pipeline::action::{ActionImpl, ActionType};
 use crate::pipeline::data::RuntimeSelection;
 use crate::secondary_app::SecondaryAppManager;
-use crate::settings_db::SettingsDb;
+use crate::settings_db::SettingsRepository;
 use crate::sys::app_process::AppProcess;
 use crate::sys::kwin::screen_tracking::KWinScreenTrackingScope;
 use crate::sys::kwin::{next_active_window, KWin};
@@ -60,7 +60,7 @@ pub struct PipelineContext {
     pub decky_env: Arc<DeckyEnv>,
     /// Config
     pub global_config: GlobalConfig,
-    pub settings_db: SettingsDb,
+    pub settings_db: SettingsRepository,
     /// KWin script handler
     #[debug(skip)]
     pub kwin: KWin,
@@ -97,7 +97,7 @@ impl PipelineContext {
     pub fn new(
         launch_info: Option<SteamLaunchInfo>,
         global_config: GlobalConfig,
-        settings_db: SettingsDb,
+        settings_db: SettingsRepository,
         decky_env: Arc<DeckyEnv>,
     ) -> Self {
         PipelineContext {
@@ -127,7 +127,7 @@ impl PipelineContext {
 
     pub fn load(
         global_config: GlobalConfig,
-        settings_db: SettingsDb,
+        settings_db: SettingsRepository,
         decky_env: Arc<DeckyEnv>,
     ) -> Result<Option<Self>> {
         let mut default: PipelineContext =
@@ -741,7 +741,7 @@ mod tests {
         let mut ctx = PipelineContext::new(
             None,
             Default::default(),
-            SettingsDb::new("memory"),
+            SettingsRepository::new("memory"),
             decky_env.clone(),
         );
 
@@ -844,7 +844,7 @@ mod tests {
 
         let loaded = PipelineContext::load(
             Default::default(),
-            SettingsDb::new("memory"),
+            SettingsRepository::new("memory"),
             decky_env.clone(),
         )
         .with_context(|| "Persisted context should load")?
