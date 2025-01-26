@@ -281,17 +281,17 @@ impl XDisplay {
         embedded: &mut Output,
         relative: &Relation,
         to_output: Option<&Output>,
-        is_primary: bool,
+        is_system_display: bool,
     ) -> Result<()> {
         log::debug!(
-            "reconfiguring {} relative to {:?}; is primary: {}",
+            "reconfiguring {} relative to {:?}; is primary/system: {}",
             embedded.xid,
             to_output.as_ref().map(|v| v.xid),
-            is_primary
+            is_system_display
         );
         self.set_output_enabled(embedded, true)?;
 
-        if is_primary {
+        if is_system_display {
             self.set_primary(embedded)?;
             log::debug!("set {} as primary display", embedded.xid);
         } else if let Some(output) = to_output {

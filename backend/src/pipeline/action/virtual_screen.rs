@@ -4,7 +4,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     pipeline::{dependency::Dependency, executor::PipelineContext},
-    sys::x_display::{AspectRatioOption, ModeOption, ModePreference, Resolution},
+    settings_db::SystemDisplay,
+    sys::{
+        display_info::get_display_info,
+        x_display::{AspectRatioOption, ModeOption, ModePreference, Resolution},
+    },
 };
 
 use super::{ActionId, ActionImpl, ActionType};
@@ -31,11 +35,14 @@ impl ActionImpl for VirtualScreen {
             .display
             .as_mut()
             .with_context(|| "VirtualScreen requires x11 to be running")?;
-        // TODO::I don't actually think forcing an external display here is required...
 
-        let external = display
-            .get_preferred_external_output()?
-            .ok_or(anyhow::anyhow!("Failed to find external display"))?;
+        let display_info = get_display_info()?;
+
+        let display_settings = ctx
+            .settings_db
+            .get_monitor_display_settings(&display_info)?;
+
+        let external = display.get_preferred_external_output(&display_settings)?;
 
         let mut deck = display
             .get_embedded_output()?
@@ -45,34 +52,51 @@ impl ActionImpl for VirtualScreen {
             .get_current_mode(&deck)?
             .expect("Embedded display should have active mode");
 
-        let resolution = if deck_mode.width < deck_mode.height {
-            Resolution {
-                h: deck_mode.width,
-                w: deck_mode.height,
-            }
+        if let Some((external, monitor_settings)) = external {
+            let external_mode = display
+                .get_current_mode(&external)?
+                .expect("External display should have active mode");
+
+            let smallest_mode = if deck_mode.height * deck_mode.width
+                > external_mode.height * external_mode.width
+            {
+                &external_mode
+            } else {
+                &deck_mode
+            };
+
+            let resolution = if smallest_mode.width < smallest_mode.height {
+                Resolution {
+                    h: smallest_mode.width,
+                    w: smallest_mode.height,
+                }
+            } else {
+                Resolution {
+                    w: smallest_mode.width,
+                    h: smallest_mode.height,
+                }
+            };
+
+            display.set_or_create_preferred_mode(
+                &external,
+                &ModePreference {
+                    resolution: ModeOption::Exact(resolution),
+                    aspect_ratio: AspectRatioOption::Exact(
+                        resolution.w as f32 / resolution.h as f32,
+                    ),
+                    refresh: ModeOption::AtMost(deck_mode.rate),
+                },
+            )?;
+
+            display.reconfigure_embedded(
+                &mut deck,
+                &monitor_settings.deck_location.into(),
+                Some(&external),
+                monitor_settings.system_display == SystemDisplay::Embedded,
+            )?;
         } else {
-            Resolution {
-                w: deck_mode.width,
-                h: deck_mode.height,
-            }
-        };
-
-        display.set_or_create_preferred_mode(
-            &external,
-            &ModePreference {
-                resolution: ModeOption::Exact(resolution),
-                aspect_ratio: AspectRatioOption::Exact(resolution.w as f32 / resolution.h as f32),
-                refresh: ModeOption::Exact(deck_mode.rate),
-            },
-        )?;
-        // TODO::SETTINGS_REFACTOR
-
-        display.reconfigure_embedded(
-            &mut deck,
-            todo!("get relative deck location"),
-            Some(&external),
-            todo!("determine primary display"),
-        )?;
+            display.reconfigure_embedded(&mut deck, &xrandr::Relation::Below, None, true)?;
+        }
 
         Ok(())
     }
