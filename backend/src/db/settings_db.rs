@@ -6,6 +6,7 @@ use std::{
     path::{Path, PathBuf},
     time::SystemTime,
 };
+use xrandr::Output;
 
 use migrate::migrate;
 use model::{DbEmbeddedDisplaySettings, DbMonitorDisplaySettings, MODELS};
@@ -16,7 +17,10 @@ use serde_with::{serde_as, TimestampMicroSeconds};
 use crate::{
     macros::newtype_strid,
     pipeline::action::display_config::{ExternalDisplaySettings, RelativeLocation},
-    sys::display_info::DisplayInfo,
+    sys::{
+        display_info::{DisplayInfo, DisplayMode},
+        x_display::XDisplay,
+    },
     util::create_dir_all,
 };
 
@@ -58,6 +62,32 @@ impl MonitorId {
             max_width,
             max_height,
         ))
+    }
+
+    pub fn from_output(output: &Output, x_display: &mut XDisplay) -> Self {
+        output
+            .edid()
+            .and_then(|v| edid::parse(&v).to_result().ok())
+            .map(|v| {
+                let mode = output
+                    .modes
+                    .iter()
+                    .map(|v| x_display.get_mode(*v))
+                    .filter_map(|m| m.ok())
+                    .into_iter()
+                    .map(|v| DisplayMode {
+                        width: v.width,
+                        height: v.height,
+                    })
+                    .sorted()
+                    .rev()
+                    .next();
+                let width = mode.map(|v| v.width).unwrap_or_default();
+                let height = mode.map(|v| v.height).unwrap_or_default();
+
+                MonitorId::from_edid(&v, width, height)
+            })
+            .unwrap_or_default()
     }
 
     fn format_id(model: &str, serial: &str, max_width: u32, max_height: u32) -> String {

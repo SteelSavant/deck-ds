@@ -45,7 +45,7 @@ impl ActionImpl for VirtualScreen {
         let external = display.get_preferred_external_output(&display_settings)?;
 
         let mut deck = display
-            .get_embedded_output()?
+            .get_embedded_output(&display_settings)?
             .ok_or(anyhow::anyhow!("Failed to find embedded display"))?;
 
         let deck_mode = display

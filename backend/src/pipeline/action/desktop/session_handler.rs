@@ -9,8 +9,11 @@ use serde::{Deserialize, Serialize};
 use steamdeck_controller_hidraw::SteamDeckGamepadButton;
 use xrandr::XId;
 
-use crate::pipeline::{
-    action::ActionType, data::BtnChord, dependency::Dependency, executor::PipelineContext,
+use crate::{
+    pipeline::{
+        action::ActionType, data::BtnChord, dependency::Dependency, executor::PipelineContext,
+    },
+    sys::display_info::get_display_info,
 };
 
 use self::ui::DeckDsUi;
@@ -181,7 +184,13 @@ impl ActionImpl for DesktopSessionHandler {
             .as_mut()
             .with_context(|| "DesktopSessionHandler requires x11 to be running")?;
 
-        let preferred = display.get_preferred_external_output()?;
+        let display_info = get_display_info()?;
+
+        let display_settings = ctx
+            .settings_db
+            .get_monitor_display_settings(&display_info)?;
+
+        let preferred = display.get_preferred_external_output(&display_settings)?;
         let embedded = display.get_embedded_output()?;
 
         log::debug!(

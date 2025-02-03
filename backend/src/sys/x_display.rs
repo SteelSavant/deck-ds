@@ -11,16 +11,11 @@ use xrandr::{Mode, Output, Relation, ScreenResources, XHandle, XId};
 use anyhow::{Context, Result};
 
 use crate::{
-    pipeline::action::{
-        display_config::ExternalDisplaySettings,
-        session_handler::{Pos, Size, UiEvent},
-    },
+    pipeline::action::session_handler::{Pos, Size, UiEvent},
     settings_db::{MonitorDisplaySetting, MonitorDisplaySettings, MonitorId},
 };
 
 use self::x_display_handle::XDisplayHandle;
-
-use super::display_info::DisplayMode;
 
 mod x_display_handle;
 pub mod x_touch;
@@ -64,8 +59,8 @@ pub enum AspectRatioOption {
 
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, JsonSchema)]
 pub enum TimingFallbackMethod {
-    #[default]
     CvtR,
+    #[default]
     Cvt,
     // Gtf,
     // Manual
@@ -77,7 +72,7 @@ impl XDisplay {
         Ok(Self {
             xrandr_handle: xrandr::XHandle::open()?,
             x_handle: XDisplayHandle::open()?,
-            timing_fallback: TimingFallbackMethod::Cvt, // TODO::make this configurable
+            timing_fallback: TimingFallbackMethod::default(), // TODO::make this configurable
         })
     }
 
@@ -89,14 +84,18 @@ impl XDisplay {
         &mut self.x_handle
     }
 
-    pub fn get_embedded_output(&mut self) -> Result<Option<Output>> {
+    pub fn get_embedded_output(
+        &mut self,
+        prefs: &MonitorDisplaySettings,
+    ) -> Result<Option<Output>> {
         let outputs: Vec<Output> = self.xrandr_handle.all_outputs()?;
 
-        Ok(outputs.into_iter().filter(|o| o.name == "eDP").last())
+        Ok(outputs
+            .into_iter()
+            .filter(|o| Some(MonitorId::from_output(o, self)) == prefs.embedded_display_id)
+            .next())
     }
 
-    // TODO::allow user to select target output.
-    /// Gets the preferred output, ignoring the steam decks embedded display. Chooses primary enabled output if available, otherwise largest.
     pub fn get_preferred_external_output(
         &mut self,
         prefs: &MonitorDisplaySettings,
@@ -113,21 +112,22 @@ impl XDisplay {
                         .monitor_display_settings
                         .iter()
                         .find(|p| p.id == external.1)
-                        .map(|v| v.clone())
-                        .unwrap_or_else(|| MonitorDisplaySetting {
-                            id: external.1,
-                            ..Default::default()
-                        });
+                        .map(|v| v.clone());
+                    if let Some(pref) = pref {
+                        let out = (external.0, pref);
+                        if out.0.connected {
+                            log::debug!("Returning connected external output");
 
-                    let out = (external.0, pref);
-                    if out.0.connected {
-                        log::debug!("Returning connected external output");
+                            return Ok(Some(out));
+                        } else if fail_count == MAX_FAIL_COUNT {
+                            log::debug!("Returning disconnected external output");
 
-                        return Ok(Some(out));
-                    } else if fail_count == MAX_FAIL_COUNT {
-                        log::debug!("Returning disconnected external output");
-
-                        return Ok(Some(out));
+                            return Ok(Some(out));
+                        }
+                    } else {
+                        // If the attempted display isn't in our list
+                        // of displays, we fail immediately
+                        fail_count = MAX_FAIL_COUNT;
                     }
 
                     fail_count += 1;
@@ -161,36 +161,13 @@ impl XDisplay {
         &mut self,
         prefs: &MonitorDisplaySettings,
     ) -> Result<Option<(Output, MonitorId)>> {
-        let screen = ScreenResources::new(&mut self.xrandr_handle)?;
-
         let mut outputs: Vec<_> = self
             .xrandr_handle
             .all_outputs()?
             .into_iter()
             .map(|o| {
-                let id = o
-                    .edid()
-                    .and_then(|v| edid::parse(&v).to_result().ok())
-                    .map(|v| {
-                        let mode = o
-                            .modes
-                            .iter()
-                            .map(|v| screen.mode(*v))
-                            .filter_map(|m| m.ok())
-                            .into_iter()
-                            .map(|v| DisplayMode {
-                                width: v.width,
-                                height: v.height,
-                            })
-                            .sorted()
-                            .rev()
-                            .next();
-                        let width = mode.map(|v| v.width).unwrap_or_default();
-                        let height = mode.map(|v| v.height).unwrap_or_default();
+                let id = MonitorId::from_output(&o, self);
 
-                        MonitorId::from_edid(&v, width, height)
-                    })
-                    .unwrap_or_default();
                 (o, id)
             })
             .collect();

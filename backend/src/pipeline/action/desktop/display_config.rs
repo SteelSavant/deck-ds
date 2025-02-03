@@ -42,7 +42,7 @@ impl ActionImpl for DisplayConfig {
 
         let preferred = display.get_preferred_external_output(&display_settings)?;
 
-        let mut embedded = display.get_embedded_output()?;
+        let mut embedded = display.get_embedded_output(&display_settings)?;
 
         if let Some((preferred, monitor_settings)) = preferred.as_ref() {
             if preferred.connected {
