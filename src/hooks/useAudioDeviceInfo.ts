@@ -3,7 +3,7 @@ import { getAudioDeviceInfo } from '../backend';
 import { GetAudioDeviceInfoResponse } from '../types/backend_api';
 import { Loading } from '../util/loading';
 
-const useDisplayInfo = (): Loading<GetAudioDeviceInfoResponse> => {
+const useAudioDeviceInfo = (): Loading<GetAudioDeviceInfoResponse> => {
     const [result, setResult] =
         useState<Loading<GetAudioDeviceInfoResponse>>(null);
 
@@ -34,4 +34,4 @@ const useDisplayInfo = (): Loading<GetAudioDeviceInfoResponse> => {
     return result;
 };
 
-export default useDisplayInfo;
+export default useAudioDeviceInfo;

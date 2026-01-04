@@ -73,7 +73,11 @@ pub trait ActionImpl: DeserializeOwned + Serialize {
         Self::TYPE
     }
 
+    /// Whether the "setup" code should be run during the "reify" step;
+    /// Generally used on "read-only" actions that define configuration
+    /// used in later predicate-style actions (determining emulator version based on config files, etc).
     fn should_setup_during_reify(&self) -> bool {
+        // TODO::remove the need for this function
         false
     }
 }
