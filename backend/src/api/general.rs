@@ -14,12 +14,12 @@ use crate::{
 };
 
 use super::{
-    request_handler::{log_invoke, RequestHandler},
-    ResponseErr, ResponseOk, StatusCode, ToResponseType,
+    request_handler::{exec_with_args, log_invoke, RequestHandler},
+    ResponseErr, ResponseOk, StatusCode, ToResponse,
 };
 
 // Get settings
-
+crate::derive_api_marker!(GetSettingsResponse);
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetSettingsResponse {
     global_settings: GlobalConfig,
@@ -53,34 +53,24 @@ pub fn set_settings(
     request_handler: Arc<Mutex<RequestHandler>>,
     settings: Arc<Mutex<Settings>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |args| {
-        log_invoke("set_settings", &args);
-
-        let args: Result<SetSettingsRequest, _> = {
-            let mut lock = request_handler
+    exec_with_args(
+        "set_settings",
+        request_handler,
+        move |args: SetSettingsRequest| {
+            let lock = settings
                 .lock()
-                .expect("request handler should not be poisoned");
+                .expect("settings mutex should not be poisoned");
 
-            lock.resolve(args)
-        };
-        match args {
-            Ok(args) => {
-                let lock = settings
-                    .lock()
-                    .expect("settings mutex should not be poisoned");
-                let res = lock.set_global_cfg(&args.global_settings);
-                match res {
-                    Ok(_) => ResponseOk.to_response(),
-                    Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
-                }
-            }
-            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-        }
-    }
+            lock.set_global_cfg(&args.global_settings)
+                .map(|_| ResponseOk)
+                .map_err(|err| ResponseErr(StatusCode::ServerError, err))
+        },
+    )
 }
 
-/// Get Display Info
+// Get Display Info
 
+crate::derive_api_marker!(GetDisplayInfoResponse);
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetDisplayInfoResponse {
     available_values: Vec<DisplayValues>,
@@ -96,8 +86,9 @@ pub fn get_display_info() -> impl Fn(super::ApiParameterType) -> super::ApiParam
     }
 }
 
-/// Get Audio Device Info
+// Get Audio Device Info
 
+crate::derive_api_marker!(GetAudioDeviceInfoResponse);
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetAudioDeviceInfoResponse {
     sources: Vec<AudioDeviceInfo>,

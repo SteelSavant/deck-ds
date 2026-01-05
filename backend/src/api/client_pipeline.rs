@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 use crate::client_pipeline::{ClientPipelineHandler, ClientTeardownAction};
 
 use super::{
-    request_handler::{log_invoke, RequestHandler},
-    ResponseErr, ResponseOk, StatusCode, ToResponseType,
+    request_handler::{exec_with_args, log_invoke, RequestHandler},
+    ResponseErr, ResponseOk, StatusCode, ToResponse,
 };
 
 // Add Client Teardown Action
@@ -22,32 +22,18 @@ pub fn add_client_teardown_action(
     request_handler: Arc<Mutex<RequestHandler>>,
     client_pipeline: Arc<Mutex<ClientPipelineHandler>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |args: super::ApiParameterType| {
-        log_invoke("add_client_teardown_action", &args);
-
-        let args: Result<AddClientTeardownActionRequest, _> = {
-            let mut lock = request_handler
+    exec_with_args(
+        "add_client_teardown_action",
+        request_handler,
+        move |args: AddClientTeardownActionRequest| {
+            let mut lock = client_pipeline
                 .lock()
-                .expect("request handler should not be poisoned");
-
-            lock.resolve(args)
-        };
-
-        match args {
-            Ok(args) => {
-                let mut lock = client_pipeline
-                    .lock()
-                    .expect("client pipeline should not be poisoned");
-                let res = lock.add_client_teardown_action(args.action);
-
-                match res {
-                    Ok(_) => ResponseOk.to_response(),
-                    Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
-                }
-            }
-            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-        }
-    }
+                .expect("client pipeline should not be poisoned");
+            lock.add_client_teardown_action(args.action)
+                .map(|_| ResponseOk)
+                .map_err(|err| ResponseErr(StatusCode::ServerError, err))
+        },
+    )
 }
 
 // Remove Client Teardown Actions
@@ -61,35 +47,22 @@ pub fn remove_client_teardown_actions(
     request_handler: Arc<Mutex<RequestHandler>>,
     client_pipeline: Arc<Mutex<ClientPipelineHandler>>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |args: super::ApiParameterType| {
-        log_invoke("remove_client_teardown_actions", &args);
-
-        let args: Result<RemoveClientTeardownActionsRequest, _> = {
-            let mut lock = request_handler
+    exec_with_args(
+        "remove_client_teardown_actions",
+        request_handler,
+        move |args: RemoveClientTeardownActionsRequest| {
+            let mut lock = client_pipeline
                 .lock()
-                .expect("request handler should not be poisoned");
-
-            lock.resolve(args)
-        };
-
-        match args {
-            Ok(args) => {
-                let mut lock = client_pipeline
-                    .lock()
-                    .expect("client pipeline should not be poisoned");
-                let res = lock.remove_client_teardown_actions(args.ids);
-
-                match res {
-                    Ok(_) => ResponseOk.to_response(),
-                    Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
-                }
-            }
-            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-        }
-    }
+                .expect("client pipeline should not be poisoned");
+            lock.remove_client_teardown_actions(args.ids)
+                .map(|_| ResponseOk)
+                .map_err(|err| ResponseErr(StatusCode::ServerError, err))
+        },
+    )
 }
 
 // Get Client Teardown Actions
+crate::derive_api_marker!(GetClientTeardownActionsResponse);
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetClientTeardownActionsResponse {
     actions: Vec<ClientTeardownAction>,

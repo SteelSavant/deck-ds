@@ -47,13 +47,21 @@ impl From<StatusCode> for Primitive {
     }
 }
 
-trait ToResponseType {
+trait ApiValue {}
+#[macro_export]
+macro_rules! derive_api_marker {
+    ($($t:ty),*) => {
+        $(impl crate::api::ApiValue for $t {})*
+    };
+}
+
+trait ToResponse {
     fn to_response(&self) -> ApiParameterType;
 }
 
-impl<T> ToResponseType for T
+impl<T> ToResponse for T
 where
-    T: serde::Serialize + std::fmt::Debug,
+    T: serde::Serialize + std::fmt::Debug + ApiValue,
 {
     fn to_response(&self) -> ApiParameterType {
         let json = serde_json::to_string_pretty(self)
@@ -67,7 +75,7 @@ where
 
 struct ResponseErr(StatusCode, anyhow::Error);
 
-impl ToResponseType for ResponseErr {
+impl ToResponse for ResponseErr {
     fn to_response(&self) -> ApiParameterType {
         log::warn!("returning error response: {:#?}", self.1);
         let display_err = Primitive::String(format!("{}", self.1));
@@ -79,7 +87,7 @@ impl ToResponseType for ResponseErr {
 
 struct ResponseOk;
 
-impl ToResponseType for ResponseOk {
+impl ToResponse for ResponseOk {
     fn to_response(&self) -> ApiParameterType {
         vec![StatusCode::Ok.into()]
     }

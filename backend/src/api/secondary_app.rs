@@ -8,8 +8,9 @@ use crate::{
     sys::flatpak::{list_installed_flatpaks, FlatpakInfo},
 };
 
-use super::{request_handler::log_invoke, ToResponseType};
+use super::{request_handler::log_invoke, ToResponse};
 
+crate::derive_api_marker!(GetSecondaryAppInfoResponse);
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetSecondaryAppInfoResponse {
     presets: HashMap<SecondaryAppPresetId, SecondaryAppPreset>,

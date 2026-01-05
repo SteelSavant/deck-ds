@@ -10,6 +10,8 @@ High Priority:
 
 -   No custom patching will be done at any point in the UI layer
 -   Remove logic and weirdness around `patchPipeline.ts`
+-   Remove logic and weirdness in `modifiablePipelineContext.tsx`
+-   Remove logic and weirdness in `appContext.tsx -> dispatchUpdate`
 
 Medium Priority:
 
