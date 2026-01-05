@@ -40,7 +40,9 @@ __pycache__/
 /.yalc
 yalc.lock
 
+# Ignore transfer settings
 .vscode/settings.json
+deck.json
 
 # Ignore output folder
 
