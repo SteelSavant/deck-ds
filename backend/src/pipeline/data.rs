@@ -478,8 +478,7 @@ impl PipelineActionId {
                             .and_then(|p| resolve_action_from_profile_override(p, self, ctx))
                             .map(|config| (Some(profile), config.clone()))
                             .or_else(|| {
-                                // if missing, use the registered defaults
-                                let mut config: PipelineActionSettings<ConfigSelection> = ctx
+                                let config: PipelineActionSettings<ConfigSelection> = ctx
                                     .registrar
                                     .get(self, ctx.target)
                                     .expect("action should exist if fetched for profile override")
@@ -487,20 +486,22 @@ impl PipelineActionId {
                                     .clone()
                                     .into();
 
-                                config.profile_override = Some(profile);
-
                                 Some((Some(profile), config))
                             })
+                    })
+                    .map(|(id, mut config)| {
+                        config.profile_override = id;
+                        (id, config)
                     })
                     .unwrap_or((None, config));
 
                 log::debug!("reify pipeline action id {self:?} got config {settings:?}@{id:?}");
 
-                let resolved_action = settings.reify(id, definition, ctx)?;
+                let resolved_action = settings.reify(definition, ctx)?;
 
                 Ok(Some(resolved_action))
             }
-            None => Ok(None),
+            None => Ok(None), // TODO::log skipped action?
         }
     }
 }
@@ -528,7 +529,6 @@ fn resolve_action_from_profile_override<'a>(
 impl PipelineActionSettings<ConfigSelection> {
     fn reify(
         &self,
-        profile_override: Option<ProfileId>,
         definition: &PipelineActionDefinition,
         ctx: &mut ReificationCtx,
     ) -> Result<PipelineAction> {
@@ -540,7 +540,7 @@ impl PipelineActionSettings<ConfigSelection> {
             toplevel_id: ctx.toplevel_id,
             enabled: self.enabled,
             is_visible_on_qam: self.is_visible_on_qam,
-            profile_override,
+            profile_override: self.profile_override,
             selection,
         })
     }
@@ -561,6 +561,7 @@ impl ConfigSelection {
                 if action.should_setup_during_reify() {
                     // Set up actions that may affect reification; specifically
                     // config-style actions used in version matching
+                    // TODO::I hate this
                     let _ = action.setup(ctx.ctx).inspect_err(|err| {
                         log::warn!(
                             "action {:?} failed to set up in reify: {:#?}",
