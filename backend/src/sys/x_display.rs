@@ -85,7 +85,7 @@ impl XDisplay {
     pub fn get_embedded_output(&mut self) -> Result<Option<Output>> {
         let outputs: Vec<Output> = self.xrandr_handle.all_outputs()?;
 
-        Ok(outputs.into_iter().filter(|o| o.name == "eDP").last())
+        Ok(outputs.into_iter().filter(|o| o.name == "eDP").next_back())
     }
 
     // TODO::allow user to select target output.

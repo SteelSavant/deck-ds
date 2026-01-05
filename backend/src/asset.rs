@@ -115,7 +115,7 @@ enum AssetType<'a> {
     External(PathBuf),
 }
 
-impl<'a> Asset<'a> {
+impl Asset<'_> {
     pub fn file_path(&self) -> Result<PathBuf> {
         match &self.asset_impl {
             AssetType::Internal(file) => {

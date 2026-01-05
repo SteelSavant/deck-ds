@@ -6,8 +6,6 @@ use std::{
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use anyhow::Result;
-
 use crate::{
     db::ProfileDb,
     decky_env::DeckyEnv,
@@ -433,37 +431,25 @@ pub fn reify_pipeline(
     registrar: PipelineActionRegistrar,
     decky_env: Arc<DeckyEnv>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |args: super::ApiParameterType| {
-        log_invoke("reify_pipeline", &args);
+    exec_with_args(
+        "reify_pipeline",
+        request_handler,
+        move |args: ReifyPipelineRequest| match profiles.get_profiles() {
+            Ok(profiles) => {
+                let ctx = &mut PipelineContext::new(None, Default::default(), decky_env.clone());
+                let res = args.pipeline.reify(&profiles, ctx, &registrar);
 
-        let args: Result<ReifyPipelineRequest, _> = {
-            let mut lock = request_handler
-                .lock()
-                .expect("request handler should not be poisoned");
-
-            lock.resolve(args)
-        };
-        match args {
-            Ok(args) => match profiles.get_profiles() {
-                Ok(profiles) => {
-                    let ctx =
-                        &mut PipelineContext::new(None, Default::default(), decky_env.clone());
-                    let res = args.pipeline.reify(&profiles, ctx, &registrar);
-
-                    match res {
-                        Ok(pipeline) => ReifyPipelineResponse {
-                            config_errors: check_config_errors(&pipeline, ctx),
-                            pipeline,
-                        }
-                        .to_response(),
-                        Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
-                    }
+                match res {
+                    Ok(pipeline) => Ok(ReifyPipelineResponse {
+                        config_errors: check_config_errors(&pipeline, ctx),
+                        pipeline,
+                    }),
+                    Err(err) => Err(ResponseErr(StatusCode::ServerError, err)),
                 }
-                Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
-            },
-            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-        }
-    }
+            }
+            Err(err) => Err(ResponseErr(StatusCode::ServerError, err)),
+        },
+    )
 }
 
 fn check_config_errors(

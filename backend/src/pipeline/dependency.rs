@@ -42,9 +42,7 @@ pub enum Dependency {
         path: PathBuf,
         is_file: bool,
     },
-    ///
     KWinScript(String),
-    ///
     ConfigField(String),
     /// Requires specified flatpak to exist
     Flatpak(String),

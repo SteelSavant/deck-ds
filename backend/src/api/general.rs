@@ -107,7 +107,6 @@ pub fn get_audio_device_info(
 }
 
 /// Error Msg Test
-
 pub fn test_error() -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |_| {
         ResponseErr(
@@ -121,7 +120,6 @@ pub fn test_error() -> impl Fn(super::ApiParameterType) -> super::ApiParameterTy
 }
 
 /// API web method to send log messages to the back-end log, callable from the front-end
-
 pub fn log_it() -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args| {
         log_invoke("LOG", &args);

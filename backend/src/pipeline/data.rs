@@ -423,9 +423,9 @@ struct ReificationCtx<'a> {
     ctx: &'a mut PipelineContext,
 }
 
-impl<'a> Drop for ReificationCtx<'a> {
+impl Drop for ReificationCtx<'_> {
     fn drop(&mut self) {
-        let _ = self.ctx.teardown(&mut vec![]);
+        self.ctx.teardown(&mut vec![]);
     }
 }
 
@@ -633,13 +633,12 @@ fn actions_have_target(
             Some(PipelineActionDefinition { settings, .. }) => match &settings.selection {
                 DefinitionSelection::Action(_) => true,
                 DefinitionSelection::OneOf { actions, .. }
-                | DefinitionSelection::AllOf(actions) => actions
-                    .iter()
-                    .map(|id| match registrar.get(id, target) {
+                | DefinitionSelection::AllOf(actions) => {
+                    actions.iter().any(|id| match registrar.get(id, target) {
                         Some(_) => search_settings(id, target, registrar),
                         None => false,
                     })
-                    .any(|v| v),
+                }
                 DefinitionSelection::Versioned {
                     default_action,
                     versions,
@@ -647,13 +646,10 @@ fn actions_have_target(
                     let mut actions: HashSet<_> = versions.iter().map(|v| &v.action).collect();
                     actions.insert(default_action);
 
-                    actions
-                        .iter()
-                        .map(|id| match registrar.get(id, target) {
-                            Some(_) => search_settings(id, target, registrar),
-                            None => false,
-                        })
-                        .any(|v| v)
+                    actions.iter().any(|id| match registrar.get(id, target) {
+                        Some(_) => search_settings(id, target, registrar),
+                        None => false,
+                    })
                 }
             },
             None => false,

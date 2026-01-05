@@ -7,7 +7,7 @@ pub trait RwExt {
         T: native_db::ToInput;
 }
 
-impl<'db> RwExt for RwTransaction<'db> {
+impl RwExt for RwTransaction<'_> {
     fn remove_blind<T>(&self, item: T) -> Result<()>
     where
         T: native_db::ToInput,

@@ -315,7 +315,7 @@ impl PipelineContext {
             .expect("state slot should exist")
             .iter()
             .enumerate()
-            .last()
+            .next_back()
             .map(|v| v.0)
     }
 

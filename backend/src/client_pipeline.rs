@@ -67,7 +67,7 @@ impl ClientPipelineHandler {
     }
 
     pub fn get_client_teardown_actions(&self) -> Vec<ClientTeardownAction> {
-        return self.state.teardown.values().cloned().collect();
+        self.state.teardown.values().cloned().collect()
     }
 
     fn save_state(&self) -> Result<()> {

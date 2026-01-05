@@ -51,7 +51,7 @@ trait ApiValue {}
 #[macro_export]
 macro_rules! derive_api_marker {
     ($($t:ty),*) => {
-        $(impl crate::api::ApiValue for $t {})*
+        $(impl $crate::api::ApiValue for $t {})*
     };
 }
 
