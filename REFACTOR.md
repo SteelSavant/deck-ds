@@ -6,10 +6,6 @@ No business logic should exist in the UI layer (preferably at all, in general fo
 -   No custom logic for reifying/patching
 -   No custom render/component logic per-item
 
-Medium Priority:
-
--   Avoid duplicating descriptions in components; ALL values should come from the pipeline definitions
-
 Low Priority:
 
 -   Dropdowns and other "selection" logic will have a predefined method of querying the server for their values
