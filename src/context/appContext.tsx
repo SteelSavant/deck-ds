@@ -13,12 +13,10 @@ import {
     PipelineTarget,
     reifyPipeline,
     ReifyPipelineResponse,
-    RuntimeSelection,
     setAppProfileOverride,
     setAppProfileSettings,
     setProfile,
 } from '../backend';
-import { PipelineActionLookup, TopLevelDefinition } from '../types/backend_api';
 import { MaybeString } from '../types/short';
 import { Loading } from '../util/loading';
 import { logger } from '../util/log';
@@ -177,7 +175,7 @@ export class ShortAppDetailsState {
             }
         }
 
-        await this.refetchProfile(profileId, appId);
+        await this.refetchProfile(appId);
     }
 
     async setAppProfileDefault(
@@ -190,7 +188,7 @@ export class ShortAppDetailsState {
         });
 
         if (res?.isOk) {
-            this.refetchProfile(defaultProfileId, appDetails.appId);
+            this.refetchProfile(appDetails.appId);
         } else {
             logger.toastError(
                 'failed to set app(',
@@ -230,15 +228,9 @@ export class ShortAppDetailsState {
             }
 
             if (overrides[profileId]) {
-                const res = (
-                    await reifyPipeline({ pipeline: overrides[profileId] })
-                ).map((res) =>
-                    patchProfileOverridesForMissing(
-                        profileId,
-                        overrides[profileId],
-                        res,
-                    ),
-                );
+                const res = await reifyPipeline({
+                    pipeline: overrides[profileId],
+                });
                 this.reifiedPipelines[profileId] = res;
                 this.appTargets[profileId] = await computeAppTargetSelection(
                     overrides[profileId],
@@ -292,7 +284,7 @@ export class ShortAppDetailsState {
                     overrides,
                 };
             });
-            this.refetchProfile(profileId, appId);
+            this.refetchProfile(appId);
         } else {
             logger.toastWarn(
                 'failed to set app(',
@@ -327,7 +319,7 @@ export class ShortAppDetailsState {
                 });
 
                 if (res?.isOk) {
-                    this.refetchProfile(profileId);
+                    this.refetchProfile();
                 } else {
                     logger.warn('failed to set external profile', profileId);
                 }
@@ -339,10 +331,7 @@ export class ShortAppDetailsState {
         }
     }
 
-    private async refetchProfile(
-        externalProfileId: string,
-        appIdToMatch?: number,
-    ) {
+    private async refetchProfile(appIdToMatch?: number) {
         const internal = async () => {
             if (
                 this.appDetails &&
@@ -373,17 +362,9 @@ export class ShortAppDetailsState {
                 } else {
                     const overrides = this.appProfile.data.overrides;
                     for (const k in overrides) {
-                        let reified = (
-                            await reifyPipeline({
-                                pipeline: overrides[k],
-                            })
-                        ).map((response) =>
-                            patchProfileOverridesForMissing(
-                                externalProfileId,
-                                overrides[k],
-                                response,
-                            ),
-                        );
+                        let reified = await reifyPipeline({
+                            pipeline: overrides[k],
+                        });
 
                         this.reifiedPipelines[k] = reified;
                         this.appTargets[k] = await computeAppTargetSelection(
@@ -550,69 +531,6 @@ export const ShortAppDetailsStateContextProvider: FC<
         </AppContext.Provider>
     );
 };
-
-function patchProfileOverridesForMissing(
-    externalProfileId: string,
-    overrides: PipelineDefinition,
-    response: ReifyPipelineResponse,
-): ReifyPipelineResponse {
-    const pipeline = response.pipeline;
-
-    const toplevel: { [k: string]: TopLevelDefinition } = {};
-    toplevel[overrides.platform.id] = overrides.platform;
-    for (const tl of overrides.toplevel) {
-        toplevel[tl.id] = tl;
-    }
-
-    function patch(selection: RuntimeSelection, actions: PipelineActionLookup) {
-        const type = selection.type;
-        switch (type) {
-            case 'Action':
-                return;
-            case 'OneOf':
-                for (const v of selection.value.actions) {
-                    if (!actions.actions[v.id]) {
-                        v.profile_override = externalProfileId;
-                    }
-                    patch(v.selection, actions);
-                }
-                return;
-            case 'AllOf': // fallthrough
-            case 'AllOfErased':
-                for (const v of selection.value) {
-                    if (!actions.actions[v.id]) {
-                        v.profile_override = externalProfileId;
-                    }
-                    patch(v.selection, actions);
-                }
-                return;
-
-            default:
-                const typecheck: never = type;
-                throw `runtime selection failed to typecheck: ${typecheck}`;
-        }
-    }
-
-    for (const target in pipeline.targets) {
-        let selection = pipeline.targets[target];
-        if (selection.type === 'AllOf') {
-            const actions = selection.value;
-            for (const a of actions) {
-                const toplevel_actions = toplevel[a.toplevel_id].actions;
-                patch(a.selection, toplevel_actions);
-                if (!toplevel_actions.actions[a.id]) {
-                    a.profile_override = externalProfileId;
-                }
-            }
-        } else {
-            throw 'expected toplevel action to be AllOf';
-        }
-    }
-
-    logger.debug('reify response after patch: ', response.pipeline);
-
-    return response;
-}
 
 async function getProfileIdsForAppId(appId: number): Promise<string[]> {
     const loadedProfiles = (await getProfiles()).unwrap().profiles;

@@ -563,9 +563,6 @@ export interface AppProfile {
     [k: string]: PipelineDefinition;
   };
 }
-/**
- * Get Audio Device Info
- */
 export interface GetAudioDeviceInfoResponse {
   sinks: AudioDeviceInfo[];
   sources: AudioDeviceInfo[];
@@ -584,9 +581,6 @@ export interface GetDefaultAppOverrideForProfileRequest {
 export interface GetDefaultAppOverrideForProfileResponse {
   pipeline?: PipelineDefinition | null;
 }
-/**
- * Get Display Info
- */
 export interface GetDisplayInfoResponse {
   available_values: DisplayValues[];
 }

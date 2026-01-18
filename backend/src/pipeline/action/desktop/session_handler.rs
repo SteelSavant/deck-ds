@@ -93,7 +93,6 @@ pub struct DisplayState {
 impl Clone for DisplayState {
     /// Clone for DisplayState is only implemented for ease of the current serialization impl.
     /// The clone will not contain any of the UI runtime context information.
-
     fn clone(&self) -> Self {
         SerialiableDisplayState::from(self).into()
     }

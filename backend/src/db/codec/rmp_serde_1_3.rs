@@ -46,7 +46,6 @@ SOFTWARE.
 ///     my_string: String
 /// }
 /// ```
-
 pub struct RmpSerde;
 
 impl<T: serde::Serialize> native_model::Encode<T> for RmpSerde {
@@ -86,7 +85,6 @@ impl<T: for<'de> serde::Deserialize<'de>> native_model::Decode<T> for RmpSerde {
 ///     my_string: String
 /// }
 /// ```
-
 pub struct RmpSerdeNamed;
 
 impl<T: serde::Serialize> native_model::Encode<T> for RmpSerdeNamed {

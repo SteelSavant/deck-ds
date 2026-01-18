@@ -77,6 +77,9 @@ export interface PipelineInfo {
     nonsteam_desktop_layout_config_hack_override?: boolean | null;
 }
 
+/** 
+ Returns a version of the input `pipeline` patched with `update`. Does not modify `pipeline`.
+**/
 export async function patchPipeline(
     pipeline: PipelineDefinition,
     update: PipelineUpdate,

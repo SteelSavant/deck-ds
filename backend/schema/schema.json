@@ -1686,7 +1686,6 @@
       }
     },
     "GetAudioDeviceInfoResponse": {
-      "description": "Get Audio Device Info",
       "type": "object",
       "required": [
         "sinks",
@@ -1749,7 +1748,6 @@
       }
     },
     "GetDisplayInfoResponse": {
-      "description": "Get Display Info",
       "type": "object",
       "required": [
         "available_values"

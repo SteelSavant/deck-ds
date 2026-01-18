@@ -191,7 +191,7 @@ struct TouchCalibrationTarget<'a> {
     target_output: &'a Output,
 }
 
-impl<'a> TouchCalibrationTarget<'a> {
+impl TouchCalibrationTarget<'_> {
     fn reconfigure(&self, display: &mut XDisplay) -> Result<()> {
         let display_info = DisplayInfo::new(display, self.source_output, self.target_output)?;
         let deviceid = self.source_touch.deviceid;

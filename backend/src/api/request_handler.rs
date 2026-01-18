@@ -10,7 +10,9 @@ use usdpl_back::core::serdes::Primitive;
 
 use anyhow::{anyhow, Context, Result};
 
-use super::{ApiParameterType, ResponseErr, ResponseOk, ToResponseType};
+use crate::api::StatusCode;
+
+use super::{ApiParameterType, ResponseErr, ResponseOk, ToResponse};
 
 #[derive(Debug, Default)]
 pub struct RequestHandler {
@@ -144,6 +146,39 @@ pub fn log_invoke(method: &str, args: &[Primitive]) {
         "API invoked {method}({:?})",
         args.iter().map(primitive_to_string).collect::<Vec<_>>()
     )
+}
+
+pub(super) fn exec_with_args<T, R, F>(
+    name: &str,
+    handler: Arc<Mutex<RequestHandler>>,
+    f: F,
+) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType + use<'_, T, R, F>
+where
+    T: DeserializeOwned,
+    R: ToResponse,
+    F: Fn(T) -> Result<R, ResponseErr>,
+{
+    move |args: super::ApiParameterType| {
+        log_invoke(name, &args);
+        let args: Result<T, _> = {
+            let mut lock = handler
+                .lock()
+                .expect("request handler should not be poisoned");
+
+            lock.resolve(args)
+        };
+
+        match args {
+            Ok(args) => {
+                let res = f(args);
+                match res {
+                    Ok(res) => res.to_response(),
+                    Err(err) => err.to_response(),
+                }
+            }
+            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
+        }
+    }
 }
 
 fn primitive_to_string(v: &Primitive) -> String {

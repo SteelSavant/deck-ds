@@ -6,8 +6,6 @@ use std::{
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use anyhow::Result;
-
 use crate::{
     db::ProfileDb,
     decky_env::DeckyEnv,
@@ -25,8 +23,8 @@ use crate::{
 };
 
 use super::{
-    request_handler::{log_invoke, RequestHandler},
-    ResponseErr, ResponseOk, StatusCode, ToResponseType,
+    request_handler::{exec_with_args, log_invoke, RequestHandler},
+    ResponseErr, ResponseOk, StatusCode, ToResponse,
 };
 
 // Create Profile
@@ -36,6 +34,7 @@ pub struct CreateProfileRequest {
     pipeline: PipelineDefinition,
 }
 
+crate::derive_api_marker!(CreateProfileResponse);
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct CreateProfileResponse {
     profile_id: ProfileId,
@@ -45,31 +44,21 @@ pub fn create_profile(
     request_handler: Arc<Mutex<RequestHandler>>,
     profiles: &'static ProfileDb,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |args: super::ApiParameterType| {
-        log_invoke("create_profile", &args);
-
-        let args: Result<CreateProfileRequest, _> = {
-            let mut lock = request_handler
-                .lock()
-                .expect("request handler should not be poisoned");
-
-            lock.resolve(args)
-        };
-        match args {
-            Ok(args) => {
-                let res = profiles.create_profile(args.pipeline);
-                match res {
-                    Ok(res) => CreateProfileResponse { profile_id: res.id }.to_response(),
-                    Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
-                }
-            }
-            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-        }
-    }
+    exec_with_args(
+        "create_profile",
+        request_handler,
+        |args: CreateProfileRequest| {
+            profiles
+                .create_profile(args.pipeline)
+                .map(|res| CreateProfileResponse { profile_id: res.id })
+                .map_err(|err| ResponseErr(StatusCode::ServerError, err))
+        },
+    )
 }
 
 // Get Profiles
 
+crate::derive_api_marker!(GetProfilesResponse);
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetProfilesResponse {
     profiles: Vec<CategoryProfile>,
@@ -82,6 +71,7 @@ pub fn get_profiles(
         log_invoke("get_profiles", &args);
 
         let res = profiles.get_profiles();
+
         match res {
             Ok(profiles) => GetProfilesResponse { profiles }.to_response(),
             Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
@@ -90,12 +80,12 @@ pub fn get_profiles(
 }
 
 // Get Profile
-
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct GetProfileRequest {
     profile_id: ProfileId,
 }
 
+crate::derive_api_marker!(GetProfileResponse);
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetProfileResponse {
     profile: Option<CategoryProfile>,
@@ -105,24 +95,12 @@ pub fn get_profile(
     request_handler: Arc<Mutex<RequestHandler>>,
     profiles: &'static ProfileDb,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |args: super::ApiParameterType| {
-        log_invoke("get_profile", &args);
-
-        let args: Result<GetProfileRequest, _> = {
-            let mut lock = request_handler
-                .lock()
-                .expect("request handler should not be poisoned");
-
-            lock.resolve(args)
-        };
-        match args {
-            Ok(args) => match profiles.get_profile(&args.profile_id) {
-                Ok(profile) => GetProfileResponse { profile }.to_response(),
-                Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-            },
-            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-        }
-    }
+    exec_with_args("get_profile", request_handler, |args: GetProfileRequest| {
+        profiles
+            .get_profile(&args.profile_id)
+            .map(|profile| GetProfileResponse { profile })
+            .map_err(|err| ResponseErr(StatusCode::ServerError, err))
+    })
 }
 
 // Set Profile
@@ -136,28 +114,12 @@ pub fn set_profile(
     request_handler: Arc<Mutex<RequestHandler>>,
     profiles: &'static ProfileDb,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |args: super::ApiParameterType| {
-        log_invoke("set_profile", &args);
-
-        let args: Result<SetProfileRequest, _> = {
-            let mut lock = request_handler
-                .lock()
-                .expect("request handler should not be poisoned");
-
-            lock.resolve(args)
-        };
-        match args {
-            Ok(args) => {
-                let res = profiles.set_profile(args.profile);
-
-                match res {
-                    Ok(()) => ResponseOk.to_response(),
-                    Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
-                }
-            }
-            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-        }
-    }
+    exec_with_args("set_profile", request_handler, |args: SetProfileRequest| {
+        profiles
+            .set_profile(args.profile)
+            .map(|_| ResponseOk)
+            .map_err(|err| ResponseErr(StatusCode::ServerError, err))
+    })
 }
 
 // Delete Profile
@@ -171,28 +133,16 @@ pub fn delete_profile(
     request_handler: Arc<Mutex<RequestHandler>>,
     profiles: &'static ProfileDb,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |args: super::ApiParameterType| {
-        log_invoke("delete_profile", &args);
-
-        let args: Result<DeleteProfileRequest, _> = {
-            let mut lock = request_handler
-                .lock()
-                .expect("request handler should not be poisoned");
-
-            lock.resolve(args)
-        };
-        match args {
-            Ok(args) => {
-                let res = profiles.delete_profile(&args.profile);
-
-                match res {
-                    Ok(()) => ResponseOk.to_response(),
-                    Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
-                }
-            }
-            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-        }
-    }
+    exec_with_args(
+        "delete_profile",
+        request_handler,
+        |args: DeleteProfileRequest| {
+            profiles
+                .delete_profile(&args.profile)
+                .map(|_| ResponseOk)
+                .map_err(|err| ResponseErr(StatusCode::ServerError, err))
+        },
+    )
 }
 
 // Get App Profile
@@ -202,6 +152,7 @@ pub struct GetAppProfileRequest {
     app_id: AppId,
 }
 
+crate::derive_api_marker!(GetAppProfileResponse);
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetAppProfileResponse {
     app: AppProfile,
@@ -211,24 +162,16 @@ pub fn get_app_profile(
     request_handler: Arc<Mutex<RequestHandler>>,
     profiles: &'static ProfileDb,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |args: super::ApiParameterType| {
-        log_invoke("get_app_profile", &args);
-
-        let args: Result<GetAppProfileRequest, _> = {
-            let mut lock = request_handler
-                .lock()
-                .expect("request handler should not be poisoned");
-
-            lock.resolve(args)
-        };
-        match args {
-            Ok(args) => match profiles.get_app_profile(&args.app_id) {
-                Ok(app) => GetAppProfileResponse { app }.to_response(),
-                Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-            },
-            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-        }
-    }
+    exec_with_args(
+        "get_app_profile",
+        request_handler,
+        |args: GetAppProfileRequest| {
+            profiles
+                .get_app_profile(&args.app_id)
+                .map(|app| GetAppProfileResponse { app })
+                .map_err(|err| ResponseErr(StatusCode::ServerError, err))
+        },
+    )
 }
 
 // Set App Settings
@@ -243,27 +186,16 @@ pub fn set_app_profile_settings(
     request_handler: Arc<Mutex<RequestHandler>>,
     profiles: &'static ProfileDb,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |args: super::ApiParameterType| {
-        log_invoke("set_app_profile_settings", &args);
-
-        let args: Result<SetAppProfileSettingsRequest, _> = {
-            let mut lock = request_handler
-                .lock()
-                .expect("request handler should not be poisoned");
-
-            lock.resolve(args)
-        };
-
-        match args {
-            Ok(args) => {
-                match profiles.set_app_profile_settings(args.app_id, args.default_profile) {
-                    Ok(_) => ResponseOk.to_response(),
-                    Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-                }
-            }
-            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-        }
-    }
+    exec_with_args(
+        "set_app_profile_settings",
+        request_handler,
+        |args: SetAppProfileSettingsRequest| {
+            profiles
+                .set_app_profile_settings(args.app_id, args.default_profile)
+                .map(|_| ResponseOk)
+                .map_err(|err| ResponseErr(StatusCode::ServerError, err))
+        },
+    )
 }
 
 // Set App Profile Override
@@ -279,28 +211,16 @@ pub fn set_app_profile_override(
     request_handler: Arc<Mutex<RequestHandler>>,
     profiles: &'static ProfileDb,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |args: super::ApiParameterType| {
-        log_invoke("set_app_profile_override", &args);
-
-        let args: Result<SetAppProfileOverrideRequest, _> = {
-            let mut lock = request_handler
-                .lock()
-                .expect("request handler should not be poisoned");
-
-            lock.resolve(args)
-        };
-
-        match args {
-            Ok(args) => {
-                match profiles.set_app_profile_override(args.app_id, args.profile_id, args.pipeline)
-                {
-                    Ok(_) => ResponseOk.to_response(),
-                    Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-                }
-            }
-            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-        }
-    }
+    exec_with_args(
+        "set_app_profile_override",
+        request_handler,
+        |args: SetAppProfileOverrideRequest| {
+            profiles
+                .set_app_profile_override(args.app_id, args.profile_id, args.pipeline)
+                .map(|_| ResponseOk)
+                .map_err(|err| ResponseErr(StatusCode::ServerError, err))
+        },
+    )
 }
 
 // Get Default App Override Pipline for Profile
@@ -310,6 +230,7 @@ pub struct GetDefaultAppOverrideForProfileRequest {
     profile_id: ProfileId,
 }
 
+crate::derive_api_marker!(GetDefaultAppOverrideForProfileResponse);
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetDefaultAppOverrideForProfileResponse {
     pipeline: Option<PipelineDefinition>,
@@ -320,77 +241,63 @@ pub fn get_default_app_override_pipeline_for_profile(
     profiles: &'static ProfileDb,
     registrar: PipelineActionRegistrar,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |args: super::ApiParameterType| {
-        log_invoke("get_default_app_override_pipeline_for_profile", &args);
+    exec_with_args(
+        "get_default_app_override_pipeline_for_profile",
+        request_handler,
+        move |args: GetDefaultAppOverrideForProfileRequest| {
+            let profile = profiles.get_profile(&args.profile_id);
+            match profile {
+                Ok(profile) => Ok(GetDefaultAppOverrideForProfileResponse {
+                    pipeline: profile.map(|profile| {
+                        let pipeline = profile.pipeline;
 
-        let args: Result<GetDefaultAppOverrideForProfileRequest, _> = {
-            let mut lock = request_handler
-                .lock()
-                .expect("request handler should not be poisoned");
+                        let mut platform_lookup = registrar.make_lookup(&pipeline.platform.root);
 
-            lock.resolve(args)
-        };
+                        for (id, action) in platform_lookup.actions.iter_mut() {
+                            action.profile_override = Some(args.profile_id);
+                            // override the visibility with the profile visibility, since the QAM can't actually set it
+                            if let Some(profile_action) = pipeline.platform.actions.actions.get(id)
+                            {
+                                action.copy_qam_values(profile_action);
+                            }
+                        }
 
-        match args {
-            Ok(args) => {
-                let profile = profiles.get_profile(&args.profile_id);
-                match profile {
-                    Ok(profile) => GetDefaultAppOverrideForProfileResponse {
-                        pipeline: profile.map(|profile| {
-                            let pipeline = profile.pipeline;
+                        let toplevel = pipeline
+                            .toplevel
+                            .iter()
+                            .map(|v| {
+                                let mut lookup = registrar.make_lookup(&v.root);
 
-                            let mut platform_lookup =
-                                registrar.make_lookup(&pipeline.platform.root);
-
-                            for (id, action) in platform_lookup.actions.iter_mut() {
-                                action.profile_override = Some(args.profile_id);
-                                // override the visibility with the profile visibility, since the QAM can't actually set it
-                                if let Some(profile_action) =
-                                    pipeline.platform.actions.actions.get(id)
-                                {
-                                    action.copy_qam_values(profile_action);
+                                for (id, action) in lookup.actions.iter_mut() {
+                                    action.profile_override = Some(args.profile_id);
+                                    // override the visibility with the profile visibility, since the QAM can't actually set it
+                                    if let Some(profile_action) = v.actions.actions.get(id) {
+                                        action.copy_qam_values(profile_action);
+                                    }
                                 }
-                            }
 
-                            let toplevel = pipeline
-                                .toplevel
-                                .iter()
-                                .map(|v| {
-                                    let mut lookup = registrar.make_lookup(&v.root);
+                                TopLevelDefinition {
+                                    actions: lookup,
+                                    ..v.clone()
+                                }
+                            })
+                            .collect();
 
-                                    for (id, action) in lookup.actions.iter_mut() {
-                                        action.profile_override = Some(args.profile_id);
-                                        // override the visibility with the profile visibility, since the QAM can't actually set it
-                                        if let Some(profile_action) = v.actions.actions.get(id) {
-                                            action.copy_qam_values(profile_action);
-                                        }
-                                    }
-
-                                    TopLevelDefinition {
-                                        actions: lookup,
-                                        ..v.clone()
-                                    }
-                                })
-                                .collect();
-
-                            PipelineDefinition {
-                                id: PipelineDefinitionId::nil(),
-                                platform: TopLevelDefinition {
-                                    actions: platform_lookup,
-                                    ..pipeline.platform
-                                },
-                                toplevel,
-                                ..pipeline
-                            }
-                        }),
-                    }
-                    .to_response(),
-                    Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-                }
+                        PipelineDefinition {
+                            id: PipelineDefinitionId::nil(),
+                            platform: TopLevelDefinition {
+                                actions: platform_lookup,
+                                ..pipeline.platform
+                            },
+                            toplevel,
+                            ..pipeline
+                        }
+                    }),
+                }),
+                Err(err) => Err(ResponseErr(StatusCode::ServerError, err)),
             }
-            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-        }
-    }
+        },
+    )
 }
 
 // Patch Pipeline
@@ -413,6 +320,7 @@ pub struct PatchPipelineActionRequest {
     update: PipelineActionUpdate,
 }
 
+crate::derive_api_marker!(PatchPipelineActionResponse);
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct PatchPipelineActionResponse {
     pipeline: PipelineDefinition,
@@ -422,102 +330,85 @@ pub fn patch_pipeline_action(
     request_handler: Arc<Mutex<RequestHandler>>,
     registrar: PipelineActionRegistrar,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |args: super::ApiParameterType| {
-        log_invoke("patch_pipeline_action", &args);
-
-        let args: Result<PatchPipelineActionRequest, _> = {
-            let mut lock = request_handler
-                .lock()
-                .expect("request handler should not be poisoned");
-
-            lock.resolve(args)
-        };
-
-        match args {
-            Ok(args) => {
-                let registered = registrar.get(&args.action_id, args.target);
-                if let Some(registered) = registered {
-                    let mut pipeline = args.pipeline;
-                    let tl = if pipeline.platform.id == args.toplevel_id {
-                        Some(&mut pipeline.platform)
-                    } else {
-                        pipeline
-                            .toplevel
-                            .iter_mut()
-                            .find(|v| v.id == args.toplevel_id)
-                    };
-
-                    match tl {
-                        Some(tl) => {
-                            let current_id = tl
-                                .actions
-                                .get(&args.action_id, args.target)
-                                .and_then(|v| match &v.selection {
-                                    ConfigSelection::Action(a) => Some(a.get_id()),
-                                    _ => None,
-                                })
-                                .unwrap_or(ActionId::nil());
-                            let pipeline_action = tl
-                                .actions
-                                .actions
-                                .entry(args.action_id.clone())
-                                .or_insert(registered.clone().settings.into());
-
-                            match args.update {
-                                PipelineActionUpdate::UpdateEnabled { is_enabled } => {
-                                    pipeline_action.enabled = Some(is_enabled);
-                                }
-                                PipelineActionUpdate::UpdateProfileOverride {
-                                    profile_override,
-                                } => {
-                                    log::info!(
-                                        "profile override for {:?} set to {:?}",
-                                        args.action_id,
-                                        profile_override
-                                    );
-
-                                    pipeline_action.profile_override = profile_override
-                                }
-                                PipelineActionUpdate::UpdateOneOf { selection } => {
-                                    pipeline_action.selection = ConfigSelection::OneOf { selection }
-                                }
-                                PipelineActionUpdate::UpdateAction { action } => {
-                                    pipeline_action.selection =
-                                        ConfigSelection::Action(action.cloned_with_id(current_id))
-                                }
-                                PipelineActionUpdate::UpdateVisibleOnQAM { is_visible } => {
-                                    pipeline_action.is_visible_on_qam = is_visible
-                                }
-                            }
-
-                            if let ConfigSelection::OneOf { selection } =
-                                &mut pipeline_action.selection
-                            {
-                                let reified =
-                                    registrar.get(selection, args.target).unwrap().id.clone();
-                                *selection = reified
-                            }
-
-                            PatchPipelineActionResponse { pipeline }.to_response()
-                        }
-                        // TODO::Notfound
-                        None => ResponseErr(
-                            StatusCode::BadRequest,
-                            anyhow::anyhow!("toplevel {:?} to registered", args.toplevel_id),
-                        )
-                        .to_response(),
-                    }
+    exec_with_args(
+        "patch_pipeline_action",
+        request_handler,
+        move |args: PatchPipelineActionRequest| {
+            let registered = registrar.get(&args.action_id, args.target);
+            if let Some(registered) = registered {
+                let mut pipeline = args.pipeline;
+                let tl = if pipeline.platform.id == args.toplevel_id {
+                    Some(&mut pipeline.platform)
                 } else {
-                    ResponseErr(
+                    pipeline
+                        .toplevel
+                        .iter_mut()
+                        .find(|v| v.id == args.toplevel_id)
+                };
+
+                match tl {
+                    Some(tl) => {
+                        let current_id = tl
+                            .actions
+                            .get(&args.action_id, args.target)
+                            .and_then(|v| match &v.selection {
+                                ConfigSelection::Action(a) => Some(a.get_id()),
+                                _ => None,
+                            })
+                            .unwrap_or(ActionId::nil());
+                        let pipeline_action = tl
+                            .actions
+                            .actions
+                            .entry(args.action_id.clone())
+                            .or_insert(registered.clone().settings.into());
+
+                        match args.update {
+                            PipelineActionUpdate::UpdateEnabled { is_enabled } => {
+                                pipeline_action.enabled = Some(is_enabled);
+                            }
+                            PipelineActionUpdate::UpdateProfileOverride { profile_override } => {
+                                log::info!(
+                                    "profile override for {:?} set to {:?}",
+                                    args.action_id,
+                                    profile_override
+                                );
+
+                                pipeline_action.profile_override = profile_override
+                            }
+                            PipelineActionUpdate::UpdateOneOf { selection } => {
+                                pipeline_action.selection = ConfigSelection::OneOf { selection }
+                            }
+                            PipelineActionUpdate::UpdateAction { action } => {
+                                pipeline_action.selection =
+                                    ConfigSelection::Action(action.cloned_with_id(current_id))
+                            }
+                            PipelineActionUpdate::UpdateVisibleOnQAM { is_visible } => {
+                                pipeline_action.is_visible_on_qam = is_visible
+                            }
+                        }
+
+                        if let ConfigSelection::OneOf { selection } = &mut pipeline_action.selection
+                        {
+                            let reified = registrar.get(selection, args.target).unwrap().id.clone();
+                            *selection = reified
+                        }
+
+                        Ok(PatchPipelineActionResponse { pipeline })
+                    }
+                    // TODO::Notfound
+                    None => Err(ResponseErr(
                         StatusCode::BadRequest,
-                        anyhow::anyhow!("action {:?} not registered", args.action_id),
-                    )
-                    .to_response()
+                        anyhow::anyhow!("toplevel {:?} to registered", args.toplevel_id),
+                    )),
                 }
+            } else {
+                Err(ResponseErr(
+                    StatusCode::BadRequest,
+                    anyhow::anyhow!("action {:?} not registered", args.action_id),
+                ))
             }
-            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-        }
-    }
+        },
+    )
 }
 
 // Reify Pipeline
@@ -527,6 +418,7 @@ pub struct ReifyPipelineRequest {
     pipeline: PipelineDefinition,
 }
 
+crate::derive_api_marker!(ReifyPipelineResponse);
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct ReifyPipelineResponse {
     pipeline: Pipeline,
@@ -539,37 +431,25 @@ pub fn reify_pipeline(
     registrar: PipelineActionRegistrar,
     decky_env: Arc<DeckyEnv>,
 ) -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
-    move |args: super::ApiParameterType| {
-        log_invoke("reify_pipeline", &args);
+    exec_with_args(
+        "reify_pipeline",
+        request_handler,
+        move |args: ReifyPipelineRequest| match profiles.get_profiles() {
+            Ok(profiles) => {
+                let ctx = &mut PipelineContext::new(None, Default::default(), decky_env.clone());
+                let res = args.pipeline.reify(&profiles, ctx, &registrar);
 
-        let args: Result<ReifyPipelineRequest, _> = {
-            let mut lock = request_handler
-                .lock()
-                .expect("request handler should not be poisoned");
-
-            lock.resolve(args)
-        };
-        match args {
-            Ok(args) => match profiles.get_profiles() {
-                Ok(profiles) => {
-                    let ctx =
-                        &mut PipelineContext::new(None, Default::default(), decky_env.clone());
-                    let res = args.pipeline.reify(&profiles, ctx, &registrar);
-
-                    match res {
-                        Ok(pipeline) => ReifyPipelineResponse {
-                            config_errors: check_config_errors(&pipeline, ctx),
-                            pipeline,
-                        }
-                        .to_response(),
-                        Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
-                    }
+                match res {
+                    Ok(pipeline) => Ok(ReifyPipelineResponse {
+                        config_errors: check_config_errors(&pipeline, ctx),
+                        pipeline,
+                    }),
+                    Err(err) => Err(ResponseErr(StatusCode::ServerError, err)),
                 }
-                Err(err) => ResponseErr(StatusCode::ServerError, err).to_response(),
-            },
-            Err(err) => ResponseErr(StatusCode::BadRequest, err).to_response(),
-        }
-    }
+            }
+            Err(err) => Err(ResponseErr(StatusCode::ServerError, err)),
+        },
+    )
 }
 
 fn check_config_errors(
@@ -638,6 +518,7 @@ pub struct ToplevelInfo {
     pub description: Option<String>,
 }
 
+crate::derive_api_marker!(GetTopLevelResponse);
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetTopLevelResponse {
     toplevel: Vec<ToplevelInfo>,
@@ -667,6 +548,7 @@ pub fn get_toplevel(
 
 // Templates
 
+crate::derive_api_marker!(GetTemplatesResponse);
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetTemplatesResponse {
     templates: Vec<Template>,
