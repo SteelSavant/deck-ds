@@ -30,10 +30,10 @@ pub use ui::UiEvent;
 pub struct DesktopSessionHandler {
     pub id: ActionId,
     #[default(true)]
-    pub deck_is_primary_display: bool,
+    pub deck_is_primary_display: bool, // TODO::validate difference between the one here, and in DisplayConfig
     pub teardown_external_settings: ExternalDisplaySettings,
     #[default(Some(Default::default()))]
-    pub teardown_deck_location: Option<RelativeLocation>,
+    pub teardown_deck_location: Option<RelativeLocation>, // TODO::this should be determined by hardware configuration
 }
 
 impl DesktopSessionHandler {

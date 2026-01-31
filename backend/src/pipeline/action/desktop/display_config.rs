@@ -14,8 +14,9 @@ pub struct DisplayConfig {
     pub id: ActionId,
     pub external_display_settings: ExternalDisplaySettings,
     // Some(Location) for relative location, None for disabled
-    pub deck_location: Option<RelativeLocation>,
+    pub deck_location: Option<RelativeLocation>, // TODO::this should be determined by hardware configuration
     pub deck_is_primary_display: bool,
+    // TODO::add field to allow overriding default display
 }
 
 // TODO::ideally, this would listen for changes to connected monitors and re-run accordingly

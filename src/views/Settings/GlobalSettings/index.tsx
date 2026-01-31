@@ -120,7 +120,6 @@ export const GlobalSettingsPage: VFC = () => {
                                 }}
                             />
                         </Builder>
-
                         <Field
                             focusable={false}
                             label="Display Settings"

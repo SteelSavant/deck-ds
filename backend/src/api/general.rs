@@ -9,7 +9,7 @@ use crate::{
     settings::{GlobalConfig, Settings},
     sys::{
         audio::{get_audio_sinks, get_audio_sources, AudioDeviceInfo},
-        display_info::{self, DisplayValues},
+        display_info::{self, DisplayInfo, DisplayValues},
     },
 };
 
@@ -73,14 +73,14 @@ pub fn set_settings(
 crate::derive_api_marker!(GetDisplayInfoResponse);
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct GetDisplayInfoResponse {
-    available_values: Vec<DisplayValues>,
+    available_values: Vec<DisplayInfo>,
 }
 
 pub fn get_display_info() -> impl Fn(super::ApiParameterType) -> super::ApiParameterType {
     move |args| {
         log_invoke("get_display_info", &args);
         GetDisplayInfoResponse {
-            available_values: display_info::get_display_info().unwrap_or_default(),
+            available_values: display_info::get_display_info(),
         }
         .to_response()
     }
