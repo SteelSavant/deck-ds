@@ -1,5 +1,6 @@
 use std::{
     cmp::Ordering,
+    collections::HashMap,
     fs::DirEntry,
     path::{Path, PathBuf},
 };
@@ -9,6 +10,10 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
+use crate::macros::newtype_strid;
+
+newtype_strid!("Display Id", DisplayId);
+
 #[derive(Debug, Default, Clone, Deserialize, Serialize, JsonSchema)]
 pub struct DisplayInfo {
     vendor: String,
@@ -16,12 +21,17 @@ pub struct DisplayInfo {
     serial: u32,
     serial_number: Option<String>,
     product_name: Option<String>,
-    values: Vec<DisplayValues>,
+    pub values: Vec<DisplayValues>,
+}
+
+pub struct RuntimeDisplayInfo {
+    pub enabled: bool,
+    pub path: String,
 }
 
 impl DisplayInfo {
-    pub fn id(&self) -> String {
-        format!("{}-{}-{}", self.vendor, self.product, self.serial)
+    pub fn id(&self) -> DisplayId {
+        DisplayId(format!("{}-{}-{}", self.vendor, self.product, self.serial))
     }
 
     pub fn display_name(&self) -> String {
@@ -76,10 +86,10 @@ impl Ord for DisplayValues {
 /// without going through X. Primarily for displaying
 /// optional values in GameMode.
 ///
-/// Returns a vec of [DisplayInfo], ordered
-/// greatest to least.
-pub fn get_display_info() -> Vec<DisplayInfo> {
-    get_display_dirs()
+/// Returns a vec of [DisplayInfo] and a hashmap mapping internal [DisplayId]s to device path (for later remapping)
+pub fn get_display_info() -> (Vec<DisplayInfo>, HashMap<DisplayId, RuntimeDisplayInfo>) {
+    let mut runtime_info: HashMap<DisplayId, _> = HashMap::new();
+    let info = get_display_dirs()
         .into_iter()
         .map(|dir| {
             let modes_file = dir.join("modes");
@@ -94,13 +104,33 @@ pub fn get_display_info() -> Vec<DisplayInfo> {
                 edid.values.dedup();
             }
 
+            let enabled = std::fs::read_to_string(dir.join("enabled"))
+                .unwrap_or("disabled".to_string())
+                == "enabled";
+
+            runtime_info.insert(
+                edid.id(),
+                RuntimeDisplayInfo {
+                    enabled: enabled,
+                    path: dir
+                        .parent()
+                        .into_iter()
+                        .last()
+                        .unwrap()
+                        .to_string_lossy()
+                        .to_string(),
+                },
+            );
+
             edid
         })
-        .collect()
+        .collect();
+
+    (info, runtime_info)
 }
 
 fn get_display_dirs() -> Vec<PathBuf> {
-    let dir = Path::new("/sys/class/drm/");
+    let drm_dir = Path::new("/sys/class/drm/");
     fn is_connected_display_dir(d: &DirEntry) -> bool {
         let dir_path = d.path();
         let exists = dir_path.join("modes").exists() || dir_path.join("edid").exists();
@@ -110,7 +140,7 @@ fn get_display_dirs() -> Vec<PathBuf> {
         exists && status == "connected"
     }
 
-    match dir.read_dir() {
+    match drm_dir.read_dir() {
         Ok(display_dirs) => display_dirs
             .filter_map(Result::ok)
             .filter(|v| {
@@ -158,12 +188,11 @@ fn parse_modes<P: AsRef<Path>>(file: P) -> Option<Vec<DisplayValues>> {
     Some(modes)
 }
 
-fn parse_edid<P: AsRef<Path> + Debug>(path: P) -> Result<DisplayInfo, anyhow::Error> {
-    let bytes = std::fs::read(&path)?;
+pub fn parse_raw_edid(bytes: &[u8]) -> Result<DisplayInfo, anyhow::Error> {
     let edid = edid::parse(&bytes);
     let edid = edid
         .to_result()
-        .map_err(|_| anyhow!("Failed to parse edid @ {:?}", path));
+        .map_err(|_| anyhow!("Failed to parse edid"));
 
     let edid = edid.with_context(|| format!("Failed to parse edid"))?;
 
@@ -196,4 +225,10 @@ fn parse_edid<P: AsRef<Path> + Debug>(path: P) -> Result<DisplayInfo, anyhow::Er
     }
 
     Ok(info)
+}
+
+fn parse_edid<P: AsRef<Path> + Debug>(path: P) -> Result<DisplayInfo, anyhow::Error> {
+    let bytes = std::fs::read(&path)?;
+
+    parse_raw_edid(&bytes).with_context(|| format!("Failed to parse edid file @ {:?}", path))
 }

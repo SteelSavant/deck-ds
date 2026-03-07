@@ -9,14 +9,16 @@ use serde::{Deserialize, Serialize};
 use steamdeck_controller_hidraw::SteamDeckGamepadButton;
 use xrandr::XId;
 
-use crate::pipeline::{
-    action::ActionType, data::BtnChord, dependency::Dependency, executor::PipelineContext,
+use crate::{
+    pipeline::{
+        action::ActionType, data::BtnChord, dependency::Dependency, executor::PipelineContext,
+    },
+    sys::display_info::DisplayId,
 };
 
 use self::ui::DeckDsUi;
 
 use super::super::{ActionId, ActionImpl};
-use smart_default::SmartDefault;
 
 pub use super::common::{ExternalDisplaySettings, RelativeLocation};
 
@@ -26,14 +28,21 @@ pub use ui::Pos;
 pub use ui::Size;
 pub use ui::UiEvent;
 
-#[derive(Debug, Copy, Clone, SmartDefault, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+pub struct DisplaySettings {
+    pub display: DisplayId,
+    pub external_settings: ExternalDisplaySettings,
+    pub deck_location: Option<RelativeLocation>,
+    pub deck_is_primary_display: bool,
+}
+
+/// Sets up/tears down the desktop; `primary` is the Deck/embedded display,
+/// `displays` are known external displays in access order (so we prefer most recently used)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct DesktopSessionHandler {
     pub id: ActionId,
-    #[default(true)]
-    pub deck_is_primary_display: bool, // TODO::validate difference between the one here, and in DisplayConfig
-    pub teardown_external_settings: ExternalDisplaySettings,
-    #[default(Some(Default::default()))]
-    pub teardown_deck_location: Option<RelativeLocation>, // TODO::this should be determined by hardware configuration
+    pub primary: DisplayId,
+    pub external: Vec<DisplaySettings>,
 }
 
 impl DesktopSessionHandler {
@@ -44,9 +53,9 @@ impl DesktopSessionHandler {
             .with_context(|| "DesktopSessionHandler requires x11 to be running")?;
 
         let mut deck = display
-            .get_embedded_output()?
+            .get_embedded_output(&self)?
             .with_context(|| "unable to find embedded display")?;
-        let current_output = display.get_preferred_external_output()?;
+        let current_output = display.get_preferred_external_output(&self)?;
 
         if let Some(current_output) = current_output.as_ref() {
             if current_output.connected {
@@ -183,8 +192,8 @@ impl ActionImpl for DesktopSessionHandler {
             .as_mut()
             .with_context(|| "DesktopSessionHandler requires x11 to be running")?;
 
-        let preferred = display.get_preferred_external_output()?;
-        let embedded = display.get_embedded_output()?;
+        let preferred = display.get_preferred_external_output(&self)?;
+        let embedded = display.get_embedded_output(&self)?;
 
         log::debug!(
             "session handler found outputs: \n--embedded:{:?}, \n--external:{:?}",
@@ -273,7 +282,8 @@ impl ActionImpl for DesktopSessionHandler {
             .display
             .take()
             .with_context(|| "DesktopSessionHandler requires x11 to be running")?;
-        let current_output = display.get_preferred_external_output()?;
+
+        let current_output = display.get_preferred_external_output(session)?;
 
         let res = match ctx.get_state::<Self>() {
             Some(state) => {
@@ -341,7 +351,7 @@ impl ActionImpl for DesktopSessionHandler {
                     }
                 }?;
 
-                let mut deck = display.get_embedded_output()?.unwrap();
+                let mut deck = display.get_embedded_output(&self)?.unwrap();
 
                 if let Some(location) = self.teardown_deck_location {
                     display.reconfigure_embedded(

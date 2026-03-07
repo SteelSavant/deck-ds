@@ -4,7 +4,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use edid::Display;
 use either::Either;
 use smart_default::SmartDefault;
 

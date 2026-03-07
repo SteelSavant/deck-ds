@@ -9,7 +9,10 @@ use xrandr::{Mode, Output, Relation, ScreenResources, XHandle, XId};
 
 use anyhow::{Context, Result};
 
-use crate::pipeline::action::session_handler::{Pos, Size, UiEvent};
+use crate::{
+    pipeline::action::session_handler::{DesktopSessionHandler, Pos, Size, UiEvent},
+    sys::display_info::{parse_raw_edid, DisplayId},
+};
 
 use self::x_display_handle::XDisplayHandle;
 
@@ -64,6 +67,20 @@ pub enum TimingFallbackMethod {
     // Manual
 }
 
+// TODO::this probably isn't great, since it'll never match if the edid fails for any reason
+impl PartialEq<DisplayId> for Output {
+    fn eq(&self, other: &DisplayId) -> bool {
+        if let Some(edid) = self.edid() {
+            let parsed = parse_raw_edid(&edid);
+            if let Ok(parsed) = parsed {
+                return parsed.id() == *other;
+            }
+        }
+
+        false
+    }
+}
+
 // TODO::rework this - its messy and unlikely to play nicely with all configurations; its either doing too much, or too little.
 impl XDisplay {
     pub fn new() -> Result<Self> {
@@ -82,17 +99,28 @@ impl XDisplay {
         &mut self.x_handle
     }
 
-    pub fn get_embedded_output(&mut self) -> Result<Option<Output>> {
+    pub fn get_embedded_output(
+        &mut self,
+        session: &DesktopSessionHandler,
+    ) -> Result<Option<Output>> {
         let outputs: Vec<Output> = self.xrandr_handle.all_outputs()?;
 
-        Ok(outputs.into_iter().filter(|o| o.name == "eDP").next_back())
+        Ok(outputs
+            .into_iter()
+            .filter(|o| *o == session.primary)
+            .next_back())
     }
 
-    // TODO::allow user to select target output.
-    /// Gets the preferred output, ignoring the steam decks embedded display. Chooses primary enabled output if available, otherwise largest.
-    pub fn get_preferred_external_output(&mut self) -> Result<Option<Output>> {
+    /// Gets the preferred output, ignoring the "primary" display. Chooses preferred enabled output if available, otherwise largest.
+    pub fn get_preferred_external_output(
+        &mut self,
+        session: &DesktopSessionHandler,
+    ) -> Result<Option<Output>> {
         let external = {
-            let mut maybe_external = self.get_preferred_external_output_maybe_disconnected()?;
+            // TODO::rework to actually use an available display, not just
+            // hope the preferred one works
+            let mut maybe_external =
+                self.get_preferred_external_output_maybe_disconnected(session)?;
 
             let mut fail_count = 0;
             const MAX_FAIL_COUNT: u16 = 150;
@@ -110,7 +138,8 @@ impl XDisplay {
 
                     fail_count += 1;
                     thread::sleep(Duration::from_millis(100));
-                    maybe_external = self.get_preferred_external_output_maybe_disconnected()?;
+                    maybe_external =
+                        self.get_preferred_external_output_maybe_disconnected(session)?;
                 }
             }
 
@@ -122,7 +151,12 @@ impl XDisplay {
         Ok(external)
     }
 
-    fn get_preferred_external_output_maybe_disconnected(&mut self) -> Result<Option<Output>> {
+    fn get_preferred_external_output_maybe_disconnected(
+        &mut self,
+        session: &DesktopSessionHandler,
+    ) -> Result<Option<Output>> {
+        // TODO::get first matching a non-primary id in the session, otherwise, do what this already does;
+        //
         let mut outputs: Vec<Output> = self.xrandr_handle.all_outputs()?;
 
         outputs.sort_by(|a, b| {

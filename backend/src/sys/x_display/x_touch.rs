@@ -27,6 +27,8 @@ use serde::{Deserialize, Serialize};
 use x11::{xinput2::*, xlib::*, xrandr::XRRGetScreenSizeRange};
 use xrandr::{Output, Rotation, ScreenResources};
 
+use crate::pipeline::action::session_handler::DesktopSessionHandler;
+
 use super::{x_display_handle::XDisplayHandle, XDisplay};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -53,12 +55,16 @@ struct DisplayInfo {
 }
 
 impl XDisplay {
-    pub fn reconfigure_touch(&mut self, touch_mode: TouchSelectionMode) -> Result<()> {
+    pub fn reconfigure_touch(
+        &mut self,
+        touch_mode: TouchSelectionMode,
+        session: &DesktopSessionHandler,
+    ) -> Result<()> {
         let deck = self
-            .get_embedded_output()?
+            .get_embedded_output(session)?
             .filter(|v| v.connected && v.current_mode.is_some());
         let external = self
-            .get_preferred_external_output()?
+            .get_preferred_external_output(session)?
             .filter(|v| v.connected && v.current_mode.is_some());
 
         if deck.is_none() && external.is_none() {

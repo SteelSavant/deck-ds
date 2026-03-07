@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     pipeline::{
-        action::{ActionId, ActionImpl, ActionType},
+        action::{session_handler::DesktopSessionHandler, ActionId, ActionImpl, ActionType},
         dependency::Dependency,
     },
     sys::{
@@ -38,12 +38,12 @@ impl ActionImpl for TouchConfig {
             .as_mut()
             .context("TouchConfig requires kwin to be running")?
             .register_update(Box::new(move |_update| {
-                update_touch(touch_mode);
+                update_touch(touch_mode); // TODO::for this to work, the kwin context must send events, rather than take callbacks
             }));
 
         ctx.set_state::<Self>(TouchConfigState { handle });
 
-        update_touch(touch_mode);
+        update_touch(touch_mode, &ctx.global_config.display_restoration);
 
         Ok(())
     }
@@ -74,12 +74,12 @@ impl ActionImpl for TouchConfig {
     }
 }
 
-fn update_touch(touch_mode: TouchSelectionMode) {
+fn update_touch(touch_mode: TouchSelectionMode, session: &DesktopSessionHandler) {
     sleep(Duration::from_millis(100));
     let xdisplay = XDisplay::new();
     match xdisplay {
         Ok(mut xdisplay) => {
-            let res = xdisplay.reconfigure_touch(touch_mode);
+            let res = xdisplay.reconfigure_touch(touch_mode, session);
             if let Err(err) = res {
                 log::warn!("failed to reconfigure touch after change event: {err}");
             }

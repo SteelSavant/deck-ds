@@ -35,12 +35,14 @@ impl ActionImpl for VirtualScreen {
             .with_context(|| "VirtualScreen requires x11 to be running")?;
         // TODO::I don't actually think forcing an external display here is required...
 
+        let session = &ctx.global_config.display_restoration;
+
         let external = display
-            .get_preferred_external_output()?
+            .get_preferred_external_output(session)?
             .ok_or(anyhow::anyhow!("Failed to find external display"))?;
 
         let mut deck = display
-            .get_embedded_output()?
+            .get_embedded_output(session)?
             .ok_or(anyhow::anyhow!("Failed to find embedded display"))?;
 
         let deck_mode = display

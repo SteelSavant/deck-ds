@@ -30,9 +30,10 @@ impl ActionImpl for DisplayConfig {
             .display
             .as_mut()
             .context("DisplayConfig requires x11 to be running")?;
+        let session = &ctx.global_config.display_restoration;
 
-        let preferred = display.get_preferred_external_output()?;
-        let mut embedded = display.get_embedded_output()?;
+        let preferred = display.get_preferred_external_output(session)?;
+        let mut embedded = display.get_embedded_output(session)?;
 
         if let Some(preferred) = preferred.as_ref() {
             if preferred.connected {
