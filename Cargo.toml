@@ -1,5 +1,3 @@
- [workspace]
+[workspace]
 resolver = "2"
-members = [
-    "backend"
-]
+members = ["backend", "action_schema"]

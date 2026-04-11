@@ -276,10 +276,10 @@ pub enum DefinitionSelection {
         actions: Vec<PipelineActionId>,
     },
     AllOf(Vec<PipelineActionId>),
-    Versioned {
+    Versioned { // TODO::this should be a more generic RuntimeSelect
         default_action: PipelineActionId,
         versions: Vec<VersionConfig>,
-    },
+    }, 
 }
 
 /// Stores an object capable of matching with the desired version,
