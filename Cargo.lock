@@ -1307,9 +1307,9 @@ checksum = "f25c0e292a7ca6d6498557ff1df68f32c99850012b6ea401cf8daf771f22ff53"
 
 [[package]]
 name = "dyn-clone"
-version = "1.0.17"
+version = "1.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d6ef0072f8a535281e4876be788938b528e9a1d43900b82c2569af7da799125"
+checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 
 [[package]]
 name = "ecolor"
@@ -3647,7 +3647,7 @@ dependencies = [
 name = "schema_derive"
 version = "0.1.0"
 dependencies = [
- "erased-serde",
+ "dyn-clone",
  "schemars 1.2.1",
  "serde",
 ]
